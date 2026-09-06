@@ -1147,64 +1147,6 @@ export default function DniMatrixTab({
               </div>
             </div>
           </div>
-
-          {/* Barra de Navegación del Expediente Activo (Inferior) */}
-          <div className="active-nav-bar">
-            <button
-              className="btn btn-secondary nav-btn"
-              disabled={activeSlotId <= 1}
-              onClick={() => {
-                if (activeSlotId > 1) {
-                  playSound('click');
-                  setActiveSlotId((prev) => prev - 1);
-                }
-              }}
-              title="Ir al cupo anterior (Flecha Izquierda)"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-              <span>
-                Anterior <kbd>&larr;</kbd>
-              </span>
-            </button>
-
-            <div className="nav-center-info">
-              <span>
-                Cupo {activeSlotId} de {totalSlots}
-              </span>
-            </div>
-
-            <button
-              className="btn btn-secondary nav-btn"
-              disabled={activeSlotId >= totalSlots}
-              onClick={() => {
-                if (activeSlotId < totalSlots) {
-                  playSound('click');
-                  setActiveSlotId((prev) => prev + 1);
-                }
-              }}
-              title="Ir al siguiente cupo (Flecha Derecha)"
-            >
-              <span>
-                Siguiente <kbd>&rarr;</kbd>
-              </span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-
-            <button
-              className="btn btn-success nav-btn-cta"
-              onClick={jumpToNextIncompleteSlot}
-              title="Saltar de inmediato al próximo cupo vacío o incompleto (Enter)"
-            >
-              <span className="pulse-dot"></span>
-              <span>
-                Siguiente Incompleto <kbd>Enter ⏎</kbd>
-              </span>
-            </button>
-          </div>
         </section>
 
         {/* COLUMNA DERECHA: EXPEDIENTE ACTIVO, BARRA DE ACCIONES Y MATRIZ DE CUPOS */}
@@ -1252,6 +1194,64 @@ export default function DniMatrixTab({
               }}
               maxLength={60}
             />
+          </div>
+
+          {/* Barra de Navegación del Expediente Activo (Anterior, Cupo actual, Siguiente, Siguiente Incompleto) */}
+          <div className="matrix-active-nav-bar">
+            <button
+              className="btn btn-secondary nav-btn"
+              disabled={activeSlotId <= 1}
+              onClick={() => {
+                if (activeSlotId > 1) {
+                  playSound('click');
+                  setActiveSlotId((prev) => prev - 1);
+                }
+              }}
+              title="Ir al cupo anterior (Flecha Izquierda)"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+              <span>
+                Anterior <kbd>&larr;</kbd>
+              </span>
+            </button>
+
+            <div className="nav-center-info">
+              <span>
+                Cupo {activeSlotId} de {totalSlots}
+              </span>
+            </div>
+
+            <button
+              className="btn btn-secondary nav-btn"
+              disabled={activeSlotId >= totalSlots}
+              onClick={() => {
+                if (activeSlotId < totalSlots) {
+                  playSound('click');
+                  setActiveSlotId((prev) => prev + 1);
+                }
+              }}
+              title="Ir al siguiente cupo (Flecha Derecha)"
+            >
+              <span>
+                Siguiente <kbd>&rarr;</kbd>
+              </span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+
+            <button
+              className="btn btn-success nav-btn-cta"
+              onClick={jumpToNextIncompleteSlot}
+              title="Saltar de inmediato al próximo cupo vacío o incompleto (Enter)"
+            >
+              <span className="pulse-dot"></span>
+              <span>
+                Siguiente Incompleto <kbd>Enter ⏎</kbd>
+              </span>
+            </button>
           </div>
 
           {/* Barra de Acciones y Herramientas Globales */}

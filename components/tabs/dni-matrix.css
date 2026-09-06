@@ -752,32 +752,79 @@ kbd {
   border-color: var(--accent-cyan);
 }
 
-/* Barra de navegación inferior */
+/* Barra de navegación del expediente en columna derecha */
+.matrix-active-nav-bar,
 .active-nav-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border-subtle);
+  gap: 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 8px 12px;
+  box-shadow: var(--shadow-sm);
+  width: 100%;
 }
 
+.matrix-active-nav-bar .nav-btn,
 .nav-btn {
-  padding: 8px 14px;
+  padding: 6px 11px;
+  font-size: 0.76rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+  transition: all 0.15s ease;
 }
 
-.nav-btn-cta {
-  padding: 9px 18px;
-  font-size: 0.88rem;
-  position: relative;
-}
-
+.matrix-active-nav-bar .nav-center-info,
 .nav-center-info {
   font-family: var(--font-mono);
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--accent-cyan);
+  font-weight: 700;
+  white-space: nowrap;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.matrix-active-nav-bar .nav-btn-cta,
+.nav-btn-cta {
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: #ffffff;
+  border: 1px solid #34d399;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.matrix-active-nav-bar .nav-btn-cta:hover,
+.nav-btn-cta:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 480px) {
+  .matrix-active-nav-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .matrix-active-nav-bar .nav-btn-cta {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .pulse-dot {
