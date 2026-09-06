@@ -49,7 +49,7 @@ export default function Sidebar({
       {/* Encabezado Móvil con Botón Cerrar (Oculto en PC vía CSS) */}
       <div className="sidebar-mobile-header">
         <span style={{ fontSize: '13px', fontWeight: 900, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <i className="fa-solid fa-boxes-stacked" style={{ color: '#38bdf8' }}></i> AMEX COURIER SISTEMA
+          <i className="fa-solid fa-boxes-stacked" style={{ color: '#38bdf8' }}></i> SISTEMA AMEX COURIER
         </span>
         <button
           onClick={onCloseSidebar}

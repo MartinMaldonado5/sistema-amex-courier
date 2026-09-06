@@ -539,14 +539,12 @@ export default function DashboardPage() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
+    <div className="app-layout-shell">
       <HeaderBar
         currentUser={currentUser}
         isSidebarCollapsed={isSidebarCollapsed}
         onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         onLogout={handleLogout}
-        onGlobalRefresh={fetchSupabaseData}
-        isRefreshing={isGlobalRefreshing}
       />
 
       <div className="app-container">
@@ -647,6 +645,8 @@ export default function DashboardPage() {
                 <DniMatrixTab
                   paquetes={paquetes}
                   clientes={clientes}
+                  onGlobalRefresh={fetchSupabaseData}
+                  isRefreshing={isGlobalRefreshing}
                 />
               )}
             </>

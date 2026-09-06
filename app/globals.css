@@ -82,7 +82,15 @@ body {
   border: 1px solid rgba(74,222,128,0.3);
 }
 
-/* Main Container & Accordion Sidebar */
+/* Main Container & Layout */
+.app-layout-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
 .app-container {
   display: flex;
   flex: 1;
@@ -105,8 +113,41 @@ body {
 }
 
 @media (min-width: 769px) {
+  .app-layout-shell {
+    display: grid !important;
+    grid-template-columns: 270px 1fr !important;
+    grid-template-rows: 56px 1fr !important;
+    grid-template-areas:
+      "header main"
+      "sidebar main" !important;
+    height: 100vh !important;
+    width: 100vw !important;
+    overflow: hidden !important;
+  }
+
+  .sap-header {
+    grid-area: header !important;
+    width: 270px !important;
+    min-width: 270px !important;
+    max-width: 270px !important;
+    height: 56px !important;
+    padding: 0 16px !important;
+    box-shadow: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    z-index: 10 !important;
+  }
+
+  .app-container {
+    display: contents !important;
+  }
+
   .sap-sidebar,
   .sap-sidebar.collapsed {
+    grid-area: sidebar !important;
     width: 270px !important;
     min-width: 270px !important;
     max-width: 270px !important;
@@ -120,10 +161,17 @@ body {
     border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
     position: relative !important;
     height: 100% !important;
+    max-height: calc(100vh - 56px) !important;
   }
 
   .header-sidebar-toggle {
     display: none !important;
+  }
+
+  .main-content {
+    grid-area: main !important;
+    height: 100vh !important;
+    overflow-y: auto !important;
   }
 }
 

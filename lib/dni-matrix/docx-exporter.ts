@@ -282,7 +282,7 @@ export async function exportMasterDocx(
 
   const doc = new Document({
     title: `Lote Procesador de DNI - ${completeSlots.length} Expedientes`,
-    creator: 'AMEX COURIER SISTEMA - Procesador de DNI',
+    creator: 'SISTEMA AMEX COURIER - Procesador de DNI',
     sections
   });
 
@@ -319,7 +319,7 @@ export async function exportZipDocx(
 
     const doc = new Document({
       title: `Expediente #${slot.id}`,
-      creator: 'AMEX COURIER SISTEMA - Procesador de DNI',
+      creator: 'SISTEMA AMEX COURIER - Procesador de DNI',
       sections: [
         {
           properties: {
@@ -401,7 +401,7 @@ export async function exportToDirectoryFolder(
     const children = await buildExpedienteChildren(slot, sizePreset);
     const doc = new Document({
       title: `Expediente #${slot.id}`,
-      creator: 'AMEX COURIER SISTEMA - Procesador de DNI',
+      creator: 'SISTEMA AMEX COURIER - Procesador de DNI',
       sections: [
         {
           properties: {
