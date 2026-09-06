@@ -447,15 +447,6 @@ export default function RotulosA4Tab() {
 
         {/* VISTA PREVIA DE LA HOJA FÍSICA A4 (WYSIWYG) */}
         <div className="rotulos-preview-container">
-          <div className="preview-scale-info">
-            <span>Vista Previa Impresión:</span>
-            <span className="scale-tag">Hoja A4 (210 mm x 297 mm)</span>
-            <span className="scale-tag">5 Franjas de 59.4 mm</span>
-            <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
-              (Haz clic en cualquier franja para editarla)
-            </span>
-          </div>
-
           {/* Hoja A4 con las 5 Franjas de 5.94 cm */}
           <div className="rotulos-a4-sheet">
             {slots.map((slot, index) => {
