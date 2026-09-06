@@ -135,19 +135,13 @@ export async function generateRotulosA4Pdf(
       doc.text(`[ Espacio #${slot.id} - Vacío ]`, pageWidth / 2, yStart + 30, { align: 'center' });
     }
 
-    // 6. Línea de corte punteada entre franjas (excepto al final de la hoja)
+    // 6. Línea de corte punteada entre franjas (solo las rayas, sin textos)
     if (i < 4) {
       doc.setDrawColor(180, 190, 205);
-      doc.setLineWidth(0.4);
+      doc.setLineWidth(0.35);
       doc.setLineDashPattern([2.5, 2.5], 0);
       doc.line(6, yEnd, pageWidth - 6, yEnd);
       doc.setLineDashPattern([], 0); // Restaurar línea sólida
-
-      // Pequeño texto de corte
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.5);
-      doc.setTextColor(148, 163, 184);
-      doc.text('CORTE  -------------------------------------------------------------------------------------------------------------------------', 10, yEnd - 0.8);
     }
   }
 

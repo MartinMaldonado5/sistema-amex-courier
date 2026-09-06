@@ -463,11 +463,7 @@ export default function RotulosA4Tab() {
                   onClick={() => setActiveSlotId(slot.id)}
                   title={`Clic para editar espacio #${slot.id} (5.94 cm)`}
                 >
-                  {index < 4 && (
-                    <div className="cut-guide-indicator">
-                      ✂️ CORTE 5.94 cm
-                    </div>
-                  )}
+                  {/* Espacio del rótulo con línea de corte punteada */}
 
                   {hasData ? (
                     <>

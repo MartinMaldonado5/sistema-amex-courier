@@ -620,6 +620,7 @@
   .rotulos-top-bar,
   .rotulos-editor-card,
   .preview-scale-info,
+  .cut-guide-indicator,
   .sidebar-backdrop {
     display: none !important;
   }
