@@ -342,9 +342,9 @@ export async function exportZipDocx(
     });
 
     const docBlob = await Packer.toBlob(doc);
-    const labelSuffix = slot.label ? `_${sanitizeFilename(slot.label)}` : '';
-    const fileNum = String(slot.id).padStart(4, '0');
-    const docxName = `Expediente_${fileNum}${labelSuffix}.docx`;
+    const cleanLabel = sanitizeFilename(slot.label || '');
+    const fileNum = String(slot.id).padStart(3, '0');
+    const docxName = cleanLabel ? `${cleanLabel}.docx` : `Expediente_${fileNum}.docx`;
 
     zip.file(docxName, docBlob);
   }
@@ -424,9 +424,9 @@ export async function exportToDirectoryFolder(
     });
 
     const docBlob = await Packer.toBlob(doc);
-    const labelSuffix = slot.label ? `_${sanitizeFilename(slot.label)}` : '';
-    const fileNum = String(slot.id).padStart(4, '0');
-    const docxName = `Expediente_${fileNum}${labelSuffix}.docx`;
+    const cleanLabel = sanitizeFilename(slot.label || '');
+    const fileNum = String(slot.id).padStart(3, '0');
+    const docxName = cleanLabel ? `${cleanLabel}.docx` : `Expediente_${fileNum}.docx`;
 
     const fileHandle = await dirHandle.getFileHandle(docxName, { create: true });
     const writable = await fileHandle.createWritable();

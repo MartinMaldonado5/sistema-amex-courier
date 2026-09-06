@@ -184,9 +184,9 @@ export async function exportPdfZip(
     onProgress?.(i + 1, completeSlots.length);
 
     const pdfBlob = await createPdfForSlot(slot, sizePreset);
+    const cleanLabel = (slot.label || '').replace(/[\\/:*?"<>|]/g, '_').trim();
     const numStr = String(slot.id).padStart(3, '0');
-    const labelSuffix = slot.label ? `_${slot.label.replace(/[\\/:*?"<>|]/g, '_').trim()}` : '';
-    const filename = `Expediente_${numStr}${labelSuffix}.pdf`;
+    const filename = cleanLabel ? `${cleanLabel}.pdf` : `Expediente_${numStr}.pdf`;
 
     zip.file(filename, pdfBlob);
   }
