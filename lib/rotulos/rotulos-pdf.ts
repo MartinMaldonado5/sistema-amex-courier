@@ -52,12 +52,12 @@ export async function generateRotulosA4Pdf(
     );
 
     if (hasData) {
-      // 1. Cabecera pequeña de la franja (Número de espacio y remitente)
+      // 1. Cabecera pequeña de la franja (Remitente y bulto)
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       doc.setTextColor(100, 116, 139); // Slate-500
       const remitenteText = slot.remitente?.trim() || 'AMEX COURIER PERÚ';
-      doc.text(`RÓTULO #${slot.id}  •  REMITENTE: ${remitenteText.toUpperCase()}`, 12, yStart + 7);
+      doc.text(remitenteText.toUpperCase(), 12, yStart + 7);
 
       if (slot.observacion?.trim()) {
         doc.setFont('helvetica', 'normal');

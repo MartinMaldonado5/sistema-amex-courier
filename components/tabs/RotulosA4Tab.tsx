@@ -482,7 +482,7 @@ export default function RotulosA4Tab() {
                     <>
                       {/* Cabecera sutil */}
                       <div className="strip-header">
-                        <span>RÓTULO #{slot.id} • REMITENTE: {(slot.remitente || 'AMEX COURIER PERÚ').toUpperCase()}</span>
+                        <span>{(slot.remitente || 'AMEX COURIER PERÚ').toUpperCase()}</span>
                         {slot.observacion && <span>{slot.observacion.toUpperCase()}</span>}
                       </div>
 
