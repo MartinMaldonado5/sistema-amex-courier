@@ -1006,6 +1006,22 @@ kbd {
   gap: 8px;
 }
 
+.ai-robot-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.7));
+  animation: robot-bounce 2.4s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+@keyframes robot-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-2px) scale(1.12); filter: drop-shadow(0 0 10px #c084fc); }
+}
+
 .ai-sparkle-icon {
   font-size: 1rem;
   filter: drop-shadow(0 0 4px rgba(236, 72, 153, 0.6));

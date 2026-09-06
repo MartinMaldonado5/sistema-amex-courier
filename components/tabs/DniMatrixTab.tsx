@@ -228,19 +228,19 @@ export default function DniMatrixTab({
     }
   }, [slotsData, totalSlots, playSound, showToast]);
 
-  // Auto-extraer nombres y apellidos del Anverso con Gemini 3.5 Flash Lite
+  // Auto-extraer nombres y apellidos del Anverso con AMEXito IA (Gemini 3.5 Flash Lite)
   const handleExtractNameWithAi = async () => {
     const slot = getSlot(activeSlotId);
     if (!slot.anverso) {
       playSound('error');
-      showToast('⚠️ Primero pega o carga la imagen del ANVERSO (frente) para leer el nombre.', 'error');
+      showToast('⚠️ Primero pega o carga la imagen del ANVERSO (frente) para que AMEXito lea el nombre.', 'error');
       return;
     }
 
     try {
       setIsExtractingName(true);
       playSound('click');
-      showToast('🤖 Leyendo DNI con Gemini 3.5 Flash Lite...', 'info');
+      showToast('🤖 AMEXito está leyendo el DNI...', 'info');
 
       const res = await fetch('/api/ai/extract-dni-name', {
         method: 'POST',
@@ -251,15 +251,15 @@ export default function DniMatrixTab({
       const data = await res.json();
 
       if (!res.ok || !data.success || !data.nombre_completo) {
-        throw new Error(data.error || 'No se detectaron nombres legibles en la imagen.');
+        throw new Error(data.error || 'AMEXito no detectó nombres legibles en la imagen.');
       }
 
       const extractedName = data.nombre_completo.toUpperCase();
       await updateSlot({ ...slot, label: extractedName });
       playSound('complete');
-      showToast(`✨ Nombre detectado por IA: ${extractedName}`, 'success');
+      showToast(`🤖 AMEXito extrajo: ${extractedName}`, 'success');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al conectar con la Inteligencia Artificial.';
+      const msg = err instanceof Error ? err.message : 'Error al conectar con AMEXito IA.';
       playSound('error');
       showToast(`❌ ${msg}`, 'error');
     } finally {
@@ -1236,7 +1236,7 @@ export default function DniMatrixTab({
             />
           </div>
 
-          {/* Botón Inteligente Gemini 3.5 Flash Lite: Lectura Automática del Anverso */}
+          {/* Botón Inteligente AMEXito: Lectura Automática del Anverso */}
           <button
             type="button"
             className={`btn-ai-extract ${isExtractingName ? 'loading' : ''} ${!activeSlot.anverso ? 'unready' : ''}`}
@@ -1244,22 +1244,22 @@ export default function DniMatrixTab({
             disabled={isExtractingName}
             title={
               activeSlot.anverso
-                ? 'Extraer automáticamente nombres y apellidos del Anverso con Gemini 3.5 Flash Lite'
-                : 'Carga primero la imagen del anverso del DNI para usar la extracción con IA'
+                ? 'Extraer automáticamente nombres y apellidos del Anverso con AMEXito'
+                : 'Carga primero la imagen del anverso del DNI para usar a AMEXito'
             }
           >
             {isExtractingName ? (
               <>
                 <div className="spinner-ai"></div>
-                <span className="ai-btn-text">Leyendo DNI con Gemini 3.5 Flash Lite...</span>
+                <span className="ai-btn-text">AMEXito está leyendo el DNI...</span>
               </>
             ) : (
               <>
                 <div className="ai-btn-left">
-                  <span className="ai-sparkle-icon">✨</span>
-                  <span className="ai-btn-text">Auto-extraer Nombre con IA (Anverso)</span>
+                  <span className="ai-robot-icon">🤖</span>
+                  <span className="ai-btn-text">Extraer Nombres y Apellidos con AMEXito</span>
                 </div>
-                <span className="ai-badge-chip">Gemini 3.5</span>
+                <span className="ai-badge-chip">AMEXito IA</span>
               </>
             )}
           </button>
