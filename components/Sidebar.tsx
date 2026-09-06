@@ -108,6 +108,7 @@ export default function Sidebar({
           {navItem('wms-picking', 'fa-solid fa-clipboard-list', '6. Picking Shalom/Olva')}
           {navItem('mobile-scanner', 'fa-solid fa-barcode', '7. Escáner de Códigos')}
           {navItem('dni-matrix', 'fa-solid fa-id-card', '8. 🪪 Procesador de DNI')}
+          {navItem('rotulos-a4', 'fa-solid fa-tags', '9. 🏷️ Rótulos Agencias')}
         </div>
       </div>
     </nav>

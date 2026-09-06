@@ -64,6 +64,11 @@ const DniMatrixTab = dynamic(() => import('@/components/tabs/DniMatrixTab'), {
   loading: () => <PageSkeleton />
 });
 
+const RotulosA4Tab = dynamic(() => import('@/components/tabs/RotulosA4Tab'), {
+  ssr: false,
+  loading: () => <PageSkeleton />
+});
+
 const NewClientModal = dynamic(() => import('@/components/modals/NewClientModal'), { ssr: false });
 const NewPackageModal = dynamic(() => import('@/components/modals/NewPackageModal'), { ssr: false });
 const ThermalLabelModal = dynamic(() => import('@/components/modals/ThermalLabelModal'), { ssr: false });
@@ -111,7 +116,8 @@ const VALID_TABS = [
   'shp-deliveries',
   'wms-picking',
   'mobile-scanner',
-  'dni-matrix'
+  'dni-matrix',
+  'rotulos-a4'
 ];
 
 export default function DashboardPage() {
@@ -709,6 +715,10 @@ export default function DashboardPage() {
                   onGlobalRefresh={fetchSupabaseData}
                   isRefreshing={isGlobalRefreshing}
                 />
+              )}
+
+              {activeTab === 'rotulos-a4' && (
+                <RotulosA4Tab />
               )}
             </>
           )}
