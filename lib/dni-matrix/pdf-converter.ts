@@ -103,7 +103,7 @@ export async function convertDocxFolderToPdf(
       const arrayBuffer = await file.arrayBuffer();
       const pdfBlob = await convertDocxBufferToPdf(arrayBuffer, sizePreset);
 
-      const baseName = name.replace(/\.docx$/i, '');
+      const baseName = name.replace(/\.docx$/i, '').toUpperCase();
       const pdfFilename = `${baseName}.pdf`;
 
       // Escribir el archivo .pdf directamente en el disco duro del usuario
@@ -184,7 +184,7 @@ export async function exportPdfZip(
     onProgress?.(i + 1, completeSlots.length);
 
     const pdfBlob = await createPdfForSlot(slot, sizePreset);
-    const cleanLabel = (slot.label || '').replace(/[\\/:*?"<>|]/g, '_').trim();
+    const cleanLabel = (slot.label || '').replace(/[\\/:*?"<>|]/g, '_').trim().toUpperCase();
     const numStr = String(slot.id).padStart(3, '0');
     const filename = cleanLabel ? `${cleanLabel}.pdf` : `Expediente_${numStr}.pdf`;
 

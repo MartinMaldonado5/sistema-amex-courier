@@ -30,8 +30,16 @@ export default function DniMatrixTab({
   // Configuración y Estados
   const [totalSlots, setTotalSlots] = useState<number>(100);
   const [printSize, setPrintSize] = useState<DniPrintSize>('large');
-  const [activeSlotId, setActiveSlotId] = useState<number>(1);
+  const [activeSlotId, setActiveSlotIdState] = useState<number>(1);
   const [focusedSide, setFocusedSide] = useState<'anverso' | 'reverso' | null>(null);
+
+  const setActiveSlotId = useCallback((idOrFn: number | ((prev: number) => number)) => {
+    setActiveSlotIdState((prev) => {
+      const nextId = typeof idOrFn === 'function' ? idOrFn(prev) : idOrFn;
+      dniDb.saveSetting('activeSlotId', nextId).catch(() => {});
+      return nextId;
+    });
+  }, []);
   const [slotsData, setSlotsData] = useState<Record<number, DniSlotData>>({});
   const [currentFilter, setCurrentFilter] = useState<'all' | 'ready' | 'partial' | 'empty'>('all');
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
@@ -138,6 +146,11 @@ export default function DniMatrixTab({
 
       const savedPrintSize = await dniDb.getSetting<DniPrintSize>('dniPrintSize', 'large');
       setPrintSize(savedPrintSize);
+
+      const savedActiveSlot = await dniDb.getSetting<number>('activeSlotId', 1);
+      if (savedActiveSlot && savedActiveSlot >= 1 && savedActiveSlot <= (savedTotal || 100)) {
+        setActiveSlotIdState(savedActiveSlot);
+      }
     }
     initData();
   }, []);
@@ -1229,7 +1242,7 @@ export default function DniMatrixTab({
               className="metadata-input"
               placeholder="Ej: Luis Juan Perez Rojas"
               value={activeSlot.label || ''}
-              onChange={(e) => updateSlot({ ...activeSlot, label: e.target.value })}
+              onChange={(e) => updateSlot({ ...activeSlot, label: e.target.value.toUpperCase() })}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();

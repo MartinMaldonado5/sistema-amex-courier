@@ -101,9 +101,61 @@ const EMPTY_PKG_FORM: NewPkgFormData = {
   facturaPdfUrl: ''
 };
 
+const VALID_TABS = [
+  'dashboard',
+  'live-sheets',
+  'mm-lince',
+  'mm-inventory',
+  'shp-entregas',
+  'fico-cobros',
+  'shp-deliveries',
+  'wms-picking',
+  'mobile-scanner',
+  'dni-matrix'
+];
+
 export default function DashboardPage() {
   const [activeTab, setActiveTabState] = useState<string>('dashboard');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Sincronizar y restaurar pestaña activa desde URL Hash o LocalStorage al recargar
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const hash = window.location.hash.replace(/^#/, '').trim();
+      const savedTab = localStorage.getItem('amex_active_tab');
+
+      let initialTab = 'dashboard';
+      if (hash && VALID_TABS.includes(hash)) {
+        initialTab = hash;
+      } else if (savedTab && VALID_TABS.includes(savedTab)) {
+        initialTab = savedTab;
+      }
+
+      if (initialTab !== 'dashboard') {
+        setActiveTabState(initialTab);
+        window.history.replaceState(null, '', '#' + initialTab);
+      } else if (hash === 'dashboard') {
+        window.history.replaceState(null, '', '#' + initialTab);
+      }
+
+      const handleHashChange = () => {
+        const currentHash = window.location.hash.replace(/^#/, '').trim();
+        if (currentHash && VALID_TABS.includes(currentHash)) {
+          setActiveTabState(currentHash);
+          try {
+            localStorage.setItem('amex_active_tab', currentHash);
+          } catch {}
+        }
+      };
+
+      window.addEventListener('hashchange', handleHashChange);
+      return () => window.removeEventListener('hashchange', handleHashChange);
+    } catch (e) {
+      console.warn('Error sincronizando pestaña activa:', e);
+    }
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -117,9 +169,18 @@ export default function DashboardPage() {
   }, []);
 
   const setActiveTab = useCallback((tab: string) => {
+    if (!VALID_TABS.includes(tab)) return;
     setActiveTabState(tab);
-    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
-      setIsSidebarCollapsed(true);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('amex_active_tab', tab);
+        window.history.replaceState(null, '', '#' + tab);
+      } catch (e) {
+        console.warn('Error guardando pestaña activa:', e);
+      }
+      if (window.innerWidth <= 768) {
+        setIsSidebarCollapsed(true);
+      }
     }
   }, []);
 

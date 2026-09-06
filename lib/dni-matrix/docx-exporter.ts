@@ -167,7 +167,7 @@ export async function normalizeImage(
 }
 
 function sanitizeFilename(text: string): string {
-  return (text || '').replace(/[\\/:*?"<>|]/g, '_').trim();
+  return (text || '').replace(/[\\/:*?"<>|]/g, '_').trim().toUpperCase();
 }
 
 /**
