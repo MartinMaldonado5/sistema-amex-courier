@@ -117,18 +117,22 @@ async function testGemini() {
     return false;
   }
 
-  try {
-    const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: 'Di "OK" si estás funcionando.',
-    });
-    console.log(`✅ Google Gemini respondió: ${response.text?.trim()}`);
-    return true;
-  } catch (err) {
-    console.log(`❌ Error al conectar con Google Gemini:`, err.message);
-    return false;
+  const models = ['gemini-3.5-flash-lite', 'gemini-3.6-flash'];
+  for (const model of models) {
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model,
+        contents: 'Di "OK" si estás funcionando.',
+      });
+      console.log(`✅ Google Gemini (${model}) respondió: ${response.text?.trim()}`);
+      return true;
+    } catch (err) {
+      console.log(`ℹ️ Intento con ${model}:`, err.message);
+    }
   }
+  console.log(`❌ Error al conectar con Google Gemini en todos los modelos disponibles.`);
+  return false;
 }
 
 async function runAll() {

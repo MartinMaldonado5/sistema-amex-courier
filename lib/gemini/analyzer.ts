@@ -20,20 +20,31 @@ Extrae la siguiente información en formato JSON estricto:
 }
 Si algún valor no es visible, retorna cadena vacía o 0. Solo devuelve el objeto JSON sin formato markdown extra.`;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash-lite',
-    contents: [
-      {
-        role: 'user',
-        parts: [
-          { inlineData: { mimeType, data: fileBase64 } },
-          { text: prompt }
-        ]
-      }
-    ]
-  });
+  const candidateModels = ['gemini-3.5-flash-lite', 'gemini-3.6-flash'];
+  let lastError: unknown;
 
-  const text = response.text || '{}';
-  const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-  return JSON.parse(cleanJson);
+  for (const model of candidateModels) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { inlineData: { mimeType, data: fileBase64 } },
+              { text: prompt }
+            ]
+          }
+        ]
+      });
+
+      const text = response.text || '{}';
+      const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      return JSON.parse(cleanJson);
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError;
 }
