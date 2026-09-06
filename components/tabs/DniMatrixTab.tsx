@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './dni-matrix.css';
 import { dniDb, DniSlotData } from '@/lib/dni-matrix/db';
 import { exportMasterDocx, exportZipDocx, exportToDirectoryFolder, DniPrintSize, DNI_SIZE_PRESETS } from '@/lib/dni-matrix/docx-exporter';
-import { convertDocxFolderToPdf, exportPdfZip } from '@/lib/dni-matrix/pdf-converter';
+import { convertDocxFolderToPdf, exportPdfZip, exportPdfToDirectoryFolder } from '@/lib/dni-matrix/pdf-converter';
 import { Paquete, Cliente } from '@/types';
 import { RefreshCw } from 'lucide-react';
 
@@ -697,6 +697,38 @@ export default function DniMatrixTab({
       playSound('complete');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al exportar PDF';
+      showToast(msg, 'error');
+    } finally {
+      setIsExporting(false);
+      setExportStatusMessage('');
+    }
+  };
+
+  // Exportar directamente PDFs a carpeta de Windows (Sin comprimir)
+  const handleExportPdfFolder = async () => {
+    const completed = Object.values(slotsData).filter((s) => s.anverso && s.reverso);
+    if (completed.length === 0) {
+      playSound('error');
+      showToast('No hay expedientes completos para exportar en PDF.', 'error');
+      return;
+    }
+    try {
+      setIsExporting(true);
+      setExportStatusMessage('Selecciona la carpeta donde guardar los PDFs...');
+      const res = await exportPdfToDirectoryFolder(
+        completed,
+        (msg) => setExportStatusMessage(msg),
+        printSize
+      );
+      if (res.cancelled) {
+        showToast('Operación cancelada');
+      } else {
+        playSound('complete');
+        showToast(`¡${res.count} archivos PDF guardados exitosamente en la carpeta!`, 'success');
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al guardar PDFs en carpeta';
+      playSound('error');
       showToast(msg, 'error');
     } finally {
       setIsExporting(false);
@@ -1489,7 +1521,30 @@ export default function DniMatrixTab({
 
                     <div className="export-menu-divider"></div>
 
-                    {/* Opción 4: Descargar en PDF (.zip) */}
+                    {/* Opción 4: Escoger Carpeta para Guardar PDFs (Sin comprimir) */}
+                    <button
+                      type="button"
+                      className="export-menu-item opt-pdf-folder"
+                      disabled={isExporting || stats.ready === 0}
+                      onClick={() => {
+                        setShowExportMenu(false);
+                        handleExportPdfFolder();
+                      }}
+                    >
+                      <div className="export-item-icon pdf-folder-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                          <polyline points="12 11 12 17"></polyline>
+                          <line x1="9" y1="14" x2="12" y2="17"></line>
+                        </svg>
+                      </div>
+                      <div className="export-item-text">
+                        <div className="export-item-title">Escoger Carpeta para PDFs</div>
+                        <div className="export-item-desc">Guarda los PDF sueltos directamente (Sin comprimir)</div>
+                      </div>
+                    </button>
+
+                    {/* Opción 5: Descargar en PDF (.zip) */}
                     <button
                       type="button"
                       className="export-menu-item opt-pdf-zip"

@@ -195,3 +195,68 @@ export async function exportPdfZip(
   const dateStr = new Date().toISOString().slice(0, 10);
   saveAs(zipBlob, `Lote_PDFs_${completeSlots.length}_Expedientes_${dateStr}.zip`);
 }
+
+/**
+ * GUARDAR DIRECTAMENTE EN UNA CARPETA LOCAL LOS PDFs (SIN COMPRIMIR)
+ * Usa la File System Access API nativa del navegador (showDirectoryPicker)
+ */
+export async function exportPdfToDirectoryFolder(
+  slots: DniSlotData[],
+  onProgress?: (msg: string, percent?: number) => void,
+  sizePreset: DniPrintSize = 'large'
+): Promise<{ success: boolean; count: number; cancelled?: boolean }> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const w = window as any;
+  if (!w.showDirectoryPicker) {
+    throw new Error('Tu navegador no soporta la selección directa de carpetas. Usa Google Chrome o Microsoft Edge.');
+  }
+
+  const completeSlots = slots.filter((s) => s.anverso && s.reverso);
+  if (completeSlots.length === 0) {
+    throw new Error('No hay expedientes completos para exportar en PDF.');
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let dirHandle: any;
+  try {
+    dirHandle = await w.showDirectoryPicker({
+      id: 'dni_export_pdf_folder',
+      mode: 'readwrite',
+      startIn: 'documents'
+    });
+  } catch (err: unknown) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((err as any)?.name === 'AbortError') {
+      return { success: false, count: 0, cancelled: true };
+    }
+    throw err;
+  }
+
+  const total = completeSlots.length;
+  const usedNames = new Set<string>();
+
+  for (let i = 0; i < total; i++) {
+    const slot = completeSlots[i];
+    const percent = Math.round(((i + 1) / total) * 100);
+    onProgress?.(`Generando y guardando PDF ${i + 1} de ${total}...`, percent);
+
+    const pdfBlob = await createPdfForSlot(slot, sizePreset);
+    const cleanLabel = (slot.label || '').replace(/[\\/:*?"<>|]/g, '_').trim().toUpperCase();
+    const numStr = String(slot.id).padStart(3, '0');
+
+    let pdfName = cleanLabel ? `${cleanLabel}.pdf` : `Expediente_${numStr}.pdf`;
+    if (usedNames.has(pdfName)) {
+      pdfName = cleanLabel ? `${cleanLabel}_(${numStr}).pdf` : `Expediente_${numStr}.pdf`;
+    }
+    usedNames.add(pdfName);
+
+    const fileHandle = await dirHandle.getFileHandle(pdfName, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(pdfBlob);
+    await writable.close();
+  }
+
+  onProgress?.('¡Todos los archivos PDF han sido guardados con éxito!', 100);
+  return { success: true, count: total };
+}
+
