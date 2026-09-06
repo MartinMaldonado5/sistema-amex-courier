@@ -57,7 +57,22 @@ export default function DniMatrixTab({
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [exportStatusMessage, setExportStatusMessage] = useState<string>('');
   const [showExportMenu, setShowExportMenu] = useState<boolean>(false);
+  const [openUpwards, setOpenUpwards] = useState<boolean>(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
+
+  const toggleExportMenu = useCallback(() => {
+    setShowExportMenu((prev) => {
+      const next = !prev;
+      if (next && exportMenuRef.current) {
+        const rect = exportMenuRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        // Si hay poco espacio hacia abajo (< 420px) y arriba hay más espacio, abrir hacia arriba
+        setOpenUpwards(spaceBelow < 420 && spaceAbove > spaceBelow);
+      }
+      return next;
+    });
+  }, []);
   const [zoomImage, setZoomImage] = useState<{ url: string; title: string; rotation: number } | null>(null);
   const [previewZoom, setPreviewZoom] = useState<number>(1.78);
 
@@ -1390,7 +1405,7 @@ export default function DniMatrixTab({
             <div className="export-dropdown-wrapper" ref={exportMenuRef}>
               <button
                 type="button"
-                onClick={() => setShowExportMenu((prev) => !prev)}
+                onClick={toggleExportMenu}
                 className={`btn btn-primary export-master-btn ${showExportMenu ? 'active' : ''}`}
                 title="Acciones de documentos, exportación, conversión y vista A4"
                 disabled={isExporting}
@@ -1433,7 +1448,7 @@ export default function DniMatrixTab({
               </button>
 
               {showExportMenu && (
-                <div className="export-dropdown-menu">
+                <div className={`export-dropdown-menu ${openUpwards ? 'open-up' : 'open-down'}`}>
                   <div className="export-menu-header">
                     <div className="export-menu-title">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
