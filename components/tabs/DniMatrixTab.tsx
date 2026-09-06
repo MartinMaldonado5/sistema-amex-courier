@@ -45,6 +45,7 @@ export default function DniMatrixTab({
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [quickJumpVal, setQuickJumpVal] = useState<string>('');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [isExtractingName, setIsExtractingName] = useState<boolean>(false);
 
   // Modales
   const [showConfigModal, setShowConfigModal] = useState<boolean>(false);
@@ -226,6 +227,45 @@ export default function DniMatrixTab({
       }
     }
   }, [slotsData, totalSlots, playSound, showToast]);
+
+  // Auto-extraer nombres y apellidos del Anverso con Gemini 3.5 Flash Lite
+  const handleExtractNameWithAi = async () => {
+    const slot = getSlot(activeSlotId);
+    if (!slot.anverso) {
+      playSound('error');
+      showToast('⚠️ Primero pega o carga la imagen del ANVERSO (frente) para leer el nombre.', 'error');
+      return;
+    }
+
+    try {
+      setIsExtractingName(true);
+      playSound('click');
+      showToast('🤖 Leyendo DNI con Gemini 3.5 Flash Lite...', 'info');
+
+      const res = await fetch('/api/ai/extract-dni-name', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: slot.anverso })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success || !data.nombre_completo) {
+        throw new Error(data.error || 'No se detectaron nombres legibles en la imagen.');
+      }
+
+      const extractedName = data.nombre_completo.toUpperCase();
+      await updateSlot({ ...slot, label: extractedName });
+      playSound('complete');
+      showToast(`✨ Nombre detectado por IA: ${extractedName}`, 'success');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al conectar con la Inteligencia Artificial.';
+      playSound('error');
+      showToast(`❌ ${msg}`, 'error');
+    } finally {
+      setIsExtractingName(false);
+    }
+  };
 
   // Rotar imagen 90 grados
   const rotateSide = async (side: 'anverso' | 'reverso', degrees: number) => {
@@ -1195,6 +1235,34 @@ export default function DniMatrixTab({
               maxLength={60}
             />
           </div>
+
+          {/* Botón Inteligente Gemini 3.5 Flash Lite: Lectura Automática del Anverso */}
+          <button
+            type="button"
+            className={`btn-ai-extract ${isExtractingName ? 'loading' : ''} ${!activeSlot.anverso ? 'unready' : ''}`}
+            onClick={handleExtractNameWithAi}
+            disabled={isExtractingName}
+            title={
+              activeSlot.anverso
+                ? 'Extraer automáticamente nombres y apellidos del Anverso con Gemini 3.5 Flash Lite'
+                : 'Carga primero la imagen del anverso del DNI para usar la extracción con IA'
+            }
+          >
+            {isExtractingName ? (
+              <>
+                <div className="spinner-ai"></div>
+                <span className="ai-btn-text">Leyendo DNI con Gemini 3.5 Flash Lite...</span>
+              </>
+            ) : (
+              <>
+                <div className="ai-btn-left">
+                  <span className="ai-sparkle-icon">✨</span>
+                  <span className="ai-btn-text">Auto-extraer Nombre con IA (Anverso)</span>
+                </div>
+                <span className="ai-badge-chip">Gemini 3.5</span>
+              </>
+            )}
+          </button>
 
           {/* Barra de Navegación del Expediente Activo (Anterior, Cupo actual, Siguiente, Siguiente Incompleto) */}
           <div className="matrix-active-nav-bar">
