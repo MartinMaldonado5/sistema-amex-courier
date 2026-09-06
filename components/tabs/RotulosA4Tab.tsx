@@ -491,16 +491,16 @@ export default function RotulosA4Tab() {
                         {slot.nombre || 'NOMBRE Y APELLIDO'}
                       </div>
 
-                      {/* DNI y Celular */}
-                      <div className="strip-docs-row">
-                        <span className="strip-doc-item">
+                      {/* DNI / RUC y Celular apilados verticalmente (DNI abajo del nombre, CEL abajo del DNI) */}
+                      <div className="strip-docs-column">
+                        <div className="strip-doc-line">
                           <span className="strip-doc-label">DNI / RUC:</span>
-                          <strong>{slot.dni || '—'}</strong>
-                        </span>
-                        <span className="strip-doc-item">
+                          <strong className="strip-doc-value">{slot.dni || '—'}</strong>
+                        </div>
+                        <div className="strip-doc-line">
                           <span className="strip-doc-label">CEL:</span>
-                          <strong>{slot.celular || '—'}</strong>
-                        </span>
+                          <strong className="strip-doc-value">{slot.celular || '—'}</strong>
+                        </div>
                       </div>
 
                       {/* Agencia y Destino */}

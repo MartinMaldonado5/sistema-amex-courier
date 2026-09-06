@@ -72,17 +72,18 @@ export async function generateRotulosA4Pdf(
       const nombreText = (slot.nombre || 'NOMBRE Y APELLIDO').toUpperCase();
       doc.text(nombreText, 12, yStart + 16);
 
-      // 3. Fila de DNI y Celular con recuadros limpios
+      // 3. DNI / RUC (debajo del nombre)
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
+      doc.setFontSize(10.5);
       doc.setTextColor(30, 41, 59);
-      const dniText = slot.dni ? `DNI / RUC: ${slot.dni}` : 'DNI: —';
-      doc.text(dniText, 12, yStart + 25);
+      const dniText = slot.dni ? `DNI / RUC: ${slot.dni}` : 'DNI / RUC: —';
+      doc.text(dniText, 12, yStart + 22.8);
 
+      // 4. CELULAR (debajo del DNI, NO al costado)
       const celText = slot.celular ? `CEL: ${slot.celular}` : 'CEL: —';
-      doc.text(celText, 85, yStart + 25);
+      doc.text(celText, 12, yStart + 29.2);
 
-      // 4. Recuadro destacado para la Agencia y el Destino
+      // 5. Recuadro destacado para la Agencia y el Destino (debajo del Celular)
       const agencyName = slot.agencia === 'OTRA' && slot.agenciaOtra?.trim()
         ? slot.agenciaOtra.toUpperCase()
         : slot.agencia;
@@ -101,31 +102,31 @@ export async function generateRotulosA4Pdf(
       }
 
       // Pastilla de la Agencia
-      const badgeWidth = Math.max(38, doc.getTextWidth(agencyName) + 10);
+      const badgeWidth = Math.max(34, doc.getTextWidth(agencyName) + 10);
       doc.setFillColor(badgeR, badgeG, badgeB);
-      doc.roundedRect(12, yStart + 31, badgeWidth, 8, 1.5, 1.5, 'F');
+      doc.roundedRect(12, yStart + 35, badgeWidth, 7.5, 1.5, 1.5, 'F');
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9.5);
       doc.setTextColor(badgeTextR, badgeTextG, badgeTextB);
-      doc.text(agencyName, 12 + badgeWidth / 2, yStart + 36.5, { align: 'center' });
+      doc.text(agencyName, 12 + badgeWidth / 2, yStart + 40.2, { align: 'center' });
 
       // Texto del Destino / Agencia de Entrega (en grande al costado del badge)
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(13);
+      doc.setFontSize(12.5);
       doc.setTextColor(15, 23, 42);
       const destinoText = slot.destino ? slot.destino.toUpperCase() : 'DESTINO NO ESPECIFICADO';
-      doc.text(`DESTINO: ${destinoText}`, 12 + badgeWidth + 5, yStart + 37);
+      doc.text(`DESTINO: ${destinoText}`, 12 + badgeWidth + 5, yStart + 40.5);
 
-      // 5. Línea divisoria interna sutil opcional o indicativo
+      // 6. Línea divisoria interna sutil opcional o indicativo
       doc.setDrawColor(226, 232, 240); // Slate-200
       doc.setLineWidth(0.3);
-      doc.line(12, yStart + 43, pageWidth - 12, yStart + 43);
+      doc.line(12, yStart + 47.5, pageWidth - 12, yStart + 47.5);
 
       doc.setFont('helvetica', 'italic');
-      doc.setFontSize(7);
+      doc.setFontSize(6.8);
       doc.setTextColor(148, 163, 184);
-      doc.text('ENTREGA EN AGENCIA / ENCOMIENDA  •  VERIFICAR DNI AL ENTREGAR', 12, yStart + 48);
+      doc.text('ENTREGA EN AGENCIA / ENCOMIENDA  •  VERIFICAR DNI AL ENTREGAR', 12, yStart + 51.5);
     } else {
       // Franja vacía: marca de agua tenue
       doc.setFont('helvetica', 'italic');
