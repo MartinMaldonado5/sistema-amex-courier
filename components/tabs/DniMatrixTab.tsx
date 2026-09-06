@@ -1218,7 +1218,7 @@ export default function DniMatrixTab({
 
           {/* Metadatos del expediente (Nombres y Apellidos) */}
           <div className="matrix-slot-metadata">
-            <label className="metadata-label">Nombres y Apellidos (Opcional):</label>
+            <label className="metadata-label">Nombres y Apellidos:</label>
             <input
               type="text"
               className="metadata-input"
