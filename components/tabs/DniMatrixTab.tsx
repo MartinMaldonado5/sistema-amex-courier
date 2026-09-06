@@ -41,7 +41,6 @@ export default function DniMatrixTab({ paquetes = [], clientes = [] }: DniMatrix
   const [exportStatusMessage, setExportStatusMessage] = useState<string>('');
   const [showExportMenu, setShowExportMenu] = useState<boolean>(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
-  const [previewLayout, setPreviewLayout] = useState<'side-by-side' | 'vertical'>('side-by-side');
   const [zoomImage, setZoomImage] = useState<{ url: string; title: string; rotation: number } | null>(null);
 
   // Estados de Conversor PDF
@@ -1100,7 +1099,7 @@ export default function DniMatrixTab({ paquetes = [], clientes = [] }: DniMatrix
             </button>
           </div>
 
-          {/* Área de Pegado y Previsualización de DNI */}
+          {/* Área de Pegado y Previsualización de DNI (Hoja A4) */}
           <div className="sheet-simulation-wrapper">
             <div className="sheet-view-toolbar">
               <div className="sheet-view-label">
@@ -1109,38 +1108,12 @@ export default function DniMatrixTab({ paquetes = [], clientes = [] }: DniMatrix
                   <circle cx="8.5" cy="8.5" r="1.5" />
                   <polyline points="21 15 16 10 5 21" />
                 </svg>
-                <span>PREVISUALIZACIÓN DNI ({printSize === 'large' ? '16.5 × 10.4 cm' : printSize === 'xlarge' ? '18.0 × 11.4 cm' : '12.0 × 7.5 cm'})</span>
-              </div>
-              <div className="sheet-layout-toggle">
-                <button
-                  type="button"
-                  className={`layout-toggle-btn ${previewLayout === 'side-by-side' ? 'active' : ''}`}
-                  onClick={() => setPreviewLayout('side-by-side')}
-                  title="Ver ambas caras en paralelo (Sin scroll)"
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="8" height="18" rx="2"></rect>
-                    <rect x="13" y="3" width="8" height="18" rx="2"></rect>
-                  </svg>
-                  <span>Lado a Lado</span>
-                </button>
-                <button
-                  type="button"
-                  className={`layout-toggle-btn ${previewLayout === 'vertical' ? 'active' : ''}`}
-                  onClick={() => setPreviewLayout('vertical')}
-                  title="Ver en formato vertical Hoja A4"
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="18" height="8" rx="2"></rect>
-                    <rect x="3" y="13" width="18" height="8" rx="2"></rect>
-                  </svg>
-                  <span>Hoja A4</span>
-                </button>
+                <span>PREVISUALIZACIÓN DNI • HOJA A4 ({printSize === 'large' ? '16.5 × 10.4 cm' : printSize === 'xlarge' ? '18.0 × 11.4 cm' : '12.0 × 7.5 cm'})</span>
               </div>
             </div>
 
             <div
-              className={`sheet-surface ${previewLayout === 'side-by-side' ? 'layout-side-by-side' : 'layout-vertical'}`}
+              className="sheet-surface layout-vertical"
               onDragOver={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -1294,37 +1267,21 @@ export default function DniMatrixTab({ paquetes = [], clientes = [] }: DniMatrix
               </div>
 
               {/* BOTÓN CENTRAL DE INTERCAMBIO */}
-              {previewLayout === 'side-by-side' ? (
-                <div className="swap-col">
-                  <button
-                    type="button"
-                    className="btn-swap-pill"
-                    onClick={swapSides}
-                    title="Intercambiar Anverso ⇄ Reverso si se pegaron invertidos"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                    </svg>
-                    <span>Cambiar</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="swap-bar">
-                  <div className="swap-line"></div>
-                  <button
-                    type="button"
-                    className="btn-swap"
-                    onClick={swapSides}
-                    title="Intercambiar Anverso y Reverso si se pegaron invertidos"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4" />
-                    </svg>
-                    <span>Intercambiar Caras</span>
-                  </button>
-                  <div className="swap-line"></div>
-                </div>
-              )}
+              <div className="swap-bar">
+                <div className="swap-line"></div>
+                <button
+                  type="button"
+                  className="btn-swap"
+                  onClick={swapSides}
+                  title="Intercambiar Anverso y Reverso si se pegaron invertidos"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                  <span>Intercambiar Caras</span>
+                </button>
+                <div className="swap-line"></div>
+              </div>
 
               {/* CASILLA REVERSO */}
               <div
