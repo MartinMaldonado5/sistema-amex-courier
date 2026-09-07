@@ -1,8 +1,22 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './rotulos-a4.css';
 import { RotuloSlotData, generateRotulosA4Pdf } from '@/lib/rotulos/rotulos-pdf';
+
+export function generarTextoBulto(
+  numeroRotulo: number,
+  totalRots: number,
+  totalCjs: string | number
+): string {
+  const rotText = `RÓTULO ${numeroRotulo} DE ${totalRots}`;
+  if (!totalCjs || String(totalCjs).trim() === '') {
+    return rotText;
+  }
+  const cjsNum = String(totalCjs).trim();
+  const cjasWord = Number(cjsNum) === 1 ? 'CAJA' : 'CAJAS';
+  return `${rotText} • TOTAL: ${cjsNum} ${cjasWord}`;
+}
 
 const DEFAULT_SLOTS: RotuloSlotData[] = [
   {
@@ -13,7 +27,11 @@ const DEFAULT_SLOTS: RotuloSlotData[] = [
     agencia: 'SHALOM',
     destino: 'LA LIBERTAD AG_ TULUEARAS',
     remitente: 'AMEX COURIER PERÚ',
-    observacion: 'BULTO 1/1'
+    observacion: 'RÓTULO 1 DE 5 • TOTAL: 30 CAJAS',
+    totalRotulos: 5,
+    totalCajas: '30',
+    numeroRotulo: 1,
+    siglas: 'CE150'
   },
   {
     id: 2,
@@ -23,7 +41,11 @@ const DEFAULT_SLOTS: RotuloSlotData[] = [
     agencia: 'SHALOM',
     destino: '',
     remitente: 'AMEX COURIER PERÚ',
-    observacion: ''
+    observacion: 'RÓTULO 2 DE 5 • TOTAL: 30 CAJAS',
+    totalRotulos: 5,
+    totalCajas: '30',
+    numeroRotulo: 2,
+    siglas: 'CE150'
   },
   {
     id: 3,
@@ -33,7 +55,11 @@ const DEFAULT_SLOTS: RotuloSlotData[] = [
     agencia: 'CRUZ DEL SUR',
     destino: '',
     remitente: 'AMEX COURIER PERÚ',
-    observacion: ''
+    observacion: 'RÓTULO 3 DE 5 • TOTAL: 30 CAJAS',
+    totalRotulos: 5,
+    totalCajas: '30',
+    numeroRotulo: 3,
+    siglas: 'CE150'
   },
   {
     id: 4,
@@ -43,7 +69,11 @@ const DEFAULT_SLOTS: RotuloSlotData[] = [
     agencia: 'OLVA',
     destino: '',
     remitente: 'AMEX COURIER PERÚ',
-    observacion: ''
+    observacion: 'RÓTULO 4 DE 5 • TOTAL: 30 CAJAS',
+    totalRotulos: 5,
+    totalCajas: '30',
+    numeroRotulo: 4,
+    siglas: 'CE150'
   },
   {
     id: 5,
@@ -53,7 +83,55 @@ const DEFAULT_SLOTS: RotuloSlotData[] = [
     agencia: 'SHALOM',
     destino: '',
     remitente: 'AMEX COURIER PERÚ',
-    observacion: ''
+    observacion: 'RÓTULO 5 DE 5 • TOTAL: 30 CAJAS',
+    totalRotulos: 5,
+    totalCajas: '30',
+    numeroRotulo: 5,
+    siglas: 'CE150'
+  }
+];
+
+export interface AgencyOption {
+  id: string;
+  name: string;
+  subtitle: string;
+  icon: string;
+  badgeClass: string;
+  color: string;
+}
+
+export const AVAILABLE_AGENCIES: AgencyOption[] = [
+  {
+    id: 'SHALOM',
+    name: 'SHALOM',
+    subtitle: 'Envíos y encomiendas a nivel nacional',
+    icon: 'fa-solid fa-truck-fast',
+    badgeClass: 'shalom',
+    color: '#dc2626'
+  },
+  {
+    id: 'OLVA',
+    name: 'OLVA COURIER',
+    subtitle: 'Entregas a agencias y domicilio',
+    icon: 'fa-solid fa-box',
+    badgeClass: 'olva',
+    color: '#eab308'
+  },
+  {
+    id: 'CRUZ DEL SUR',
+    name: 'CRUZ DEL SUR',
+    subtitle: 'Cruz del Sur Cargo y encomiendas',
+    icon: 'fa-solid fa-bus',
+    badgeClass: 'cruz',
+    color: '#1e40af'
+  },
+  {
+    id: 'OTRA',
+    name: 'OTRA AGENCIA...',
+    subtitle: 'Escribir nombre personalizado',
+    icon: 'fa-solid fa-pen-to-square',
+    badgeClass: 'otra',
+    color: '#6366f1'
   }
 ];
 
@@ -63,6 +141,79 @@ export default function RotulosA4Tab() {
   const [isExportingPdf, setIsExportingPdf] = useState<boolean>(false);
   const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
 
+  // Estados de control de embalajes y cantidades
+  const [totalRotulos, setTotalRotulos] = useState<number>(5);
+  const [totalCajas, setTotalCajas] = useState<string>('30');
+  const [autoDuplicar, setAutoDuplicar] = useState<boolean>(false);
+
+  // Estados para AMEXito IA (Lectura inteligente de WhatsApp/Capturas)
+  const [aiInputText, setAiInputText] = useState<string>('');
+  const [aiImagePreview, setAiImagePreview] = useState<string | null>(null);
+  const [isAiProcessing, setIsAiProcessing] = useState<boolean>(false);
+  const [isAiCardExpanded, setIsAiCardExpanded] = useState<boolean>(true);
+
+  // Estado y ref para menú desplegable de Agencias
+  const [isAgencyDropdownOpen, setIsAgencyDropdownOpen] = useState<boolean>(false);
+  const agencyDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (agencyDropdownRef.current && !agencyDropdownRef.current.contains(event.target as Node)) {
+        setIsAgencyDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Sintetizador de efectos de sonido Web Audio
+  const playSound = useCallback((type: 'complete' | 'paste' | 'click' | 'error') => {
+    if (typeof window === 'undefined') return;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      if (type === 'complete') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.setValueAtTime(880.0, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.35);
+      } else if (type === 'paste') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, ctx.currentTime);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.15);
+      } else if (type === 'click') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(320, ctx.currentTime);
+        gain.gain.setValueAtTime(0.05, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.08);
+      } else if (type === 'error') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, ctx.currentTime);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.25);
+      }
+    } catch {
+      // Ignorar si audio está bloqueado
+    }
+  }, []);
+
   // Cargar borrador persistido desde LocalStorage
   useEffect(() => {
     try {
@@ -71,6 +222,8 @@ export default function RotulosA4Tab() {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length === 5) {
           setSlots(parsed);
+          if (parsed[0]?.totalRotulos) setTotalRotulos(parsed[0].totalRotulos);
+          if (parsed[0]?.totalCajas) setTotalCajas(String(parsed[0].totalCajas));
         }
       }
     } catch {
@@ -95,29 +248,124 @@ export default function RotulosA4Tab() {
 
   const activeSlot = slots.find((s) => s.id === activeSlotId) || slots[0];
 
-  const updateActiveSlot = (fields: Partial<RotuloSlotData>) => {
-    const updated = slots.map((s) => {
-      if (s.id === activeSlotId) {
-        return { ...s, ...fields };
+  // Aplicar duplicación en los N rótulos configurados
+  const aplicarDuplicacion = (
+    baseSlot: RotuloSlotData,
+    rotsCount: number,
+    totCajas: string
+  ) => {
+    const updated = slots.map((s, idx) => {
+      const slotNum = idx + 1;
+      if (slotNum <= rotsCount) {
+        return {
+          ...baseSlot,
+          id: s.id,
+          observacion: generarTextoBulto(slotNum, rotsCount, totCajas),
+          totalRotulos: rotsCount,
+          totalCajas: totCajas,
+          numeroRotulo: slotNum,
+          siglas: baseSlot.siglas
+        };
+      } else {
+        return {
+          id: s.id,
+          nombre: '',
+          dni: '',
+          celular: '',
+          agencia: 'SHALOM' as const,
+          destino: '',
+          remitente: 'AMEX COURIER PERÚ',
+          observacion: '',
+          siglas: ''
+        };
       }
-      return s;
     });
     saveSlots(updated);
   };
 
-  // Duplicar el contenido del espacio activo en los 5 espacios
+  const handleTotalRotulosChange = (newCount: number) => {
+    const clamped = Math.max(1, Math.min(5, newCount));
+    setTotalRotulos(clamped);
+    if (autoDuplicar) {
+      aplicarDuplicacion(activeSlot, clamped, totalCajas);
+    } else {
+      updateActiveSlot({
+        totalRotulos: clamped,
+        observacion: generarTextoBulto(activeSlot.id, clamped, totalCajas)
+      });
+    }
+  };
+
+  const handleTotalCajasChange = (newVal: string) => {
+    setTotalCajas(newVal);
+    if (autoDuplicar) {
+      aplicarDuplicacion(activeSlot, totalRotulos, newVal);
+    } else {
+      updateActiveSlot({
+        totalCajas: newVal,
+        observacion: generarTextoBulto(activeSlot.id, totalRotulos, newVal)
+      });
+    }
+  };
+
+  const updateActiveSlot = (fields: Partial<RotuloSlotData>) => {
+    if (autoDuplicar) {
+      const updated = slots.map((s, idx) => {
+        const slotNum = idx + 1;
+        if (s.id === activeSlotId) {
+          return {
+            ...s,
+            ...fields,
+            observacion: fields.observacion !== undefined
+              ? fields.observacion
+              : generarTextoBulto(slotNum, totalRotulos, totalCajas)
+          };
+        } else if (
+          slotNum <= totalRotulos &&
+          (fields.nombre !== undefined ||
+            fields.dni !== undefined ||
+            fields.celular !== undefined ||
+            fields.agencia !== undefined ||
+            fields.agenciaOtra !== undefined ||
+            fields.destino !== undefined ||
+            fields.remitente !== undefined ||
+            fields.siglas !== undefined)
+        ) {
+          return {
+            ...s,
+            nombre: fields.nombre !== undefined ? fields.nombre : s.nombre,
+            dni: fields.dni !== undefined ? fields.dni : s.dni,
+            celular: fields.celular !== undefined ? fields.celular : s.celular,
+            agencia: fields.agencia !== undefined ? fields.agencia : s.agencia,
+            agenciaOtra: fields.agenciaOtra !== undefined ? fields.agenciaOtra : s.agenciaOtra,
+            destino: fields.destino !== undefined ? fields.destino : s.destino,
+            remitente: fields.remitente !== undefined ? fields.remitente : s.remitente,
+            siglas: fields.siglas !== undefined ? fields.siglas : s.siglas,
+            observacion: generarTextoBulto(slotNum, totalRotulos, totalCajas)
+          };
+        }
+        return s;
+      });
+      saveSlots(updated);
+    } else {
+      const updated = slots.map((s) => {
+        if (s.id === activeSlotId) {
+          return { ...s, ...fields };
+        }
+        return s;
+      });
+      saveSlots(updated);
+    }
+  };
+
+  // Duplicar el contenido del espacio activo en los N espacios configurados
   const handleDuplicateToAll = () => {
     if (!activeSlot.nombre && !activeSlot.destino) {
       showToast('⚠️ Escribe primero los datos en este espacio antes de duplicar.');
       return;
     }
-    const updated = slots.map((s, idx) => ({
-      ...activeSlot,
-      id: s.id,
-      observacion: `BULTO ${idx + 1} DE 5`
-    }));
-    saveSlots(updated);
-    showToast('✨ Rótulo duplicado en los 5 espacios de la hoja.');
+    aplicarDuplicacion(activeSlot, totalRotulos, totalCajas);
+    showToast(`✨ Duplicado en los ${totalRotulos} rótulos (${totalCajas || 0} cajas en total).`);
   };
 
   // Limpiar solo el espacio activo
@@ -176,11 +424,131 @@ export default function RotulosA4Tab() {
     }
   };
 
+  // Capturar imagen pegada con Ctrl + V
+  const handlePasteCapture = (e: React.ClipboardEvent<HTMLTextAreaElement | HTMLDivElement>) => {
+    setIsAiCardExpanded(true);
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.indexOf('image') !== -1) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const base64 = event.target?.result as string;
+            setAiImagePreview(base64);
+            playSound('paste');
+            showToast('📸 ¡Captura pegada! Haz clic en "Rellenar con AMEXito IA".');
+          };
+          reader.readAsDataURL(file);
+        }
+        return;
+      }
+    }
+  };
+
+  // Subir captura desde archivo
+  const handleAiImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setAiImagePreview(base64);
+      playSound('paste');
+      showToast('📸 ¡Captura cargada con éxito!');
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  // Procesar texto o captura con AMEXito IA
+  const handleProcessWithAmexito = async () => {
+    if (!aiInputText.trim() && !aiImagePreview) {
+      playSound('error');
+      showToast('⚠️ Pega primero el texto o captura del pedido de WhatsApp.');
+      return;
+    }
+
+    try {
+      setIsAiProcessing(true);
+      playSound('click');
+      showToast('🤖 AMEXito está leyendo y organizando los datos del pedido...');
+
+      const res = await fetch('/api/ai/parse-rotulo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: aiInputText.trim() || undefined,
+          imageBase64: aiImagePreview || undefined
+        })
+      });
+
+      const resData = await res.json();
+
+      if (!res.ok || !resData.success || !resData.data) {
+        throw new Error(resData.error || 'AMEXito no pudo interpretar los datos del pedido.');
+      }
+
+      const extracted = resData.data;
+      const updates: Partial<RotuloSlotData> = {};
+
+      if (extracted.nombre) updates.nombre = extracted.nombre;
+      if (extracted.dni) updates.dni = extracted.dni;
+      if (extracted.celular) updates.celular = extracted.celular;
+      // IMPORTANTE: AMEXito NO toca la agencia de envío; el operador la selecciona manualmente
+      if (extracted.destino) updates.destino = extracted.destino;
+      if (extracted.remitente) updates.remitente = extracted.remitente;
+      if (extracted.siglas) updates.siglas = extracted.siglas;
+
+      let cjsNum = totalCajas;
+      if (extracted.totalCajas) {
+        cjsNum = String(extracted.totalCajas).replace(/[^0-9]/g, '');
+        if (cjsNum) {
+          setTotalCajas(cjsNum);
+          updates.totalCajas = cjsNum;
+        }
+      }
+
+      // AMEXito solo debe rellenar ÚNICAMENTE el espacio activo seleccionado (solo 1 de los 5)
+      // Los demás espacios quedan intactos; el operador decide si duplicar con el botón
+      const updated = slots.map((s) => {
+        if (s.id === activeSlotId) {
+          const slotTotalCajas = updates.totalCajas || s.totalCajas || cjsNum;
+          return {
+            ...s,
+            ...updates,
+            observacion: generarTextoBulto(s.id, totalRotulos, slotTotalCajas)
+          };
+        }
+        return s;
+      });
+      saveSlots(updated);
+
+      playSound('complete');
+      showToast(`🤖 ¡AMEXito rellenó el espacio #${activeSlotId}! (Usa 'Duplicar' si deseas repetirlo).`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al conectar con AMEXito IA.';
+      playSound('error');
+      showToast(`❌ ${msg}`);
+    } finally {
+      setIsAiProcessing(false);
+    }
+  };
+
   const getAgencyClass = (agencia: string) => {
     switch (agencia) {
       case 'SHALOM': return 'shalom';
       case 'CRUZ DEL SUR': return 'cruz';
       case 'OLVA': return 'olva';
+      case 'MARVISUR': return 'marvisur';
+      case 'MÓVIL BUS': return 'movil';
+      case 'FLORES': return 'flores';
+      case 'CIVA': return 'civa';
+      case 'ANTEZANA': return 'antezana';
       default: return 'otra';
     }
   };
@@ -209,62 +577,6 @@ export default function RotulosA4Tab() {
         </div>
       )}
 
-      {/* Barra Superior del Módulo */}
-      <div className="rotulos-top-bar">
-        <div className="rotulos-header-info">
-          <div className="rotulos-header-icon">
-            <i className="fa-solid fa-tags"></i>
-          </div>
-          <div>
-            <h1 className="rotulos-header-title">Rótulos de Agencias (Hoja A4)</h1>
-            <p className="rotulos-header-subtitle">
-              Plantilla física milimétrica: <strong>Hoja A4 (21.0 x 29.7 cm)</strong> dividida en <strong>5 espacios iguales de 5.94 cm</strong> cada uno.
-            </p>
-          </div>
-        </div>
-
-        <div className="rotulos-actions-bar">
-          <button
-            type="button"
-            className="btn-rotulo btn-rotulo-print"
-            onClick={handlePrintDirect}
-            title="Imprimir la hoja A4 física directamente (Ctrl + P)"
-          >
-            <i className="fa-solid fa-print"></i>
-            <span>Imprimir A4 Físico</span>
-          </button>
-
-          <button
-            type="button"
-            className="btn-rotulo btn-rotulo-pdf"
-            onClick={handleDownloadPdf}
-            disabled={isExportingPdf}
-            title="Descargar documento PDF listo para imprimir"
-          >
-            {isExportingPdf ? (
-              <>
-                <i className="fa-solid fa-spinner fa-spin"></i>
-                <span>Generando...</span>
-              </>
-            ) : (
-              <>
-                <i className="fa-solid fa-file-pdf"></i>
-                <span>Descargar PDF</span>
-              </>
-            )}
-          </button>
-
-          <button
-            type="button"
-            className="btn-rotulo btn-rotulo-secondary"
-            onClick={handleClearAll}
-            title="Limpiar los 5 espacios para empezar una hoja nueva"
-          >
-            <i className="fa-solid fa-rotate-left"></i>
-            <span>Limpiar Hoja</span>
-          </button>
-        </div>
-      </div>
 
       {/* Grid de Trabajo: Editor Lateral + Vista Previa A4 */}
       <div className="rotulos-workspace-grid">
@@ -284,7 +596,7 @@ export default function RotulosA4Tab() {
                     type="button"
                     className={`slot-tab-btn ${s.id === activeSlotId ? 'active' : ''} ${isFilled ? 'filled' : ''}`}
                     onClick={() => setActiveSlotId(s.id)}
-                    title={`Espacio #${s.id} (5.94 cm)`}
+                    title={`Espacio #${s.id}`}
                   >
                     <span>Espacio #{s.id}</span>
                     <span className="slot-tab-status"></span>
@@ -299,8 +611,138 @@ export default function RotulosA4Tab() {
               <i className="fa-solid fa-pen-to-square"></i>
               <span>Editando Espacio #{activeSlot.id} de 5</span>
             </div>
-            <span className="slot-dimensions-tag">21.0 cm x 5.94 cm</span>
           </div>
+
+          {/* Asistente Inteligente AMEXito IA */}
+          <div
+            className={`rotulo-ai-card ${!isAiCardExpanded ? 'collapsed' : ''}`}
+            onPaste={!isAiCardExpanded ? (e) => {
+              setIsAiCardExpanded(true);
+              handlePasteCapture(e);
+            } : undefined}
+          >
+            <div
+              className="ai-card-header"
+              onClick={() => {
+                if (!isAiCardExpanded) setIsAiCardExpanded(true);
+              }}
+              style={{ cursor: !isAiCardExpanded ? 'pointer' : 'default' }}
+            >
+              <div className="ai-card-identity">
+                <div className="ai-avatar-icon">
+                  <i className="fa-solid fa-robot"></i>
+                </div>
+                <div className="ai-card-titles">
+                  <span className="ai-card-name">
+                    AMEXito IA
+                    <span className="ai-card-tag">Lector de WhatsApp</span>
+                    {(aiImagePreview || aiInputText) && !isAiCardExpanded && (
+                      <span className="ai-card-badge-pending">
+                        <i className="fa-solid fa-circle-check"></i> Con datos
+                      </span>
+                    )}
+                  </span>
+                  <span className="ai-card-sub">
+                    {isAiCardExpanded
+                      ? 'Pega texto o presiona Ctrl + V con una captura para autocompletar'
+                      : 'Haz clic aquí o presiona Ctrl + V para abrir el asistente'}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="ai-toggle-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsAiCardExpanded(!isAiCardExpanded);
+                }}
+                title={isAiCardExpanded ? 'Minimizar AMEXito IA' : 'Expandir AMEXito IA'}
+              >
+                <i className={`fa-solid ${isAiCardExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
+                <span>{isAiCardExpanded ? 'Minimizar' : 'Abrir'}</span>
+              </button>
+            </div>
+
+            {isAiCardExpanded && (
+              <div className="ai-input-area">
+              <textarea
+                className="ai-textarea"
+                placeholder="Pega aquí el texto del pedido o presiona Ctrl + V con una captura de WhatsApp (ej: CE79, 2 cajas, Shalom, Nombre, DNI, Teléfono...)"
+                value={aiInputText}
+                onChange={(e) => setAiInputText(e.target.value)}
+                onPaste={handlePasteCapture}
+                rows={2}
+              />
+
+              {aiImagePreview && (
+                <div className="ai-image-preview-chip">
+                  <img src={aiImagePreview} alt="Captura cargada" className="ai-image-thumb" />
+                  <div className="ai-image-info">
+                    <strong>Captura de WhatsApp cargada</strong>
+                    <span>Lista para que AMEXito extraiga los datos del envío</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="ai-remove-img-btn"
+                    onClick={() => setAiImagePreview(null)}
+                    title="Quitar captura"
+                  >
+                    ✕ Quitar
+                  </button>
+                </div>
+              )}
+
+              <div className="ai-controls-row">
+                <label className="ai-upload-label" title="Cargar captura desde archivo">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAiImageUpload}
+                    style={{ display: 'none' }}
+                  />
+                  <i className="fa-solid fa-image"></i>
+                  <span>Subir captura</span>
+                </label>
+
+                {(aiInputText || aiImagePreview) && (
+                  <button
+                    type="button"
+                    className="ai-clear-btn"
+                    onClick={() => {
+                      setAiInputText('');
+                      setAiImagePreview(null);
+                    }}
+                    title="Limpiar entrada de IA"
+                  >
+                    <i className="fa-solid fa-eraser"></i>
+                    <span>Limpiar</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  className="ai-submit-btn"
+                  onClick={handleProcessWithAmexito}
+                  disabled={isAiProcessing || (!aiInputText.trim() && !aiImagePreview)}
+                  title="Interpretar con AMEXito IA y rellenar automáticamente los campos"
+                >
+                  {isAiProcessing ? (
+                    <>
+                      <i className="fa-solid fa-spinner fa-spin"></i>
+                      <span>AMEXito analizando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <i className="fa-solid fa-wand-magic-sparkles"></i>
+                      <span>Rellenar con AMEXito IA</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
           {/* Formulario de Entrada 100% Manual */}
           <div className="rotulo-form">
@@ -321,7 +763,7 @@ export default function RotulosA4Tab() {
                 <label className="rotulo-label">DNI / RUC / CE:</label>
                 <input
                   type="text"
-                  className="rotulo-input"
+                  className="rotulo-input rotulo-input-dni"
                   placeholder="Ej: 72410845"
                   value={activeSlot.dni}
                   onChange={(e) => updateActiveSlot({ dni: e.target.value.trim().toUpperCase() })}
@@ -331,7 +773,7 @@ export default function RotulosA4Tab() {
                 <label className="rotulo-label">Celular / Teléfono:</label>
                 <input
                   type="tel"
-                  className="rotulo-input"
+                  className="rotulo-input rotulo-input-cel"
                   placeholder="Ej: 982432561"
                   value={activeSlot.celular}
                   onChange={(e) => updateActiveSlot({ celular: e.target.value.trim() })}
@@ -339,62 +781,194 @@ export default function RotulosA4Tab() {
               </div>
             </div>
 
-            {/* Selector de Agencia */}
+            {/* Selector de Agencia (Botón Único con Menú Desplegable) */}
             <div className="rotulo-field-group">
               <label className="rotulo-label">Agencia de Envío:</label>
-              <div className="agency-pill-grid">
+              <div className="agency-dropdown-wrapper" ref={agencyDropdownRef}>
                 <button
                   type="button"
-                  className={`agency-pill-btn shalom ${activeSlot.agencia === 'SHALOM' ? 'active' : ''}`}
-                  onClick={() => updateActiveSlot({ agencia: 'SHALOM' })}
+                  className={`btn-select-agency ${isAgencyDropdownOpen ? 'open' : ''} ${getAgencyClass(activeSlot.agencia)}`}
+                  onClick={() => setIsAgencyDropdownOpen(!isAgencyDropdownOpen)}
+                  title="Haz clic para seleccionar o cambiar de agencia"
                 >
-                  SHALOM
-                </button>
-                <button
-                  type="button"
-                  className={`agency-pill-btn cruz ${activeSlot.agencia === 'CRUZ DEL SUR' ? 'active' : ''}`}
-                  onClick={() => updateActiveSlot({ agencia: 'CRUZ DEL SUR' })}
-                >
-                  CRUZ DEL SUR
-                </button>
-                <button
-                  type="button"
-                  className={`agency-pill-btn olva ${activeSlot.agencia === 'OLVA' ? 'active' : ''}`}
-                  onClick={() => updateActiveSlot({ agencia: 'OLVA' })}
-                >
-                  OLVA
-                </button>
-                <button
-                  type="button"
-                  className={`agency-pill-btn otra ${activeSlot.agencia === 'OTRA' ? 'active' : ''}`}
-                  onClick={() => updateActiveSlot({ agencia: 'OTRA' })}
-                >
-                  OTRA...
-                </button>
-              </div>
+                  <div className="btn-agency-left">
+                    <div className="btn-agency-icon">
+                      <i className={AVAILABLE_AGENCIES.find((a) => a.id === activeSlot.agencia)?.icon || 'fa-solid fa-truck-fast'}></i>
+                    </div>
+                    <div className="btn-agency-texts">
+                      <span className="btn-agency-title">
+                        {activeSlot.agencia === 'OTRA' && activeSlot.agenciaOtra?.trim()
+                          ? activeSlot.agenciaOtra
+                          : activeSlot.agencia || 'Seleccionar Agencia'}
+                      </span>
+                      <span className="btn-agency-sub">
+                        {AVAILABLE_AGENCIES.find((a) => a.id === activeSlot.agencia)?.subtitle || 'Haz clic para desplegar lista'}
+                      </span>
+                    </div>
+                  </div>
 
-              {activeSlot.agencia === 'OTRA' && (
-                <input
-                  type="text"
-                  className="rotulo-input"
-                  style={{ marginTop: '6px' }}
-                  placeholder="Escribe el nombre de la agencia (ej: Marvisur, Móvil Bus)"
-                  value={activeSlot.agenciaOtra || ''}
-                  onChange={(e) => updateActiveSlot({ agenciaOtra: e.target.value.toUpperCase() })}
-                />
-              )}
+                  <div className="btn-agency-right">
+                    <span className="btn-agency-badge">
+                      {activeSlot.agencia === 'OTRA' ? 'OTRA' : activeSlot.agencia}
+                    </span>
+                    <i className={`fa-solid ${isAgencyDropdownOpen ? 'fa-chevron-up' : 'fa-chevron-down'} btn-agency-arrow`}></i>
+                  </div>
+                </button>
+
+                {isAgencyDropdownOpen && (
+                  <div className="agency-dropdown-menu">
+                    <div className="agency-dropdown-header">
+                      <i className="fa-solid fa-truck-ramp-box"></i>
+                      <span>SELECCIONAR AGENCIA ({AVAILABLE_AGENCIES.length})</span>
+                    </div>
+
+                    <div className="agency-dropdown-list">
+                      {AVAILABLE_AGENCIES.map((agency) => {
+                        const isSelected = activeSlot.agencia === agency.id;
+                        return (
+                          <button
+                            key={agency.id}
+                            type="button"
+                            className={`agency-dropdown-item ${isSelected ? 'selected' : ''}`}
+                            onClick={() => {
+                              updateActiveSlot({
+                                agencia: agency.id,
+                                agenciaOtra: agency.id === 'OTRA' ? (activeSlot.agenciaOtra || '') : undefined
+                              });
+                              setIsAgencyDropdownOpen(false);
+                              playSound('click');
+                            }}
+                          >
+                            <div
+                              className="agency-item-icon-box"
+                              style={{
+                                background: `${agency.color}20`,
+                                color: agency.color,
+                                borderColor: `${agency.color}50`
+                              }}
+                            >
+                              <i className={agency.icon}></i>
+                            </div>
+
+                            <div className="agency-item-info">
+                              <span className="agency-item-name">{agency.name}</span>
+                              <span className="agency-item-desc">{agency.subtitle}</span>
+                            </div>
+
+                            {isSelected && (
+                              <div className="agency-item-check">
+                                <i className="fa-solid fa-check"></i>
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {activeSlot.agencia === 'OTRA' && (
+                  <input
+                    type="text"
+                    className="rotulo-input"
+                    style={{ marginTop: '8px' }}
+                    placeholder="Escribe el nombre de la agencia (ej: Marvisur, Cavassa, Chancas...)"
+                    value={activeSlot.agenciaOtra || ''}
+                    onChange={(e) => updateActiveSlot({ agenciaOtra: e.target.value.toUpperCase() })}
+                    autoFocus
+                  />
+                )}
+              </div>
             </div>
 
-            {/* Destino y Agencia de Entrega */}
+            {/* Destino y Agencia de Entrega (Hasta 80 caracteres) */}
             <div className="rotulo-field-group">
-              <label className="rotulo-label">Destino / Agencia de Entrega:</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label className="rotulo-label">Destino / Agencia de Entrega:</label>
+                <span
+                  style={{
+                    fontSize: '0.70rem',
+                    fontWeight: 700,
+                    color: (activeSlot.destino?.length || 0) >= 75 ? '#f87171' : '#94a3b8'
+                  }}
+                >
+                  {activeSlot.destino?.length || 0} / 80 car.
+                </span>
+              </div>
               <input
                 type="text"
                 className="rotulo-input"
-                placeholder="Ej: LA LIBERTAD Ag_ tuluearas"
+                maxLength={80}
+                placeholder="Ej: LA LIBERTAD - TRUJILLO - AGENCIA TULUEARAS (Hasta 80 caracteres)"
                 value={activeSlot.destino}
                 onChange={(e) => updateActiveSlot({ destino: e.target.value.toUpperCase() })}
               />
+            </div>
+
+            {/* Control Logístico de Bultos y Total de Cajas */}
+            <div className="rotulo-embalaje-card">
+              <div className="embalaje-card-header">
+                <span className="embalaje-card-title">
+                  <i className="fa-solid fa-boxes-packing"></i>
+                  <span>Bultos y Total de Cajas</span>
+                </span>
+                <label className="embalaje-auto-toggle">
+                  <input
+                    type="checkbox"
+                    checked={autoDuplicar}
+                    onChange={(e) => setAutoDuplicar(e.target.checked)}
+                  />
+                  <span>Auto-duplicar</span>
+                </label>
+              </div>
+
+              <div className="rotulo-row-3">
+                <div className="rotulo-field-group">
+                  <label className="rotulo-label">Cant. Rótulos:</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={5}
+                    className="rotulo-input"
+                    value={totalRotulos}
+                    onChange={(e) => handleTotalRotulosChange(Number(e.target.value))}
+                    title="Cantidad de rótulos a imprimir (1 a 5 por hoja A4)"
+                  />
+                </div>
+
+                <div className="rotulo-field-group">
+                  <label className="rotulo-label">Total Cajas:</label>
+                  <input
+                    type="number"
+                    min={1}
+                    className="rotulo-input"
+                    placeholder="Ej: 30"
+                    value={totalCajas}
+                    onChange={(e) => handleTotalCajasChange(e.target.value)}
+                    title="Cantidad total de cajas enviadas por el cliente"
+                  />
+                </div>
+
+                <div className="rotulo-field-group">
+                  <label className="rotulo-label">Siglas / Código:</label>
+                  <input
+                    type="text"
+                    className="rotulo-input rotulo-input-siglas"
+                    placeholder="Ej: CE150 ó CP 68"
+                    value={activeSlot.siglas || ''}
+                    onChange={(e) => updateActiveSlot({ siglas: e.target.value.toUpperCase() })}
+                    title="Siglas identificadoras o clave del envío (ej: CE150, CP 68)"
+                  />
+                </div>
+              </div>
+
+              <div className="embalaje-preview-bar">
+                <span className="embalaje-preview-label">Formato rótulo #{activeSlot.id}:</span>
+                <strong className="embalaje-preview-value">
+                  {generarTextoBulto(activeSlot.id, totalRotulos, totalCajas)}
+                  {activeSlot.siglas?.trim() ? ` • [${activeSlot.siglas.trim().toUpperCase()}]` : ''}
+                </strong>
+              </div>
             </div>
 
             <div className="rotulo-row-2">
@@ -421,27 +995,73 @@ export default function RotulosA4Tab() {
             </div>
           </div>
 
-          {/* Acciones de Productividad */}
+          {/* Acciones de Productividad y Salida */}
           <div className="rotulo-tools-box">
             <button
               type="button"
               className="btn-tool-action duplicate"
               onClick={handleDuplicateToAll}
-              title="Copiar los datos de este espacio en los 5 espacios de la hoja"
+              title={`Duplicar a los ${totalRotulos} rótulos con numeración correlativa y total de ${totalCajas || 0} cajas`}
             >
               <i className="fa-solid fa-clone"></i>
-              <span>Duplicar este rótulo en los 5 espacios</span>
+              <span>⚡ Duplicar en los {totalRotulos} rótulos (1 de {totalRotulos} ... {totalRotulos} de {totalRotulos})</span>
             </button>
 
-            <button
-              type="button"
-              className="btn-tool-action danger"
-              onClick={handleClearActiveSlot}
-              title="Borrar los datos de este espacio"
-            >
-              <i className="fa-solid fa-trash-can"></i>
-              <span>Limpiar este espacio #{activeSlot.id}</span>
-            </button>
+            {/* Botones de Impresión Física y PDF */}
+            <div className="rotulo-tools-row">
+              <button
+                type="button"
+                className="btn-rotulo btn-rotulo-print"
+                onClick={handlePrintDirect}
+                title="Imprimir la hoja A4 física directamente (Ctrl + P)"
+              >
+                <i className="fa-solid fa-print"></i>
+                <span>Imprimir A4</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn-rotulo btn-rotulo-pdf"
+                onClick={handleDownloadPdf}
+                disabled={isExportingPdf}
+                title="Descargar documento PDF listo para imprimir"
+              >
+                {isExportingPdf ? (
+                  <>
+                    <i className="fa-solid fa-spinner fa-spin"></i>
+                    <span>Generando...</span>
+                  </>
+                ) : (
+                  <>
+                    <i className="fa-solid fa-file-pdf"></i>
+                    <span>Descargar PDF</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Botones de Limpieza: Espacio actual y Hoja completa */}
+            <div className="rotulo-tools-row">
+              <button
+                type="button"
+                className="btn-tool-action danger"
+                onClick={handleClearActiveSlot}
+                title="Borrar los datos de este espacio"
+              >
+                <i className="fa-solid fa-trash-can"></i>
+                <span>Limpiar espacio #{activeSlot.id}</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn-rotulo btn-rotulo-secondary"
+                onClick={handleClearAll}
+                title="Limpiar los 5 espacios para empezar una hoja nueva"
+              >
+                <i className="fa-solid fa-rotate-left"></i>
+                <span>Limpiar Hoja</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -461,7 +1081,7 @@ export default function RotulosA4Tab() {
                   key={slot.id}
                   className={`rotulo-strip-preview ${slot.id === activeSlotId ? 'active' : ''}`}
                   onClick={() => setActiveSlotId(slot.id)}
-                  title={`Clic para editar espacio #${slot.id} (5.94 cm)`}
+                  title={`Clic para editar espacio #${slot.id}`}
                 >
                   {/* Espacio del rótulo con línea de corte punteada */}
 
@@ -469,13 +1089,25 @@ export default function RotulosA4Tab() {
                     <>
                       {/* Cabecera sutil */}
                       <div className="strip-header">
-                        <span>{(slot.remitente || 'AMEX COURIER PERÚ').toUpperCase()}</span>
-                        {slot.observacion && <span>{slot.observacion.toUpperCase()}</span>}
+                        <span className="strip-remitente">{(slot.remitente || 'AMEX COURIER PERÚ').toUpperCase()}</span>
+                        {slot.observacion && (
+                          <span className="strip-bulto-badge">
+                            <i className="fa-solid fa-box-archive" style={{ marginRight: '5px' }}></i>
+                            {slot.observacion.toUpperCase()}
+                          </span>
+                        )}
                       </div>
 
-                      {/* Destinatario */}
-                      <div className="strip-destinatario">
-                        {slot.nombre || 'NOMBRE Y APELLIDO'}
+                      {/* Destinatario y Siglas / Código (debajo del Total de Cajas) */}
+                      <div className="strip-destinatario-row">
+                        <div className="strip-destinatario">
+                          {slot.nombre || 'NOMBRE Y APELLIDO'}
+                        </div>
+                        {slot.siglas?.trim() && (
+                          <div className="strip-siglas-badge" title="Siglas / Código de envío">
+                            {slot.siglas.trim().toUpperCase()}
+                          </div>
+                        )}
                       </div>
 
                       {/* DNI / RUC y Celular apilados verticalmente (DNI abajo del nombre, CEL abajo del DNI) */}
@@ -502,7 +1134,7 @@ export default function RotulosA4Tab() {
                     </>
                   ) : (
                     <div className="strip-empty-placeholder">
-                      <span>[ Espacio #{slot.id} libre - 5.94 cm de altura ]</span>
+                      <span>[ Espacio #{slot.id} libre ]</span>
                     </div>
                   )}
                 </div>
