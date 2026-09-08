@@ -187,7 +187,7 @@ export async function generateRotulosA4Pdf(
           }
           line2 = rest.slice(0, idx2);
 
-          // Si aún sobra texto, reducir a 8.0pt para garantizar los 80 caracteres completos
+          // Si aún sobra texto, reducir dinámicamente a 8.0pt o 7.5pt para garantizar los 100 caracteres completos
           if (idx2 < rest.length) {
             destFontSize = 8.0;
             doc.setFontSize(destFontSize);
@@ -202,6 +202,38 @@ export async function generateRotulosA4Pdf(
               s2++;
             }
             line2 = sRest.slice(0, s2);
+
+            if (s2 < sRest.length) {
+              destFontSize = 7.5;
+              doc.setFontSize(destFontSize);
+              let t1 = 0;
+              while (t1 < fullDestText.length && doc.getTextWidth(fullDestText.slice(0, t1 + 1)) <= maxDestWidth) {
+                t1++;
+              }
+              line1 = fullDestText.slice(0, t1);
+              const tRest = fullDestText.slice(t1).trimStart();
+              let t2 = 0;
+              while (t2 < tRest.length && doc.getTextWidth(tRest.slice(0, t2 + 1)) <= maxDestWidth) {
+                t2++;
+              }
+              line2 = tRest.slice(0, t2);
+
+              if (t2 < tRest.length) {
+                destFontSize = 7.0;
+                doc.setFontSize(destFontSize);
+                let u1 = 0;
+                while (u1 < fullDestText.length && doc.getTextWidth(fullDestText.slice(0, u1 + 1)) <= maxDestWidth) {
+                  u1++;
+                }
+                line1 = fullDestText.slice(0, u1);
+                const uRest = fullDestText.slice(u1).trimStart();
+                let u2 = 0;
+                while (u2 < uRest.length && doc.getTextWidth(uRest.slice(0, u2 + 1)) <= maxDestWidth) {
+                  u2++;
+                }
+                line2 = uRest.slice(0, u2);
+              }
+            }
           }
         }
 

@@ -21,17 +21,17 @@ export function generarTextoBulto(
 const DEFAULT_SLOTS: RotuloSlotData[] = [
   {
     id: 1,
-    nombre: 'KENNETH MALDONADO',
-    dni: '72410845',
-    celular: '982432561',
+    nombre: '',
+    dni: '',
+    celular: '',
     agencia: 'SHALOM',
-    destino: 'LA LIBERTAD AG_ TULUEARAS',
+    destino: '',
     remitente: 'AMEX COURIER PERÚ',
-    observacion: 'RÓTULO 1 DE 5 • TOTAL: 30 CAJAS',
-    totalRotulos: 5,
-    totalCajas: '30',
+    observacion: '',
+    totalRotulos: 1,
+    totalCajas: '1',
     numeroRotulo: 1,
-    siglas: 'CE150'
+    siglas: ''
   },
   {
     id: 2,
@@ -41,39 +41,39 @@ const DEFAULT_SLOTS: RotuloSlotData[] = [
     agencia: 'SHALOM',
     destino: '',
     remitente: 'AMEX COURIER PERÚ',
-    observacion: 'RÓTULO 2 DE 5 • TOTAL: 30 CAJAS',
-    totalRotulos: 5,
-    totalCajas: '30',
+    observacion: '',
+    totalRotulos: 1,
+    totalCajas: '1',
     numeroRotulo: 2,
-    siglas: 'CE150'
+    siglas: ''
   },
   {
     id: 3,
     nombre: '',
     dni: '',
     celular: '',
-    agencia: 'CRUZ DEL SUR',
+    agencia: 'SHALOM',
     destino: '',
     remitente: 'AMEX COURIER PERÚ',
-    observacion: 'RÓTULO 3 DE 5 • TOTAL: 30 CAJAS',
-    totalRotulos: 5,
-    totalCajas: '30',
+    observacion: '',
+    totalRotulos: 1,
+    totalCajas: '1',
     numeroRotulo: 3,
-    siglas: 'CE150'
+    siglas: ''
   },
   {
     id: 4,
     nombre: '',
     dni: '',
     celular: '',
-    agencia: 'OLVA',
+    agencia: 'SHALOM',
     destino: '',
     remitente: 'AMEX COURIER PERÚ',
-    observacion: 'RÓTULO 4 DE 5 • TOTAL: 30 CAJAS',
-    totalRotulos: 5,
-    totalCajas: '30',
+    observacion: '',
+    totalRotulos: 1,
+    totalCajas: '1',
     numeroRotulo: 4,
-    siglas: 'CE150'
+    siglas: ''
   },
   {
     id: 5,
@@ -83,11 +83,11 @@ const DEFAULT_SLOTS: RotuloSlotData[] = [
     agencia: 'SHALOM',
     destino: '',
     remitente: 'AMEX COURIER PERÚ',
-    observacion: 'RÓTULO 5 DE 5 • TOTAL: 30 CAJAS',
-    totalRotulos: 5,
-    totalCajas: '30',
+    observacion: '',
+    totalRotulos: 1,
+    totalCajas: '1',
     numeroRotulo: 5,
-    siglas: 'CE150'
+    siglas: ''
   }
 ];
 
@@ -141,30 +141,45 @@ export default function RotulosA4Tab() {
   const [isExportingPdf, setIsExportingPdf] = useState<boolean>(false);
   const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
 
-  // Estados de control de embalajes y cantidades
-  const [totalRotulos, setTotalRotulos] = useState<number>(5);
-  const [totalCajas, setTotalCajas] = useState<string>('30');
+  // Estados de control de embalajes y cantidades (por defecto: 1 rótulo, 1 caja)
+  const [totalRotulos, setTotalRotulos] = useState<number>(1);
+  const [totalCajas, setTotalCajas] = useState<string>('1');
   const [autoDuplicar, setAutoDuplicar] = useState<boolean>(false);
 
-  // Estados para AMEXito IA (Lectura inteligente de WhatsApp/Capturas)
+  // Estados para AMEXito IA (Lectura inteligente de WhatsApp/Capturas - oculto por defecto)
   const [aiInputText, setAiInputText] = useState<string>('');
   const [aiImagePreview, setAiImagePreview] = useState<string | null>(null);
   const [isAiProcessing, setIsAiProcessing] = useState<boolean>(false);
-  const [isAiCardExpanded, setIsAiCardExpanded] = useState<boolean>(true);
+  const [isAiCardExpanded, setIsAiCardExpanded] = useState<boolean>(false);
 
   // Estado y ref para menú desplegable de Agencias
   const [isAgencyDropdownOpen, setIsAgencyDropdownOpen] = useState<boolean>(false);
   const agencyDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  // Estado y ref para menú desplegable de Acciones Maestras (Imprimir, PDF, Limpieza)
+  const [isMasterActionsOpen, setIsMasterActionsOpen] = useState<boolean>(false);
+  const masterActionsRef = React.useRef<HTMLDivElement>(null);
+
+  // Ref para contenedor flotante de AMEXito IA (Superpuesto)
+  const amexitoRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (agencyDropdownRef.current && !agencyDropdownRef.current.contains(event.target as Node)) {
         setIsAgencyDropdownOpen(false);
       }
+      if (masterActionsRef.current && !masterActionsRef.current.contains(event.target as Node)) {
+        setIsMasterActionsOpen(false);
+      }
+      if (amexitoRef.current && !amexitoRef.current.contains(event.target as Node)) {
+        if (!isAiProcessing) {
+          setIsAiCardExpanded(false);
+        }
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [isAiProcessing]);
 
   // Sintetizador de efectos de sonido Web Audio
   const playSound = useCallback((type: 'complete' | 'paste' | 'click' | 'error') => {
@@ -221,6 +236,14 @@ export default function RotulosA4Tab() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length === 5) {
+          // Si contenía los datos de prueba anteriores con KENNETH MALDONADO, reiniciar a limpio
+          if (parsed[0]?.nombre === 'KENNETH MALDONADO') {
+            localStorage.removeItem('amex_rotulos_a4_slots');
+            setSlots(DEFAULT_SLOTS);
+            setTotalRotulos(1);
+            setTotalCajas('1');
+            return;
+          }
           setSlots(parsed);
           if (parsed[0]?.totalRotulos) setTotalRotulos(parsed[0].totalRotulos);
           if (parsed[0]?.totalCajas) setTotalCajas(String(parsed[0].totalCajas));
@@ -380,11 +403,17 @@ export default function RotulosA4Tab() {
           agencia: 'SHALOM' as const,
           destino: '',
           remitente: 'AMEX COURIER PERÚ',
-          observacion: ''
+          observacion: '',
+          totalRotulos: 1,
+          totalCajas: '1',
+          numeroRotulo: s.id,
+          siglas: ''
         };
       }
       return s;
     });
+    setTotalRotulos(1);
+    setTotalCajas('1');
     saveSlots(updated);
     showToast(`Espacio #${activeSlotId} limpiado.`);
   };
@@ -399,8 +428,14 @@ export default function RotulosA4Tab() {
       agencia: 'SHALOM' as const,
       destino: '',
       remitente: 'AMEX COURIER PERÚ',
-      observacion: ''
+      observacion: '',
+      totalRotulos: 1,
+      totalCajas: '1',
+      numeroRotulo: s.id,
+      siglas: ''
     }));
+    setTotalRotulos(1);
+    setTotalCajas('1');
     saveSlots(emptySlots);
     showToast('Hoja A4 reiniciada (5 espacios vacíos).');
   };
@@ -529,7 +564,8 @@ export default function RotulosA4Tab() {
       saveSlots(updated);
 
       playSound('complete');
-      showToast(`🤖 ¡AMEXito rellenó el espacio #${activeSlotId}! (Usa 'Duplicar' si deseas repetirlo).`);
+      showToast(`🤖 ¡AMEXito rellenó el espacio #${activeSlotId}!`);
+      setIsAiCardExpanded(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al conectar con AMEXito IA.';
       playSound('error');
@@ -582,29 +618,6 @@ export default function RotulosA4Tab() {
       <div className="rotulos-workspace-grid">
         {/* PANEL LATERAL DE DIGITACIÓN MANUAL */}
         <div className="rotulos-editor-card">
-          {/* Selector de Espacios 1 al 5 */}
-          <div>
-            <label className="rotulo-label" style={{ marginBottom: '6px', display: 'block' }}>
-              Seleccionar Espacio a Digitar:
-            </label>
-            <div className="rotulo-slot-selector">
-              {slots.map((s) => {
-                const isFilled = Boolean(s.nombre || s.destino);
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    className={`slot-tab-btn ${s.id === activeSlotId ? 'active' : ''} ${isFilled ? 'filled' : ''}`}
-                    onClick={() => setActiveSlotId(s.id)}
-                    title={`Espacio #${s.id}`}
-                  >
-                    <span>Espacio #{s.id}</span>
-                    <span className="slot-tab-status"></span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
 
           <div className="slot-editor-header">
             <div className="slot-badge-title">
@@ -613,136 +626,312 @@ export default function RotulosA4Tab() {
             </div>
           </div>
 
-          {/* Asistente Inteligente AMEXito IA */}
+          {/* Botón Maestro Desplegable de Acciones (Por encima de AMEXito IA) */}
+          <div className="rotulo-master-actions-wrapper" ref={masterActionsRef}>
+            <button
+              type="button"
+              className={`btn-master-actions ${isMasterActionsOpen ? 'open' : ''}`}
+              onClick={() => {
+                setIsMasterActionsOpen(!isMasterActionsOpen);
+                playSound('click');
+              }}
+              title="Haz clic para ver opciones de impresión, PDF y limpieza"
+            >
+              <div className="btn-master-left">
+                <div className="btn-master-icon">
+                  <i className="fa-solid fa-sliders"></i>
+                </div>
+                <div className="btn-master-texts">
+                  <span className="btn-master-title">Acciones de Hoja A4</span>
+                  <span className="btn-master-sub">Imprimir A4 • Descargar PDF • Limpiar</span>
+                </div>
+              </div>
+
+              <div className="btn-master-right">
+                <span className="btn-master-badge">4 Opciones</span>
+                <i className={`fa-solid ${isMasterActionsOpen ? 'fa-chevron-up' : 'fa-chevron-down'} btn-master-arrow`}></i>
+              </div>
+            </button>
+
+            {isMasterActionsOpen && (
+              <div className="master-actions-dropdown-menu">
+                <div className="master-actions-menu-header">
+                  <i className="fa-solid fa-layer-group"></i>
+                  <span>OPCIONES DE IMPRESIÓN Y HOJA</span>
+                </div>
+
+                <div className="master-actions-list">
+                  {/* Opción 1: Imprimir A4 */}
+                  <button
+                    type="button"
+                    className="master-action-item print-item"
+                    onClick={() => {
+                      setIsMasterActionsOpen(false);
+                      handlePrintDirect();
+                    }}
+                    title="Imprimir la hoja A4 física directamente (Ctrl + P)"
+                  >
+                    <div className="master-action-icon-box print">
+                      <i className="fa-solid fa-print"></i>
+                    </div>
+                    <div className="master-action-info">
+                      <div className="master-action-name-row">
+                        <span className="master-action-name">Imprimir A4 Directo</span>
+                        <span className="master-action-tag print">A4 Físico</span>
+                      </div>
+                      <span className="master-action-desc">Impresión física directa a escala real (Ctrl + P)</span>
+                    </div>
+                  </button>
+
+                  {/* Opción 2: Descargar PDF */}
+                  <button
+                    type="button"
+                    className="master-action-item pdf-item"
+                    onClick={() => {
+                      setIsMasterActionsOpen(false);
+                      handleDownloadPdf();
+                    }}
+                    disabled={isExportingPdf}
+                    title="Descargar documento PDF listo para imprimir"
+                  >
+                    <div className="master-action-icon-box pdf">
+                      {isExportingPdf ? (
+                        <i className="fa-solid fa-circle-notch fa-spin"></i>
+                      ) : (
+                        <i className="fa-solid fa-file-pdf"></i>
+                      )}
+                    </div>
+                    <div className="master-action-info">
+                      <div className="master-action-name-row">
+                        <span className="master-action-name">
+                          {isExportingPdf ? 'Generando Documento...' : 'Descargar PDF A4'}
+                        </span>
+                        <span className="master-action-tag pdf">PDF</span>
+                      </div>
+                      <span className="master-action-desc">Documento PDF vectorial de 5 franjas listo</span>
+                    </div>
+                  </button>
+
+                  <div className="master-actions-divider"></div>
+
+                  {/* Opción 3: Limpiar Espacio Actual */}
+                  <button
+                    type="button"
+                    className="master-action-item clear-slot-item"
+                    onClick={() => {
+                      setIsMasterActionsOpen(false);
+                      handleClearActiveSlot();
+                    }}
+                    title={`Borrar los datos del espacio #${activeSlot.id}`}
+                  >
+                    <div className="master-action-icon-box warning">
+                      <i className="fa-solid fa-eraser"></i>
+                    </div>
+                    <div className="master-action-info">
+                      <div className="master-action-name-row">
+                        <span className="master-action-name">Limpiar Espacio #{activeSlot.id}</span>
+                        <span className="master-action-tag warning">Solo este</span>
+                      </div>
+                      <span className="master-action-desc">Borrar datos únicamente de este rótulo</span>
+                    </div>
+                  </button>
+
+                  {/* Opción 4: Limpiar Hoja Completa */}
+                  <button
+                    type="button"
+                    className="master-action-item clear-all-item"
+                    onClick={() => {
+                      setIsMasterActionsOpen(false);
+                      handleClearAll();
+                    }}
+                    title="Reiniciar todos los 5 espacios de la hoja A4"
+                  >
+                    <div className="master-action-icon-box danger">
+                      <i className="fa-solid fa-rotate-left"></i>
+                    </div>
+                    <div className="master-action-info">
+                      <div className="master-action-name-row">
+                        <span className="master-action-name">Limpiar Hoja Completa</span>
+                        <span className="master-action-tag danger">5 Espacios</span>
+                      </div>
+                      <span className="master-action-desc">Reiniciar todos los 5 rótulos a blanco</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Asistente Inteligente AMEXito IA (Superpuesto - Sin empujar los labels) */}
           <div
-            className={`rotulo-ai-card ${!isAiCardExpanded ? 'collapsed' : ''}`}
-            onPaste={!isAiCardExpanded ? (e) => {
+            className="rotulo-amexito-wrapper"
+            ref={amexitoRef}
+            onPaste={(e) => {
               setIsAiCardExpanded(true);
               handlePasteCapture(e);
-            } : undefined}
+            }}
           >
-            <div
-              className="ai-card-header"
+            <button
+              type="button"
+              className={`btn-trigger-amexito ${isAiCardExpanded ? 'open' : ''}`}
               onClick={() => {
-                if (!isAiCardExpanded) setIsAiCardExpanded(true);
+                setIsAiCardExpanded(!isAiCardExpanded);
+                playSound('click');
               }}
-              style={{ cursor: !isAiCardExpanded ? 'pointer' : 'default' }}
+              title={isAiCardExpanded ? 'Haz clic para ocultar AMEXito IA' : 'Haz clic para desplegar AMEXito IA'}
             >
-              <div className="ai-card-identity">
-                <div className="ai-avatar-icon">
-                  <i className="fa-solid fa-robot"></i>
-                </div>
-                <div className="ai-card-titles">
-                  <span className="ai-card-name">
-                    AMEXito IA
-                    <span className="ai-card-tag">Lector de WhatsApp</span>
-                    {(aiImagePreview || aiInputText) && !isAiCardExpanded && (
-                      <span className="ai-card-badge-pending">
-                        <i className="fa-solid fa-circle-check"></i> Con datos
-                      </span>
-                    )}
+              <div className="trigger-amexito-content">
+                <span className="ai-robot-icon">🤖</span>
+                <span className="trigger-amexito-name">Usar AMEXito IA</span>
+                {(aiImagePreview || aiInputText) && (
+                  <span className="trigger-amexito-pending">
+                    <i className="fa-solid fa-circle-check"></i> Con datos
                   </span>
-                  <span className="ai-card-sub">
-                    {isAiCardExpanded
-                      ? 'Pega texto o presiona Ctrl + V con una captura para autocompletar'
-                      : 'Haz clic aquí o presiona Ctrl + V para abrir el asistente'}
-                  </span>
-                </div>
+                )}
               </div>
 
-              <button
-                type="button"
-                className="ai-toggle-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsAiCardExpanded(!isAiCardExpanded);
-                }}
-                title={isAiCardExpanded ? 'Minimizar AMEXito IA' : 'Expandir AMEXito IA'}
-              >
-                <i className={`fa-solid ${isAiCardExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
-                <span>{isAiCardExpanded ? 'Minimizar' : 'Abrir'}</span>
-              </button>
-            </div>
+              <div className="trigger-amexito-cta">
+                <span className="trigger-cta-text">{isAiCardExpanded ? 'Ocultar' : 'Desplegar'}</span>
+                <i className={`fa-solid ${isAiCardExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} trigger-cta-arrow`}></i>
+              </div>
+            </button>
 
             {isAiCardExpanded && (
-              <div className="ai-input-area">
-              <textarea
-                className="ai-textarea"
-                placeholder="Pega aquí el texto del pedido o presiona Ctrl + V con una captura de WhatsApp (ej: CE79, 2 cajas, Shalom, Nombre, DNI, Teléfono...)"
-                value={aiInputText}
-                onChange={(e) => setAiInputText(e.target.value)}
-                onPaste={handlePasteCapture}
-                rows={2}
-              />
-
-              {aiImagePreview && (
-                <div className="ai-image-preview-chip">
-                  <img src={aiImagePreview} alt="Captura cargada" className="ai-image-thumb" />
-                  <div className="ai-image-info">
-                    <strong>Captura de WhatsApp cargada</strong>
-                    <span>Lista para que AMEXito extraiga los datos del envío</span>
+              <div className="rotulo-ai-card expanded">
+                <div className="ai-card-header">
+                  <div className="ai-card-identity">
+                    <div className="ai-avatar-icon">
+                      <span className="ai-robot-icon" style={{ fontSize: '1.2rem' }}>🤖</span>
+                    </div>
+                    <div className="ai-card-titles">
+                      <div className="ai-card-name-row">
+                        <span className="ai-card-name">AMEXito IA</span>
+                        {(aiImagePreview || aiInputText) && (
+                          <span className="ai-card-badge-pending">
+                            <i className="fa-solid fa-circle-check"></i> Con datos listos
+                          </span>
+                        )}
+                      </div>
+                      <span className="ai-card-sub">
+                        Pega texto o presiona Ctrl + V con una captura para autocompletar automáticamente
+                      </span>
+                    </div>
                   </div>
+
                   <button
                     type="button"
-                    className="ai-remove-img-btn"
-                    onClick={() => setAiImagePreview(null)}
-                    title="Quitar captura"
+                    className="ai-collapse-btn"
+                    onClick={() => {
+                      setIsAiCardExpanded(false);
+                      playSound('click');
+                    }}
+                    title="Ocultar AMEXito IA"
                   >
-                    ✕ Quitar
+                    <i className="fa-solid fa-chevron-up"></i>
+                    <span>Ocultar</span>
                   </button>
                 </div>
-              )}
 
-              <div className="ai-controls-row">
-                <label className="ai-upload-label" title="Cargar captura desde archivo">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAiImageUpload}
-                    style={{ display: 'none' }}
-                  />
-                  <i className="fa-solid fa-image"></i>
-                  <span>Subir captura</span>
-                </label>
+                <div className="ai-input-area">
+                  <div className="ai-textarea-wrapper">
+                    <textarea
+                      className="ai-textarea"
+                      placeholder="Pega aquí el texto del pedido o presiona Ctrl + V con una captura de WhatsApp (ej: CE79, 2 cajas, Shalom, Nombre, DNI, Teléfono...)"
+                      value={aiInputText}
+                      onChange={(e) => setAiInputText(e.target.value)}
+                      onPaste={handlePasteCapture}
+                      rows={2}
+                      autoFocus
+                    />
+                    {aiInputText && (
+                      <button
+                        type="button"
+                        className="ai-textarea-quick-clear"
+                        onClick={() => setAiInputText('')}
+                        title="Borrar texto"
+                      >
+                        <i className="fa-solid fa-xmark"></i>
+                      </button>
+                    )}
+                  </div>
 
-                {(aiInputText || aiImagePreview) && (
-                  <button
-                    type="button"
-                    className="ai-clear-btn"
-                    onClick={() => {
-                      setAiInputText('');
-                      setAiImagePreview(null);
-                    }}
-                    title="Limpiar entrada de IA"
-                  >
-                    <i className="fa-solid fa-eraser"></i>
-                    <span>Limpiar</span>
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  className="ai-submit-btn"
-                  onClick={handleProcessWithAmexito}
-                  disabled={isAiProcessing || (!aiInputText.trim() && !aiImagePreview)}
-                  title="Interpretar con AMEXito IA y rellenar automáticamente los campos"
-                >
-                  {isAiProcessing ? (
-                    <>
-                      <i className="fa-solid fa-spinner fa-spin"></i>
-                      <span>AMEXito analizando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <i className="fa-solid fa-wand-magic-sparkles"></i>
-                      <span>Rellenar con AMEXito IA</span>
-                    </>
+                  {aiImagePreview && (
+                    <div className="ai-image-preview-chip">
+                      <div className="ai-image-thumb-wrapper">
+                        <img src={aiImagePreview} alt="Captura cargada" className="ai-image-thumb" />
+                      </div>
+                      <div className="ai-image-info">
+                        <div className="ai-image-header-line">
+                          <strong>Captura de WhatsApp cargada</strong>
+                          <span className="ai-image-ready-tag">Lista para extraer</span>
+                        </div>
+                        <span>AMEXito extraerá automáticamente los datos del envío</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="ai-remove-img-btn"
+                        onClick={() => setAiImagePreview(null)}
+                        title="Quitar captura"
+                      >
+                        <i className="fa-solid fa-trash-can"></i>
+                        <span>Quitar</span>
+                      </button>
+                    </div>
                   )}
-                </button>
+
+                  <div className="ai-controls-row">
+                    <div className="ai-controls-left">
+                      <label className="ai-upload-label" title="Cargar captura desde archivo">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAiImageUpload}
+                          style={{ display: 'none' }}
+                        />
+                        <i className="fa-solid fa-arrow-up-from-bracket"></i>
+                        <span>Subir captura</span>
+                      </label>
+
+                      {(aiInputText || aiImagePreview) && (
+                        <button
+                          type="button"
+                          className="ai-clear-btn"
+                          onClick={() => {
+                            setAiInputText('');
+                            setAiImagePreview(null);
+                          }}
+                          title="Limpiar entrada de IA"
+                        >
+                          <i className="fa-solid fa-trash-can"></i>
+                          <span>Limpiar</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      className="ai-submit-btn"
+                      onClick={handleProcessWithAmexito}
+                      disabled={isAiProcessing || (!aiInputText.trim() && !aiImagePreview)}
+                      title="Interpretar con AMEXito IA y rellenar automáticamente los campos"
+                    >
+                      {isAiProcessing ? (
+                        <>
+                          <i className="fa-solid fa-circle-notch fa-spin"></i>
+                          <span>AMEXito analizando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <i className="fa-solid fa-wand-magic-sparkles"></i>
+                          <span>Rellenar con AMEXito IA</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
           {/* Formulario de Entrada 100% Manual */}
           <div className="rotulo-form">
@@ -758,27 +947,50 @@ export default function RotulosA4Tab() {
               />
             </div>
 
-            <div className="rotulo-row-2">
-              <div className="rotulo-field-group">
-                <label className="rotulo-label">DNI / RUC / CE:</label>
-                <input
-                  type="text"
-                  className="rotulo-input rotulo-input-dni"
-                  placeholder="Ej: 72410845"
-                  value={activeSlot.dni}
-                  onChange={(e) => updateActiveSlot({ dni: e.target.value.trim().toUpperCase() })}
-                />
+            <div className="rotulo-field-group">
+              <label className="rotulo-label">DNI / RUC / CE:</label>
+              <input
+                type="text"
+                className="rotulo-input rotulo-input-dni"
+                placeholder="Ej: 72410845"
+                value={activeSlot.dni}
+                onChange={(e) => updateActiveSlot({ dni: e.target.value.trim().toUpperCase() })}
+              />
+            </div>
+
+            <div className="rotulo-field-group">
+              <label className="rotulo-label">Celular / Teléfono:</label>
+              <input
+                type="tel"
+                className="rotulo-input rotulo-input-cel"
+                placeholder="Ej: 982432561"
+                value={activeSlot.celular}
+                onChange={(e) => updateActiveSlot({ celular: e.target.value.trim() })}
+              />
+            </div>
+
+            {/* Destino y Agencia de Entrega (Hasta 110 caracteres) - encima de Agencia de Envío */}
+            <div className="rotulo-field-group">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label className="rotulo-label">Destino / Agencia de Entrega:</label>
+                <span
+                  style={{
+                    fontSize: '0.70rem',
+                    fontWeight: 700,
+                    color: (activeSlot.destino?.length || 0) >= 105 ? '#f87171' : '#94a3b8'
+                  }}
+                >
+                  {activeSlot.destino?.length || 0} / 110 car.
+                </span>
               </div>
-              <div className="rotulo-field-group">
-                <label className="rotulo-label">Celular / Teléfono:</label>
-                <input
-                  type="tel"
-                  className="rotulo-input rotulo-input-cel"
-                  placeholder="Ej: 982432561"
-                  value={activeSlot.celular}
-                  onChange={(e) => updateActiveSlot({ celular: e.target.value.trim() })}
-                />
-              </div>
+              <input
+                type="text"
+                className="rotulo-input"
+                maxLength={110}
+                placeholder="Ej: LA LIBERTAD - TRUJILLO - AGENCIA TULUEARAS (Hasta 110 caracteres)"
+                value={activeSlot.destino}
+                onChange={(e) => updateActiveSlot({ destino: e.target.value.toUpperCase() })}
+              />
             </div>
 
             {/* Selector de Agencia (Botón Único con Menú Desplegable) */}
@@ -800,9 +1012,6 @@ export default function RotulosA4Tab() {
                         {activeSlot.agencia === 'OTRA' && activeSlot.agenciaOtra?.trim()
                           ? activeSlot.agenciaOtra
                           : activeSlot.agencia || 'Seleccionar Agencia'}
-                      </span>
-                      <span className="btn-agency-sub">
-                        {AVAILABLE_AGENCIES.find((a) => a.id === activeSlot.agencia)?.subtitle || 'Haz clic para desplegar lista'}
                       </span>
                     </div>
                   </div>
@@ -852,7 +1061,6 @@ export default function RotulosA4Tab() {
 
                             <div className="agency-item-info">
                               <span className="agency-item-name">{agency.name}</span>
-                              <span className="agency-item-desc">{agency.subtitle}</span>
                             </div>
 
                             {isSelected && (
@@ -879,30 +1087,6 @@ export default function RotulosA4Tab() {
                   />
                 )}
               </div>
-            </div>
-
-            {/* Destino y Agencia de Entrega (Hasta 80 caracteres) */}
-            <div className="rotulo-field-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label className="rotulo-label">Destino / Agencia de Entrega:</label>
-                <span
-                  style={{
-                    fontSize: '0.70rem',
-                    fontWeight: 700,
-                    color: (activeSlot.destino?.length || 0) >= 75 ? '#f87171' : '#94a3b8'
-                  }}
-                >
-                  {activeSlot.destino?.length || 0} / 80 car.
-                </span>
-              </div>
-              <input
-                type="text"
-                className="rotulo-input"
-                maxLength={80}
-                placeholder="Ej: LA LIBERTAD - TRUJILLO - AGENCIA TULUEARAS (Hasta 80 caracteres)"
-                value={activeSlot.destino}
-                onChange={(e) => updateActiveSlot({ destino: e.target.value.toUpperCase() })}
-              />
             </div>
 
             {/* Control Logístico de Bultos y Total de Cajas */}
@@ -995,74 +1179,6 @@ export default function RotulosA4Tab() {
             </div>
           </div>
 
-          {/* Acciones de Productividad y Salida */}
-          <div className="rotulo-tools-box">
-            <button
-              type="button"
-              className="btn-tool-action duplicate"
-              onClick={handleDuplicateToAll}
-              title={`Duplicar a los ${totalRotulos} rótulos con numeración correlativa y total de ${totalCajas || 0} cajas`}
-            >
-              <i className="fa-solid fa-clone"></i>
-              <span>⚡ Duplicar en los {totalRotulos} rótulos (1 de {totalRotulos} ... {totalRotulos} de {totalRotulos})</span>
-            </button>
-
-            {/* Botones de Impresión Física y PDF */}
-            <div className="rotulo-tools-row">
-              <button
-                type="button"
-                className="btn-rotulo btn-rotulo-print"
-                onClick={handlePrintDirect}
-                title="Imprimir la hoja A4 física directamente (Ctrl + P)"
-              >
-                <i className="fa-solid fa-print"></i>
-                <span>Imprimir A4</span>
-              </button>
-
-              <button
-                type="button"
-                className="btn-rotulo btn-rotulo-pdf"
-                onClick={handleDownloadPdf}
-                disabled={isExportingPdf}
-                title="Descargar documento PDF listo para imprimir"
-              >
-                {isExportingPdf ? (
-                  <>
-                    <i className="fa-solid fa-spinner fa-spin"></i>
-                    <span>Generando...</span>
-                  </>
-                ) : (
-                  <>
-                    <i className="fa-solid fa-file-pdf"></i>
-                    <span>Descargar PDF</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Botones de Limpieza: Espacio actual y Hoja completa */}
-            <div className="rotulo-tools-row">
-              <button
-                type="button"
-                className="btn-tool-action danger"
-                onClick={handleClearActiveSlot}
-                title="Borrar los datos de este espacio"
-              >
-                <i className="fa-solid fa-trash-can"></i>
-                <span>Limpiar espacio #{activeSlot.id}</span>
-              </button>
-
-              <button
-                type="button"
-                className="btn-rotulo btn-rotulo-secondary"
-                onClick={handleClearAll}
-                title="Limpiar los 5 espacios para empezar una hoja nueva"
-              >
-                <i className="fa-solid fa-rotate-left"></i>
-                <span>Limpiar Hoja</span>
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* VISTA PREVIA DE LA HOJA FÍSICA A4 (WYSIWYG) */}

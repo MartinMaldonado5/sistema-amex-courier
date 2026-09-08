@@ -622,7 +622,7 @@ export default function DashboardPage() {
           onCloseSidebar={() => setIsSidebarCollapsed(true)}
         />
 
-        <main className={`main-content ${activeTab === 'dni-matrix' ? 'dni-matrix-mode' : ''}`}>
+        <main className={`main-content ${activeTab === 'dni-matrix' ? 'dni-matrix-mode' : ''} ${activeTab === 'rotulos-a4' ? 'rotulos-mode' : ''}`}>
           {isLoadingInitialData ? (
             <PageSkeleton />
           ) : (
