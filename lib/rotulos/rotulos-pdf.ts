@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import { saveAs } from 'file-saver';
+import saveAs from 'file-saver';
 
 export interface RotuloSlotData {
   id: number; // 1 a 5
@@ -16,6 +16,7 @@ export interface RotuloSlotData {
   cajasPorBulto?: string | number;
   numeroRotulo?: number;
   siglas?: string;
+  groupId?: string;
 }
 
 /**

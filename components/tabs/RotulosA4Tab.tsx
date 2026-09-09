@@ -9,7 +9,9 @@ export function generarTextoBulto(
   totalRots: number,
   totalCjs: string | number
 ): string {
-  const rotText = `RÓTULO ${numeroRotulo} DE ${totalRots}`;
+  const safeTotalRots = Math.max(1, Number(totalRots) || 1);
+  const safeNumRot = Math.min(Math.max(1, Number(numeroRotulo) || 1), safeTotalRots);
+  const rotText = `RÓTULO ${safeNumRot} DE ${safeTotalRots}`;
   if (!totalCjs || String(totalCjs).trim() === '') {
     return rotText;
   }
@@ -44,7 +46,7 @@ const DEFAULT_SLOTS: RotuloSlotData[] = [
     observacion: '',
     totalRotulos: 1,
     totalCajas: '1',
-    numeroRotulo: 2,
+    numeroRotulo: 1,
     siglas: ''
   },
   {
@@ -58,7 +60,7 @@ const DEFAULT_SLOTS: RotuloSlotData[] = [
     observacion: '',
     totalRotulos: 1,
     totalCajas: '1',
-    numeroRotulo: 3,
+    numeroRotulo: 1,
     siglas: ''
   },
   {
@@ -72,7 +74,7 @@ const DEFAULT_SLOTS: RotuloSlotData[] = [
     observacion: '',
     totalRotulos: 1,
     totalCajas: '1',
-    numeroRotulo: 4,
+    numeroRotulo: 1,
     siglas: ''
   },
   {
@@ -86,7 +88,7 @@ const DEFAULT_SLOTS: RotuloSlotData[] = [
     observacion: '',
     totalRotulos: 1,
     totalCajas: '1',
-    numeroRotulo: 5,
+    numeroRotulo: 1,
     siglas: ''
   }
 ];
@@ -145,7 +147,7 @@ export default function RotulosA4Tab() {
   const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
 
   // Estados de control de embalajes y cantidades (por defecto: 1 rótulo, 1 caja)
-  const [totalRotulos, setTotalRotulos] = useState<number>(1);
+  const [totalRotulos, setTotalRotulos] = useState<string>('1');
   const [totalCajas, setTotalCajas] = useState<string>('1');
 
   // Estados para AMEXito IA (Lectura inteligente de WhatsApp/Capturas - oculto por defecto)
@@ -242,14 +244,25 @@ export default function RotulosA4Tab() {
           if (parsed[0]?.nombre === 'KENNETH MALDONADO') {
             localStorage.removeItem('amex_rotulos_a4_slots');
             setSlots(DEFAULT_SLOTS);
-            setTotalRotulos(1);
+            setTotalRotulos('1');
             setTotalCajas('1');
             return;
           }
           // Limitar estrictamente al máximo de MAX_SHEETS (5 hojas = 25 rótulos)
-          const cappedSlots = parsed.slice(0, MAX_SHEETS * 5);
+          const cappedSlots = parsed.slice(0, MAX_SHEETS * 5).map((s: RotuloSlotData) => {
+            const isIndep = (!s.totalRotulos || s.totalRotulos <= 1) && !s.groupId;
+            if (isIndep) {
+              return {
+                ...s,
+                numeroRotulo: 1,
+                totalRotulos: 1,
+                observacion: s.totalCajas ? generarTextoBulto(1, 1, s.totalCajas) : s.observacion
+              };
+            }
+            return s;
+          });
           setSlots(cappedSlots);
-          if (cappedSlots[0]?.totalRotulos) setTotalRotulos(cappedSlots[0].totalRotulos);
+          if (cappedSlots[0]?.totalRotulos) setTotalRotulos(String(cappedSlots[0].totalRotulos));
           if (cappedSlots[0]?.totalCajas) setTotalCajas(String(cappedSlots[0].totalCajas));
         }
       }
@@ -257,6 +270,15 @@ export default function RotulosA4Tab() {
       // Ignorar error al cargar
     }
   }, []);
+
+  // Sincronizar controles numéricos con el slot activo seleccionado
+  useEffect(() => {
+    const current = slots.find((s) => s.id === activeSlotId);
+    if (current) {
+      setTotalRotulos(current.totalRotulos ? String(current.totalRotulos) : '1');
+      setTotalCajas(current.totalCajas !== undefined && current.totalCajas !== null ? String(current.totalCajas) : '1');
+    }
+  }, [activeSlotId]);
 
   // Guardar automáticamente en LocalStorage al modificar
   const saveSlots = (newSlots: RotuloSlotData[]) => {
@@ -278,27 +300,276 @@ export default function RotulosA4Tab() {
   const activeSlot = slots.find((s) => s.id === activeSlotId) || slots[0];
   const currentSheetSlots = slots.slice((currentSheet - 1) * 5, currentSheet * 5);
 
-  const handleTotalRotulosChange = (newCount: number) => {
-    const clamped = Math.max(1, Math.min(100, newCount));
-    setTotalRotulos(clamped);
+  // Validador estricto para permitir únicamente la digitación de números (0-9)
+  const handleNumericKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (
+      e.key === 'Backspace' ||
+      e.key === 'Delete' ||
+      e.key === 'Tab' ||
+      e.key === 'Escape' ||
+      e.key === 'Enter' ||
+      e.key === 'ArrowLeft' ||
+      e.key === 'ArrowRight' ||
+      e.key === 'ArrowUp' ||
+      e.key === 'ArrowDown' ||
+      e.key === 'Home' ||
+      e.key === 'End' ||
+      e.ctrlKey ||
+      e.metaKey
+    ) {
+      return;
+    }
+    // Bloquear cualquier tecla que no sea un dígito numérico (0 al 9)
+    if (!/^[0-9]$/.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+
+  // Sanitizador al pegar texto: solo permite números
+  const handleNumericPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pasteData = e.clipboardData.getData('text');
+    if (!/^\d+$/.test(pasteData)) {
+      e.preventDefault();
+      const cleanDigits = pasteData.replace(/\D/g, '');
+      if (cleanDigits) {
+        document.execCommand('insertText', false, cleanDigits);
+      }
+    }
+  };
+
+  // Duplicación automática en espacios libres cuando se cambia la cantidad de rótulos (ej: 2 o 3)
+  const applyTotalRotulosDuplication = (targetCount: number) => {
+    let workingSlots = [...slots];
+    const currentSlot = workingSlots.find((s) => s.id === activeSlotId) || workingSlots[0];
+
+    // Asignar o reutilizar groupId para vincular las copias del mismo pedido
+    const groupId = currentSlot.groupId || `grp_${currentSlot.id}_${Date.now()}`;
+
+    // Buscar slots que ya pertenecen a este grupo
+    let groupSlots = workingSlots.filter((s) => s.groupId === groupId);
+    if (groupSlots.length === 0) {
+      groupSlots = [currentSlot];
+    }
+
+    const currentGroupCount = groupSlots.length;
+    const effectiveTotalCajas = currentSlot.totalCajas || totalCajas || '1';
+
+    // CASO 1: Reducir cantidad (o volver a 1)
+    if (targetCount <= currentGroupCount) {
+      groupSlots.sort((a, b) => (a.numeroRotulo || 1) - (b.numeroRotulo || 1));
+
+      workingSlots = workingSlots.map((s) => {
+        if (s.groupId === groupId) {
+          const rotIdx = s.numeroRotulo || 1;
+          if (rotIdx <= targetCount) {
+            return {
+              ...s,
+              groupId: targetCount === 1 ? undefined : groupId,
+              totalRotulos: targetCount,
+              numeroRotulo: rotIdx,
+              observacion: generarTextoBulto(rotIdx, targetCount, effectiveTotalCajas)
+            };
+          } else {
+            // Excedentes se limpian y vuelven a quedar libres
+            return {
+              id: s.id,
+              nombre: '',
+              dni: '',
+              celular: '',
+              agencia: 'SHALOM',
+              destino: '',
+              remitente: 'AMEX COURIER PERÚ',
+              observacion: '',
+              totalRotulos: 1,
+              totalCajas: '1',
+              numeroRotulo: s.id,
+              siglas: '',
+              groupId: undefined
+            };
+          }
+        }
+        return s;
+      });
+
+      saveSlots(workingSlots);
+      if (targetCount > 1) {
+        playSound('click');
+        showToast(`🔢 Cantidad ajustada a ${targetCount} rótulos.`);
+      }
+      return;
+    }
+
+    // CASO 2: Aumentar cantidad (duplicar automáticamente en espacios libres)
+    const neededCopies = targetCount - currentGroupCount;
+
+    // Espacio libre: sin nombre ni destino, y que no pertenezca al grupo actual ni sea el slot activo
+    const isFree = (s: RotuloSlotData) =>
+      !s.nombre?.trim() && !s.destino?.trim() && s.groupId !== groupId && s.id !== activeSlotId;
+
+    let freeSlotIndices: number[] = [];
+    for (let i = 0; i < workingSlots.length; i++) {
+      if (isFree(workingSlots[i])) {
+        freeSlotIndices.push(i);
+      }
+    }
+
+    // Priorizar espacios libres que se ubiquen después del slot activo
+    const activeIdx = workingSlots.findIndex((s) => s.id === activeSlotId);
+    const afterActive = freeSlotIndices.filter((idx) => idx > activeIdx);
+    const beforeActive = freeSlotIndices.filter((idx) => idx < activeIdx);
+    freeSlotIndices = [...afterActive, ...beforeActive];
+
+    // Si no alcanzan los espacios libres, generar hojas nuevas (+5) hasta MAX_SHEETS (25 slots)
+    while (freeSlotIndices.length < neededCopies && workingSlots.length < MAX_SHEETS * 5) {
+      const startId = workingSlots.length + 1;
+      const addedSlots: RotuloSlotData[] = Array.from({ length: 5 }, (_, idx) => {
+        const id = startId + idx;
+        return {
+          id,
+          nombre: '',
+          dni: '',
+          celular: '',
+          agencia: currentSlot.agencia || 'SHALOM',
+          agenciaOtra: currentSlot.agenciaOtra,
+          destino: '',
+          remitente: currentSlot.remitente || 'AMEX COURIER PERÚ',
+          observacion: '',
+          totalRotulos: 1,
+          totalCajas: '1',
+          numeroRotulo: id,
+          siglas: ''
+        };
+      });
+      const newStartIdx = workingSlots.length;
+      workingSlots = [...workingSlots, ...addedSlots];
+      for (let k = 0; k < 5; k++) {
+        freeSlotIndices.push(newStartIdx + k);
+      }
+    }
+
+    const actualCopiesPossible = Math.min(neededCopies, freeSlotIndices.length);
+    if (actualCopiesPossible < neededCopies) {
+      showToast(`⚠️ Solo hay ${actualCopiesPossible} espacio(s) libre(s) disponible(s).`);
+    }
+
+    const finalTotal = currentGroupCount + actualCopiesPossible;
+
+    // Asignar copias en los espacios libres
+    const assignedIndices = new Set<number>();
+    for (let c = 0; c < actualCopiesPossible; c++) {
+      const targetSlotIdx = freeSlotIndices[c];
+      assignedIndices.add(targetSlotIdx);
+      const newRotuloNum = currentGroupCount + c + 1;
+
+      workingSlots[targetSlotIdx] = {
+        ...workingSlots[targetSlotIdx],
+        nombre: currentSlot.nombre,
+        dni: currentSlot.dni,
+        celular: currentSlot.celular,
+        agencia: currentSlot.agencia,
+        agenciaOtra: currentSlot.agenciaOtra,
+        destino: currentSlot.destino,
+        remitente: currentSlot.remitente,
+        totalCajas: effectiveTotalCajas,
+        siglas: currentSlot.siglas,
+        groupId: groupId,
+        totalRotulos: finalTotal,
+        numeroRotulo: newRotuloNum,
+        observacion: generarTextoBulto(newRotuloNum, finalTotal, effectiveTotalCajas)
+      };
+    }
+
+    // Actualizar los slots existentes del grupo con el nuevo total
+    workingSlots = workingSlots.map((s, idx) => {
+      if (assignedIndices.has(idx)) return s;
+      if (s.id === activeSlotId || s.groupId === groupId) {
+        const rotIdx = s.numeroRotulo || 1;
+        return {
+          ...s,
+          groupId: groupId,
+          totalRotulos: finalTotal,
+          numeroRotulo: rotIdx,
+          observacion: generarTextoBulto(rotIdx, finalTotal, s.totalCajas || effectiveTotalCajas)
+        };
+      }
+      return s;
+    });
+
+    saveSlots(workingSlots);
+    playSound('paste');
+    showToast(`⚡ ¡Duplicado automáticamente en ${actualCopiesPossible} espacio(s) libre(s)! (Total: ${finalTotal} rótulos)`);
+  };
+
+  const handleTotalRotulosChange = (rawVal: string) => {
+    // Solo permitir números
+    const cleanVal = rawVal.replace(/\D/g, '');
+    setTotalRotulos(cleanVal);
+
+    if (!cleanVal) {
+      return;
+    }
+
+    const targetCount = parseInt(cleanVal, 10);
+    if (targetCount < 1) {
+      return;
+    }
+
+    if (targetCount > 25) {
+      showToast('⚠️ El sistema soporta un máximo de 25 rótulos (5 hojas A4).');
+    }
+
+    applyTotalRotulosDuplication(Math.min(25, targetCount));
+  };
+
+  const handleTotalRotulosBlur = () => {
+    if (!totalRotulos || totalRotulos.trim() === '' || totalRotulos === '0') {
+      setTotalRotulos('1');
+      applyTotalRotulosDuplication(1);
+    }
+  };
+
+  const handleTotalCajasChange = (rawVal: string) => {
+    // Solo permitir números
+    const cleanVal = rawVal.replace(/\D/g, '');
+    setTotalCajas(cleanVal);
+
+    const currentSlot = slots.find((s) => s.id === activeSlotId) || slots[0];
+    const numRotulo = currentSlot.numeroRotulo || 1;
+    const rotCount = currentSlot.totalRotulos || (Number(totalRotulos) || 1);
+
     updateActiveSlot({
-      totalRotulos: clamped,
-      observacion: generarTextoBulto(activeSlot.id, clamped, totalCajas)
+      totalCajas: cleanVal,
+      observacion: generarTextoBulto(numRotulo, rotCount, cleanVal)
     });
   };
 
-  const handleTotalCajasChange = (newVal: string) => {
-    setTotalCajas(newVal);
-    updateActiveSlot({
-      totalCajas: newVal,
-      observacion: generarTextoBulto(activeSlot.id, totalRotulos, newVal)
-    });
+  const handleTotalCajasBlur = () => {
+    if (!totalCajas || totalCajas.trim() === '' || totalCajas === '0') {
+      handleTotalCajasChange('1');
+    }
   };
 
   const updateActiveSlot = (fields: Partial<RotuloSlotData>) => {
+    const targetSlot = slots.find((s) => s.id === activeSlotId);
+    const targetGroupId = targetSlot?.groupId;
+
     const updated = slots.map((s) => {
       if (s.id === activeSlotId) {
         return { ...s, ...fields };
+      }
+      // Sincronizar todos los rótulos duplicados del mismo grupo
+      if (targetGroupId && s.groupId === targetGroupId) {
+        const syncedFields = { ...fields };
+        delete syncedFields.id;
+        delete syncedFields.numeroRotulo;
+
+        if (fields.totalCajas !== undefined || fields.totalRotulos !== undefined) {
+          const slotNumRot = s.numeroRotulo || 1;
+          const slotTotRots = fields.totalRotulos !== undefined ? fields.totalRotulos : (s.totalRotulos || 1);
+          const slotTotCjs = fields.totalCajas !== undefined ? fields.totalCajas : (s.totalCajas || '1');
+          syncedFields.observacion = generarTextoBulto(slotNumRot, slotTotRots, slotTotCjs);
+        }
+        return { ...s, ...syncedFields };
       }
       return s;
     });
@@ -338,7 +609,7 @@ export default function RotulosA4Tab() {
         observacion: '',
         totalRotulos: 1,
         totalCajas: '1',
-        numeroRotulo: id,
+        numeroRotulo: 1,
         siglas: ''
       };
     });
@@ -374,11 +645,12 @@ export default function RotulosA4Tab() {
     // Reindexar correlativamente todos los slots para que sigan siendo 1..N
     const reindexedSlots = remainingSlots.map((s, idx) => {
       const newId = idx + 1;
+      const rotIdx = s.numeroRotulo || 1;
       return {
         ...s,
         id: newId,
-        numeroRotulo: newId,
-        observacion: s.totalRotulos && s.totalCajas ? generarTextoBulto(newId, s.totalRotulos, s.totalCajas) : s.observacion
+        numeroRotulo: rotIdx,
+        observacion: s.totalRotulos && s.totalCajas ? generarTextoBulto(rotIdx, s.totalRotulos, s.totalCajas) : s.observacion
       };
     });
 
@@ -410,12 +682,13 @@ export default function RotulosA4Tab() {
           totalRotulos: 1,
           totalCajas: '1',
           numeroRotulo: s.id,
-          siglas: ''
+          siglas: '',
+          groupId: undefined
         };
       }
       return s;
     });
-    setTotalRotulos(1);
+    setTotalRotulos('1');
     setTotalCajas('1');
     saveSlots(updated);
     const inSheetNum = ((activeSlotId - 1) % 5) + 1;
@@ -440,7 +713,8 @@ export default function RotulosA4Tab() {
           totalRotulos: 1,
           totalCajas: '1',
           numeroRotulo: s.id,
-          siglas: ''
+          siglas: '',
+          groupId: undefined
         };
       }
       return s;
@@ -462,7 +736,7 @@ export default function RotulosA4Tab() {
     saveSlots(DEFAULT_SLOTS);
     setCurrentSheet(1);
     setActiveSlotId(1);
-    setTotalRotulos(1);
+    setTotalRotulos('1');
     setTotalCajas('1');
     playSound('click');
     showToast('🧹 Todas las hojas reiniciadas a 1 hoja limpia (5 espacios).');
@@ -653,15 +927,24 @@ export default function RotulosA4Tab() {
         }
       }
 
-      // AMEXito solo debe rellenar ÚNICAMENTE el espacio activo seleccionado (solo 1 de los 5)
-      // Los demás espacios quedan intactos; el operador decide si duplicar con el botón
+      const targetSlot = slots.find((st) => st.id === activeSlotId);
+      const targetGroupId = targetSlot?.groupId;
+
       const updated = slots.map((s) => {
         if (s.id === activeSlotId) {
           const slotTotalCajas = updates.totalCajas || s.totalCajas || cjsNum;
           return {
             ...s,
             ...updates,
-            observacion: generarTextoBulto(s.id, totalRotulos, slotTotalCajas)
+            observacion: generarTextoBulto(s.numeroRotulo || 1, Number(totalRotulos) || 1, slotTotalCajas)
+          };
+        }
+        if (targetGroupId && s.groupId === targetGroupId) {
+          const slotTotalCajas = updates.totalCajas || s.totalCajas || cjsNum;
+          return {
+            ...s,
+            ...updates,
+            observacion: generarTextoBulto(s.numeroRotulo || 1, s.totalRotulos || (Number(totalRotulos) || 1), slotTotalCajas)
           };
         }
         return s;
@@ -1286,7 +1569,7 @@ export default function RotulosA4Tab() {
               <input
                 type="text"
                 className="rotulo-input"
-                placeholder="Ej: Kenneth Maldonado"
+                placeholder=""
                 value={activeSlot.nombre}
                 onChange={(e) => updateActiveSlot({ nombre: e.target.value.toUpperCase() })}
                 autoFocus
@@ -1298,7 +1581,7 @@ export default function RotulosA4Tab() {
               <input
                 type="text"
                 className="rotulo-input rotulo-input-dni"
-                placeholder="Ej: 72410845"
+                placeholder=""
                 value={activeSlot.dni}
                 onChange={(e) => updateActiveSlot({ dni: e.target.value.trim().toUpperCase() })}
               />
@@ -1309,7 +1592,7 @@ export default function RotulosA4Tab() {
               <input
                 type="tel"
                 className="rotulo-input rotulo-input-cel"
-                placeholder="Ej: 982432561"
+                placeholder=""
                 value={activeSlot.celular}
                 onChange={(e) => updateActiveSlot({ celular: e.target.value.trim() })}
               />
@@ -1333,7 +1616,7 @@ export default function RotulosA4Tab() {
                 type="text"
                 className="rotulo-input"
                 maxLength={110}
-                placeholder="Ej: LA LIBERTAD - TRUJILLO - AGENCIA TULUEARAS (Hasta 110 caracteres)"
+                placeholder=""
                 value={activeSlot.destino}
                 onChange={(e) => updateActiveSlot({ destino: e.target.value.toUpperCase() })}
               />
@@ -1354,26 +1637,34 @@ export default function RotulosA4Tab() {
                 <div className="rotulo-field-group">
                   <label className="rotulo-label">Cant. Rótulos:</label>
                   <input
-                    type="number"
-                    min={1}
-                    max={100}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     className="rotulo-input"
+                    placeholder=""
                     value={totalRotulos}
-                    onChange={(e) => handleTotalRotulosChange(Number(e.target.value))}
-                    title="Cantidad de rótulos del pedido (para órdenes de múltiples bultos)"
+                    onKeyDown={handleNumericKeyDown}
+                    onChange={(e) => handleTotalRotulosChange(e.target.value)}
+                    onBlur={handleTotalRotulosBlur}
+                    onPaste={handleNumericPaste}
+                    title="Cantidad de rótulos del pedido (solo números). Al poner 2 o 3 se duplican automáticamente en los espacios libres"
                   />
                 </div>
 
                 <div className="rotulo-field-group">
                   <label className="rotulo-label">Total Cajas:</label>
                   <input
-                    type="number"
-                    min={1}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     className="rotulo-input"
-                    placeholder="Ej: 30"
+                    placeholder=""
                     value={totalCajas}
+                    onKeyDown={handleNumericKeyDown}
                     onChange={(e) => handleTotalCajasChange(e.target.value)}
-                    title="Cantidad total de cajas enviadas por el cliente"
+                    onBlur={handleTotalCajasBlur}
+                    onPaste={handleNumericPaste}
+                    title="Cantidad total de cajas enviadas por el cliente (solo números)"
                   />
                 </div>
 
@@ -1382,7 +1673,7 @@ export default function RotulosA4Tab() {
                   <input
                     type="text"
                     className="rotulo-input rotulo-input-siglas"
-                    placeholder="Ej: CE150 ó CP 68"
+                    placeholder=""
                     value={activeSlot.siglas || ''}
                     onChange={(e) => updateActiveSlot({ siglas: e.target.value.toUpperCase() })}
                     title="Siglas identificadoras o clave del envío (ej: CE150, CP 68)"
@@ -1393,7 +1684,7 @@ export default function RotulosA4Tab() {
               <div className="embalaje-preview-bar">
                 <span className="embalaje-preview-label">Formato rótulo #{activeSlot.id}:</span>
                 <strong className="embalaje-preview-value">
-                  {generarTextoBulto(activeSlot.id, totalRotulos, totalCajas)}
+                  {generarTextoBulto(activeSlot.numeroRotulo || 1, Number(totalRotulos) || 1, totalCajas || '1')}
                   {activeSlot.siglas?.trim() ? ` • [${activeSlot.siglas.trim().toUpperCase()}]` : ''}
                 </strong>
               </div>
@@ -1405,7 +1696,7 @@ export default function RotulosA4Tab() {
                 <input
                   type="text"
                   className="rotulo-input"
-                  placeholder="AMEX COURIER PERÚ"
+                  placeholder=""
                   value={activeSlot.remitente || ''}
                   onChange={(e) => updateActiveSlot({ remitente: e.target.value.toUpperCase() })}
                 />
@@ -1415,7 +1706,7 @@ export default function RotulosA4Tab() {
                 <input
                   type="text"
                   className="rotulo-input"
-                  placeholder="Ej: Bulto 1/1"
+                  placeholder=""
                   value={activeSlot.observacion || ''}
                   onChange={(e) => updateActiveSlot({ observacion: e.target.value.toUpperCase() })}
                 />
@@ -1489,9 +1780,6 @@ export default function RotulosA4Tab() {
 
           {/* Hoja A4 en Pantalla (Muestra la hoja activa con sus 5 franjas) */}
           <div className="rotulos-a4-sheet screen-only-sheet">
-            <div className="sheet-corner-tag">
-              HOJA {currentSheet} DE {totalSheets}
-            </div>
             {currentSheetSlots.map((slot) => renderStrip(slot, true))}
           </div>
 
