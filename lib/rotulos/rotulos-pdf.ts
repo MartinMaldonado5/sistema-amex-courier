@@ -34,19 +34,27 @@ export async function generateRotulosA4Pdf(
 
   const stripHeight = 59.4; // 297 mm / 5 = 59.4 mm
   const pageWidth = 210.0;  // 210 mm
+  const totalSheets = Math.max(1, Math.ceil(slots.length / 5));
 
-  for (let i = 0; i < 5; i++) {
-    const slot = slots[i] || {
-      id: i + 1,
-      nombre: '',
-      dni: '',
-      celular: '',
-      agencia: 'SHALOM',
-      destino: ''
-    };
+  for (let pageIdx = 0; pageIdx < totalSheets; pageIdx++) {
+    if (pageIdx > 0) {
+      doc.addPage('a4', 'portrait');
+    }
 
-    const yStart = i * stripHeight;
-    const yEnd = yStart + stripHeight;
+    const pageSlots = slots.slice(pageIdx * 5, pageIdx * 5 + 5);
+
+    for (let i = 0; i < 5; i++) {
+      const slot = pageSlots[i] || {
+        id: pageIdx * 5 + i + 1,
+        nombre: '',
+        dni: '',
+        celular: '',
+        agencia: 'SHALOM',
+        destino: ''
+      };
+
+      const yStart = i * stripHeight;
+      const yEnd = yStart + stripHeight;
 
     // Solo dibujar contenido si la franja tiene datos
     const hasData = Boolean(
@@ -271,11 +279,12 @@ export async function generateRotulosA4Pdf(
       doc.setLineDashPattern([], 0); // Restaurar línea sólida
     }
   }
+  }
 
   // Descarga del PDF
   const dateStr = new Date().toISOString().slice(0, 10);
   const cleanTitle = sheetTitle.replace(/[\\/:*?"<>|]/g, '_').trim();
-  const filename = `${cleanTitle}_${dateStr}.pdf`;
+  const filename = `${cleanTitle}_${totalSheets}Hojas_${dateStr}.pdf`;
 
   const pdfBlob = doc.output('blob');
   saveAs(pdfBlob, filename);
