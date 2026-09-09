@@ -2583,38 +2583,55 @@
     width: 210mm !important;
     height: 297mm !important;
     max-height: 297mm !important;
-    max-width: none !important;
+    max-width: 210mm !important;
     box-shadow: none !important;
     border-radius: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
     page-break-after: always !important;
+    break-after: page !important;
     page-break-inside: avoid !important;
+    break-inside: avoid-page !important;
     background: #ffffff !important;
     display: flex !important;
     flex-direction: column !important;
     box-sizing: border-box !important;
+    overflow: hidden !important;
   }
 
   .rotulos-a4-sheet.print-sheet-page:last-child {
     page-break-after: auto !important;
+    break-after: auto !important;
   }
 
-  /* Cada una de las 5 franjas mide exactamente 59.4 mm de alto */
+  /* Cada una de las 5 franjas mide exactamente el 20% (59.4 mm) de la hoja A4 */
   .rotulo-strip-preview {
+    flex: 1 1 0 !important;
     width: 210mm !important;
-    height: 59.4mm !important;
-    max-height: 59.4mm !important;
-    padding: 6mm 12mm !important;
+    height: 20% !important;
+    max-height: 20% !important;
+    padding: 5mm 12mm !important;
     box-sizing: border-box !important;
     border-bottom: 0.4mm dashed #94a3b8 !important;
     page-break-inside: avoid !important;
+    break-inside: avoid !important;
     background: #ffffff !important;
     outline: none !important;
+    overflow: hidden !important;
   }
 
   .rotulo-strip-preview:last-child {
     border-bottom: none !important;
+  }
+
+  .strip-empty-placeholder {
+    color: #cbd5e1 !important;
+    font-size: 8.5pt !important;
+    font-style: italic !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 100% !important;
   }
 
   .strip-destinatario-row {

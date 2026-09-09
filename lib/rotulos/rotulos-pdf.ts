@@ -254,21 +254,14 @@ export async function generateRotulosA4Pdf(
         }
       }
 
-      // 6. Línea divisoria interna sutil opcional o indicativo
-      doc.setDrawColor(226, 232, 240); // Slate-200
-      doc.setLineWidth(0.3);
-      doc.line(12, yStart + 47.5, pageWidth - 12, yStart + 47.5);
-
-      doc.setFont('helvetica', 'italic');
-      doc.setFontSize(6.8);
-      doc.setTextColor(148, 163, 184);
-      doc.text('ENTREGA EN AGENCIA / ENCOMIENDA  •  VERIFICAR DNI AL ENTREGAR', 12, yStart + 51.5);
     } else {
       // Franja vacía: marca de agua tenue
+      const sheetNum = pageIdx + 1;
+      const slotInSheet = i + 1;
       doc.setFont('helvetica', 'italic');
-      doc.setFontSize(10);
+      doc.setFontSize(9.5);
       doc.setTextColor(203, 213, 225); // Slate-300
-      doc.text(`[ Espacio #${slot.id} - Vacío ]`, pageWidth / 2, yStart + 30, { align: 'center' });
+      doc.text(`[ Hoja ${sheetNum} — Espacio #${slotInSheet} libre ]`, pageWidth / 2, yStart + 29.7, { align: 'center' });
     }
 
     // 6. Línea de corte punteada entre franjas (solo las rayas, sin textos)
