@@ -6,7 +6,7 @@ import { dniDb, DniSlotData } from '@/lib/dni-matrix/db';
 import { exportMasterDocx, exportZipDocx, exportToDirectoryFolder, DniPrintSize, DNI_SIZE_PRESETS } from '@/lib/dni-matrix/docx-exporter';
 import { convertDocxFolderToPdf, exportPdfZip, exportPdfToDirectoryFolder } from '@/lib/dni-matrix/pdf-converter';
 import { Paquete, Cliente } from '@/types';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, SlidersHorizontal, Trash2, X, AlertTriangle, Layers } from 'lucide-react';
 
 interface DniMatrixTabProps {
   paquetes?: Paquete[];
@@ -52,6 +52,7 @@ export default function DniMatrixTab({
   const [showPreviewModal, setShowPreviewModal] = useState<boolean>(false);
   const [showPdfModal, setShowPdfModal] = useState<boolean>(false);
   const [showAmexLinkModal, setShowAmexLinkModal] = useState<boolean>(false);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState<boolean>(false);
 
   // Estados de exportación
   const [isExporting, setIsExporting] = useState<boolean>(false);
@@ -576,6 +577,7 @@ export default function DniMatrixTab({
         const targetSide = focusedSide || 'anverso';
         rotateSide(targetSide, 90);
       } else if (e.key === 'Escape') {
+        setShowDeleteConfirmModal(false);
         setShowConfigModal(false);
         setShowPreviewModal(false);
         setShowPdfModal(false);
@@ -834,15 +836,9 @@ export default function DniMatrixTab({
     }
   };
 
-  // Limpiar todo el lote
-  const handleClearAllData = async () => {
-    if (confirm('¿ATENCIÓN: Estás seguro de borrar todos los expedientes y fotos? Esta acción no se puede deshacer.')) {
-      await dniDb.clearAllSlots();
-      setSlotsData({});
-      setActiveSlotId(1);
-      setShowConfigModal(false);
-      showToast('Todos los datos han sido borrados', 'success');
-    }
+  // Limpiar todo el lote (abre modal de confirmación personalizado en lugar de confirm del navegador)
+  const handleClearAllData = () => {
+    setShowDeleteConfirmModal(true);
   };
 
   return (
@@ -1804,17 +1800,49 @@ export default function DniMatrixTab({
 
       {/* MODAL: AJUSTES Y CONFIGURACIÓN */}
       {showConfigModal && (
-        <div className="modal-overlay">
-          <div className="modal-card">
-            <div className="modal-header">
-              <h3>Configuración de Lote y Cupos</h3>
-              <button onClick={() => setShowConfigModal(false)} className="modal-close-btn">
-                &times;
+        <div className="dni-modal-overlay">
+          <div className="dni-modal-card" style={{ maxWidth: '540px' }}>
+            <div className="dni-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background: 'rgba(56, 189, 248, 0.12)',
+                    border: '1px solid rgba(56, 189, 248, 0.25)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#38bdf8'
+                  }}
+                >
+                  <SlidersHorizontal size={18} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#ffffff' }}>
+                    Configuración de Lote y Cupos
+                  </h3>
+                  <p style={{ margin: 0, fontSize: '0.74rem', color: '#94a3b8' }}>
+                    Ajusta la capacidad de la matriz y el tamaño para Word/PDF
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowConfigModal(false)}
+                className="dni-modal-close-btn"
+                title="Cerrar ajustes"
+              >
+                <X size={18} />
               </button>
             </div>
-            <div className="modal-body">
+            <div className="dni-modal-body">
               <div className="form-group">
-                <label>Cantidad total de cupos en la matriz:</label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#f8fafc', fontWeight: 600, fontSize: '0.86rem' }}>
+                  <Layers size={16} style={{ color: '#38bdf8' }} />
+                  Cantidad total de cupos en la matriz:
+                </label>
                 <select
                   value={totalSlots}
                   onChange={async (e) => {
@@ -1823,119 +1851,108 @@ export default function DniMatrixTab({
                     await dniDb.saveSetting('totalSlots', count);
                   }}
                   className="form-select"
+                  style={{ marginTop: '6px' }}
                 >
                   <option value="50">50 Cupos (#001 a #050)</option>
-                  <option value="100">100 Cupos (#001 a #100) (Estándar)</option>
+                  <option value="100">100 Cupos (#001 a #100) — Estándar</option>
                   <option value="200">200 Cupos (#001 a #200)</option>
                   <option value="300">300 Cupos (#001 a #300)</option>
                   <option value="500">500 Cupos (#001 a #500)</option>
                   <option value="1000">1000 Cupos (#0001 a #1000)</option>
                 </select>
-                <small>Si cambias el número, los expedientes ya cargados dentro del rango se conservan.</small>
+                <small style={{ color: '#94a3b8', fontSize: '0.74rem', marginTop: '5px', display: 'block' }}>
+                  💡 Si cambias la cantidad, los expedientes ya cargados dentro del nuevo rango se conservan.
+                </small>
               </div>
 
-              <hr className="modal-divider" />
+              <hr className="dni-modal-divider" />
 
               {/* Selector de Tamaño de DNI en Word y PDF */}
               <div className="form-group">
-                <label className="font-bold" style={{ color: 'var(--accent-cyan)' }}>
-                  📐 Tamaño de los DNI en la Hoja Word y PDF:
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#38bdf8', fontWeight: 700, fontSize: '0.86rem', marginBottom: '8px' }}>
+                  📐 Tamaño de los DNI en Hoja Word y PDF:
                 </label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '10px',
-                      cursor: 'pointer',
-                      padding: '10px 12px',
-                      borderRadius: '8px',
-                      background: printSize === 'large' ? 'rgba(56, 189, 248, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-                      border: printSize === 'large' ? '1.5px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.08)'
+                    className={`dni-size-card ${printSize === 'large' ? 'active' : ''}`}
+                    onClick={async () => {
+                      setPrintSize('large');
+                      await dniDb.saveSetting('dniPrintSize', 'large');
+                      showToast('Tamaño Grande (16.5 × 10.4 cm) guardado', 'success');
                     }}
                   >
                     <input
                       type="radio"
                       name="printSizeOption"
                       checked={printSize === 'large'}
-                      onChange={async () => {
-                        setPrintSize('large');
-                        await dniDb.saveSetting('dniPrintSize', 'large');
-                        showToast('Tamaño Grande (16.5 × 10.4 cm) guardado', 'success');
-                      }}
-                      style={{ marginTop: '3px' }}
+                      onChange={() => {}}
                     />
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#f8fafc' }}>
-                        Grande (16.5 &times; 10.4 cm) <span className="badge badge-ready" style={{ marginLeft: '6px' }}>Recomendado</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#f8fafc' }}>
+                          Grande (16.5 &times; 10.4 cm)
+                        </span>
+                        <span className="badge badge-ready" style={{ fontSize: '0.7rem', padding: '2px 8px' }}>Recomendado</span>
                       </div>
-                      <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '2px' }}>
+                      <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '3px', lineHeight: 1.4 }}>
                         Ocupa la mayor parte de la hoja A4 sin dejar espacios vacíos exagerados. Información y sellos del DNI 100% nítidos y legibles (1 sola página exacta).
                       </div>
                     </div>
                   </label>
 
                   <label
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '10px',
-                      cursor: 'pointer',
-                      padding: '10px 12px',
-                      borderRadius: '8px',
-                      background: printSize === 'xlarge' ? 'rgba(56, 189, 248, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-                      border: printSize === 'xlarge' ? '1.5px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.08)'
+                    className={`dni-size-card ${printSize === 'xlarge' ? 'active' : ''}`}
+                    onClick={async () => {
+                      setPrintSize('xlarge');
+                      await dniDb.saveSetting('dniPrintSize', 'xlarge');
+                      showToast('Tamaño Extra Grande (17.5 × 11.0 cm) guardado', 'success');
                     }}
                   >
                     <input
                       type="radio"
                       name="printSizeOption"
                       checked={printSize === 'xlarge'}
-                      onChange={async () => {
-                        setPrintSize('xlarge');
-                        await dniDb.saveSetting('dniPrintSize', 'xlarge');
-                        showToast('Tamaño Extra Grande (17.5 × 11.0 cm) guardado', 'success');
-                      }}
-                      style={{ marginTop: '3px' }}
+                      onChange={() => {}}
                     />
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#f8fafc' }}>
-                        Extra Grande (17.5 &times; 11.0 cm)
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#f8fafc' }}>
+                          Extra Grande (17.5 &times; 11.0 cm)
+                        </span>
+                        <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '4px', background: 'rgba(99, 102, 241, 0.18)', color: '#818cf8', fontWeight: 700 }}>
+                          Máximo Detalle
+                        </span>
                       </div>
-                      <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '2px' }}>
+                      <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '3px', lineHeight: 1.4 }}>
                         Ocupación máxima de margen a margen (1.5 cm) en la hoja A4 para casos donde se requiere ver cada detalle microscópico.
                       </div>
                     </div>
                   </label>
 
                   <label
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '10px',
-                      cursor: 'pointer',
-                      padding: '10px 12px',
-                      borderRadius: '8px',
-                      background: printSize === 'standard' ? 'rgba(56, 189, 248, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-                      border: printSize === 'standard' ? '1.5px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.08)'
+                    className={`dni-size-card ${printSize === 'standard' ? 'active' : ''}`}
+                    onClick={async () => {
+                      setPrintSize('standard');
+                      await dniDb.saveSetting('dniPrintSize', 'standard');
+                      showToast('Tamaño Estándar (12.0 × 7.5 cm) guardado', 'info');
                     }}
                   >
                     <input
                       type="radio"
                       name="printSizeOption"
                       checked={printSize === 'standard'}
-                      onChange={async () => {
-                        setPrintSize('standard');
-                        await dniDb.saveSetting('dniPrintSize', 'standard');
-                        showToast('Tamaño Estándar (12.0 × 7.5 cm) guardado', 'info');
-                      }}
-                      style={{ marginTop: '3px' }}
+                      onChange={() => {}}
                     />
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#f8fafc' }}>
-                        Estándar (12.0 &times; 7.5 cm)
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#f8fafc' }}>
+                          Estándar (12.0 &times; 7.5 cm)
+                        </span>
+                        <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '4px', background: 'rgba(148, 163, 184, 0.15)', color: '#cbd5e1', fontWeight: 600 }}>
+                          Reglamentario
+                        </span>
                       </div>
-                      <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '2px' }}>
+                      <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '3px', lineHeight: 1.4 }}>
                         Medida reglamentaria tradicional más pequeña, centrada en la hoja con amplios márgenes alrededor.
                       </div>
                     </div>
@@ -1943,25 +1960,61 @@ export default function DniMatrixTab({
                 </div>
               </div>
 
-              <hr className="modal-divider" />
+              <hr className="dni-modal-divider" />
 
-              <div className="form-group">
-                <label className="text-danger font-bold">Zona de Peligro:</label>
-                <p className="text-muted" style={{ fontSize: '0.8rem', marginTop: '4px' }}>
-                  Borra todos los DNIs, números y fotos guardadas en este navegador para iniciar un nuevo lote de trabajo.
+              <div
+                style={{
+                  background: 'rgba(239, 68, 68, 0.06)',
+                  border: '1px solid rgba(239, 68, 68, 0.22)',
+                  borderRadius: '12px',
+                  padding: '14px 16px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ef4444', fontWeight: 700, fontSize: '0.88rem' }}>
+                  <AlertTriangle size={16} />
+                  <span>Zona de Peligro</span>
+                </div>
+                <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '6px 0 12px 0', lineHeight: 1.4 }}>
+                  Borra todos los DNIs, números y fotos guardadas en este navegador para iniciar un nuevo lote de trabajo en blanco.
                 </p>
                 <button
                   type="button"
-                  onClick={handleClearAllData}
-                  className="btn btn-secondary"
-                  style={{ borderColor: 'rgba(239, 68, 68, 0.4)', color: '#f87171', marginTop: '8px' }}
+                  onClick={() => setShowDeleteConfirmModal(true)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 14px',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    borderRadius: '8px',
+                    background: 'rgba(239, 68, 68, 0.12)',
+                    border: '1px solid rgba(239, 68, 68, 0.35)',
+                    color: '#f87171',
+                    cursor: 'pointer',
+                    transition: 'all 0.18s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(239, 68, 68, 0.22)';
+                    e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.55)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
+                    e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+                  }}
                 >
-                  🗑️ Borrar Todos los Datos del Lote
+                  <Trash2 size={15} />
+                  Borrar Todos los Datos del Lote
                 </button>
               </div>
             </div>
-            <div className="modal-footer">
-              <button onClick={() => setShowConfigModal(false)} className="btn btn-secondary">
+            <div className="dni-modal-footer">
+              <button
+                type="button"
+                onClick={() => setShowConfigModal(false)}
+                className="btn btn-secondary"
+                style={{ minWidth: '90px' }}
+              >
                 Cerrar
               </button>
             </div>
@@ -1971,21 +2024,21 @@ export default function DniMatrixTab({
 
       {/* MODAL: VISTA PREVIA HOJA A4 REAL */}
       {showPreviewModal && (
-        <div className="modal-overlay">
-          <div className="modal-card modal-large">
-            <div className="modal-header">
+        <div className="dni-modal-overlay">
+          <div className="dni-modal-card dni-modal-large">
+            <div className="dni-modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3>Vista Previa Impresión A4</h3>
+                <h3 style={{ margin: 0, color: '#ffffff' }}>Vista Previa Impresión A4</h3>
                 <span className="badge badge-ready">Expediente #{padNum(activeSlotId)}</span>
                 <span className="badge badge-partial">
                   {DNI_SIZE_PRESETS[printSize]?.widthCm} &times; {DNI_SIZE_PRESETS[printSize]?.heightCm} cm
                 </span>
               </div>
-              <button onClick={() => setShowPreviewModal(false)} className="modal-close-btn">
+              <button onClick={() => setShowPreviewModal(false)} className="dni-modal-close-btn" title="Cerrar">
                 &times;
               </button>
             </div>
-            <div className="modal-body" style={{ textAlign: 'center', background: '#0a0d14', padding: '24px' }}>
+            <div className="dni-modal-body" style={{ textAlign: 'center', background: '#0a0d14', padding: '24px' }}>
               <div
                 style={{
                   display: 'inline-block',
@@ -2090,7 +2143,7 @@ export default function DniMatrixTab({
                 </div>
               </div>
             </div>
-            <div className="modal-footer">
+            <div className="dni-modal-footer">
               <span className="text-muted" style={{ fontSize: '0.8rem' }}>
                 Medidas exactas para impresión física en hoja A4 (21.0 &times; 29.7 cm). Tamaño actual: {DNI_SIZE_PRESETS[printSize]?.widthCm} &times; {DNI_SIZE_PRESETS[printSize]?.heightCm} cm.
               </span>
@@ -2104,11 +2157,11 @@ export default function DniMatrixTab({
 
       {/* MODAL: CONVERSOR DOCX A PDF */}
       {showPdfModal && (
-        <div className="modal-overlay">
-          <div className="modal-card modal-large">
-            <div className="modal-header">
+        <div className="dni-modal-overlay">
+          <div className="dni-modal-card dni-modal-large">
+            <div className="dni-modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3>Conversor Masivo de Word (.docx) a PDF</h3>
+                <h3 style={{ margin: 0, color: '#ffffff' }}>Conversor Masivo de Word (.docx) a PDF</h3>
                 <span
                   style={{
                     background: 'rgba(16, 185, 129, 0.2)',
@@ -2122,11 +2175,11 @@ export default function DniMatrixTab({
                   Motor Directo A4
                 </span>
               </div>
-              <button onClick={() => setShowPdfModal(false)} className="modal-close-btn">
+              <button onClick={() => setShowPdfModal(false)} className="dni-modal-close-btn" title="Cerrar">
                 &times;
               </button>
             </div>
-            <div className="modal-body">
+            <div className="dni-modal-body">
               <div className="form-group">
                 <label className="form-label font-bold">1. Carpeta con los archivos Word (.docx):</label>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
@@ -2212,7 +2265,7 @@ export default function DniMatrixTab({
                 </div>
               )}
             </div>
-            <div className="modal-footer">
+            <div className="dni-modal-footer">
               <span className="text-muted" style={{ fontSize: '0.74rem' }}>
                 💡 Convierte los Word a PDF A4 con medidas exactas (12 &times; 7.5 cm) y guarda los archivos directamente en tu equipo.
               </span>
@@ -2236,15 +2289,15 @@ export default function DniMatrixTab({
 
       {/* MODAL: VINCULAR CON CLIENTE O GUÍA AMEX */}
       {showAmexLinkModal && (
-        <div className="modal-overlay">
-          <div className="modal-card">
-            <div className="modal-header">
-              <h3>Vincular Cupo #{padNum(activeSlotId)} con AMEX</h3>
-              <button onClick={() => setShowAmexLinkModal(false)} className="modal-close-btn">
+        <div className="dni-modal-overlay">
+          <div className="dni-modal-card">
+            <div className="dni-modal-header">
+              <h3 style={{ margin: 0, color: '#ffffff' }}>Vincular Cupo #{padNum(activeSlotId)} con AMEX</h3>
+              <button onClick={() => setShowAmexLinkModal(false)} className="dni-modal-close-btn" title="Cerrar">
                 &times;
               </button>
             </div>
-            <div className="modal-body">
+            <div className="dni-modal-body">
               <div className="form-group">
                 <label>Seleccionar Cliente Registrado:</label>
                 <select
@@ -2304,7 +2357,7 @@ export default function DniMatrixTab({
                 </select>
               </div>
             </div>
-            <div className="modal-footer">
+            <div className="dni-modal-footer">
               <button onClick={() => setShowAmexLinkModal(false)} className="btn btn-secondary">
                 Cancelar
               </button>
@@ -2315,7 +2368,7 @@ export default function DniMatrixTab({
 
       {/* MODAL: ZOOM / AMPLIAR DNI */}
       {zoomImage && (
-        <div className="modal-overlay" onClick={() => setZoomImage(null)} style={{ zIndex: 1500 }}>
+        <div className="dni-modal-overlay" onClick={() => setZoomImage(null)} style={{ zIndex: 1500 }}>
           <div
             className="zoom-lightbox-card"
             onClick={(e) => e.stopPropagation()}
@@ -2340,7 +2393,7 @@ export default function DniMatrixTab({
               <button
                 type="button"
                 onClick={() => setZoomImage(null)}
-                className="modal-close-btn"
+                className="dni-modal-close-btn"
                 style={{ fontSize: '1.3rem', padding: '4px 10px', background: 'transparent', border: 'none', color: '#cbd5e1', cursor: 'pointer' }}
               >
                 &times;
@@ -2362,6 +2415,106 @@ export default function DniMatrixTab({
             </div>
             <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '0.74rem', color: 'var(--text-muted)' }}>
               Presiona Esc o haz clic fuera para cerrar
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: CONFIRMACIÓN ELEGANTE DE BORRADO DE LOTE */}
+      {showDeleteConfirmModal && (
+        <div className="dni-modal-overlay" style={{ zIndex: 1200 }}>
+          <div
+            className="dni-modal-card dni-modal-sm"
+            style={{
+              border: '1px solid rgba(239, 68, 68, 0.45)',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.9), 0 0 35px rgba(239, 68, 68, 0.22)'
+            }}
+          >
+            <div className="dni-modal-body" style={{ padding: '28px 24px', textAlign: 'center' }}>
+              <div
+                style={{
+                  width: '62px',
+                  height: '62px',
+                  borderRadius: '50%',
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  border: '2px solid rgba(239, 68, 68, 0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px auto',
+                  color: '#ef4444',
+                  boxShadow: '0 0 20px rgba(239, 68, 68, 0.25)'
+                }}
+              >
+                <Trash2 size={28} />
+              </div>
+
+              <h3 style={{ fontSize: '1.18rem', fontWeight: 800, color: '#f8fafc', marginBottom: '8px', letterSpacing: '-0.2px' }}>
+                ¿Borrar todos los datos del lote?
+              </h3>
+
+              <p style={{ fontSize: '0.86rem', color: '#94a3b8', lineHeight: 1.5, marginBottom: '16px' }}>
+                Esta acción eliminará de forma <strong>permanente e irreversible</strong> todos los expedientes (#001 a #{padNum(totalSlots)}), nombres cargados, y fotos de anverso y reverso guardadas en este navegador.
+              </p>
+
+              <div
+                style={{
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  borderRadius: '10px',
+                  padding: '10px 14px',
+                  fontSize: '0.8rem',
+                  color: '#fca5a5',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  marginBottom: '22px',
+                  textAlign: 'left'
+                }}
+              >
+                <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+                <span>Esta acción no se puede deshacer. Se reiniciará la matriz en blanco con el cupo #001.</span>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirmModal(false)}
+                  className="btn btn-secondary"
+                  style={{ flex: 1, padding: '10px 16px', fontWeight: 600 }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await dniDb.clearAllSlots();
+                    setSlotsData({});
+                    setActiveSlotId(1);
+                    setShowDeleteConfirmModal(false);
+                    setShowConfigModal(false);
+                    showToast('Todos los datos del lote han sido eliminados correctamente', 'success');
+                  }}
+                  style={{
+                    flex: 1.3,
+                    padding: '10px 16px',
+                    fontWeight: 700,
+                    background: '#ef4444',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    boxShadow: '0 4px 14px rgba(239, 68, 68, 0.4)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Trash2 size={16} />
+                  Sí, Borrar Todo
+                </button>
+              </div>
             </div>
           </div>
         </div>

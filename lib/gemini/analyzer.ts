@@ -235,3 +235,192 @@ Reglas estrictas:
     throw new Error('No se pudo procesar la respuesta de la Inteligencia Artificial.');
   }
 }
+
+export interface ShalomBoletaExtractedData {
+  nro_orden: string;
+  codigo: string;
+  fecha_emision: string; // YYYY-MM-DD
+  hora_emision: string;
+  fecha_traslado: string; // YYYY-MM-DD
+  origen: string;
+  destino: string;
+  remitente_nombre: string;
+  remitente_dni: string;
+  remitente_telefono: string;
+  destinatario_nombre: string;
+  destinatario_dni: string;
+  destinatario_telefono: string;
+  tipo_entrega: string;
+  forma_pago: string;
+  monto_total: number;
+  moneda: string;
+  descripcion: string;
+  cantidad: number;
+  unidad_medida: string;
+  peso: number;
+  observaciones: string;
+  // Campos de compatibilidad
+  numero_guia: string;
+  codigo_seguimiento: string;
+  remitente_documento: string;
+  destinatario_documento: string;
+  modalidad_pago: string;
+  contenido_bultos: string;
+  peso_total: number;
+  agencia_destino?: string;
+}
+
+/**
+ * Analiza un documento PDF o imagen de ticket / boleta de SHALOM (ej: DATOS TICKET SHALOM)
+ * Utiliza Gemini 3.5 Flash Lite para extracción estructurada de alta precisión
+ */
+export async function analyzeShalomBoletaPdf(pdfBase64: string): Promise<ShalomBoletaExtractedData> {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY no está configurada.');
+  }
+
+  const { mimeType, base64 } = parseBase64Data(pdfBase64);
+  const ai = new GoogleGenAI({ apiKey });
+
+  const prompt = `Analiza detalladamente este comprobante impreso correspondiente a un TICKET / BOLETA DE SHALOM (DATOS TICKET SHALOM / SHALOM EMPRESARIAL S.A.C).
+
+Examina minuciosamente todas las secciones del ticket:
+1. Encabezado y sub-encabezado con ciudad y sede (ej: "AREQUIPA - CERRO COLORADO / ZAMACOLA - TERRESTRE").
+2. Bloque "DATOS":
+   - "NRO. ORDEN:" (ej: 95294190)
+   - "CÓDIGO:" (código alfanumérico corto, ej: 7HH7)
+   - "Fecha Emision:" (Fecha y hora, ej: 2026-09-09 17:53:14)
+   - "Fecha Traslado:" (Fecha programada de traslado, ej: 2026-09-10)
+3. Bloques de Origen y Destino:
+   - "Origen:" (dirección o agencia de salida)
+   - "Destino:" (dirección o agencia de llegada)
+4. "DATOS DEL REMITENTE":
+   - "Nombre:" (Nombres y apellidos o razón social)
+   - "DNI:" o RUC
+   - "Telefono:"
+5. "DATOS DEL DESTINATARIO":
+   - "Nombre:" (Nombres y apellidos de quien recibe)
+   - "DNI:" o RUC
+   - "Telefono:"
+6. "ENTREGA":
+   - "Direccion:" o modalidad (ej: "ENTREGAR EN AGENCIA" o dirección a domicilio)
+7. "FORMA DE PAGO": (ej: "Pendiente de Pago", "Pagado", "Contado", "Crédito")
+8. Tabla de Ítems / Encomienda:
+   - "Descripción": (ej: "BULTO", "PAQUETE", etc.)
+   - "Cantidad": (número entero, ej: 1)
+   - "Unidad de medida": (ej: "Volumen", "Peso", "Unidad")
+   - "Peso": (valor numérico decimal, ej: 0.120)
+9. "Observaciones:" (textos informativos, seguros, garantías, etc.)
+10. "TOTAL: S/." (Importe total en soles, ej: 33.00)
+
+Devuelve EXCLUSIVAMENTE un objeto JSON estricto sin markdown:
+{
+  "nro_orden": "95294190",
+  "codigo": "7HH7",
+  "fecha_emision": "YYYY-MM-DD",
+  "hora_emision": "HH:mm:ss",
+  "fecha_traslado": "YYYY-MM-DD",
+  "origen": "ORIGEN DETALLADO",
+  "destino": "DESTINO DETALLADO",
+  "remitente_nombre": "NOMBRE REMITENTE",
+  "remitente_dni": "DNI REMITENTE",
+  "remitente_telefono": "TELEFONO REMITENTE",
+  "destinatario_nombre": "NOMBRE DESTINATARIO",
+  "destinatario_dni": "DNI DESTINATARIO",
+  "destinatario_telefono": "TELEFONO DESTINATARIO",
+  "tipo_entrega": "ENTREGAR EN AGENCIA",
+  "forma_pago": "Pendiente de Pago",
+  "descripcion": "BULTO",
+  "cantidad": 1,
+  "unidad_medida": "Volumen",
+  "peso": 0.120,
+  "observaciones": "TEXTO DE OBSERVACIONES",
+  "monto_total": 33.00,
+  "moneda": "PEN"
+}
+
+Reglas estrictas:
+- Todo en mayúsculas salvo fechas u horas.
+- Fechas siempre en formato ISO YYYY-MM-DD.
+- Si algún dato no aparece o no es legible, asigna "" (cadena vacía) o 0 (cero) en campos numéricos.
+- No agregues explicaciones ni comillas invertidas markdown.`;
+
+  const response = await ai.models.generateContent({
+    model: DEFAULT_GEMINI_MODEL,
+    contents: [
+      {
+        role: 'user',
+        parts: [
+          { inlineData: { mimeType: mimeType || 'application/pdf', data: base64 } },
+          { text: prompt }
+        ]
+      }
+    ]
+  });
+
+  const text = response.text || '{}';
+  const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+  try {
+    const parsed = JSON.parse(cleanJson);
+    const nroOrden = (parsed.nro_orden || parsed.numero_guia || '').trim().toUpperCase();
+    const codigo = (parsed.codigo || parsed.codigo_seguimiento || '').trim().toUpperCase();
+    const fechaEmision = (parsed.fecha_emision || '').trim();
+    const horaEmision = (parsed.hora_emision || '').trim();
+    const fechaTraslado = (parsed.fecha_traslado || '').trim();
+    const remitenteNombre = (parsed.remitente_nombre || 'AMEX COURIER').trim().toUpperCase();
+    const remitenteDni = (parsed.remitente_dni || parsed.remitente_documento || '').trim();
+    const remitenteTel = (parsed.remitente_telefono || '').trim();
+    const destNombre = (parsed.destinatario_nombre || '').trim().toUpperCase();
+    const destDni = (parsed.destinatario_dni || parsed.destinatario_documento || '').trim();
+    const destTel = (parsed.destinatario_telefono || '').trim();
+    const origen = (parsed.origen || 'LIMA').trim().toUpperCase();
+    const destino = (parsed.destino || '').trim().toUpperCase();
+    const tipoEntrega = (parsed.tipo_entrega || 'ENTREGAR EN AGENCIA').trim().toUpperCase();
+    const formaPago = (parsed.forma_pago || 'Pendiente de Pago').trim();
+    const desc = (parsed.descripcion || parsed.contenido_bultos || 'BULTO').trim().toUpperCase();
+    const cantidad = parseInt(parsed.cantidad, 10) || 1;
+    const unidadMedida = (parsed.unidad_medida || 'Volumen').trim();
+    const peso = parseFloat(parsed.peso || parsed.peso_total) || 0;
+    const montoTotal = parseFloat(parsed.monto_total) || 0;
+    const observaciones = (parsed.observaciones || '').trim();
+
+    return {
+      nro_orden: nroOrden,
+      codigo,
+      fecha_emision: fechaEmision,
+      hora_emision: horaEmision,
+      fecha_traslado: fechaTraslado,
+      origen,
+      destino,
+      remitente_nombre: remitenteNombre,
+      remitente_dni: remitenteDni,
+      remitente_telefono: remitenteTel,
+      destinatario_nombre: destNombre,
+      destinatario_dni: destDni,
+      destinatario_telefono: destTel,
+      tipo_entrega: tipoEntrega,
+      forma_pago: formaPago,
+      monto_total: montoTotal,
+      moneda: (parsed.moneda || 'PEN').trim().toUpperCase(),
+      descripcion: desc,
+      cantidad,
+      unidad_medida: unidadMedida,
+      peso,
+      observaciones,
+      // Alias
+      numero_guia: nroOrden || codigo,
+      codigo_seguimiento: codigo,
+      remitente_documento: remitenteDni,
+      destinatario_documento: destDni,
+      modalidad_pago: formaPago.toUpperCase().includes('PENDIENTE') ? 'PAGO_DESTINO' : formaPago.toUpperCase(),
+      contenido_bultos: desc,
+      peso_total: peso,
+      agencia_destino: tipoEntrega
+    };
+  } catch (err) {
+    console.error('Error al parsear respuesta JSON de Gemini para ticket Shalom:', cleanJson, err);
+    throw new Error('No se pudo estructurar la información del comprobante de Shalom.');
+  }
+}

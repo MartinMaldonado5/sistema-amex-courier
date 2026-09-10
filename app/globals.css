@@ -252,11 +252,14 @@ body {
   padding: 0 !important;
   color: #f8fafc !important;
   overflow-x: hidden;
+  overflow-y: auto !important;
+  scrollbar-width: thin;
+  scrollbar-color: #334155 #0a0d14;
 }
 
 .main-content.dni-matrix-mode::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
 }
 
 .main-content.dni-matrix-mode::-webkit-scrollbar-track {
@@ -266,10 +269,11 @@ body {
 .main-content.dni-matrix-mode::-webkit-scrollbar-thumb {
   background: #1e293b;
   border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .main-content.dni-matrix-mode::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #38bdf8;
 }
 
 /* Custom Sleek Scrollbar */

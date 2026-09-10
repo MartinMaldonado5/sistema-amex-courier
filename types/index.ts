@@ -335,3 +335,100 @@ export interface HojaRuta {
   actualizadoEn: string;
 }
 
+// ==========================================
+// Módulo 10: Boletas / Tickets de Shalom
+// ==========================================
+export type ModalidadPagoShalom = 'PAGO_DESTINO' | 'PAGADO' | 'CREDITO' | 'Pendiente de Pago' | string;
+
+export interface BoletaShalom {
+  id: string;
+  // Campos del Ticket Shalom
+  nro_orden?: string;             // Ej: 95294190
+  codigo?: string;                // Ej: 7HH7
+  numero_guia: string;            // Alias / Correlativo principal
+  codigo_seguimiento?: string;    // Tracking web
+  fecha_emision: string;          // YYYY-MM-DD
+  hora_emision?: string;          // HH:mm:ss
+  fecha_traslado?: string;        // YYYY-MM-DD
+  origen: string;                 // Dirección o ciudad origen
+  destino: string;                // Dirección o ciudad destino
+  agencia_destino?: string;       // Sucursal Shalom
+  // Datos del Remitente
+  remitente_nombre: string;       // Nombre / Razón Social
+  remitente_dni?: string;          // DNI / RUC Remitente
+  remitente_documento?: string;   // Alias
+  remitente_telefono?: string;    // Celular / Teléfono Remitente
+  // Datos del Destinatario
+  destinatario_nombre: string;    // Nombre / Razón Social
+  destinatario_dni?: string;       // DNI / RUC Destinatario
+  destinatario_documento?: string;// Alias
+  destinatario_telefono?: string; // Celular / Teléfono Destinatario
+  // Entrega y Detalle
+  tipo_entrega?: string;          // Ej: ENTREGAR EN AGENCIA o DOMICILIO
+  descripcion?: string;           // Ej: BULTO, PAQUETE
+  contenido_bultos?: string;      // Alias
+  cantidad?: number;              // Ej: 1
+  unidad_medida?: string;         // Ej: Volumen, Peso, Unidad
+  peso?: number;                  // Ej: 0.120 kg
+  peso_total?: number;            // Alias
+  observaciones?: string;         // Observaciones del ticket
+  // Pago
+  forma_pago?: string;            // Ej: Pendiente de Pago, Cancelado
+  modalidad_pago: ModalidadPagoShalom;
+  monto_total: number;
+  moneda: 'PEN' | 'USD' | string;
+  // Storage
+  pdf_url: string;
+  storage_path: string;
+  r2_key?: string;
+  metadatos_ocr?: Record<string, any>;
+  creado_en: string;
+  actualizado_en: string;
+}
+
+export interface BoletaShalomInput {
+  nro_orden?: string;
+  codigo?: string;
+  numero_guia: string;
+  codigo_seguimiento?: string;
+  fecha_emision: string;
+  hora_emision?: string;
+  fecha_traslado?: string;
+  origen: string;
+  destino: string;
+  agencia_destino?: string;
+  remitente_nombre: string;
+  remitente_dni?: string;
+  remitente_documento?: string;
+  remitente_telefono?: string;
+  destinatario_nombre: string;
+  destinatario_dni?: string;
+  destinatario_documento?: string;
+  destinatario_telefono?: string;
+  tipo_entrega?: string;
+  descripcion?: string;
+  contenido_bultos?: string;
+  cantidad?: number;
+  unidad_medida?: string;
+  peso?: number;
+  peso_total?: number;
+  observaciones?: string;
+  forma_pago?: string;
+  modalidad_pago?: ModalidadPagoShalom;
+  monto_total: number;
+  moneda?: string;
+  pdf_url: string;
+  storage_path: string;
+  metadatos_ocr?: Record<string, any>;
+}
+
+export interface FiltrosBoletaShalom {
+  q?: string;
+  year?: string;
+  month?: string;
+  day?: string;
+  destino?: string;
+  modalidad?: string;
+  page?: number;
+  limit?: number;
+}

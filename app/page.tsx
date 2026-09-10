@@ -69,6 +69,11 @@ const RotulosA4Tab = dynamic(() => import('@/components/tabs/RotulosA4Tab'), {
   loading: () => <PageSkeleton />
 });
 
+const BoletasShalomTab = dynamic(() => import('@/components/tabs/BoletasShalomTab'), {
+  ssr: false,
+  loading: () => <PageSkeleton />
+});
+
 const NewClientModal = dynamic(() => import('@/components/modals/NewClientModal'), { ssr: false });
 const NewPackageModal = dynamic(() => import('@/components/modals/NewPackageModal'), { ssr: false });
 const ThermalLabelModal = dynamic(() => import('@/components/modals/ThermalLabelModal'), { ssr: false });
@@ -117,7 +122,8 @@ const VALID_TABS = [
   'wms-picking',
   'mobile-scanner',
   'dni-matrix',
-  'rotulos-a4'
+  'rotulos-a4',
+  'boletas-shalom'
 ];
 
 export default function DashboardPage() {
@@ -719,6 +725,10 @@ export default function DashboardPage() {
 
               {activeTab === 'rotulos-a4' && (
                 <RotulosA4Tab />
+              )}
+
+              {activeTab === 'boletas-shalom' && (
+                <BoletasShalomTab />
               )}
             </>
           )}
