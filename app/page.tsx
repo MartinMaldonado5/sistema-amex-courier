@@ -17,6 +17,7 @@ import HeaderBar from '@/components/HeaderBar';
 import Sidebar from '@/components/Sidebar';
 import { NewClientFormData } from '@/components/modals/NewClientModal';
 import { NewPkgFormData } from '@/components/modals/NewPackageModal';
+import { tabToPath, pathToTab, migrateLegacyHash } from '@/lib/navigation/routes';
 import {
   PageSkeleton,
   DashboardSkeleton,
@@ -143,40 +144,51 @@ export default function DashboardPage() {
   const [activeTab, setActiveTabState] = useState<string>('dashboard');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // Sincronizar y restaurar pestaña activa desde URL Hash o LocalStorage al recargar
+  // Sincronizar y restaurar pestaña activa desde URL limpia (con migración retrocompatible de hash)
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     try {
-      const hash = window.location.hash.replace(/^#/, '').trim();
+      // 1. Si el usuario llegó con un hash legado (#...), migrarlo a URL limpia
+      const legacyPath = migrateLegacyHash(window.location.hash);
+      if (legacyPath) {
+        window.history.replaceState(null, '', legacyPath);
+      }
+
+      // 2. Resolver la pestaña inicial a partir del pathname actual o localStorage
+      const { tab: pathTab } = pathToTab(window.location.pathname);
       const savedTab = localStorage.getItem('amex_active_tab');
 
       let initialTab = 'dashboard';
-      if (hash && VALID_TABS.includes(hash)) {
-        initialTab = hash;
+      if (pathTab && VALID_TABS.includes(pathTab)) {
+        initialTab = pathTab;
       } else if (savedTab && VALID_TABS.includes(savedTab)) {
         initialTab = savedTab;
       }
 
-      if (initialTab !== 'dashboard') {
-        setActiveTabState(initialTab);
-        window.history.replaceState(null, '', '#' + initialTab);
-      } else if (hash === 'dashboard') {
-        window.history.replaceState(null, '', '#' + initialTab);
+      setActiveTabState(initialTab);
+
+      // Si la URL actual es la raíz '/' o difiere de la ruta de la pestaña activa, sincronizar URL limpia
+      const targetPath = tabToPath(initialTab);
+      if (window.location.pathname === '/' || window.location.pathname !== targetPath) {
+        if (!window.location.pathname.startsWith('/amex-excel/d/')) {
+          window.history.replaceState(null, '', targetPath);
+        }
       }
 
-      const handleHashChange = () => {
-        const currentHash = window.location.hash.replace(/^#/, '').trim();
-        if (currentHash && VALID_TABS.includes(currentHash)) {
-          setActiveTabState(currentHash);
+      // 3. Escuchar navegación del historial (flechas Atrás / Adelante del navegador)
+      const handlePopState = () => {
+        const { tab: currentTab } = pathToTab(window.location.pathname);
+        if (currentTab && VALID_TABS.includes(currentTab)) {
+          setActiveTabState(currentTab);
           try {
-            localStorage.setItem('amex_active_tab', currentHash);
+            localStorage.setItem('amex_active_tab', currentTab);
           } catch {}
         }
       };
 
-      window.addEventListener('hashchange', handleHashChange);
-      return () => window.removeEventListener('hashchange', handleHashChange);
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
     } catch (e) {
       console.warn('Error sincronizando pestaña activa:', e);
     }
@@ -199,7 +211,10 @@ export default function DashboardPage() {
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('amex_active_tab', tab);
-        window.history.replaceState(null, '', '#' + tab);
+        const cleanPath = tabToPath(tab);
+        if (window.location.pathname !== cleanPath) {
+          window.history.pushState(null, '', cleanPath);
+        }
       } catch (e) {
         console.warn('Error guardando pestaña activa:', e);
       }

@@ -73,17 +73,23 @@ export function useLiveSheetsData({ paquetes, operatorName }: UseLiveSheetsDataP
     }
   }, [activeHojaId, fetchItems, hojas]);
 
-  // Sincronización con Hash de URL (#d/...)
+  // Sincronización con URL limpia (/amex-excel/d/...) o Hash legado (#d/...)
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.hash) {
-      const hash = window.location.hash;
-      if (hash.startsWith('#d/')) {
-        const code = hash.replace('#d/', '').trim();
-        const found = hojas.find(h => getSheetLongCode(h.id) === code || h.id === code);
-        if (found) {
-          setActiveHojaId(found.id);
-          setDocTitle(found.titulo || 'AMEX WR');
-        }
+    if (typeof window === 'undefined') return;
+
+    let targetCode: string | null = null;
+
+    if (window.location.pathname.startsWith('/amex-excel/d/')) {
+      targetCode = window.location.pathname.replace('/amex-excel/d/', '').trim();
+    } else if (window.location.hash && window.location.hash.startsWith('#d/')) {
+      targetCode = window.location.hash.replace('#d/', '').trim();
+    }
+
+    if (targetCode && hojas.length > 0) {
+      const found = hojas.find(h => getSheetLongCode(h.id) === targetCode || h.id === targetCode);
+      if (found) {
+        setActiveHojaId(found.id);
+        setDocTitle(found.titulo || 'AMEX WR');
       }
     }
   }, [hojas]);
@@ -92,9 +98,11 @@ export function useLiveSheetsData({ paquetes, operatorName }: UseLiveSheetsDataP
     if (typeof window !== 'undefined') {
       if (activeHojaId) {
         const code = getSheetLongCode(activeHojaId);
-        window.history.replaceState(null, '', `#d/${code}`);
+        window.history.replaceState(null, '', `/amex-excel/d/${code}`);
       } else {
-        window.history.replaceState(null, '', window.location.pathname);
+        if (window.location.pathname.startsWith('/amex-excel/d/')) {
+          window.history.replaceState(null, '', '/amex-excel');
+        }
       }
     }
   }, [activeHojaId]);
