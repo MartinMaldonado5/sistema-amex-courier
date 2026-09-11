@@ -149,7 +149,7 @@ export default function LiveSheetsTab({
   const realtimeChannelRef = useRef<any>(null);
 
   // Edición Inline directa en celdas
-  const [editingCell, setEditingCell] = useState<{ col: string; row: number; itemId: string } | null>(null);
+  const [editingCell, setEditingCell] = useState<{ col: string; row: number; itemId?: string } | null>(null);
   const [editingValue, setEditingValue] = useState('');
 
   // State: Hojas & Items
@@ -168,10 +168,16 @@ export default function LiveSheetsTab({
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
   // Active Cell Selection (Google Sheets Address box, e.g. "E10")
-  const [activeCell, setActiveCell] = useState<{ col: string; row: number; val: string }>({
+  const [activeCell, setActiveCell] = useState<{
+    col: string;
+    row: number;
+    val: string;
+    itemId?: string;
+  }>({
     col: 'D',
     row: 2,
-    val: ''
+    val: '',
+    itemId: undefined
   });
   const [isEditingCell, setIsEditingCell] = useState(false);
   const [cellEditInput, setCellEditInput] = useState('');
@@ -1071,54 +1077,32 @@ export default function LiveSheetsTab({
     [remoteCursors]
   );
 
-  // 10. Click en celda
-  const handleCellClick = (col: string, row: number, val: string) => {
-    setActiveCell({ col, row, val });
-    setCellEditInput(val);
-    setIsEditingCell(false);
-    broadcastActiveCell(col, row);
-  };
+  // Obtener valor de cualquier celda (por columna y número de fila)
+  const getCellValue = useCallback((col: string, rowNum: number): string => {
+    const itemIndex = rowNum - 2;
+    if (itemIndex < 0 || itemIndex >= visibleRows.length) return '';
+    const r = visibleRows[itemIndex];
+    if (!r) return '';
+    if (col === 'A') return r.nombre || '';
+    if (col === 'B') return r.codigoWarehouse || '';
+    if (col === 'C') return r.codigoTib || '';
+    if (col === 'D') return r.codigoEscaneado || '';
+    if (col === 'E') return r.estado || '';
+    if (col === 'F') return r.nombreEscaneado || '';
+    return '';
+  }, [visibleRows]);
 
-  // Doble clic para edición inline directa en la celda
-  const handleCellDoubleClick = (col: string, rowNum: number, currentVal: string, itemId?: string) => {
-    if (!itemId || rowNum < 2) return;
-    setEditingCell({ col, row: rowNum, itemId });
-    setEditingValue(currentVal);
-  };
-
-  // Guardar edición inline
-  const commitInlineCellEdit = async () => {
-    if (!editingCell) return;
-    const { col, itemId } = editingCell;
-    const trimmed = editingValue.trim();
-    setEditingCell(null);
-
-    const targetItem = items.find(it => it.id === itemId);
-    if (!targetItem) return;
-
-    if (col === 'A') {
-      setItems(prev => prev.map(it => (it.id === itemId ? { ...it, consignatario: trimmed } : it)));
-      await supabase.from('hojas_cotejo_items').update({ consignatario: trimmed }).eq('id', itemId);
-    } else if (col === 'B') {
-      setItems(prev => prev.map(it => (it.id === itemId ? { ...it, codigoWr: trimmed } : it)));
-      await supabase.from('hojas_cotejo_items').update({ codigo_wr: trimmed }).eq('id', itemId);
-    } else if (col === 'C') {
-      setItems(prev => prev.map(it => (it.id === itemId ? { ...it, casillero: trimmed } : it)));
-      await supabase.from('hojas_cotejo_items').update({ casillero: trimmed }).eq('id', itemId);
-    } else if (col === 'D') {
-      if (trimmed) {
-        processBarcodeScan(trimmed, items.findIndex(it => it.id === itemId));
-      } else {
-        handleClearScanAtRow(itemId);
-      }
-    } else if (col === 'F') {
-      setItems(prev => prev.map(it => (it.id === itemId ? { ...it, notas: trimmed } : it)));
-      await supabase.from('hojas_cotejo_items').update({ notas: trimmed }).eq('id', itemId);
+  // Obtener el ID del item de una fila
+  const getItemIdForRow = useCallback((rowNum: number): string | undefined => {
+    const itemIndex = rowNum - 2;
+    if (itemIndex >= 0 && itemIndex < visibleRows.length) {
+      return visibleRows[itemIndex].id;
     }
-  };
+    return undefined;
+  }, [visibleRows]);
 
   // 11. Limpiar escaneo de una fila específica
-  const handleClearScanAtRow = async (itemId: string) => {
+  const handleClearScanAtRow = useCallback(async (itemId: string) => {
     setItems(prev =>
       prev.map(i =>
         i.id === itemId
@@ -1147,39 +1131,307 @@ export default function LiveSheetsTab({
         actualizado_en: new Date().toISOString()
       })
       .eq('id', itemId);
-  };
+  }, []);
+
+  // Guardar un valor directamente en una celda (local + Supabase)
+  const commitDirectValue = useCallback(async (col: string, rowNum: number, itemId: string | undefined, newVal: string) => {
+    const trimmed = newVal.trim();
+
+    if (!itemId) {
+      // Fila vacía / nueva: si se ingresó texto, crear el ítem en hojas_cotejo_items
+      if (!activeHojaId || !trimmed) return;
+      try {
+        const newItemPayload = {
+          hoja_id: activeHojaId,
+          codigo_wr: col === 'B' ? trimmed : '',
+          tracking_usa: col === 'D' ? trimmed : '',
+          casillero: col === 'C' ? trimmed : '',
+          consignatario: col === 'A' ? trimmed : '',
+          peso_kg: 0,
+          posicion_estante: 'REC',
+          notas: col === 'F' ? trimmed : '',
+          estado: col === 'E' && (trimmed.toUpperCase() === 'ENCONTRADO' || trimmed.toUpperCase() === 'ESCANEADO') ? 'ESCANEADO' : 'PENDIENTE',
+          veces_escaneado: col === 'D' && trimmed ? 1 : 0,
+          escaneado_en: col === 'D' && trimmed ? new Date().toISOString() : null,
+          escaneado_por: col === 'D' && trimmed ? operatorName : null,
+          orden: items.length + 1
+        };
+
+        const { data, error } = await supabase
+          .from('hojas_cotejo_items')
+          .insert([newItemPayload])
+          .select()
+          .single();
+
+        if (!error && data) {
+          const created: ItemCotejo = {
+            id: data.id,
+            hojaId: data.hoja_id,
+            codigoWr: data.codigo_wr || '',
+            trackingUsa: data.tracking_usa,
+            casillero: data.casillero,
+            consignatario: data.consignatario,
+            pesoKg: Number(data.peso_kg || 0),
+            posicionEstante: data.posicion_estante,
+            notas: data.notas,
+            estado: (data.estado as TipoEstadoItemCotejo) || 'PENDIENTE',
+            escaneadoEn: data.escaneado_en,
+            escaneadoPor: data.escaneado_por,
+            vecesEscaneado: data.veces_escaneado || 0,
+            orden: data.orden,
+            creadoEn: data.creado_en,
+            actualizadoEn: data.actualizado_en
+          };
+          setItems(prev => [...prev, created]);
+          setActiveCell(prev => ({ ...prev, itemId: data.id, val: trimmed }));
+        }
+      } catch (err) {
+        console.error('Error creating new row item:', err);
+      }
+      return;
+    }
+
+    // Fila existente: actualizar según columna
+    const targetItem = items.find(it => it.id === itemId);
+    if (!targetItem) return;
+
+    if (col === 'A') {
+      setItems(prev => prev.map(it => (it.id === itemId ? { ...it, consignatario: trimmed } : it)));
+      await supabase.from('hojas_cotejo_items').update({ consignatario: trimmed }).eq('id', itemId);
+    } else if (col === 'B') {
+      setItems(prev => prev.map(it => (it.id === itemId ? { ...it, codigoWr: trimmed } : it)));
+      await supabase.from('hojas_cotejo_items').update({ codigo_wr: trimmed }).eq('id', itemId);
+    } else if (col === 'C') {
+      setItems(prev => prev.map(it => (it.id === itemId ? { ...it, casillero: trimmed } : it)));
+      await supabase.from('hojas_cotejo_items').update({ casillero: trimmed }).eq('id', itemId);
+    } else if (col === 'D') {
+      if (trimmed) {
+        processBarcodeScan(trimmed, items.findIndex(it => it.id === itemId));
+      } else {
+        handleClearScanAtRow(itemId);
+      }
+    } else if (col === 'E') {
+      const upper = trimmed.toUpperCase();
+      const isEncontrado = upper === 'ENCONTRADO' || upper === 'ESCANEADO';
+      const isNoEncontrado = upper === 'NO ENCONTRADO' || upper === 'NO_LISTADO';
+      const newEstado: TipoEstadoItemCotejo = isEncontrado ? 'ESCANEADO' : isNoEncontrado ? 'NO_LISTADO' : 'PENDIENTE';
+      setItems(prev => prev.map(it => (it.id === itemId ? { ...it, estado: newEstado } : it)));
+      await supabase.from('hojas_cotejo_items').update({ estado: newEstado }).eq('id', itemId);
+    } else if (col === 'F') {
+      setItems(prev => prev.map(it => (it.id === itemId ? { ...it, notas: trimmed } : it)));
+      await supabase.from('hojas_cotejo_items').update({ notas: trimmed }).eq('id', itemId);
+    }
+  }, [activeHojaId, items, operatorName, processBarcodeScan, handleClearScanAtRow]);
+
+  // Guardar edición inline
+  const commitInlineCellEdit = useCallback(async () => {
+    if (!editingCell) return;
+    const { col, row, itemId } = editingCell;
+    const val = editingValue;
+    setEditingCell(null);
+    await commitDirectValue(col, row, itemId, val);
+    setActiveCell(prev => ({ ...prev, val: val.trim() }));
+  }, [editingCell, editingValue, commitDirectValue]);
+
+  // 10. Click en celda: seleccionar y habilitar edición
+  const handleCellClick = useCallback((col: string, row: number, val: string, itemId?: string) => {
+    // Si estaba editando otra celda distinta, guardar su valor primero
+    if (editingCell && (editingCell.col !== col || editingCell.row !== row)) {
+      commitInlineCellEdit();
+    }
+
+    // Si hace clic en la misma celda que ya estaba activa, entrar a edición directa
+    if (activeCell.col === col && activeCell.row === row && !editingCell) {
+      setEditingCell({ col, row, itemId });
+      setEditingValue(val || '');
+      return;
+    }
+
+    setActiveCell({ col, row, val: val || '', itemId });
+    setCellEditInput(val || '');
+    setIsEditingCell(false);
+    broadcastActiveCell(col, row);
+  }, [activeCell, editingCell, commitInlineCellEdit, broadcastActiveCell]);
+
+  // Doble clic para edición inline directa en la celda
+  const handleCellDoubleClick = useCallback((col: string, rowNum: number, currentVal: string, itemId?: string) => {
+    if (rowNum < 2) return;
+    setEditingCell({ col, row: rowNum, itemId });
+    setEditingValue(currentVal || '');
+  }, []);
 
   // 12. Enviar cambio desde la barra de fórmulas
   const handleFormulaSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeCell.col || !activeCell.row) return;
-    const rowIndex = activeCell.row - 2;
-    if (rowIndex >= 0 && rowIndex < items.length) {
-      const item = items[rowIndex];
-      const val = activeCell.val.trim();
-      const col = activeCell.col;
-
-      if (col === 'D') {
-        if (val) {
-          processBarcodeScan(val, rowIndex);
-        } else {
-          handleClearScanAtRow(item.id);
-        }
-      } else if (col === 'A') {
-        setItems(prev => prev.map(it => (it.id === item.id ? { ...it, consignatario: val } : it)));
-        await supabase.from('hojas_cotejo_items').update({ consignatario: val }).eq('id', item.id);
-      } else if (col === 'B') {
-        setItems(prev => prev.map(it => (it.id === item.id ? { ...it, codigoWr: val } : it)));
-        await supabase.from('hojas_cotejo_items').update({ codigo_wr: val }).eq('id', item.id);
-      } else if (col === 'C') {
-        setItems(prev => prev.map(it => (it.id === item.id ? { ...it, casillero: val } : it)));
-        await supabase.from('hojas_cotejo_items').update({ casillero: val }).eq('id', item.id);
-      } else if (col === 'F') {
-        setItems(prev => prev.map(it => (it.id === item.id ? { ...it, notas: val } : it)));
-        await supabase.from('hojas_cotejo_items').update({ notas: val }).eq('id', item.id);
-      }
-    }
+    await commitDirectValue(activeCell.col, activeCell.row, activeCell.itemId, activeCell.val);
   };
+
+  // Renderizar input inline en celda activa
+  const renderCellInput = (col: string, rowNum: number, itemId?: string) => (
+    <input
+      autoFocus
+      className="gsheet-cell-inline-input"
+      value={editingValue}
+      onChange={e => {
+        setEditingValue(e.target.value);
+        setActiveCell(prev => ({ ...prev, val: e.target.value }));
+      }}
+      onBlur={commitInlineCellEdit}
+      onKeyDown={e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          commitInlineCellEdit();
+          // Mover a fila siguiente (row + 1)
+          const nextRow = rowNum + 1;
+          const nextVal = getCellValue(col, nextRow);
+          const nextId = getItemIdForRow(nextRow);
+          setActiveCell({ col, row: nextRow, val: nextVal, itemId: nextId });
+          broadcastActiveCell(col, nextRow);
+        } else if (e.key === 'Tab') {
+          e.preventDefault();
+          commitInlineCellEdit();
+          // Mover a columna siguiente
+          const COLS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+          const colIdx = COLS.indexOf(col);
+          if (colIdx < COLS.length - 1) {
+            const nextCol = COLS[colIdx + 1];
+            const nextVal = getCellValue(nextCol, rowNum);
+            setActiveCell({ col: nextCol, row: rowNum, val: nextVal, itemId });
+            broadcastActiveCell(nextCol, rowNum);
+          }
+        } else if (e.key === 'Escape') {
+          setEditingCell(null);
+        }
+      }}
+    />
+  );
+
+  // Listener Global de Teclado Estilo Google Sheets:
+  // Al seleccionar cualquier celda, escribir directamente cualquier letra/número edita la celda,
+  // Delete/Backspace borra su contenido, Flechas/Tab navegan y Enter confirma.
+  useEffect(() => {
+    const handleWindowKeyDown = (e: KeyboardEvent) => {
+      // Si el foco está en un input/textarea que NO sea de la celda de la hoja, no interceptar
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') &&
+        !activeEl.classList.contains('gsheet-cell-inline-input')
+      ) {
+        return;
+      }
+
+      if (isPasteModalOpen || isNewSheetModalOpen || isCameraScannerOpen) {
+        return;
+      }
+
+      // Si ya está editando dentro del input de la celda, el onKeyDown del input se encarga
+      if (editingCell) {
+        return;
+      }
+
+      // Si no hay celda activa seleccionada, salir
+      if (!activeCell.col || !activeCell.row || activeCell.row < 2) {
+        return;
+      }
+
+      const { col, row, itemId, val } = activeCell;
+      const COLS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+      const colIdx = COLS.indexOf(col);
+
+      // Flecha Abajo
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const nextRow = row + 1;
+        const nextVal = getCellValue(col, nextRow);
+        const nextId = getItemIdForRow(nextRow);
+        setActiveCell({ col, row: nextRow, val: nextVal, itemId: nextId });
+        broadcastActiveCell(col, nextRow);
+        return;
+      }
+
+      // Flecha Arriba
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const nextRow = Math.max(2, row - 1);
+        const nextVal = getCellValue(col, nextRow);
+        const nextId = getItemIdForRow(nextRow);
+        setActiveCell({ col, row: nextRow, val: nextVal, itemId: nextId });
+        broadcastActiveCell(col, nextRow);
+        return;
+      }
+
+      // Flecha Derecha o Tab
+      if (e.key === 'ArrowRight' || e.key === 'Tab') {
+        e.preventDefault();
+        if (colIdx < COLS.length - 1) {
+          const nextCol = COLS[colIdx + 1];
+          const nextVal = getCellValue(nextCol, row);
+          setActiveCell({ col: nextCol, row, val: nextVal, itemId });
+          broadcastActiveCell(nextCol, row);
+        } else {
+          const nextRow = row + 1;
+          const nextCol = 'A';
+          const nextVal = getCellValue(nextCol, nextRow);
+          const nextId = getItemIdForRow(nextRow);
+          setActiveCell({ col: nextCol, row: nextRow, val: nextVal, itemId: nextId });
+          broadcastActiveCell(nextCol, nextRow);
+        }
+        return;
+      }
+
+      // Flecha Izquierda
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        if (colIdx > 0) {
+          const prevCol = COLS[colIdx - 1];
+          const prevVal = getCellValue(prevCol, row);
+          setActiveCell({ col: prevCol, row, val: prevVal, itemId });
+          broadcastActiveCell(prevCol, row);
+        }
+        return;
+      }
+
+      // Enter o F2: Entrar en modo edición preservando el valor actual
+      if (e.key === 'Enter' || e.key === 'F2') {
+        e.preventDefault();
+        setEditingCell({ col, row, itemId });
+        setEditingValue(val || '');
+        return;
+      }
+
+      // Delete o Backspace: Borrar el contenido de la celda de inmediato
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        commitDirectValue(col, row, itemId, '');
+        setActiveCell(prev => ({ ...prev, val: '' }));
+        return;
+      }
+
+      // Cualquier tecla de texto/número/símbolo:
+      // Iniciar edición instantánea con la tecla presionada (exacto a Google Sheets)
+      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        setEditingCell({ col, row, itemId });
+        setEditingValue(e.key);
+      }
+    };
+
+    window.addEventListener('keydown', handleWindowKeyDown);
+    return () => window.removeEventListener('keydown', handleWindowKeyDown);
+  }, [
+    activeCell,
+    editingCell,
+    items,
+    isPasteModalOpen,
+    isNewSheetModalOpen,
+    isCameraScannerOpen,
+    getCellValue,
+    getItemIdForRow,
+    commitDirectValue,
+    broadcastActiveCell
+  ]);
 
   // Acciones desde el Hub de Hojas de Cálculo
   const handleCreateSheetFromHub = async (title: string, tipoProceso?: TipoProcesoCotejo) => {
@@ -1735,8 +1987,9 @@ export default function LiveSheetsTab({
                       return (
                         <td
                           className={`gsheet-cell ${r.nombre ? 'gsheet-group-left' : ''} ${r.isGroupStart ? 'gsheet-group-top' : ''} ${r.isGroupEnd ? 'gsheet-group-bottom' : ''} ${isCellActive('A') ? 'active-cell' : ''} ${remoteUserA ? 'gsheet-cell-remote-active' : ''}`}
-                          onClick={() => handleCellClick('A', rowNum, r.nombre)}
+                          onClick={() => handleCellClick('A', rowNum, r.nombre, r.id)}
                           onDoubleClick={() => handleCellDoubleClick('A', rowNum, r.nombre, r.id)}
+                          title="Celda A: Escribe para modificar o borrar"
                           style={{
                             fontWeight: 600,
                             outline: remoteUserA ? `2px solid ${remoteUserA.color}` : undefined
@@ -1747,21 +2000,7 @@ export default function LiveSheetsTab({
                               {remoteUserA.name}
                             </div>
                           )}
-                          {isEditingA ? (
-                            <input
-                              autoFocus
-                              className="gsheet-cell-inline-input"
-                              value={editingValue}
-                              onChange={e => setEditingValue(e.target.value)}
-                              onBlur={commitInlineCellEdit}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') commitInlineCellEdit();
-                                if (e.key === 'Escape') setEditingCell(null);
-                              }}
-                            />
-                          ) : (
-                            r.nombre
-                          )}
+                          {isEditingA ? renderCellInput('A', rowNum, r.id) : r.nombre}
                         </td>
                       );
                     })()}
@@ -1773,8 +2012,9 @@ export default function LiveSheetsTab({
                       return (
                         <td
                           className={`gsheet-cell ${r.isManifestFound ? 'gsheet-cell-mint' : ''} ${r.isGroupStart ? 'gsheet-group-top' : ''} ${r.isGroupEnd ? 'gsheet-group-bottom' : ''} ${isCellActive('B') ? 'active-cell' : ''} ${remoteUserB ? 'gsheet-cell-remote-active' : ''}`}
-                          onClick={() => handleCellClick('B', rowNum, r.codigoWarehouse)}
+                          onClick={() => handleCellClick('B', rowNum, r.codigoWarehouse, r.id)}
                           onDoubleClick={() => handleCellDoubleClick('B', rowNum, r.codigoWarehouse, r.id)}
+                          title="Celda B: Escribe para modificar o borrar"
                           style={{
                             outline: remoteUserB ? `2px solid ${remoteUserB.color}` : undefined
                           }}
@@ -1784,21 +2024,7 @@ export default function LiveSheetsTab({
                               {remoteUserB.name}
                             </div>
                           )}
-                          {isEditingB ? (
-                            <input
-                              autoFocus
-                              className="gsheet-cell-inline-input"
-                              value={editingValue}
-                              onChange={e => setEditingValue(e.target.value)}
-                              onBlur={commitInlineCellEdit}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') commitInlineCellEdit();
-                                if (e.key === 'Escape') setEditingCell(null);
-                              }}
-                            />
-                          ) : (
-                            r.codigoWarehouse
-                          )}
+                          {isEditingB ? renderCellInput('B', rowNum, r.id) : r.codigoWarehouse}
                         </td>
                       );
                     })()}
@@ -1810,8 +2036,9 @@ export default function LiveSheetsTab({
                       return (
                         <td
                           className={`gsheet-cell ${r.isManifestFound ? 'gsheet-cell-mint' : ''} ${r.nombre ? 'gsheet-group-right' : ''} ${r.isGroupStart ? 'gsheet-group-top' : ''} ${r.isGroupEnd ? 'gsheet-group-bottom' : ''} ${isCellActive('C') ? 'active-cell' : ''} ${remoteUserC ? 'gsheet-cell-remote-active' : ''}`}
-                          onClick={() => handleCellClick('C', rowNum, r.codigoTib)}
+                          onClick={() => handleCellClick('C', rowNum, r.codigoTib, r.id)}
                           onDoubleClick={() => handleCellDoubleClick('C', rowNum, r.codigoTib, r.id)}
+                          title="Celda C: Escribe para modificar o borrar"
                           style={{
                             outline: remoteUserC ? `2px solid ${remoteUserC.color}` : undefined
                           }}
@@ -1821,21 +2048,7 @@ export default function LiveSheetsTab({
                               {remoteUserC.name}
                             </div>
                           )}
-                          {isEditingC ? (
-                            <input
-                              autoFocus
-                              className="gsheet-cell-inline-input"
-                              value={editingValue}
-                              onChange={e => setEditingValue(e.target.value)}
-                              onBlur={commitInlineCellEdit}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') commitInlineCellEdit();
-                                if (e.key === 'Escape') setEditingCell(null);
-                              }}
-                            />
-                          ) : (
-                            r.codigoTib
-                          )}
+                          {isEditingC ? renderCellInput('C', rowNum, r.id) : r.codigoTib}
                         </td>
                       );
                     })()}
@@ -1847,9 +2060,9 @@ export default function LiveSheetsTab({
                       return (
                         <td
                           className={`gsheet-cell ${colDClass} ${isCellActive('D') ? 'active-cell' : ''} ${remoteUserD ? 'gsheet-cell-remote-active' : ''}`}
-                          onClick={() => handleCellClick('D', rowNum, r.codigoEscaneado)}
+                          onClick={() => handleCellClick('D', rowNum, r.codigoEscaneado, r.id)}
                           onDoubleClick={() => handleCellDoubleClick('D', rowNum, r.codigoEscaneado, r.id)}
-                          title={r.codigoEscaneado ? `Escaneado: ${r.codigoEscaneado}` : 'Clic para seleccionar celda (o doble clic para editar)'}
+                          title={r.codigoEscaneado ? `Escaneado: ${r.codigoEscaneado} (Escribe para modificar o Supr/Backspace para borrar)` : 'Celda D: Escribe para modificar o disparar'}
                           style={{
                             outline: remoteUserD ? `2px solid ${remoteUserD.color}` : undefined
                           }}
@@ -1860,17 +2073,7 @@ export default function LiveSheetsTab({
                             </div>
                           )}
                           {isEditingD ? (
-                            <input
-                              autoFocus
-                              className="gsheet-cell-inline-input"
-                              value={editingValue}
-                              onChange={e => setEditingValue(e.target.value)}
-                              onBlur={commitInlineCellEdit}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') commitInlineCellEdit();
-                                if (e.key === 'Escape') setEditingCell(null);
-                              }}
-                            />
+                            renderCellInput('D', rowNum, r.id)
                           ) : (
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                               <span>{r.codigoEscaneado}</span>
@@ -1907,10 +2110,13 @@ export default function LiveSheetsTab({
                     {/* Columna E: ESTADO */}
                     {(() => {
                       const remoteUserE = getRemoteUserOnCell('E', rowNum);
+                      const isEditingE = editingCell?.col === 'E' && editingCell.row === rowNum;
                       return (
                         <td
                           className={`gsheet-cell ${colEClass} ${isCellActive('E') ? 'active-cell' : ''} ${remoteUserE ? 'gsheet-cell-remote-active' : ''}`}
-                          onClick={() => handleCellClick('E', rowNum, r.estado)}
+                          onClick={() => handleCellClick('E', rowNum, r.estado, r.id)}
+                          onDoubleClick={() => handleCellDoubleClick('E', rowNum, r.estado, r.id)}
+                          title="Celda E: Escribe para modificar o borrar estado"
                           style={{
                             outline: remoteUserE ? `2px solid ${remoteUserE.color}` : undefined
                           }}
@@ -1920,7 +2126,7 @@ export default function LiveSheetsTab({
                               {remoteUserE.name}
                             </div>
                           )}
-                          {r.estado}
+                          {isEditingE ? renderCellInput('E', rowNum, r.id) : r.estado}
                         </td>
                       );
                     })()}
@@ -1932,8 +2138,9 @@ export default function LiveSheetsTab({
                       return (
                         <td
                           className={`gsheet-cell ${isCellActive('F') ? 'active-cell' : ''} ${remoteUserF ? 'gsheet-cell-remote-active' : ''}`}
-                          onClick={() => handleCellClick('F', rowNum, r.nombreEscaneado)}
+                          onClick={() => handleCellClick('F', rowNum, r.nombreEscaneado, r.id)}
                           onDoubleClick={() => handleCellDoubleClick('F', rowNum, r.nombreEscaneado, r.id)}
+                          title="Celda F: Escribe para modificar o borrar"
                           style={{
                             color: isNotFound ? '#70757a' : '#202124',
                             fontWeight: isFound ? 700 : 400,
@@ -1945,51 +2152,73 @@ export default function LiveSheetsTab({
                               {remoteUserF.name}
                             </div>
                           )}
-                          {isEditingF ? (
-                            <input
-                              autoFocus
-                              className="gsheet-cell-inline-input"
-                              value={editingValue}
-                              onChange={e => setEditingValue(e.target.value)}
-                              onBlur={commitInlineCellEdit}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') commitInlineCellEdit();
-                                if (e.key === 'Escape') setEditingCell(null);
-                              }}
-                            />
-                          ) : (
-                            r.nombreEscaneado
-                          )}
+                          {isEditingF ? renderCellInput('F', rowNum, r.id) : r.nombreEscaneado}
                         </td>
                       );
                     })()}
 
-                    {/* Columnas vacías del lienzo de Google Sheets */}
-                    <td className="gsheet-cell"></td>
-                    <td className="gsheet-cell"></td>
-                    <td className="gsheet-cell"></td>
-                    <td className="gsheet-cell"></td>
+                    {/* Columnas vacías del lienzo de Google Sheets (G, H, I, J) */}
+                    {['G', 'H', 'I', 'J'].map(col => {
+                      const isActive = isCellActive(col);
+                      const isEditing = editingCell?.col === col && editingCell.row === rowNum;
+                      const remoteUser = getRemoteUserOnCell(col, rowNum);
+                      return (
+                        <td
+                          key={`col-${col}-${rowNum}`}
+                          className={`gsheet-cell ${isActive ? 'active-cell' : ''} ${remoteUser ? 'gsheet-cell-remote-active' : ''}`}
+                          onClick={() => handleCellClick(col, rowNum, '', r.id)}
+                          onDoubleClick={() => handleCellDoubleClick(col, rowNum, '', r.id)}
+                          style={{
+                            outline: remoteUser ? `2px solid ${remoteUser.color}` : undefined
+                          }}
+                        >
+                          {remoteUser && (
+                            <div className="gsheet-remote-cursor-tag" style={{ backgroundColor: remoteUser.color }}>
+                              {remoteUser.name}
+                            </div>
+                          )}
+                          {isEditing ? renderCellInput(col, rowNum, r.id) : null}
+                        </td>
+                      );
+                    })}
                   </tr>
                 );
               })
             )}
 
-            {/* Filas vacías adicionales al final para mantener el canvas de Google Sheets */}
-            {Array.from({ length: Math.max(10, 30 - visibleRows.length) }).map((_, i) => {
-              const extraRowNum = visibleRows.length + i + 2;
+            {/* Filas vacías interactivas al final para mantener el canvas de Google Sheets */}
+            {Array.from({ length: Math.max(12, 35 - visibleRows.length) }).map((_, i) => {
+              const extraRowNum = (visibleRows.length === 0 ? 1 : visibleRows.length) + i + 2;
+              const isRowActive = (col: string) => activeCell.col === col && activeCell.row === extraRowNum;
+              const isEditingInRow = (col: string) => editingCell?.col === col && editingCell.row === extraRowNum;
+
               return (
                 <tr key={`empty-tail-${i}`}>
                   <td className="gsheet-row-num">{extraRowNum}</td>
-                  <td className="gsheet-cell"></td>
-                  <td className="gsheet-cell"></td>
-                  <td className="gsheet-cell"></td>
-                  <td className="gsheet-cell"></td>
-                  <td className="gsheet-cell"></td>
-                  <td className="gsheet-cell"></td>
-                  <td className="gsheet-cell"></td>
-                  <td className="gsheet-cell"></td>
-                  <td className="gsheet-cell"></td>
-                  <td className="gsheet-cell"></td>
+                  {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'].map(col => {
+                    const isActive = isRowActive(col);
+                    const isEditing = isEditingInRow(col);
+                    const remoteUser = getRemoteUserOnCell(col, extraRowNum);
+
+                    return (
+                      <td
+                        key={`tail-${col}-${extraRowNum}`}
+                        className={`gsheet-cell ${isActive ? 'active-cell' : ''} ${remoteUser ? 'gsheet-cell-remote-active' : ''}`}
+                        onClick={() => handleCellClick(col, extraRowNum, '', undefined)}
+                        onDoubleClick={() => handleCellDoubleClick(col, extraRowNum, '', undefined)}
+                        style={{
+                          outline: remoteUser ? `2px solid ${remoteUser.color}` : undefined
+                        }}
+                      >
+                        {remoteUser && (
+                          <div className="gsheet-remote-cursor-tag" style={{ backgroundColor: remoteUser.color }}>
+                            {remoteUser.name}
+                          </div>
+                        )}
+                        {isEditing ? renderCellInput(col, extraRowNum, undefined) : null}
+                      </td>
+                    );
+                  })}
                 </tr>
               );
             })}
