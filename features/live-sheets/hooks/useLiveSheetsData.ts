@@ -175,7 +175,7 @@ export function useLiveSheetsData({ paquetes, operatorName }: UseLiveSheetsDataP
         (wrDigits && allScannedCodes.has(wrDigits));
 
       let displayEstado: 'ENCONTRADO' | 'NO ENCONTRADO' | 'PENDIENTE' | '' = '';
-      let scannedCode = (it.trackingUsa || '').trim();
+      const scannedCode = (it.trackingUsa || '').trim();
       let scannedName = (it.notas || '').trim();
 
       if (scannedCode) {

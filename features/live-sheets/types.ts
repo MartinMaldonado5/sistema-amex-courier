@@ -1,8 +1,11 @@
 import {
-  HojaCotejo,
   ItemCotejo,
   Paquete,
-  Cliente,
+  Cliente
+} from '@/types';
+
+export type {
+  HojaCotejo,
   TipoProcesoCotejo,
   TipoEstadoItemCotejo
 } from '@/types';

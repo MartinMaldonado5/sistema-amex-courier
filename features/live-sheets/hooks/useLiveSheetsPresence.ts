@@ -60,8 +60,7 @@ export function useLiveSheetsPresence({
   useEffect(() => {
     if (!activeHojaId) return;
 
-    setRealtimeStatus('CONNECTING');
-
+    // Conectar canal Realtime
     const channel = supabase.channel(`cotejo-hoja-${activeHojaId}`, {
       config: {
         presence: { key: myIdentity.id }
