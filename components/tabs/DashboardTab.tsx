@@ -245,10 +245,10 @@ export default function DashboardTab({
               gap: '6px',
               boxShadow: '0 2px 6px rgba(5,150,105,0.25)'
             }}
-            title="Abrir hoja de cotejo y pistoleo en vivo"
+            title="Abrir Amex Excel en vivo"
           >
             <Zap style={{ width: '16px', height: '16px', color: '#fde047', fill: 'currentColor' }} />
-            <span>Cotejo Live (Sheets)</span>
+            <span>Amex Excel</span>
           </button>
 
           <button

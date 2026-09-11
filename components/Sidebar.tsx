@@ -100,7 +100,7 @@ export default function Sidebar({
         {/* SUBMÓDULOS EN ORDEN OPERATIVO */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', paddingBottom: '60px' }}>
           {navItem('dashboard', 'fa-solid fa-chart-pie', '1. Panel Operativo')}
-          {navItem('live-sheets', 'fa-solid fa-table-list', '⚡ Cotejo & Pistoleo Live (Sheets)')}
+          {navItem('live-sheets', 'fa-solid fa-table-list', '⚡ Amex Excel')}
           {navItem('mm-lince', 'fa-solid fa-store', '2. Almacén Central (Lince)')}
           {navItem('shp-entregas', 'fa-solid fa-box-open', '3. Entregas & Búsqueda WR')}
           {navItem('fico-cobros', 'fa-solid fa-receipt', '4. Cobros & Vouchers')}

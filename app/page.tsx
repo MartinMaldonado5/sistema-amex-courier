@@ -765,7 +765,7 @@ export default function DashboardPage() {
           className={`mobile-nav-btn ${activeTab === 'live-sheets' ? 'active' : ''}`}
         >
           <i className="fa-solid fa-table-list"></i>
-          <span>Cotejo</span>
+          <span>Amex Excel</span>
         </button>
 
         <button

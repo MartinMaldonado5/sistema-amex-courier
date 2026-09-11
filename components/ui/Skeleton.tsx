@@ -299,7 +299,7 @@ export function DashboardSkeleton() {
 }
 
 /**
- * 2. SKELETON: COTEJO & PISTOLEO LIVE (SHEETS)
+ * 2. SKELETON: AMEX EXCEL
  */
 export function LiveSheetsSkeleton() {
   return (

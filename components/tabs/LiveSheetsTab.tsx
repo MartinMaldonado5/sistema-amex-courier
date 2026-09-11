@@ -35,11 +35,14 @@ import {
   X,
   Trash2,
   Filter,
-  ArrowRight
+  ArrowRight,
+  Users,
+  Copy
 } from 'lucide-react';
 import PasteWrListModal from '@/components/modals/PasteWrListModal';
 import NewSheetModal from '@/components/modals/NewSheetModal';
 import MobileScannerModal from '@/components/scanner/MobileScannerModal';
+import SheetsHub, { getSheetLongCode } from './SheetsHub';
 import './live-sheets.css';
 
 interface LiveSheetsTabProps {
@@ -48,6 +51,42 @@ interface LiveSheetsTabProps {
   onViewPdf?: (url: string) => void;
   currentUser?: { nombre: string; rol: string } | null;
 }
+
+export interface Collaborator {
+  id: string;
+  name: string;
+  color: string;
+  isCurrent?: boolean;
+  activeCell?: string;
+  lastSeen?: string;
+}
+
+export const ANIMAL_ALIASES = [
+  'Lince Veloz',
+  'Halcón Expreso',
+  'Puma Ágil',
+  'Tigre Veloz',
+  'Cóndor Andino',
+  'Jaguar Dorado',
+  'Gaviota Postal',
+  'Lobo Nocturno',
+  'Águila Real',
+  'Pantera Negra',
+  'Guepardo Flash',
+  'Halcón Peregrino'
+];
+
+export const AVATAR_COLORS = [
+  '#1a73e8', // Azul Google
+  '#9333ea', // Morado Real
+  '#059669', // Esmeralda
+  '#d97706', // Ámbar / Dorado
+  '#dc2626', // Rojo Rubí
+  '#0891b2', // Cian WMS
+  '#4f46e5', // Índigo
+  '#db2777', // Magenta
+  '#0d9488'  // Verde Turquesa
+];
 
 export interface SheetRow {
   id: string;
@@ -72,6 +111,46 @@ export default function LiveSheetsTab({
   currentUser
 }: LiveSheetsTabProps) {
   const operatorName = currentUser?.nombre || 'Operador Lince';
+
+  // Identidad aleatoria/consistente del Operador para Colaboración en Vivo
+  const [myIdentity] = useState<{ id: string; name: string; color: string }>(() => {
+    if (typeof window === 'undefined') {
+      return { id: 'usr_init', name: operatorName, color: '#1a73e8' };
+    }
+    try {
+      const savedId = sessionStorage.getItem('amex_cotejo_uid') || `usr_${Math.random().toString(36).substring(2, 9)}`;
+      sessionStorage.setItem('amex_cotejo_uid', savedId);
+
+      let savedName = sessionStorage.getItem('amex_cotejo_name');
+      if (!savedName) {
+        if (currentUser?.nombre && currentUser.nombre !== 'Operador Lince') {
+          savedName = currentUser.nombre;
+        } else {
+          savedName = ANIMAL_ALIASES[Math.floor(Math.random() * ANIMAL_ALIASES.length)];
+        }
+        sessionStorage.setItem('amex_cotejo_name', savedName);
+      }
+
+      const savedColor =
+        sessionStorage.getItem('amex_cotejo_color') ||
+        AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)];
+      sessionStorage.setItem('amex_cotejo_color', savedColor);
+
+      return { id: savedId, name: savedName, color: savedColor };
+    } catch {
+      return { id: `usr_${Date.now()}`, name: operatorName, color: '#1a73e8' };
+    }
+  });
+
+  // Estado de Colaboradores y Presencia
+  const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  const [realtimeStatus, setRealtimeStatus] = useState<'CONNECTING' | 'CONNECTED' | 'DISCONNECTED'>('CONNECTING');
+  const [remoteCursors, setRemoteCursors] = useState<Record<string, { name: string; color: string; cell: string }>>({});
+  const realtimeChannelRef = useRef<any>(null);
+
+  // Edición Inline directa en celdas
+  const [editingCell, setEditingCell] = useState<{ col: string; row: number; itemId: string } | null>(null);
+  const [editingValue, setEditingValue] = useState('');
 
   // State: Hojas & Items
   const [hojas, setHojas] = useState<HojaCotejo[]>([]);
@@ -141,46 +220,46 @@ export default function LiveSheetsTab({
           actualizadoEn: h.actualizado_en
         }));
         setHojas(mapped);
-        if (!activeHojaId || !mapped.some(h => h.id === activeHojaId)) {
-          setActiveHojaId(mapped[0].id);
-          setDocTitle(mapped[0].titulo || 'AMEX WR');
+        if (activeHojaId) {
+          const found = mapped.find(h => h.id === activeHojaId);
+          if (found) setDocTitle(found.titulo || 'AMEX WR');
         }
       } else {
-        // Create initial default sheet if empty
-        const todayStr = new Date().toLocaleDateString('es-PE');
-        const { data: newSheet } = await supabase
-          .from('hojas_cotejo')
-          .insert({
-            titulo: 'AMEX WR',
-            descripcion: 'Cotejo y pistoleo en tiempo real de bultos recibidos',
-            tipo_proceso: 'RECEPCION_LINCE',
-            creado_por: operatorName
-          })
-          .select()
-          .single();
-
-        if (newSheet) {
-          const initSheet: HojaCotejo = {
-            id: newSheet.id,
-            titulo: newSheet.titulo,
-            descripcion: newSheet.descripcion || '',
-            tipoProceso: 'RECEPCION_LINCE',
-            estado: 'ACTIVA',
-            creadoPor: newSheet.creado_por || 'AMEX',
-            creadoEn: newSheet.creado_en,
-            actualizadoEn: newSheet.actualizado_en
-          };
-          setHojas([initSheet]);
-          setActiveHojaId(initSheet.id);
-          setDocTitle('AMEX WR');
-        }
+        // No hay libros en la base de datos
+        setHojas([]);
       }
     } catch (err) {
       console.error('Error in fetchHojas:', err);
     } finally {
       setIsLoadingSheets(false);
     }
-  }, [activeHojaId, operatorName]);
+  }, [activeHojaId]);
+
+  // Sincronización con Hash de URL (ej. #d/1wrBslqT...) para enlaces directos compartibles
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const hash = window.location.hash;
+      if (hash.startsWith('#d/')) {
+        const code = hash.replace('#d/', '').trim();
+        const found = hojas.find(h => getSheetLongCode(h.id) === code || h.id === code);
+        if (found) {
+          setActiveHojaId(found.id);
+          setDocTitle(found.titulo || 'AMEX WR');
+        }
+      }
+    }
+  }, [hojas]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (activeHojaId) {
+        const code = getSheetLongCode(activeHojaId);
+        window.history.replaceState(null, '', `#d/${code}`);
+      } else {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    }
+  }, [activeHojaId]);
 
   // 2. Fetch Items of active Hoja
   const fetchItems = useCallback(async (hojaId: string) => {
@@ -236,6 +315,198 @@ export default function LiveSheetsTab({
       }
     }
   }, [activeHojaId, fetchItems, hojas]);
+
+  // 2.1 Suscripción Supabase Realtime (Postgres Changes + Presencia + Cursores)
+  useEffect(() => {
+    if (!activeHojaId) return;
+
+    setRealtimeStatus('CONNECTING');
+
+    const channel = supabase.channel(`cotejo-hoja-${activeHojaId}`, {
+      config: {
+        presence: { key: myIdentity.id }
+      }
+    });
+
+    realtimeChannelRef.current = channel;
+
+    // A. Escuchar cuando un usuario pistolea o modifica una fila
+    channel
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'hojas_cotejo_items',
+          filter: `hoja_id=eq.${activeHojaId}`
+        },
+        payload => {
+          const row = payload.new as any;
+          if (!row || !row.id) return;
+
+          setItems(prev =>
+            prev.map(it => {
+              if (it.id !== row.id) return it;
+              return {
+                ...it,
+                codigoWr: row.codigo_wr ?? it.codigoWr,
+                casillero: row.casillero ?? it.casillero,
+                consignatario: row.consignatario ?? it.consignatario,
+                trackingUsa: row.tracking_usa ?? it.trackingUsa,
+                pesoKg: row.peso_kg !== undefined ? Number(row.peso_kg) : it.pesoKg,
+                posicionEstante: row.posicion_estante ?? it.posicionEstante,
+                notas: row.notas ?? it.notas,
+                estado: (row.estado as TipoEstadoItemCotejo) ?? it.estado,
+                escaneadoEn: row.escaneado_en ?? it.escaneadoEn,
+                escaneadoPor: row.escaneado_por ?? it.escaneadoPor,
+                vecesEscaneado: row.veces_escaneado ?? it.vecesEscaneado,
+                orden: row.orden ?? it.orden,
+                actualizadoEn: row.actualizado_en ?? it.actualizadoEn
+              };
+            })
+          );
+        }
+      )
+      // B. Escuchar cuando se agrega una fila nueva (ej. pistoleo de bulto desconocido o importación)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'hojas_cotejo_items',
+          filter: `hoja_id=eq.${activeHojaId}`
+        },
+        payload => {
+          const row = payload.new as any;
+          if (!row || !row.id) return;
+
+          setItems(prev => {
+            if (prev.some(it => it.id === row.id)) return prev;
+            const mapped: ItemCotejo = {
+              id: row.id,
+              hojaId: row.hoja_id,
+              codigoWr: row.codigo_wr || '',
+              casillero: row.casillero || '',
+              consignatario: row.consignatario || '',
+              trackingUsa: row.tracking_usa || '',
+              pesoKg: Number(row.peso_kg || 0),
+              posicionEstante: row.posicion_estante || 'REC',
+              notas: row.notas || '',
+              estado: (row.estado as TipoEstadoItemCotejo) || 'PENDIENTE',
+              escaneadoEn: row.escaneado_en,
+              escaneadoPor: row.escaneado_por,
+              vecesEscaneado: row.veces_escaneado || 0,
+              orden: row.orden || prev.length + 1,
+              creadoEn: row.creado_en,
+              actualizadoEn: row.actualizado_en
+            };
+            return [...prev, mapped];
+          });
+        }
+      )
+      // C. Escuchar si se eliminan filas
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'hojas_cotejo_items'
+        },
+        payload => {
+          const deletedId = payload.old?.id;
+          if (deletedId) {
+            setItems(prev => prev.filter(it => it.id !== deletedId));
+          }
+        }
+      )
+      // D. Escuchar cambios en la cabecera de la hoja (renombrar título)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'hojas_cotejo'
+        },
+        payload => {
+          if (payload.eventType === 'UPDATE' && payload.new?.id === activeHojaId) {
+            setDocTitle(payload.new.titulo || 'AMEX WR');
+            setHojas(prev =>
+              prev.map(h => (h.id === payload.new.id ? { ...h, titulo: payload.new.titulo } : h))
+            );
+          } else if (payload.eventType === 'INSERT' && payload.new) {
+            const h = payload.new as any;
+            setHojas(prev => {
+              if (prev.some(sheet => sheet.id === h.id)) return prev;
+              return [
+                ...prev,
+                {
+                  id: h.id,
+                  titulo: h.titulo,
+                  descripcion: h.descripcion || '',
+                  tipoProceso: h.tipo_proceso || 'RECEPCION_LINCE',
+                  estado: h.estado || 'ACTIVA',
+                  creadoPor: h.creado_por || 'AMEX',
+                  creadoEn: h.creado_en,
+                  actualizadoEn: h.actualizado_en
+                }
+              ];
+            });
+          }
+        }
+      )
+      // E. Presencia en tiempo real (usuarios conectados en la misma hoja)
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const activeUsers: Collaborator[] = [];
+        Object.keys(state).forEach(key => {
+          const presences = state[key] as any[];
+          if (presences && presences.length > 0) {
+            const p = presences[0];
+            activeUsers.push({
+              id: key,
+              name: p.name || 'Operador',
+              color: p.color || '#1a73e8',
+              isCurrent: key === myIdentity.id,
+              activeCell: p.activeCell,
+              lastSeen: p.onlineAt
+            });
+          }
+        });
+        setCollaborators(activeUsers);
+      })
+      // F. Broadcast de celda seleccionada por otros usuarios
+      .on('broadcast', { event: 'cell_focus' }, ({ payload }) => {
+        if (!payload || payload.userId === myIdentity.id) return;
+        setRemoteCursors(prev => ({
+          ...prev,
+          [payload.userId]: {
+            name: payload.name,
+            color: payload.color,
+            cell: payload.cell
+          }
+        }));
+      })
+      .subscribe(async status => {
+        if (status === 'SUBSCRIBED') {
+          setRealtimeStatus('CONNECTED');
+          await channel.track({
+            id: myIdentity.id,
+            name: myIdentity.name,
+            color: myIdentity.color,
+            activeCell: `${activeCell.col}${activeCell.row}`,
+            onlineAt: new Date().toISOString()
+          });
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          setRealtimeStatus('DISCONNECTED');
+        }
+      });
+
+    return () => {
+      channel.untrack();
+      supabase.removeChannel(channel);
+      realtimeChannelRef.current = null;
+    };
+  }, [activeHojaId, myIdentity]);
 
   // Set de todos los códigos escaneados en Columna D para verificación instantánea
   const allScannedCodes = useMemo(() => {
@@ -771,11 +1042,79 @@ export default function LiveSheetsTab({
     await supabase.from('hojas_cotejo').update({ titulo: docTitle.trim() }).eq('id', activeHojaId);
   };
 
+  // Transmitir celda activa a los demás colaboradores
+  const broadcastActiveCell = useCallback(
+    (col: string, row: number) => {
+      if (realtimeChannelRef.current && realtimeStatus === 'CONNECTED') {
+        const cellKey = `${col}${row}`;
+        realtimeChannelRef.current.send({
+          type: 'broadcast',
+          event: 'cell_focus',
+          payload: {
+            userId: myIdentity.id,
+            name: myIdentity.name,
+            color: myIdentity.color,
+            cell: cellKey
+          }
+        });
+      }
+    },
+    [myIdentity, realtimeStatus]
+  );
+
+  // Obtener si otro operador tiene seleccionada esta celda
+  const getRemoteUserOnCell = useCallback(
+    (col: string, rowNum: number) => {
+      const cellKey = `${col}${rowNum}`;
+      return Object.values(remoteCursors).find(c => c.cell === cellKey);
+    },
+    [remoteCursors]
+  );
+
   // 10. Click en celda
   const handleCellClick = (col: string, row: number, val: string) => {
     setActiveCell({ col, row, val });
     setCellEditInput(val);
     setIsEditingCell(false);
+    broadcastActiveCell(col, row);
+  };
+
+  // Doble clic para edición inline directa en la celda
+  const handleCellDoubleClick = (col: string, rowNum: number, currentVal: string, itemId?: string) => {
+    if (!itemId || rowNum < 2) return;
+    setEditingCell({ col, row: rowNum, itemId });
+    setEditingValue(currentVal);
+  };
+
+  // Guardar edición inline
+  const commitInlineCellEdit = async () => {
+    if (!editingCell) return;
+    const { col, itemId } = editingCell;
+    const trimmed = editingValue.trim();
+    setEditingCell(null);
+
+    const targetItem = items.find(it => it.id === itemId);
+    if (!targetItem) return;
+
+    if (col === 'A') {
+      setItems(prev => prev.map(it => (it.id === itemId ? { ...it, consignatario: trimmed } : it)));
+      await supabase.from('hojas_cotejo_items').update({ consignatario: trimmed }).eq('id', itemId);
+    } else if (col === 'B') {
+      setItems(prev => prev.map(it => (it.id === itemId ? { ...it, codigoWr: trimmed } : it)));
+      await supabase.from('hojas_cotejo_items').update({ codigo_wr: trimmed }).eq('id', itemId);
+    } else if (col === 'C') {
+      setItems(prev => prev.map(it => (it.id === itemId ? { ...it, casillero: trimmed } : it)));
+      await supabase.from('hojas_cotejo_items').update({ casillero: trimmed }).eq('id', itemId);
+    } else if (col === 'D') {
+      if (trimmed) {
+        processBarcodeScan(trimmed, items.findIndex(it => it.id === itemId));
+      } else {
+        handleClearScanAtRow(itemId);
+      }
+    } else if (col === 'F') {
+      setItems(prev => prev.map(it => (it.id === itemId ? { ...it, notas: trimmed } : it)));
+      await supabase.from('hojas_cotejo_items').update({ notas: trimmed }).eq('id', itemId);
+    }
   };
 
   // 11. Limpiar escaneo de una fila específica
@@ -818,22 +1157,181 @@ export default function LiveSheetsTab({
     if (rowIndex >= 0 && rowIndex < items.length) {
       const item = items[rowIndex];
       const val = activeCell.val.trim();
-      if (activeCell.col === 'D') {
+      const col = activeCell.col;
+
+      if (col === 'D') {
         if (val) {
           processBarcodeScan(val, rowIndex);
         } else {
           handleClearScanAtRow(item.id);
         }
+      } else if (col === 'A') {
+        setItems(prev => prev.map(it => (it.id === item.id ? { ...it, consignatario: val } : it)));
+        await supabase.from('hojas_cotejo_items').update({ consignatario: val }).eq('id', item.id);
+      } else if (col === 'B') {
+        setItems(prev => prev.map(it => (it.id === item.id ? { ...it, codigoWr: val } : it)));
+        await supabase.from('hojas_cotejo_items').update({ codigo_wr: val }).eq('id', item.id);
+      } else if (col === 'C') {
+        setItems(prev => prev.map(it => (it.id === item.id ? { ...it, casillero: val } : it)));
+        await supabase.from('hojas_cotejo_items').update({ casillero: val }).eq('id', item.id);
+      } else if (col === 'F') {
+        setItems(prev => prev.map(it => (it.id === item.id ? { ...it, notas: val } : it)));
+        await supabase.from('hojas_cotejo_items').update({ notas: val }).eq('id', item.id);
       }
     }
   };
 
+  // Acciones desde el Hub de Hojas de Cálculo
+  const handleCreateSheetFromHub = async (title: string, tipoProceso?: TipoProcesoCotejo) => {
+    const { data: newSheet } = await supabase
+      .from('hojas_cotejo')
+      .insert({
+        titulo: title || 'AMEX WR',
+        descripcion: 'Cotejo y pistoleo en tiempo real de bultos recibidos',
+        tipo_proceso: tipoProceso || 'RECEPCION_LINCE',
+        creado_por: operatorName
+      })
+      .select()
+      .single();
+
+    if (newSheet) {
+      await fetchHojas();
+      setActiveHojaId(newSheet.id);
+      setDocTitle(newSheet.titulo);
+    }
+  };
+
+  const handleRenameSheetFromHub = async (sheetId: string, newTitle: string) => {
+    await supabase.from('hojas_cotejo').update({ titulo: newTitle }).eq('id', sheetId);
+    setHojas(prev => prev.map(h => (h.id === sheetId ? { ...h, titulo: newTitle } : h)));
+    if (activeHojaId === sheetId) setDocTitle(newTitle);
+  };
+
+  const handleDeleteSheetFromHub = async (sheetId: string) => {
+    await supabase.from('hojas_cotejo_items').delete().eq('hoja_id', sheetId);
+    await supabase.from('hojas_cotejo').delete().eq('id', sheetId);
+    setHojas(prev => prev.filter(h => h.id !== sheetId));
+    if (activeHojaId === sheetId) {
+      setActiveHojaId(null);
+    }
+  };
+
+  const handleDuplicateSheetFromHub = async (sheetId: string) => {
+    const original = hojas.find(h => h.id === sheetId);
+    if (!original) return;
+
+    const { data: newSheet } = await supabase
+      .from('hojas_cotejo')
+      .insert({
+        titulo: `${original.titulo} (Copia)`,
+        descripcion: original.descripcion,
+        tipo_proceso: original.tipoProceso,
+        creado_por: operatorName
+      })
+      .select()
+      .single();
+
+    if (newSheet) {
+      const { data: originalItems } = await supabase
+        .from('hojas_cotejo_items')
+        .select('*')
+        .eq('hoja_id', sheetId);
+
+      if (originalItems && originalItems.length > 0) {
+        const cloned = originalItems.map(it => ({
+          hoja_id: newSheet.id,
+          codigo_wr: it.codigo_wr,
+          casillero: it.casillero,
+          consignatario: it.consignatario,
+          tracking_usa: it.tracking_usa,
+          peso_kg: it.peso_kg,
+          posicion_estante: it.posicion_estante,
+          notas: it.notas,
+          estado: it.estado,
+          escaneado_en: it.escaneado_en,
+          escaneado_por: it.escaneado_por,
+          veces_escaneado: it.veces_escaneado,
+          orden: it.orden
+        }));
+        await supabase.from('hojas_cotejo_items').insert(cloned);
+      }
+
+      await fetchHojas();
+      setActiveHojaId(newSheet.id);
+    }
+  };
+
+  // Si no hay hoja abierta, mostrar la galería y listado de libros de Google Sheets (Hub)
+  if (!activeHojaId) {
+    return (
+      <SheetsHub
+        hojas={hojas}
+        isLoading={isLoadingSheets}
+        currentUser={currentUser}
+        onOpenSheet={sheetId => {
+          setActiveHojaId(sheetId);
+          const found = hojas.find(h => h.id === sheetId);
+          if (found) setDocTitle(found.titulo || 'AMEX WR');
+        }}
+        onCreateSheet={handleCreateSheetFromHub}
+        onRenameSheet={handleRenameSheetFromHub}
+        onDeleteSheet={handleDeleteSheetFromHub}
+        onDuplicateSheet={handleDuplicateSheetFromHub}
+      />
+    );
+  }
+
   return (
     <div className="gsheet-container">
+      {/* Barra de URL estilo Google Sheets (Imagen 2) */}
+      <div className="gsheet-url-banner">
+        <button
+          type="button"
+          className="gsheet-url-back-btn"
+          onClick={() => setActiveHojaId(null)}
+          title="Volver a la galería de libros de Amex Excel"
+        >
+          ← Amex Excel
+        </button>
+        <span className="text-slate-400">docs.google.com/spreadsheets/d/</span>
+        <span className="gsheet-url-tag" title="Código largo único del libro">
+          {getSheetLongCode(activeHojaId)}
+        </span>
+        <span className="text-slate-400">/edit?gid=0#gid=0</span>
+        <button
+          type="button"
+          onClick={() => {
+            const code = getSheetLongCode(activeHojaId);
+            navigator.clipboard.writeText(code);
+            alert(`Código largo copiado: ${code}`);
+          }}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#1a73e8',
+            cursor: 'pointer',
+            padding: '1px 6px',
+            fontSize: '11px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}
+          title="Copiar código al portapapeles"
+        >
+          <Copy size={11} />
+          <span>Copiar código</span>
+        </button>
+      </div>
+
       {/* 1. Header Superior de Google Sheets */}
       <header className="gsheet-header-top">
         <div className="gsheet-header-left">
-          <div className="gsheet-logo-icon" title="Google Sheets - AMEX ERP">
+          <div
+            className="gsheet-logo-icon"
+            onClick={() => setActiveHojaId(null)}
+            style={{ cursor: 'pointer' }}
+            title="Página principal de Amex Excel (Volver a todos los libros)"
+          >
             <FileSpreadsheet size={20} />
           </div>
 
@@ -855,9 +1353,15 @@ export default function LiveSheetsTab({
               >
                 <Star size={15} fill={isStarred ? '#fbbc04' : 'none'} color={isStarred ? '#fbbc04' : '#5f6368'} />
               </button>
-              <span className="gsheet-sync-badge" title="Todos los cambios se guardan automáticamente en Supabase">
-                <CloudCheck size={14} className="text-emerald-600" />
-                <span>Guardado en Supabase</span>
+              <span
+                className={`gsheet-sync-badge ${realtimeStatus === 'CONNECTED' ? 'live-synced' : ''}`}
+                title="Sincronización en tiempo real con Supabase Realtime"
+              >
+                <CloudCheck
+                  size={14}
+                  className={realtimeStatus === 'CONNECTED' ? 'text-emerald-600' : 'text-amber-500'}
+                />
+                <span>{realtimeStatus === 'CONNECTED' ? 'En vivo' : 'Conectando...'}</span>
               </span>
             </div>
 
@@ -889,6 +1393,56 @@ export default function LiveSheetsTab({
         </div>
 
         <div className="gsheet-header-right">
+          {/* Indicador de Colaboradores en Vivo (Estilo Google Sheets) */}
+          <div className="gsheet-presence-container">
+            <div
+              className="gsheet-presence-pill"
+              title={
+                collaborators.length > 0
+                  ? `Colaboradores en vivo: ${collaborators
+                      .map(c => `${c.name}${c.isCurrent ? ' (Tú)' : ''}`)
+                      .join(', ')}`
+                  : 'Conectando con Supabase Realtime...'
+              }
+            >
+              <span
+                className={`gsheet-presence-dot ${
+                  realtimeStatus === 'CONNECTED'
+                    ? 'online'
+                    : realtimeStatus === 'CONNECTING'
+                    ? 'connecting'
+                    : 'offline'
+                }`}
+              />
+              <span className="gsheet-presence-count">
+                {collaborators.length} {collaborators.length === 1 ? 'operador' : 'operadores'} en vivo
+              </span>
+
+              <div className="gsheet-avatars-cluster">
+                {collaborators.map(c => {
+                  const initials = c.name
+                    .split(' ')
+                    .map(w => w[0])
+                    .slice(0, 2)
+                    .join('')
+                    .toUpperCase();
+
+                  return (
+                    <div
+                      key={c.id}
+                      className="gsheet-avatar-badge"
+                      style={{ backgroundColor: c.color }}
+                      title={`${c.name} ${c.isCurrent ? '(Tú)' : ''} ${c.activeCell ? `• Celda ${c.activeCell}` : ''}`}
+                    >
+                      <span>{initials}</span>
+                      {c.isCurrent && <span className="gsheet-avatar-you-indicator">★</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
           {/* Métricas rápidas estilo Sheets */}
           <div className="gsheet-stats-pill">
             <span>Total: <strong>{stats.total}</strong></span>
@@ -1175,81 +1729,240 @@ export default function LiveSheetsTab({
                     <td className="gsheet-row-num">{rowNum}</td>
 
                     {/* Columna A: NOMBRE (Grupo izquierdo y contorno negro de cliente) */}
-                    <td
-                      className={`gsheet-cell ${r.nombre ? 'gsheet-group-left' : ''} ${r.isGroupStart ? 'gsheet-group-top' : ''} ${r.isGroupEnd ? 'gsheet-group-bottom' : ''} ${isCellActive('A') ? 'active-cell' : ''}`}
-                      onClick={() => handleCellClick('A', rowNum, r.nombre)}
-                      style={{ fontWeight: 600 }}
-                    >
-                      {r.nombre}
-                    </td>
+                    {(() => {
+                      const remoteUserA = getRemoteUserOnCell('A', rowNum);
+                      const isEditingA = editingCell?.col === 'A' && editingCell.row === rowNum;
+                      return (
+                        <td
+                          className={`gsheet-cell ${r.nombre ? 'gsheet-group-left' : ''} ${r.isGroupStart ? 'gsheet-group-top' : ''} ${r.isGroupEnd ? 'gsheet-group-bottom' : ''} ${isCellActive('A') ? 'active-cell' : ''} ${remoteUserA ? 'gsheet-cell-remote-active' : ''}`}
+                          onClick={() => handleCellClick('A', rowNum, r.nombre)}
+                          onDoubleClick={() => handleCellDoubleClick('A', rowNum, r.nombre, r.id)}
+                          style={{
+                            fontWeight: 600,
+                            outline: remoteUserA ? `2px solid ${remoteUserA.color}` : undefined
+                          }}
+                        >
+                          {remoteUserA && (
+                            <div className="gsheet-remote-cursor-tag" style={{ backgroundColor: remoteUserA.color }}>
+                              {remoteUserA.name}
+                            </div>
+                          )}
+                          {isEditingA ? (
+                            <input
+                              autoFocus
+                              className="gsheet-cell-inline-input"
+                              value={editingValue}
+                              onChange={e => setEditingValue(e.target.value)}
+                              onBlur={commitInlineCellEdit}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') commitInlineCellEdit();
+                                if (e.key === 'Escape') setEditingCell(null);
+                              }}
+                            />
+                          ) : (
+                            r.nombre
+                          )}
+                        </td>
+                      );
+                    })()}
 
                     {/* Columna B: CODIGO WAREHOUSE (Verde menta suave si fue encontrado) */}
-                    <td
-                      className={`gsheet-cell ${r.isManifestFound ? 'gsheet-cell-mint' : ''} ${r.isGroupStart ? 'gsheet-group-top' : ''} ${r.isGroupEnd ? 'gsheet-group-bottom' : ''} ${isCellActive('B') ? 'active-cell' : ''}`}
-                      onClick={() => handleCellClick('B', rowNum, r.codigoWarehouse)}
-                    >
-                      {r.codigoWarehouse}
-                    </td>
+                    {(() => {
+                      const remoteUserB = getRemoteUserOnCell('B', rowNum);
+                      const isEditingB = editingCell?.col === 'B' && editingCell.row === rowNum;
+                      return (
+                        <td
+                          className={`gsheet-cell ${r.isManifestFound ? 'gsheet-cell-mint' : ''} ${r.isGroupStart ? 'gsheet-group-top' : ''} ${r.isGroupEnd ? 'gsheet-group-bottom' : ''} ${isCellActive('B') ? 'active-cell' : ''} ${remoteUserB ? 'gsheet-cell-remote-active' : ''}`}
+                          onClick={() => handleCellClick('B', rowNum, r.codigoWarehouse)}
+                          onDoubleClick={() => handleCellDoubleClick('B', rowNum, r.codigoWarehouse, r.id)}
+                          style={{
+                            outline: remoteUserB ? `2px solid ${remoteUserB.color}` : undefined
+                          }}
+                        >
+                          {remoteUserB && (
+                            <div className="gsheet-remote-cursor-tag" style={{ backgroundColor: remoteUserB.color }}>
+                              {remoteUserB.name}
+                            </div>
+                          )}
+                          {isEditingB ? (
+                            <input
+                              autoFocus
+                              className="gsheet-cell-inline-input"
+                              value={editingValue}
+                              onChange={e => setEditingValue(e.target.value)}
+                              onBlur={commitInlineCellEdit}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') commitInlineCellEdit();
+                                if (e.key === 'Escape') setEditingCell(null);
+                              }}
+                            />
+                          ) : (
+                            r.codigoWarehouse
+                          )}
+                        </td>
+                      );
+                    })()}
 
                     {/* Columna C: CODIGO TIB (Verde menta suave si fue encontrado, Grupo derecho de cliente) */}
-                    <td
-                      className={`gsheet-cell ${r.isManifestFound ? 'gsheet-cell-mint' : ''} ${r.nombre ? 'gsheet-group-right' : ''} ${r.isGroupStart ? 'gsheet-group-top' : ''} ${r.isGroupEnd ? 'gsheet-group-bottom' : ''} ${isCellActive('C') ? 'active-cell' : ''}`}
-                      onClick={() => handleCellClick('C', rowNum, r.codigoTib)}
-                    >
-                      {r.codigoTib}
-                    </td>
+                    {(() => {
+                      const remoteUserC = getRemoteUserOnCell('C', rowNum);
+                      const isEditingC = editingCell?.col === 'C' && editingCell.row === rowNum;
+                      return (
+                        <td
+                          className={`gsheet-cell ${r.isManifestFound ? 'gsheet-cell-mint' : ''} ${r.nombre ? 'gsheet-group-right' : ''} ${r.isGroupStart ? 'gsheet-group-top' : ''} ${r.isGroupEnd ? 'gsheet-group-bottom' : ''} ${isCellActive('C') ? 'active-cell' : ''} ${remoteUserC ? 'gsheet-cell-remote-active' : ''}`}
+                          onClick={() => handleCellClick('C', rowNum, r.codigoTib)}
+                          onDoubleClick={() => handleCellDoubleClick('C', rowNum, r.codigoTib, r.id)}
+                          style={{
+                            outline: remoteUserC ? `2px solid ${remoteUserC.color}` : undefined
+                          }}
+                        >
+                          {remoteUserC && (
+                            <div className="gsheet-remote-cursor-tag" style={{ backgroundColor: remoteUserC.color }}>
+                              {remoteUserC.name}
+                            </div>
+                          )}
+                          {isEditingC ? (
+                            <input
+                              autoFocus
+                              className="gsheet-cell-inline-input"
+                              value={editingValue}
+                              onChange={e => setEditingValue(e.target.value)}
+                              onBlur={commitInlineCellEdit}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') commitInlineCellEdit();
+                                if (e.key === 'Escape') setEditingCell(null);
+                              }}
+                            />
+                          ) : (
+                            r.codigoTib
+                          )}
+                        </td>
+                      );
+                    })()}
 
                     {/* Columna D: CODIGO ESCANEADO (Rojo vivo si NO ENCONTRADO, Verde suave si ENCONTRADO) */}
-                    <td
-                      className={`gsheet-cell ${colDClass} ${isCellActive('D') ? 'active-cell' : ''}`}
-                      onClick={() => handleCellClick('D', rowNum, r.codigoEscaneado)}
-                      title={r.codigoEscaneado ? `Escaneado: ${r.codigoEscaneado}` : 'Clic para seleccionar celda'}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span>{r.codigoEscaneado}</span>
-                        {r.codigoEscaneado && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleClearScanAtRow(r.id);
-                            }}
-                            title="Borrar este escaneo"
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              color: isNotFound ? '#ffffff' : '#5f6368',
-                              cursor: 'pointer',
-                              padding: '0 2px',
-                              opacity: 0.7,
-                              fontSize: '11px',
-                              lineHeight: 1
-                            }}
-                            onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                            onMouseLeave={e => (e.currentTarget.style.opacity = '0.7')}
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
-                    </td>
+                    {(() => {
+                      const remoteUserD = getRemoteUserOnCell('D', rowNum);
+                      const isEditingD = editingCell?.col === 'D' && editingCell.row === rowNum;
+                      return (
+                        <td
+                          className={`gsheet-cell ${colDClass} ${isCellActive('D') ? 'active-cell' : ''} ${remoteUserD ? 'gsheet-cell-remote-active' : ''}`}
+                          onClick={() => handleCellClick('D', rowNum, r.codigoEscaneado)}
+                          onDoubleClick={() => handleCellDoubleClick('D', rowNum, r.codigoEscaneado, r.id)}
+                          title={r.codigoEscaneado ? `Escaneado: ${r.codigoEscaneado}` : 'Clic para seleccionar celda (o doble clic para editar)'}
+                          style={{
+                            outline: remoteUserD ? `2px solid ${remoteUserD.color}` : undefined
+                          }}
+                        >
+                          {remoteUserD && (
+                            <div className="gsheet-remote-cursor-tag" style={{ backgroundColor: remoteUserD.color }}>
+                              {remoteUserD.name}
+                            </div>
+                          )}
+                          {isEditingD ? (
+                            <input
+                              autoFocus
+                              className="gsheet-cell-inline-input"
+                              value={editingValue}
+                              onChange={e => setEditingValue(e.target.value)}
+                              onBlur={commitInlineCellEdit}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') commitInlineCellEdit();
+                                if (e.key === 'Escape') setEditingCell(null);
+                              }}
+                            />
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span>{r.codigoEscaneado}</span>
+                              {r.codigoEscaneado && (
+                                <button
+                                  type="button"
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    handleClearScanAtRow(r.id);
+                                  }}
+                                  title="Borrar este escaneo"
+                                  style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: isNotFound ? '#ffffff' : '#5f6368',
+                                    cursor: 'pointer',
+                                    padding: '0 2px',
+                                    opacity: 0.7,
+                                    fontSize: '11px',
+                                    lineHeight: 1
+                                  }}
+                                  onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                                  onMouseLeave={e => (e.currentTarget.style.opacity = '0.7')}
+                                >
+                                  ✕
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })()}
 
                     {/* Columna E: ESTADO */}
-                    <td
-                      className={`gsheet-cell ${colEClass} ${isCellActive('E') ? 'active-cell' : ''}`}
-                      onClick={() => handleCellClick('E', rowNum, r.estado)}
-                    >
-                      {r.estado}
-                    </td>
+                    {(() => {
+                      const remoteUserE = getRemoteUserOnCell('E', rowNum);
+                      return (
+                        <td
+                          className={`gsheet-cell ${colEClass} ${isCellActive('E') ? 'active-cell' : ''} ${remoteUserE ? 'gsheet-cell-remote-active' : ''}`}
+                          onClick={() => handleCellClick('E', rowNum, r.estado)}
+                          style={{
+                            outline: remoteUserE ? `2px solid ${remoteUserE.color}` : undefined
+                          }}
+                        >
+                          {remoteUserE && (
+                            <div className="gsheet-remote-cursor-tag" style={{ backgroundColor: remoteUserE.color }}>
+                              {remoteUserE.name}
+                            </div>
+                          )}
+                          {r.estado}
+                        </td>
+                      );
+                    })()}
 
                     {/* Columna F: NOMBRE ESCANEADO */}
-                    <td
-                      className={`gsheet-cell ${isCellActive('F') ? 'active-cell' : ''}`}
-                      onClick={() => handleCellClick('F', rowNum, r.nombreEscaneado)}
-                      style={{ color: isNotFound ? '#70757a' : '#202124', fontWeight: isFound ? 700 : 400 }}
-                    >
-                      {r.nombreEscaneado}
-                    </td>
+                    {(() => {
+                      const remoteUserF = getRemoteUserOnCell('F', rowNum);
+                      const isEditingF = editingCell?.col === 'F' && editingCell.row === rowNum;
+                      return (
+                        <td
+                          className={`gsheet-cell ${isCellActive('F') ? 'active-cell' : ''} ${remoteUserF ? 'gsheet-cell-remote-active' : ''}`}
+                          onClick={() => handleCellClick('F', rowNum, r.nombreEscaneado)}
+                          onDoubleClick={() => handleCellDoubleClick('F', rowNum, r.nombreEscaneado, r.id)}
+                          style={{
+                            color: isNotFound ? '#70757a' : '#202124',
+                            fontWeight: isFound ? 700 : 400,
+                            outline: remoteUserF ? `2px solid ${remoteUserF.color}` : undefined
+                          }}
+                        >
+                          {remoteUserF && (
+                            <div className="gsheet-remote-cursor-tag" style={{ backgroundColor: remoteUserF.color }}>
+                              {remoteUserF.name}
+                            </div>
+                          )}
+                          {isEditingF ? (
+                            <input
+                              autoFocus
+                              className="gsheet-cell-inline-input"
+                              value={editingValue}
+                              onChange={e => setEditingValue(e.target.value)}
+                              onBlur={commitInlineCellEdit}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') commitInlineCellEdit();
+                                if (e.key === 'Escape') setEditingCell(null);
+                              }}
+                            />
+                          ) : (
+                            r.nombreEscaneado
+                          )}
+                        </td>
+                      );
+                    })()}
 
                     {/* Columnas vacías del lienzo de Google Sheets */}
                     <td className="gsheet-cell"></td>
