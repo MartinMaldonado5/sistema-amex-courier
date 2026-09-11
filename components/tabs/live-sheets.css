@@ -1,0 +1,643 @@
+/* ==========================================================================
+   GOOGLE SHEETS THEME & REPLICA FOR COTEJO & PISTOLEO WMS
+   Sistema AMEX Courier ERP - Authentic Google Sheets Experience
+   ========================================================================== */
+
+.gsheet-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 75px);
+  width: 100%;
+  background-color: #ffffff;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  color: #202124;
+  overflow: hidden;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* 1. Header Superior de Google Sheets */
+.gsheet-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px 4px 14px;
+  background: #ffffff;
+  border-bottom: 1px solid #f1f3f4;
+  flex-shrink: 0;
+}
+
+.gsheet-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gsheet-logo-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f9d58;
+  color: #ffffff;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(15, 157, 88, 0.3);
+  font-size: 18px;
+}
+
+.gsheet-title-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.gsheet-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gsheet-doc-title {
+  font-size: 17px;
+  font-weight: 500;
+  color: #202124;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 1px 6px;
+  outline: none;
+  cursor: text;
+  transition: all 0.15s;
+}
+
+.gsheet-doc-title:focus,
+.gsheet-doc-title:hover {
+  border-color: #dadce0;
+  background: #f8f9fa;
+}
+
+.gsheet-star-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #5f6368;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+}
+
+.gsheet-star-btn:hover {
+  color: #fbbc04;
+}
+
+.gsheet-sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  color: #5f6368;
+  margin-left: 4px;
+}
+
+.gsheet-menu-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 1px;
+}
+
+.gsheet-menu-item {
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  color: #3c4043;
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.gsheet-menu-item:hover {
+  background: #f1f3f4;
+  color: #202124;
+}
+
+/* Indicadores de Operador y Estadísticas en Header */
+.gsheet-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gsheet-stats-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8f9fa;
+  border: 1px solid #dadce0;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.gsheet-stat-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gsheet-stat-tag.found {
+  color: #0d652d;
+}
+
+.gsheet-stat-tag.not-found {
+  color: #d93025;
+}
+
+/* 2. Barra de Herramientas (Action Toolbar) */
+.gsheet-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #edf2fa;
+  border-radius: 24px;
+  margin: 0 10px 4px 10px;
+  flex-shrink: 0;
+}
+
+.gsheet-tool-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.gsheet-divider {
+  width: 1px;
+  height: 18px;
+  background: #dadce0;
+  margin: 0 4px;
+}
+
+.gsheet-btn-tool {
+  background: transparent;
+  border: none;
+  color: #444746;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.gsheet-btn-tool:hover {
+  background: rgba(68, 71, 70, 0.08);
+  color: #1f1f1f;
+}
+
+.gsheet-btn-tool.active {
+  background: #c2e7ff;
+  color: #001d35;
+}
+
+/* Hero Scanner Gun Input */
+.gsheet-gun-input-wrap {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 2px solid #1a73e8;
+  border-radius: 20px;
+  padding: 2px 10px;
+  gap: 6px;
+  box-shadow: 0 1px 4px rgba(26, 115, 232, 0.2);
+  flex: 1 1 260px;
+  max-width: 440px;
+}
+
+.gsheet-gun-icon {
+  color: #1a73e8;
+  animation: pulse 2s infinite;
+}
+
+.gsheet-gun-input {
+  border: none;
+  outline: none;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: #1a73e8;
+  width: 100%;
+}
+
+.gsheet-gun-input::placeholder {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 400;
+  color: #70757a;
+  font-size: 12px;
+}
+
+.gsheet-btn-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid transparent;
+}
+
+.gsheet-btn-action.paste {
+  background: #1a73e8;
+  color: #ffffff;
+}
+.gsheet-btn-action.paste:hover {
+  background: #1557b0;
+}
+
+.gsheet-btn-action.export {
+  background: #0f9d58;
+  color: #ffffff;
+}
+.gsheet-btn-action.export:hover {
+  background: #0b8043;
+}
+
+.gsheet-btn-action.secondary {
+  background: #ffffff;
+  color: #444746;
+  border-color: #dadce0;
+}
+.gsheet-btn-action.secondary:hover {
+  background: #f8f9fa;
+  color: #1f1f1f;
+}
+
+/* 3. Barra de Fórmulas (Formula Bar) */
+.gsheet-formula-bar {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border-top: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 2px 10px;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.gsheet-name-box {
+  width: 60px;
+  font-size: 12px;
+  font-family: monospace;
+  font-weight: 700;
+  color: #3c4043;
+  text-align: center;
+  border-right: 1px solid #dadce0;
+  padding-right: 6px;
+}
+
+.gsheet-fx-symbol {
+  font-size: 13px;
+  font-style: italic;
+  font-weight: bold;
+  color: #70757a;
+  user-select: none;
+  width: 22px;
+  text-align: center;
+}
+
+.gsheet-formula-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  font-family: 'Roboto', sans-serif;
+  color: #202124;
+  padding: 3px 6px;
+  background: transparent;
+}
+
+/* 4. Canvas / Cuadrícula de la Hoja de Cálculo (Google Sheets Viewport) */
+.gsheet-viewport {
+  flex: 1;
+  overflow: auto;
+  background: #f8f9fa;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+}
+
+.gsheet-table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: #ffffff;
+  user-select: text;
+  font-size: 13px;
+}
+
+/* Esquina superior izquierda ◰ */
+.gsheet-corner-header {
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
+  height: 26px;
+  background: #f8f9fa;
+  border-right: 1px solid #dadce0;
+  border-bottom: 1px solid #dadce0;
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 30;
+  text-align: center;
+  color: #70757a;
+  font-size: 10px;
+}
+
+/* Fila de Letras de Columnas (A, B, C, D, E, F...) */
+.gsheet-col-letter {
+  height: 26px;
+  background: #f8f9fa;
+  border-right: 1px solid #dadce0;
+  border-bottom: 1px solid #dadce0;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: #70757a;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+/* Columna de Números de Fila (1, 2, 3, 4, 5...) */
+.gsheet-row-num {
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
+  background: #f8f9fa;
+  border-right: 1px solid #dadce0;
+  border-bottom: 1px solid #e0e0e0;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: #70757a;
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  user-select: none;
+}
+
+/* Fila 1: Encabezados Reales de AMEX (NOMBRE, CODIGO WAREHOUSE, etc.) */
+.gsheet-header-cell {
+  background: #ffffff;
+  color: #202124;
+  font-weight: 800;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  padding: 6px 10px;
+  border-right: 1px solid #dadce0;
+  border-bottom: 2px solid #202124;
+  text-align: left;
+  position: sticky;
+  top: 26px;
+  z-index: 15;
+}
+
+/* Celdas de Datos Generales */
+.gsheet-cell {
+  border-right: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 4px 8px;
+  height: 24px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+  box-sizing: border-box;
+  font-size: 13px;
+  color: #202124;
+}
+
+/* Celda Activa Seleccionada (Marco Azul Google Sheets) */
+.gsheet-cell.active-cell {
+  outline: 2px solid #1a73e8 !important;
+  outline-offset: -1px;
+  z-index: 4;
+}
+
+.gsheet-cell.active-cell::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 6px;
+  height: 6px;
+  background: #1a73e8;
+  border: 1px solid #ffffff;
+  border-radius: 1px;
+  z-index: 6;
+}
+
+/* ==========================================================================
+   COLORES Y ESTILOS EXACTOS DE LA CAPTURA DE GOOGLE SHEETS
+   ========================================================================== */
+
+/* Columnas B y C: CODIGO WAREHOUSE & CODIGO TIB (Fondo verde menta suave) */
+.gsheet-cell-mint {
+  background-color: #c8e6c9 !important;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: #1b5e20 !important;
+}
+
+/* Columna D: CODIGO ESCANEADO cuando NO ENCONTRADO (Fondo rojo vivo) */
+.gsheet-cell-red-alert {
+  background-color: #ef4444 !important;
+  color: #ffffff !important;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+/* Columna D: CODIGO ESCANEADO cuando ENCONTRADO (Fondo verde o blanco limpio) */
+.gsheet-cell-found-match {
+  background-color: #d1fae5 !important;
+  color: #065f46 !important;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+}
+
+/* Columna E: ESTADO */
+.gsheet-cell-status-found {
+  color: #0d652d;
+  font-weight: 800;
+}
+
+.gsheet-cell-status-not-found {
+  color: #d93025;
+  font-weight: 800;
+}
+
+/* Grupos de Clientes (Recuadro negro grueso alrededor del bloque) */
+.gsheet-group-top {
+  border-top: 2px solid #000000 !important;
+}
+
+.gsheet-group-bottom {
+  border-bottom: 2px solid #000000 !important;
+}
+
+.gsheet-group-left {
+  border-left: 2px solid #000000 !important;
+}
+
+.gsheet-group-right {
+  border-right: 2px solid #000000 !important;
+}
+
+/* Fila separadora vacía entre clientes */
+.gsheet-separator-row td {
+  height: 18px !important;
+  background: #ffffff !important;
+}
+
+/* 5. Barra de Hojas Inferior (Bottom Tabs Google Sheets) */
+.gsheet-bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8f9fa;
+  border-top: 1px solid #dadce0;
+  padding: 0 10px;
+  height: 38px;
+  flex-shrink: 0;
+  z-index: 25;
+}
+
+.gsheet-bottom-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.gsheet-add-tab-btn {
+  background: transparent;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #444746;
+  font-size: 16px;
+  transition: background 0.15s;
+}
+
+.gsheet-add-tab-btn:hover {
+  background: #e8eaed;
+}
+
+.gsheet-tab-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: #ffffff;
+  border-top: 2px solid transparent;
+  border-left: 1px solid #dadce0;
+  border-right: 1px solid #dadce0;
+  border-bottom: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: #3c4043;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s;
+}
+
+.gsheet-tab-item.active {
+  color: #0f9d58;
+  border-top: 3px solid #0f9d58;
+  font-weight: 700;
+  background: #ffffff;
+}
+
+.gsheet-tab-item:hover:not(.active) {
+  background: #f1f3f4;
+}
+
+.gsheet-bottom-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11.5px;
+  color: #5f6368;
+}
+
+/* Modales y utilidades */
+.gsheet-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.gsheet-modal-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 640px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.gsheet-modal-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8f9fa;
+}
+
+.gsheet-modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #202124;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gsheet-modal-body {
+  padding: 18px 20px;
+  overflow-y: auto;
+  max-height: 70vh;
+}
+
+.gsheet-modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  background: #f8f9fa;
+}

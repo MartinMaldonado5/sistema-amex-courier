@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { BoletaShalom, ModalidadPagoShalom } from '@/types';
 import { getR2ViewUrl } from '@/lib/r2/client';
+import { ShalomTableSkeleton } from '@/components/ui/Skeleton';
 import './boletas-shalom.css';
 
 interface StatsState {
@@ -148,24 +149,55 @@ export default function BoletasShalomTab() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletingBoleta, setDeletingBoleta] = useState<BoletaShalom | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Cargar boletas desde el backend
-  const fetchBoletas = useCallback(async () => {
+  // Debounce para búsqueda por texto y destino para evitar saturación de peticiones
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+  const [debouncedDestinoFilter, setDebouncedDestinoFilter] = useState(destinoFilter);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 280);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedDestinoFilter(destinoFilter);
+    }, 280);
+    return () => clearTimeout(timer);
+  }, [destinoFilter]);
+
+  // Cargar boletas desde el backend con soporte de cancelación y tolerancia a fallos
+  const fetchBoletas = useCallback(async (signal?: AbortSignal) => {
     setIsLoading(true);
+    setFetchError(null);
     try {
       const params = new URLSearchParams();
-      if (searchQuery.trim()) params.set('q', searchQuery.trim());
+      if (debouncedSearchQuery.trim()) params.set('q', debouncedSearchQuery.trim());
       if (yearFilter) params.set('year', yearFilter);
       if (monthFilter) params.set('month', monthFilter);
       if (dayFilter) params.set('day', dayFilter);
-      if (destinoFilter) params.set('destino', destinoFilter);
+      if (debouncedDestinoFilter.trim()) params.set('destino', debouncedDestinoFilter.trim());
       if (modalidadFilter) params.set('modalidad', modalidadFilter);
       params.set('page', String(page));
       params.set('limit', '50');
 
-      const res = await fetch(`/api/shalom-boletas?${params.toString()}`);
+      // Validar estrictamente que sea una instancia de AbortSignal para evitar pasar MouseEvent de onClick
+      const activeSignal = signal instanceof AbortSignal ? signal : abortControllerRef.current?.signal;
+
+      const res = await fetch(`/api/shalom-boletas?${params.toString()}`, {
+        signal: activeSignal
+      });
+
+      if (!res.ok) {
+        throw new Error(`Servidor devolvió código HTTP ${res.status}`);
+      }
+
       const json = await res.json();
 
       if (json.boletas) {
@@ -176,15 +208,39 @@ export default function BoletasShalomTab() {
           setStats(json.stats);
         }
       }
-    } catch (err) {
-      console.error('Error fetching boletas shalom:', err);
+    } catch (err: unknown) {
+      if (
+        (err instanceof DOMException && err.name === 'AbortError') ||
+        (err instanceof Error && (err.name === 'AbortError' || err.message.includes('aborted')))
+      ) {
+        // Cancelación intencional de petición previa
+        return;
+      }
+      console.warn('[BoletasShalomTab] Conexión temporal:', err);
+      setFetchError(
+        err instanceof Error && err.message.includes('Failed to fetch')
+          ? 'No se pudo contactar al servidor local. Reintentando...'
+          : err instanceof Error
+          ? err.message
+          : 'Error al consultar boletas de Shalom'
+      );
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery, yearFilter, monthFilter, dayFilter, destinoFilter, modalidadFilter, page]);
+  }, [debouncedSearchQuery, yearFilter, monthFilter, dayFilter, debouncedDestinoFilter, modalidadFilter, page]);
 
   useEffect(() => {
-    fetchBoletas();
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    fetchBoletas(controller.signal);
+
+    return () => {
+      controller.abort();
+    };
   }, [fetchBoletas]);
 
   // Copiar al portapapeles con feedback
@@ -197,7 +253,7 @@ export default function BoletasShalomTab() {
   // Manejar selección de archivo PDF (Apertura INMEDIATA sin intermediación obligatoria de IA)
   const handleFileSelected = (file: File) => {
     if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-      setUploadError('Por favor selecciona un archivo en formato PDF emitido por el escáner Brother.');
+      setUploadError('Por favor selecciona un archivo en formato PDF de la boleta escaneada.');
       return;
     }
 
@@ -509,7 +565,7 @@ export default function BoletasShalomTab() {
             </h1>
           </div>
           <p className="shalom-subtitle">
-            Archivo digital inteligente y buscador instantáneo de encomiendas escaneadas vía Brother & AMEXito AI
+            Archivo digital inteligente y buscador instantáneo de encomiendas escaneadas & AMEXito AI
           </p>
         </div>
 
@@ -517,7 +573,7 @@ export default function BoletasShalomTab() {
           <button
             type="button"
             className="shalom-btn-secondary"
-            onClick={fetchBoletas}
+            onClick={() => fetchBoletas()}
             title="Recargar datos"
           >
             <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
@@ -723,9 +779,22 @@ export default function BoletasShalomTab() {
           </div>
 
           {isLoading ? (
+            <ShalomTableSkeleton rows={6} />
+          ) : fetchError ? (
             <div className="shalom-empty-state">
-              <RefreshCw size={28} className="animate-spin text-sky-400" />
-              <p className="text-sm text-slate-400">Cargando archivo de boletas de Shalom...</p>
+              <div className="shalom-empty-icon" style={{ color: '#f87171', background: 'rgba(239, 68, 68, 0.12)' }}>
+                <AlertCircle size={28} />
+              </div>
+              <h3 className="shalom-empty-title">Estado de Conexión</h3>
+              <p className="shalom-empty-desc">{fetchError}</p>
+              <button
+                type="button"
+                className="shalom-btn-primary"
+                onClick={() => fetchBoletas()}
+                style={{ marginTop: '8px' }}
+              >
+                <RefreshCw size={14} /> Reintentar
+              </button>
             </div>
           ) : boletas.length === 0 ? (
             <div className="shalom-empty-state">
@@ -1057,7 +1126,7 @@ export default function BoletasShalomTab() {
       </div>
 
       {/* =====================================================================
-          MODAL DE CARGA ASISTIDA DE BOLETAS CON OCR GEMINI (BROTHER SCANNER)
+          MODAL DE CARGA ASISTIDA DE BOLETAS CON OCR GEMINI (BOLETAS ESCANEADAS)
           ===================================================================== */}
       {isUploadModalOpen && (
         <div className="shalom-modal-overlay">
@@ -1065,7 +1134,7 @@ export default function BoletasShalomTab() {
             <div className="shalom-modal-header">
               <h3>
                 <UploadCloud size={20} className="text-sky-400" />
-                Cargar Boleta de Shalom (Escáner Brother & OCR)
+                Cargar Boleta de Shalom (Boleta Escaneada & OCR)
               </h3>
               <button
                 type="button"
@@ -1116,7 +1185,7 @@ export default function BoletasShalomTab() {
                     Arrastra el archivo PDF escaneado aquí o haz clic para buscar
                   </h4>
                   <p className="shalom-dropzone-subtitle">
-                    Compatible con los archivos PDF generados por la impresora multifuncional Brother de la oficina. AMEXito AI leerá los datos al instante.
+                    Compatible con los archivos PDF generados por cualquier escáner o impresora multifuncional. AMEXito AI leerá los datos al instante.
                   </p>
                   <span className="shalom-dropzone-tag">Solo archivos .PDF</span>
                 </div>
@@ -1569,7 +1638,7 @@ export default function BoletasShalomTab() {
                   className="shalom-btn-save-next"
                   onClick={() => handleSaveBoleta(true)}
                   disabled={isSaving}
-                  title="Guarda esta boleta y deja el escáner listo para el siguiente PDF"
+                  title="Guarda esta boleta y deja listo para el siguiente PDF escaneado"
                 >
                   {isSaving ? (
                     <RefreshCw size={14} className="animate-spin" />

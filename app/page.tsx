@@ -17,61 +17,74 @@ import HeaderBar from '@/components/HeaderBar';
 import Sidebar from '@/components/Sidebar';
 import { NewClientFormData } from '@/components/modals/NewClientModal';
 import { NewPkgFormData } from '@/components/modals/NewPackageModal';
-import { PageSkeleton } from '@/components/ui/Skeleton';
+import {
+  PageSkeleton,
+  DashboardSkeleton,
+  InventorySkeleton,
+  EntregasSkeleton,
+  CobrosSkeleton,
+  DeliveriesSkeleton,
+  PickingSkeleton,
+  ScannerSkeleton,
+  LiveSheetsSkeleton,
+  DniMatrixSkeleton,
+  RotulosA4Skeleton,
+  BoletasShalomSkeleton
+} from '@/components/ui/Skeleton';
 
 const DashboardTab = dynamic(() => import('@/components/tabs/DashboardTab'), {
   ssr: false,
-  loading: () => <PageSkeleton />
+  loading: () => <DashboardSkeleton />
 });
 
 const InventoryTab = dynamic(() => import('@/components/tabs/InventoryTab'), {
   ssr: false,
-  loading: () => <PageSkeleton />
+  loading: () => <InventorySkeleton />
 });
 
 const EntregasTab = dynamic(() => import('@/components/tabs/EntregasTab'), {
   ssr: false,
-  loading: () => <PageSkeleton />
+  loading: () => <EntregasSkeleton />
 });
 
 const CobrosTab = dynamic(() => import('@/components/tabs/CobrosTab'), {
   ssr: false,
-  loading: () => <PageSkeleton />
+  loading: () => <CobrosSkeleton />
 });
 
 const DeliveriesTab = dynamic(() => import('@/components/tabs/DeliveriesTab'), {
   ssr: false,
-  loading: () => <PageSkeleton />
+  loading: () => <DeliveriesSkeleton />
 });
 
 const PickingTab = dynamic(() => import('@/components/tabs/PickingTab'), {
   ssr: false,
-  loading: () => <PageSkeleton />
+  loading: () => <PickingSkeleton />
 });
 
 const ScannerTab = dynamic(() => import('@/components/tabs/ScannerTab'), {
   ssr: false,
-  loading: () => <PageSkeleton />
+  loading: () => <ScannerSkeleton />
 });
 
 const LiveSheetsTab = dynamic(() => import('@/components/tabs/LiveSheetsTab'), {
   ssr: false,
-  loading: () => <PageSkeleton />
+  loading: () => <LiveSheetsSkeleton />
 });
 
 const DniMatrixTab = dynamic(() => import('@/components/tabs/DniMatrixTab'), {
   ssr: false,
-  loading: () => <PageSkeleton />
+  loading: () => <DniMatrixSkeleton />
 });
 
 const RotulosA4Tab = dynamic(() => import('@/components/tabs/RotulosA4Tab'), {
   ssr: false,
-  loading: () => <PageSkeleton />
+  loading: () => <RotulosA4Skeleton />
 });
 
 const BoletasShalomTab = dynamic(() => import('@/components/tabs/BoletasShalomTab'), {
   ssr: false,
-  loading: () => <PageSkeleton />
+  loading: () => <BoletasShalomSkeleton />
 });
 
 const NewClientModal = dynamic(() => import('@/components/modals/NewClientModal'), { ssr: false });
@@ -628,9 +641,9 @@ export default function DashboardPage() {
           onCloseSidebar={() => setIsSidebarCollapsed(true)}
         />
 
-        <main className={`main-content ${activeTab === 'dni-matrix' ? 'dni-matrix-mode' : ''} ${activeTab === 'rotulos-a4' ? 'rotulos-mode' : ''}`}>
+        <main className={`main-content ${activeTab === 'dni-matrix' ? 'dni-matrix-mode' : ''} ${activeTab === 'rotulos-a4' ? 'rotulos-mode' : ''} ${activeTab === 'boletas-shalom' ? 'boletas-shalom-mode' : ''}`}>
           {isLoadingInitialData ? (
-            <PageSkeleton />
+            <PageSkeleton activeTab={activeTab} />
           ) : (
             <>
               {activeTab === 'dashboard' && (

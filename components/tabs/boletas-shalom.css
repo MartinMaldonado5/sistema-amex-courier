@@ -2,6 +2,22 @@
    MÓDULO 10: GESTIÓN Y BÚSQUEDA INTELIGENTE DE BOLETAS SHALOM
    Sistema AMEX Courier ERP - Tema Oscuro Premium & Ergonómico
    ========================================================================== */
+/* Integración inmersiva en el layout principal sin fondos blancos */
+.main-content.boletas-shalom-mode {
+  background: #0a0d14 !important;
+  padding: 0 !important;
+  color: #f8fafc !important;
+  overflow-x: hidden;
+  overflow-y: auto !important;
+  scrollbar-width: thin;
+  scrollbar-color: #334155 #0a0d14;
+}
+
+@media (max-width: 768px) {
+  .main-content.boletas-shalom-mode {
+    padding: 0 !important;
+  }
+}
 
 .boletas-shalom-theme {
   --bs-bg-main: #0a0d14;
@@ -1161,3 +1177,272 @@
   background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
 }
+
+/* ==========================================================================
+   DISEÑO RESPONSIVO MULTIPANTALLA (Desktop, Laptop, Tablet, Móvil)
+   ========================================================================== */
+
+/* Pantallas grandes y medianas (<= 1200px) */
+@media (max-width: 1200px) {
+  .shalom-main-layout.with-viewer {
+    grid-template-columns: 1fr;
+  }
+
+  .shalom-viewer-panel {
+    position: static;
+    height: 520px;
+    margin-top: 16px;
+  }
+}
+
+/* Tablets (<= 992px) */
+@media (max-width: 992px) {
+  .boletas-shalom-theme {
+    padding: 16px 16px 70px 16px;
+  }
+
+  .shalom-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .shalom-modal-container {
+    max-width: 96vw;
+    max-height: 94vh;
+  }
+
+  .shalom-split-review {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .shalom-split-preview {
+    height: 320px;
+  }
+
+  .shalom-split-form {
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+
+/* Teléfonos Móviles y Pantallas Pequeñas (<= 768px) */
+@media (max-width: 768px) {
+  .boletas-shalom-theme {
+    padding: 12px 10px 90px 10px;
+  }
+
+  .shalom-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+  }
+
+  .shalom-title {
+    font-size: 19px;
+  }
+
+  .shalom-subtitle {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .shalom-header-actions {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+
+  .shalom-btn-primary,
+  .shalom-btn-secondary {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 12px;
+    font-size: 12.5px;
+  }
+
+  .shalom-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .shalom-kpi-card {
+    padding: 12px 10px;
+    gap: 10px;
+    border-radius: 10px;
+  }
+
+  .shalom-kpi-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    border-radius: 8px;
+  }
+
+  .shalom-kpi-label {
+    font-size: 10px;
+  }
+
+  .shalom-kpi-value {
+    font-size: 17px;
+  }
+
+  .shalom-kpi-sub {
+    font-size: 10px;
+  }
+
+  .shalom-filter-bar {
+    padding: 12px;
+    gap: 10px;
+    margin-bottom: 14px;
+    border-radius: 10px;
+  }
+
+  .shalom-search-input {
+    font-size: 13px;
+    padding: 9px 34px 9px 36px;
+  }
+
+  .shalom-filters-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .shalom-filter-group {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 3px;
+    width: 100%;
+  }
+
+  .shalom-select {
+    width: 100%;
+    padding: 7px 8px;
+    font-size: 12px;
+  }
+
+  .shalom-btn-clear-filters {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-content: center;
+    padding: 8px;
+  }
+
+  .shalom-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .shalom-table {
+    min-width: 820px;
+  }
+
+  .shalom-table-header-info {
+    padding: 10px 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .shalom-table td,
+  .shalom-table th {
+    padding: 10px 12px;
+  }
+
+  .shalom-viewer-panel {
+    height: 420px;
+  }
+
+  .shalom-modal-overlay {
+    padding: 8px;
+  }
+
+  .shalom-modal-container {
+    width: 100%;
+    max-width: 100%;
+    max-height: 96vh;
+    border-radius: 12px !important;
+  }
+
+  .shalom-modal-header {
+    padding: 12px 16px !important;
+  }
+
+  .shalom-modal-header h3 {
+    font-size: 14.5px;
+  }
+
+  .shalom-modal-body {
+    padding: 14px 12px !important;
+  }
+
+  .shalom-dropzone {
+    padding: 28px 16px;
+  }
+
+  .shalom-dropzone-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 22px;
+  }
+
+  .shalom-dropzone-title {
+    font-size: 14px;
+  }
+
+  .shalom-dropzone-subtitle {
+    font-size: 12px;
+  }
+
+  .shalom-split-preview {
+    height: 260px;
+  }
+
+  .shalom-ai-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .shalom-btn-ai-extract {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .shalom-form-grid-2,
+  .shalom-form-grid-3 {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .shalom-modal-footer {
+    flex-direction: column-reverse;
+    gap: 8px;
+    padding: 12px 14px !important;
+  }
+
+  .shalom-modal-footer button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Pantallas Extra Pequeñas (<= 420px) */
+@media (max-width: 420px) {
+  .shalom-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shalom-filters-row {
+    grid-template-columns: 1fr;
+  }
+
+  .shalom-header-actions {
+    flex-direction: column;
+  }
+}
+

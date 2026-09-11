@@ -50,28 +50,55 @@ export default function PasteWrListModal({
     });
 
     for (const line of lines) {
-      if (line.includes('\t')) {
-        const cols = line.split('\t').map(c => c.trim());
-        const rawCode = cols[0];
-        if (!rawCode) continue;
+      if (line.includes('\t') || line.includes(';')) {
+        const delimiter = line.includes('\t') ? '\t' : ';';
+        const cols = line.split(delimiter).map(c => c.trim().replace(/^["']|["']$/g, ''));
+        if (cols.length === 0 || !cols[0]) continue;
 
-        const codeUpper = rawCode.toUpperCase().replace(/\s+/g, '');
-        if (seenCodes.has(codeUpper)) {
+        // Saltar línea de encabezado ("NOMBRE \t CODIGO WAREHOUSE \t CODIGO TIB")
+        if (/^(NOMBRE|CLIENTE|CONSIGNATARIO)/i.test(cols[0]) && /^(CODIGO|WR|WAREHOUSE|TIB)/i.test(cols[1] || '')) {
+          continue;
+        }
+
+        let consignee = '';
+        let rawCode = '';
+        let tib = '';
+
+        // Detección inteligente del formato Google Sheets AMEX:
+        // Col 0 = NOMBRE ("GABRIELA MORE"), Col 1 = CODIGO WAREHOUSE ("WR000457269"), Col 2 = CODIGO TIB ("457269")
+        if (cols[1] && (cols[1].toUpperCase().includes('WR') || /^\d{4,9}$/.test(cols[1]))) {
+          consignee = cols[0].toUpperCase();
+          rawCode = cols[1];
+          tib = cols[2] ? cols[2].toUpperCase().trim() : '';
+        } else {
+          // Formato estándar: Col 0 = CODIGO WR, Col 1 = Tracking / Consignatario
+          rawCode = cols[0];
+          consignee = cols[1] ? cols[1].toUpperCase() : '';
+          tib = cols[2] ? cols[2].toUpperCase().trim() : '';
+        }
+
+        if (!rawCode) continue;
+        const cleanCode = rawCode.toUpperCase().replace(/\s+/g, '');
+        const normalizedCode = /^\d{3,8}$/.test(cleanCode) ? `WR${cleanCode}` : cleanCode;
+
+        if (seenCodes.has(normalizedCode)) {
           duplicates++;
           continue;
         }
-        seenCodes.add(codeUpper);
+        seenCodes.add(normalizedCode);
 
-        const dbMatch = autoEnrich ? dbMap.get(codeUpper) : undefined;
+        // Si no se proporcionó TIB, extraer dígitos del código WR (ej: WR000457269 -> 457269)
+        const safeTib = tib || normalizedCode.replace(/^[A-Za-z]+0*/, '');
+        const dbMatch = autoEnrich ? dbMap.get(normalizedCode) : undefined;
 
         items.push({
-          codigoWr: codeUpper,
-          trackingUsa: cols[1] || dbMatch?.trackingUsa || '',
-          casillero: cols[2] || dbMatch?.codigoCasillero || '',
-          consignatario: cols[3] || dbMatch?.nombreConsignatario || '',
-          pesoKg: Number(cols[4]) || dbMatch?.pesoKg || 0,
-          posicionEstante: cols[5] || dbMatch?.posicionEstante || 'REC',
-          notas: cols[6] || '',
+          codigoWr: normalizedCode,
+          trackingUsa: safeTib || dbMatch?.trackingUsa || '',
+          casillero: safeTib || dbMatch?.codigoCasillero || '',
+          consignatario: consignee || dbMatch?.nombreConsignatario || '',
+          pesoKg: Number(cols[3] || cols[4]) || dbMatch?.pesoKg || 0,
+          posicionEstante: dbMatch?.posicionEstante || 'REC',
+          notas: '',
           matchedInDb: !!dbMatch
         });
       } else {
@@ -79,6 +106,9 @@ export default function PasteWrListModal({
         const code = codeMatch ? codeMatch[0].toUpperCase().replace(/\s+/g, '') : line.toUpperCase();
 
         if (!code) continue;
+        // Saltar si es la palabra "CODIGO" o "NOMBRE"
+        if (/^(NOMBRE|CODIGO|WAREHOUSE|TIB)$/i.test(code)) continue;
+
         const normalizedCode = /^\d{3,8}$/.test(code) ? `WR${code}` : code;
 
         if (seenCodes.has(normalizedCode)) {
@@ -87,12 +117,13 @@ export default function PasteWrListModal({
         }
         seenCodes.add(normalizedCode);
 
+        const safeTib = normalizedCode.replace(/^[A-Za-z]+0*/, '');
         const dbMatch = autoEnrich ? dbMap.get(normalizedCode) : undefined;
 
         items.push({
           codigoWr: normalizedCode,
-          trackingUsa: dbMatch?.trackingUsa || '',
-          casillero: dbMatch?.codigoCasillero || '',
+          trackingUsa: safeTib || dbMatch?.trackingUsa || '',
+          casillero: safeTib || dbMatch?.codigoCasillero || '',
           consignatario: dbMatch?.nombreConsignatario || '',
           pesoKg: dbMatch?.pesoKg || 0,
           posicionEstante: dbMatch?.posicionEstante || 'REC',

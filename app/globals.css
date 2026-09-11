@@ -247,7 +247,8 @@ body {
 }
 
 /* Modo DNI Matrix: Integración Dark 100% inmersiva sin bordes ni fondo blanco */
-.main-content.dni-matrix-mode {
+.main-content.dni-matrix-mode,
+.main-content.boletas-shalom-mode {
   background: #0a0d14 !important;
   padding: 0 !important;
   color: #f8fafc !important;
@@ -257,22 +258,26 @@ body {
   scrollbar-color: #334155 #0a0d14;
 }
 
-.main-content.dni-matrix-mode::-webkit-scrollbar {
+.main-content.dni-matrix-mode::-webkit-scrollbar,
+.main-content.boletas-shalom-mode::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-.main-content.dni-matrix-mode::-webkit-scrollbar-track {
+.main-content.dni-matrix-mode::-webkit-scrollbar-track,
+.main-content.boletas-shalom-mode::-webkit-scrollbar-track {
   background: #0a0d14;
 }
 
-.main-content.dni-matrix-mode::-webkit-scrollbar-thumb {
+.main-content.dni-matrix-mode::-webkit-scrollbar-thumb,
+.main-content.boletas-shalom-mode::-webkit-scrollbar-thumb {
   background: #1e293b;
   border-radius: 9999px;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.main-content.dni-matrix-mode::-webkit-scrollbar-thumb:hover {
+.main-content.dni-matrix-mode::-webkit-scrollbar-thumb:hover,
+.main-content.boletas-shalom-mode::-webkit-scrollbar-thumb:hover {
   background: #38bdf8;
 }
 
@@ -923,6 +928,10 @@ tr:hover { background: #f8fafc !important; }
   .main-content {
     padding: 14px 12px 76px 12px !important;
   }
+  .main-content.dni-matrix-mode,
+  .main-content.boletas-shalom-mode {
+    padding: 0 !important;
+  }
   .sidebar-backdrop {
     display: block !important;
     position: fixed;
@@ -998,8 +1007,19 @@ tr:hover { background: #f8fafc !important; }
 
 /* ==========================================================================
    PROFESSIONAL SKELETON SHIMMER EFFECT
+/* ==========================================================================
+   SKELETON SHIMMER SYSTEM - PRO ADAPTIVE (LIGHT & DARK ACCENTS)
    ========================================================================== */
-@keyframes shimmerPulse {
+@keyframes shimmerPulseLight {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes shimmerPulseDark {
   0% {
     background-position: -200% 0;
   }
@@ -1011,17 +1031,69 @@ tr:hover { background: #f8fafc !important; }
 .skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    #f1f5f9 0%,
-    #e2e8f0 35%,
-    #cbd5e1 50%,
-    #e2e8f0 65%,
-    #f1f5f9 100%
+    #e8edf5 0%,
+    #f8fafc 35%,
+    #e2e8f0 50%,
+    #f8fafc 65%,
+    #e8edf5 100%
   ) !important;
-  background-size: 300% 100% !important;
-  animation: shimmerPulse 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+  background-size: 250% 100% !important;
+  animation: shimmerPulseLight 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
   pointer-events: none;
   user-select: none;
   display: block;
+}
+
+/* Skeletons en temas oscuros (DNI Matrix, Rótulos A4, Boletas Shalom o tarjetas oscuras) */
+.dni-matrix-mode .skeleton-shimmer,
+.rotulos-mode .skeleton-shimmer,
+.boletas-shalom-mode .skeleton-shimmer,
+.skeleton-shimmer.dark,
+.skeleton-dark-container .skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.08) 25%,
+    rgba(56, 189, 248, 0.15) 50%,
+    rgba(255, 255, 255, 0.08) 75%,
+    rgba(255, 255, 255, 0.04) 100%
+  ) !important;
+  background-size: 250% 100% !important;
+  animation: shimmerPulseDark 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+}
+
+/* Helpers de contenedor para Skeletons Profesionales */
+.skeleton-card-light {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.skeleton-card-dark {
+  background: #111724;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.skeleton-grid-kpi-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .skeleton-grid-kpi-auto {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  .skeleton-grid-kpi-auto {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ==========================================================================
