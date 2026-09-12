@@ -226,24 +226,58 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
         </div>
 
         <div className="rotulo-field-group">
-          <label className="rotulo-label">DNI / RUC / CE:</label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <label className="rotulo-label">DNI / RUC / CE:</label>
+            <span
+              style={{
+                fontSize: '0.70rem',
+                fontWeight: 700,
+                color: (activeSlot.dni?.length || 0) > 0 ? '#38bdf8' : '#94a3b8'
+              }}
+            >
+              {activeSlot.dni?.length || 0} / 11 dígitos
+            </span>
+          </div>
           <input
             type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={11}
             className="rotulo-input rotulo-input-dni"
-            placeholder=""
+            placeholder="Hasta 11 dígitos numéricos"
             value={activeSlot.dni}
-            onChange={(e) => updateActiveSlot({ dni: e.target.value.trim().toUpperCase() })}
+            onChange={(e) => {
+              const onlyNums = e.target.value.replace(/\D/g, '').slice(0, 11);
+              updateActiveSlot({ dni: onlyNums });
+            }}
           />
         </div>
 
         <div className="rotulo-field-group">
-          <label className="rotulo-label">Celular / Teléfono:</label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <label className="rotulo-label">Celular / Teléfono:</label>
+            <span
+              style={{
+                fontSize: '0.70rem',
+                fontWeight: 700,
+                color: (activeSlot.celular?.length || 0) === 9 ? '#34d399' : (activeSlot.celular?.length || 0) > 0 ? '#38bdf8' : '#94a3b8'
+              }}
+            >
+              {activeSlot.celular?.length || 0} / 9 dígitos
+            </span>
+          </div>
           <input
             type="tel"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={9}
             className="rotulo-input rotulo-input-cel"
-            placeholder=""
+            placeholder="Hasta 9 dígitos numéricos"
             value={activeSlot.celular}
-            onChange={(e) => updateActiveSlot({ celular: e.target.value.trim() })}
+            onChange={(e) => {
+              const onlyNums = e.target.value.replace(/\D/g, '').slice(0, 9);
+              updateActiveSlot({ celular: onlyNums });
+            }}
           />
         </div>
 

@@ -654,8 +654,8 @@ export function useRotulosState() {
 
       const updates: Partial<RotuloSlotData> = {};
       if (extracted.nombre) updates.nombre = extracted.nombre;
-      if (extracted.dni) updates.dni = extracted.dni;
-      if (extracted.celular) updates.celular = extracted.celular;
+      if (extracted.dni) updates.dni = String(extracted.dni).replace(/\D/g, '').slice(0, 11);
+      if (extracted.celular) updates.celular = String(extracted.celular).replace(/\D/g, '').slice(0, 9);
       if (extracted.destino) updates.destino = extracted.destino;
       if (extracted.remitente) updates.remitente = extracted.remitente;
       if (extracted.siglas) updates.siglas = extracted.siglas;
