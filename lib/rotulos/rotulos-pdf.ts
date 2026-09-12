@@ -68,15 +68,15 @@ export async function generateRotulosA4Pdf(
     if (hasData) {
       // 1. Cabecera pequeña de la franja (Remitente y bulto/embalaje)
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
-      doc.setTextColor(100, 116, 139); // Slate-500
+      doc.setFontSize(8.5);
+      doc.setTextColor(71, 85, 105); // Slate-600
       const remitenteText = slot.remitente?.trim() || 'AMEX COURIER PERÚ';
-      doc.text(remitenteText.toUpperCase(), 12, yStart + 7);
+      doc.text(remitenteText.toUpperCase(), 12, yStart + 7.5);
 
       if (slot.observacion?.trim()) {
         const obsText = slot.observacion.toUpperCase();
         doc.setFont('helvetica', 'bold');
-        let obsFontSize = 8.5;
+        let obsFontSize = 8.8;
         doc.setFontSize(obsFontSize);
         doc.setTextColor(15, 23, 42); // Slate-900 (alta legibilidad)
         const maxObsWidth = pageWidth - 12 - (12 + doc.getTextWidth(remitenteText.toUpperCase()) + 8);
@@ -84,42 +84,47 @@ export async function generateRotulosA4Pdf(
           obsFontSize -= 0.5;
           doc.setFontSize(obsFontSize);
         }
-        doc.text(obsText, pageWidth - 12, yStart + 7, { align: 'right' });
+        doc.text(obsText, pageWidth - 12, yStart + 7.5, { align: 'right' });
       }
 
-      // Siglas / Código de envío (debajo del total de cajas, alineado a la derecha)
+      // Siglas / Código de envío (alineado a la derecha junto al destinatario)
       if (slot.siglas?.trim()) {
         const siglasText = slot.siglas.trim().toUpperCase();
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(13);
+        doc.setFontSize(14);
         doc.setTextColor(15, 23, 42); // Slate-900
-        const siglaWidth = Math.max(22, doc.getTextWidth(siglasText) + 8);
+        const siglaWidth = Math.max(24, doc.getTextWidth(siglasText) + 8);
         doc.setFillColor(248, 250, 252);
         doc.setDrawColor(15, 23, 42);
         doc.setLineWidth(0.4);
-        doc.roundedRect(pageWidth - 12 - siglaWidth, yStart + 10.2, siglaWidth, 7.5, 1.2, 1.2, 'FD');
-        doc.text(siglasText, pageWidth - 12 - (siglaWidth / 2), yStart + 15.6, { align: 'center' });
+        doc.roundedRect(pageWidth - 12 - siglaWidth, yStart + 13.5, siglaWidth, 8, 1.2, 1.2, 'FD');
+        doc.text(siglasText, pageWidth - 12 - (siglaWidth / 2), yStart + 19.2, { align: 'center' });
       }
 
       // 2. Destinatario (Nombres y Apellidos en grande y negrita)
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(16);
+      let nombreFontSize = 19;
+      doc.setFontSize(nombreFontSize);
       doc.setTextColor(15, 23, 42); // Slate-900
       const nombreText = (slot.nombre || 'NOMBRE Y APELLIDO').toUpperCase();
-      doc.text(nombreText, 12, yStart + 16);
+      const maxNombreWidth = slot.siglas?.trim() ? pageWidth - 12 - 40 - 12 : pageWidth - 24;
+      while (doc.getTextWidth(nombreText) > maxNombreWidth && nombreFontSize > 13) {
+        nombreFontSize -= 0.5;
+        doc.setFontSize(nombreFontSize);
+      }
+      doc.text(nombreText, 12, yStart + 19.5);
 
-      // 3. DNI / RUC (debajo del nombre - mayor legibilidad)
+      // 3. DNI / RUC y CELULAR (distribuidos en línea para mayor presencia)
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12.5);
+      doc.setFontSize(13);
       doc.setTextColor(15, 23, 42); // Slate-900 para máxima nitidez
       const dniText = slot.dni ? `DNI / RUC: ${slot.dni}` : 'DNI / RUC: —';
-      doc.text(dniText, 12, yStart + 23.2);
-
-      // 4. CELULAR (debajo del DNI, NO al costado - mayor tamaño)
       const celText = slot.celular ? `CEL: ${slot.celular}` : 'CEL: —';
-      doc.text(celText, 12, yStart + 30.0);
+      doc.text(dniText, 12, yStart + 31.5);
+      const dniWidth = doc.getTextWidth(dniText);
+      doc.text(celText, 12 + dniWidth + 10, yStart + 31.5);
 
-      // 5. Recuadro destacado para la Agencia y el Destino (debajo del Celular)
+      // 4. Recuadro destacado para la Agencia y el Destino (en la franja inferior)
       const agencyName = slot.agencia === 'OTRA' && slot.agenciaOtra?.trim()
         ? slot.agenciaOtra.toUpperCase()
         : slot.agencia;
@@ -150,12 +155,12 @@ export async function generateRotulosA4Pdf(
       // Pastilla de la Agencia
       const badgeWidth = Math.max(34, doc.getTextWidth(agencyName) + 10);
       doc.setFillColor(badgeR, badgeG, badgeB);
-      doc.roundedRect(12, yStart + 35, badgeWidth, 7.5, 1.5, 1.5, 'F');
+      doc.roundedRect(12, yStart + 42, badgeWidth, 9.5, 1.5, 1.5, 'F');
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.5);
+      doc.setFontSize(10.5);
       doc.setTextColor(badgeTextR, badgeTextG, badgeTextB);
-      doc.text(agencyName, 12 + badgeWidth / 2, yStart + 40.2, { align: 'center' });
+      doc.text(agencyName, 12 + badgeWidth / 2, yStart + 48.2, { align: 'center' });
 
       // Texto del Destino / Agencia de Entrega (adaptado para hasta 80 caracteres)
       const maxDestWidth = pageWidth - 12 - (12 + badgeWidth + 4);
@@ -163,16 +168,16 @@ export async function generateRotulosA4Pdf(
       const fullDestText = `DESTINO: ${destinoRaw}`;
 
       doc.setFont('helvetica', 'bold');
-      let destFontSize = 11.5;
+      let destFontSize = 12.5;
       doc.setFontSize(destFontSize);
       doc.setTextColor(15, 23, 42);
 
       // Si entra en 1 sola línea ajustando levemente (textos cortos a medianos):
       if (doc.getTextWidth(fullDestText) <= maxDestWidth) {
-        doc.text(fullDestText, 12 + badgeWidth + 4, yStart + 40.2);
+        doc.text(fullDestText, 12 + badgeWidth + 4, yStart + 48.2);
       } else {
         // Para destinos largos de hasta 80 caracteres, aprovechar al 100% la primera línea
-        destFontSize = 9.0;
+        destFontSize = 9.5;
         doc.setFontSize(destFontSize);
         let line1 = '';
         let line2 = '';
@@ -182,7 +187,6 @@ export async function generateRotulosA4Pdf(
           line1 = lines[0];
           line2 = lines[1];
         } else {
-          // Si el quiebre estándar dejó la línea 1 a la mitad (por palabras largas o códigos), empacar al ancho máximo
           let idx1 = 0;
           while (idx1 < fullDestText.length && doc.getTextWidth(fullDestText.slice(0, idx1 + 1)) <= maxDestWidth) {
             idx1++;
@@ -196,9 +200,8 @@ export async function generateRotulosA4Pdf(
           }
           line2 = rest.slice(0, idx2);
 
-          // Si aún sobra texto, reducir dinámicamente a 8.0pt o 7.5pt para garantizar los 100 caracteres completos
           if (idx2 < rest.length) {
-            destFontSize = 8.0;
+            destFontSize = 8.5;
             doc.setFontSize(destFontSize);
             let s1 = 0;
             while (s1 < fullDestText.length && doc.getTextWidth(fullDestText.slice(0, s1 + 1)) <= maxDestWidth) {
@@ -211,46 +214,14 @@ export async function generateRotulosA4Pdf(
               s2++;
             }
             line2 = sRest.slice(0, s2);
-
-            if (s2 < sRest.length) {
-              destFontSize = 7.5;
-              doc.setFontSize(destFontSize);
-              let t1 = 0;
-              while (t1 < fullDestText.length && doc.getTextWidth(fullDestText.slice(0, t1 + 1)) <= maxDestWidth) {
-                t1++;
-              }
-              line1 = fullDestText.slice(0, t1);
-              const tRest = fullDestText.slice(t1).trimStart();
-              let t2 = 0;
-              while (t2 < tRest.length && doc.getTextWidth(tRest.slice(0, t2 + 1)) <= maxDestWidth) {
-                t2++;
-              }
-              line2 = tRest.slice(0, t2);
-
-              if (t2 < tRest.length) {
-                destFontSize = 7.0;
-                doc.setFontSize(destFontSize);
-                let u1 = 0;
-                while (u1 < fullDestText.length && doc.getTextWidth(fullDestText.slice(0, u1 + 1)) <= maxDestWidth) {
-                  u1++;
-                }
-                line1 = fullDestText.slice(0, u1);
-                const uRest = fullDestText.slice(u1).trimStart();
-                let u2 = 0;
-                while (u2 < uRest.length && doc.getTextWidth(uRest.slice(0, u2 + 1)) <= maxDestWidth) {
-                  u2++;
-                }
-                line2 = uRest.slice(0, u2);
-              }
-            }
           }
         }
 
         if (!line2) {
-          doc.text(line1, 12 + badgeWidth + 4, yStart + 40.2);
+          doc.text(line1, 12 + badgeWidth + 4, yStart + 48.2);
         } else {
-          doc.text(line1, 12 + badgeWidth + 4, yStart + 38.0);
-          doc.text(line2, 12 + badgeWidth + 4, yStart + 42.0);
+          doc.text(line1, 12 + badgeWidth + 4, yStart + 45.5);
+          doc.text(line2, 12 + badgeWidth + 4, yStart + 50.5);
         }
       }
 
