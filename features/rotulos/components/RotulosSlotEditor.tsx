@@ -370,29 +370,6 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
             </strong>
           </div>
         </div>
-
-        <div className="rotulo-row-2">
-          <div className="rotulo-field-group">
-            <label className="rotulo-label">Remitente:</label>
-            <input
-              type="text"
-              className="rotulo-input"
-              placeholder=""
-              value={activeSlot.remitente || ''}
-              onChange={(e) => updateActiveSlot({ remitente: e.target.value.toUpperCase() })}
-            />
-          </div>
-          <div className="rotulo-field-group">
-            <label className="rotulo-label">Observación / Bulto:</label>
-            <input
-              type="text"
-              className="rotulo-input"
-              placeholder=""
-              value={activeSlot.observacion || ''}
-              onChange={(e) => updateActiveSlot({ observacion: e.target.value.toUpperCase() })}
-            />
-          </div>
-        </div>
       </div>
     </div>
   );

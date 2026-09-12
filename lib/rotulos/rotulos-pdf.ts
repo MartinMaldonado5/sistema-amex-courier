@@ -73,19 +73,24 @@ export async function generateRotulosA4Pdf(
       const remitenteText = slot.remitente?.trim() || 'AMEX COURIER PERÚ';
       doc.text(remitenteText.toUpperCase(), 12, yStart + 7.5);
 
-      if (slot.observacion?.trim()) {
-        const obsText = slot.observacion.toUpperCase();
-        doc.setFont('helvetica', 'bold');
-        let obsFontSize = 8.8;
+      const bNum = slot.numeroRotulo || 1;
+      const bTotR = slot.totalRotulos || 1;
+      const bTotC = slot.totalCajas || '1';
+      const obsText = (
+        slot.observacion?.trim() ||
+        `RÓTULO ${bNum} DE ${bTotR} • TOTAL: ${bTotC} ${Number(bTotC) === 1 ? 'CAJA' : 'CAJAS'}`
+      ).toUpperCase();
+
+      doc.setFont('helvetica', 'bold');
+      let obsFontSize = 8.8;
+      doc.setFontSize(obsFontSize);
+      doc.setTextColor(15, 23, 42); // Slate-900 (alta legibilidad)
+      const maxObsWidth = pageWidth - 12 - (12 + doc.getTextWidth(remitenteText.toUpperCase()) + 8);
+      while (doc.getTextWidth(obsText) > maxObsWidth && obsFontSize > 6.0) {
+        obsFontSize -= 0.5;
         doc.setFontSize(obsFontSize);
-        doc.setTextColor(15, 23, 42); // Slate-900 (alta legibilidad)
-        const maxObsWidth = pageWidth - 12 - (12 + doc.getTextWidth(remitenteText.toUpperCase()) + 8);
-        while (doc.getTextWidth(obsText) > maxObsWidth && obsFontSize > 6.0) {
-          obsFontSize -= 0.5;
-          doc.setFontSize(obsFontSize);
-        }
-        doc.text(obsText, pageWidth - 12, yStart + 7.5, { align: 'right' });
       }
+      doc.text(obsText, pageWidth - 12, yStart + 7.5, { align: 'right' });
 
       // Siglas / Código de envío (alineado a la derecha junto al destinatario)
       if (slot.siglas?.trim()) {

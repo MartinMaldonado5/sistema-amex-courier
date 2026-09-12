@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { RotuloSlotData } from '@/lib/rotulos/rotulos-pdf';
-import { MAX_SHEETS, getAgencyClass } from '../types';
+import { MAX_SHEETS, getAgencyClass, generarTextoBulto } from '../types';
 
 interface RotulosSheetPreviewProps {
   slots: RotuloSlotData[];
@@ -68,12 +68,10 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
                   </span>
                 )}
               </div>
-              {slot.observacion && (
-                <span className="strip-bulto-badge">
-                  <i className="fa-solid fa-box-archive" style={{ marginRight: '5px' }}></i>
-                  {slot.observacion.toUpperCase()}
-                </span>
-              )}
+              <span className="strip-bulto-badge">
+                <i className="fa-solid fa-box-archive" style={{ marginRight: '5px' }}></i>
+                {(slot.observacion?.trim() || generarTextoBulto(slot.numeroRotulo || 1, slot.totalRotulos || 1, slot.totalCajas || '1')).toUpperCase()}
+              </span>
             </div>
 
             <div className="strip-destinatario-row">
