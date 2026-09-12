@@ -54,7 +54,7 @@ export const DEFAULT_SLOTS: RotuloSlotData[] = [
     nombre: '',
     dni: '',
     celular: '',
-    agencia: 'SHALOM',
+    agencia: '',
     destino: '',
     remitente: 'AMEX COURIER PERÚ',
     observacion: '',
@@ -68,7 +68,7 @@ export const DEFAULT_SLOTS: RotuloSlotData[] = [
     nombre: '',
     dni: '',
     celular: '',
-    agencia: 'SHALOM',
+    agencia: '',
     destino: '',
     remitente: 'AMEX COURIER PERÚ',
     observacion: '',
@@ -82,7 +82,7 @@ export const DEFAULT_SLOTS: RotuloSlotData[] = [
     nombre: '',
     dni: '',
     celular: '',
-    agencia: 'SHALOM',
+    agencia: '',
     destino: '',
     remitente: 'AMEX COURIER PERÚ',
     observacion: '',
@@ -96,7 +96,7 @@ export const DEFAULT_SLOTS: RotuloSlotData[] = [
     nombre: '',
     dni: '',
     celular: '',
-    agencia: 'SHALOM',
+    agencia: '',
     destino: '',
     remitente: 'AMEX COURIER PERÚ',
     observacion: '',
@@ -110,7 +110,7 @@ export const DEFAULT_SLOTS: RotuloSlotData[] = [
     nombre: '',
     dni: '',
     celular: '',
-    agencia: 'SHALOM',
+    agencia: '',
     destino: '',
     remitente: 'AMEX COURIER PERÚ',
     observacion: '',
@@ -137,13 +137,16 @@ export function generarTextoBulto(
   return `${rotText} • TOTAL: ${cjsNum} ${cjasWord}`;
 }
 
-export function getAgencyClass(agencia: string): string {
-  switch (agencia) {
+export function getAgencyClass(agencia?: string): string {
+  const clean = (agencia || '').trim().toUpperCase();
+  if (!clean) return 'unselected';
+  switch (clean) {
     case 'SHALOM': return 'shalom';
     case 'CRUZ DEL SUR': return 'cruz';
     case 'OLVA': return 'olva';
     case 'MARVISUR': return 'marvisur';
     case 'MÓVIL BUS': return 'movil';
+    case 'MOVIL BUS': return 'movil';
     case 'FLORES': return 'flores';
     case 'CIVA': return 'civa';
     case 'ANTEZANA': return 'antezana';

@@ -37,7 +37,7 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
     const agencyDisplayName =
       slot.agencia === 'OTRA' && slot.agenciaOtra?.trim()
         ? slot.agenciaOtra
-        : slot.agencia;
+        : (slot.agencia || 'SIN AGENCIA');
 
     const sheetNum = Math.ceil(slot.id / 5);
     const slotInSheet = ((slot.id - 1) % 5) + 1;

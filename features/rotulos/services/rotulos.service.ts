@@ -22,16 +22,22 @@ export const RotulosService = {
 
         // Limitar estrictamente al máximo de MAX_SHEETS (5 hojas = 25 rótulos)
         return parsed.slice(0, MAX_SHEETS * 5).map((s: RotuloSlotData) => {
+          const isSlotEmpty = !s.nombre?.trim() && !s.dni?.trim() && !s.celular?.trim() && !s.destino?.trim();
+          const cleanAgencia = isSlotEmpty && s.agencia === 'SHALOM' ? '' : s.agencia;
           const isIndep = (!s.totalRotulos || s.totalRotulos <= 1) && !s.groupId;
           if (isIndep) {
             return {
               ...s,
+              agencia: cleanAgencia,
               numeroRotulo: 1,
               totalRotulos: 1,
               observacion: s.totalCajas ? generarTextoBulto(1, 1, s.totalCajas) : s.observacion
             };
           }
-          return s;
+          return {
+            ...s,
+            agencia: cleanAgencia
+          };
         });
       }
     } catch (e) {

@@ -94,16 +94,16 @@ export const RotulosToolbar: React.FC<RotulosToolbarProps> = ({
           type="button"
           className={`btn-toolbar-col btn-agency-col ${isAgencyDropdownOpen ? 'open' : ''} ${getAgencyClass(activeSlot.agencia)}`}
           onClick={() => setIsAgencyDropdownOpen(!isAgencyDropdownOpen)}
-          title="Haz clic para seleccionar o cambiar la agencia de envío"
+          title="Haz clic para seleccionar la agencia de envío"
         >
           <div className="btn-col-content">
             <span className="agency-col-icon">
-              <i className={AVAILABLE_AGENCIES.find((a) => a.id === activeSlot.agencia)?.icon || 'fa-solid fa-truck-fast'}></i>
+              <i className={AVAILABLE_AGENCIES.find((a) => a.id === activeSlot.agencia)?.icon || 'fa-solid fa-truck-ramp-box'}></i>
             </span>
-            <span className="btn-col-title">
+            <span className={`btn-col-title ${!activeSlot.agencia ? 'unselected-title' : ''}`}>
               {activeSlot.agencia === 'OTRA' && activeSlot.agenciaOtra?.trim()
                 ? activeSlot.agenciaOtra
-                : activeSlot.agencia || 'Agencia'}
+                : activeSlot.agencia || 'Elegir Agencia'}
             </span>
           </div>
           <div className="btn-col-right">
