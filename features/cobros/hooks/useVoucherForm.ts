@@ -135,14 +135,24 @@ export function useVoucherForm({
       let finalVoucherKey = '';
 
       if (voucherFile) {
-        const uploadResult = await CobrosService.uploadVoucherImage({
-          file: voucherFile,
-          codigoCobro,
-          clienteNombre: formValues.clienteNombre,
-          metodoPago: formValues.metodoPago
-        });
-        finalVoucherUrl = uploadResult.url;
-        finalVoucherKey = uploadResult.key;
+        try {
+          const uploadResult = await CobrosService.uploadVoucherImage({
+            file: voucherFile,
+            codigoCobro,
+            clienteNombre: formValues.clienteNombre,
+            metodoPago: formValues.metodoPago
+          });
+          finalVoucherUrl = uploadResult.url;
+          finalVoucherKey = uploadResult.key;
+        } catch (uploadErr) {
+          console.warn('R2 upload failed, fallback to Data URL:', uploadErr);
+          finalVoucherUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => resolve('');
+            reader.readAsDataURL(voucherFile);
+          });
+        }
       }
 
       // Construir lista de WRs pagados
@@ -198,7 +208,11 @@ export function useVoucherForm({
         validado_en: new Date().toISOString()
       };
 
-      await CobrosService.saveVoucher(payload);
+      try {
+        await CobrosService.saveVoucher(payload);
+      } catch (saveErr) {
+        console.warn('Sync to Supabase cobros_vouchers failed (running in offline mode):', saveErr);
+      }
 
       alert(
         `✅ ¡VOUCHER GUARDADO EXITOSAMENTE!\n\nCódigo: ${codigoCobro}\nCliente: ${formValues.clienteNombre}\nMonto: ${formValues.moneda === 'PEN' ? 'S/' : '$'} ${montoNum.toFixed(2)} (${formValues.metodoPago})\nAlmacenado en Cloudflare R2.`

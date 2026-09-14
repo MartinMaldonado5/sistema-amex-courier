@@ -5,6 +5,8 @@ export const TAB_TO_PATH: Record<string, string> = {
   'mm-inventory': '/inventario',
   'shp-entregas': '/entregas',
   'fico-cobros': '/cobros',
+  'directorio-clientes': '/directorio-clientes',
+  'clientes-360': '/directorio-clientes',
   'shp-deliveries': '/despacho',
   'wms-picking': '/picking',
   'mobile-scanner': '/escaner',
@@ -19,6 +21,10 @@ export const PATH_TO_TAB: Record<string, string> = {
   '/inventario': 'mm-lince',
   '/entregas': 'shp-entregas',
   '/cobros': 'fico-cobros',
+  '/directorio-clientes': 'directorio-clientes',
+  '/directorio': 'directorio-clientes',
+  '/clientes': 'directorio-clientes',
+  '/clientes-360': 'directorio-clientes',
   '/despacho': 'shp-deliveries',
   '/picking': 'wms-picking',
   '/escaner': 'mobile-scanner',
@@ -32,6 +38,11 @@ export const PATH_TO_TAB: Record<string, string> = {
   '/mm-inventory': 'mm-lince',
   '/shp-entregas': 'shp-entregas',
   '/fico-cobros': 'fico-cobros',
+  '/directorio clientes': 'directorio-clientes',
+  '/clientes360': 'directorio-clientes',
+  '/clientes 360': 'directorio-clientes',
+  '/clientes%20360': 'directorio-clientes',
+  '/crm-clientes': 'directorio-clientes',
   '/shp-deliveries': 'shp-deliveries',
   '/wms-picking': 'wms-picking',
   '/mobile-scanner': 'mobile-scanner',
@@ -50,7 +61,13 @@ export function tabToPath(tab: string): string {
  * Convierte un pathname en el tab ID y sub-ruta correspondiente
  */
 export function pathToTab(pathname: string): { tab: string; sheetCode?: string } {
-  const cleanPath = pathname.replace(/\/$/, '') || '/';
+  let cleanPath = pathname.replace(/\/$/, '') || '/';
+  try {
+    cleanPath = decodeURI(cleanPath);
+  } catch {
+    // Si falla decodeURI, continúa con cleanPath tal cual
+  }
+  cleanPath = cleanPath.trim();
 
   // Detección de sub-ruta en Amex Excel: /amex-excel/d/:code
   if (cleanPath.startsWith('/amex-excel/d/')) {
@@ -59,9 +76,19 @@ export function pathToTab(pathname: string): { tab: string; sheetCode?: string }
   }
 
   // Rutas directas
-  const tab = PATH_TO_TAB[cleanPath];
+  const tab = PATH_TO_TAB[cleanPath.toLowerCase()];
   if (tab) {
     return { tab };
+  }
+
+  // Soporte flexible para variantes de clientes (ej: /directorio-clientes, /clientes 360, /clientes/..., /cliente...)
+  const normalized = cleanPath.toLowerCase().replace(/[\s_-]+/g, '');
+  if (
+    normalized.startsWith('/cliente') ||
+    normalized.startsWith('/directorio') ||
+    normalized.startsWith('/crmcliente')
+  ) {
+    return { tab: 'directorio-clientes' };
   }
 
   return { tab: 'dashboard' };
@@ -95,6 +122,12 @@ export function migrateLegacyHash(hash: string): string | null {
     'entregas': '/entregas',
     'fico-cobros': '/cobros',
     'cobros': '/cobros',
+    'directorio-clientes': '/directorio-clientes',
+    'directorio': '/directorio-clientes',
+    'clientes': '/directorio-clientes',
+    'clientes-360': '/directorio-clientes',
+    'clientes360': '/directorio-clientes',
+    'crm-clientes': '/directorio-clientes',
     'shp-deliveries': '/despacho',
     'deliveries': '/despacho',
     'wms-picking': '/picking',

@@ -40,12 +40,16 @@ export interface CobrosMetrics {
   totalVouchers: number;
 }
 
-export type CobrosSubtab = 'todos' | 'nuevo' | 'pendientes' | 'validados';
+export * from './types/cobros-models';
+
+export type CobrosSubtab = 'diario' | 'clientes360' | 'importar' | 'vouchers' | 'todos' | 'nuevo' | 'pendientes' | 'validados';
 
 export interface CobrosTabProps {
   paquetes: Paquete[];
   clientes: Cliente[];
   onUpdatePackage?: (pkg: Paquete) => void;
+  onNavigateToClientes360?: (clienteNombre?: string) => void;
+  filterClienteInicial?: string;
 }
 
 export interface VoucherFormValues {

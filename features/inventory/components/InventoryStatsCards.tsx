@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Boxes, Warehouse, MapPin, Truck } from 'lucide-react';
+import { Boxes, Warehouse, MapPin, Truck, Layers } from 'lucide-react';
 import { Paquete } from '@/types';
 
 export interface InventoryStatsCardsProps {
@@ -11,7 +11,12 @@ export interface InventoryStatsCardsProps {
 export default function InventoryStatsCards({ paquetes }: InventoryStatsCardsProps) {
   const totalExistencias = paquetes.length;
   const totalPesoKg = paquetes.reduce((acc, p) => acc + (Number(p.pesoKg) || 0), 0);
-  const totalValorUsd = paquetes.reduce((acc, p) => acc + (Number(p.valorDeclaradoUsd) || 0), 0);
+
+  // Métricas logísticas y de estantería para el personal de Almacén
+  const paquetesEnEstante = paquetes.filter(
+    p => p.posicionEstante && !p.posicionEstante.startsWith('REC') && p.posicionEstante !== 'SIN_ASIGNAR'
+  ).length;
+  const paquetesSinUbicar = totalExistencias - paquetesEnEstante;
 
   const countMiami = paquetes.filter(p => p.ubicacionActual === 'TibCourierMiami').length;
   const countTingo = paquetes.filter(
@@ -69,7 +74,7 @@ export default function InventoryStatsCards({ paquetes }: InventoryStatsCardsPro
         </div>
       </div>
 
-      {/* Valor Declarado */}
+      {/* En Anaqueles (Slotting WMS) - Enfocado 100% en Almacenamiento */}
       <div
         style={{
           background: '#ffffff',
@@ -81,15 +86,15 @@ export default function InventoryStatsCards({ paquetes }: InventoryStatsCardsPro
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
           <span style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
-            Valor Declarado Total
+            En Anaqueles (Slotting)
           </span>
-          <span style={{ fontSize: '16px', fontWeight: 800, color: '#16a34a' }}>$</span>
+          <Layers className="w-5 h-5 text-emerald-600" />
         </div>
-        <div style={{ fontSize: '22px', fontWeight: 800, color: '#16a34a' }}>
-          ${totalValorUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        <div style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a' }}>
+          {paquetesEnEstante} <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>ubicados</span>
         </div>
-        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
-          Asegurado bajo póliza aduanera
+        <div style={{ fontSize: '11px', color: paquetesSinUbicar > 0 ? '#d97706' : '#22c55e', marginTop: '4px', fontWeight: 700 }}>
+          {paquetesSinUbicar > 0 ? `${paquetesSinUbicar} pendientes de slotting` : '✓ 100% en anaquel asignado'}
         </div>
       </div>
 

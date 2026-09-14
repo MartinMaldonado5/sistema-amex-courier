@@ -58,7 +58,6 @@ export function exportPaquetesToExcel(paquetes: Paquete[], filenamePrefix = 'Inv
     'Descripción del Paquete': p.descripcion || '',
     'Tipo Empaque': p.tipoEmpaque || 'CAJA',
     'Peso (Kg)': Number(p.pesoKg || 0),
-    'Valor Decl. ($ USD)': Number(p.valorDeclaradoUsd || 0),
     'Almacén Actual': p.ubicacionActual === 'AmexLince'
       ? 'Almacén Central Lince'
       : p.ubicacionActual === 'TibCourierMiami'

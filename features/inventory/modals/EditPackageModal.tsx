@@ -86,26 +86,14 @@ export default function EditPackageModal({
             />
           </div>
 
-          <div className="wms-modal-grid-3">
+          <div className="wms-modal-grid-2">
             <div className="form-group">
-              <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>Peso (Kg)</label>
+              <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>Peso Físico (Kg)</label>
               <input
                 type="number"
                 step="0.01"
                 value={editFormData.pesoKg || 0}
                 onChange={e => setEditFormData({ ...editFormData, pesoKg: Number(e.target.value) })}
-                className="form-control"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>Valor Decl. ($)</label>
-              <input
-                type="number"
-                step="0.01"
-                value={editFormData.valorDeclaradoUsd || 0}
-                onChange={e => setEditFormData({ ...editFormData, valorDeclaradoUsd: Number(e.target.value) })}
                 className="form-control"
                 required
               />

@@ -148,7 +148,7 @@ export default function SheetsHub({
 
   // Filtrado y clasificación de hojas
   const filteredHojas = useMemo(() => {
-    let result = [...hojas];
+    let result = hojas.filter(h => !h.libroId);
 
     // Búsqueda por término (título o código largo)
     if (searchTerm.trim()) {

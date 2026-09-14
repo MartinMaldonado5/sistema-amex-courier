@@ -71,7 +71,7 @@ export default function InventoryTable({
               <th style={{ padding: '10px 14px' }}>Guía WR / Tracking</th>
               <th style={{ padding: '10px 14px' }}>Casillero / Cliente</th>
               <th style={{ padding: '10px 14px' }}>Descripción & Tipo</th>
-              <th style={{ padding: '10px 14px' }}>Peso & Valor</th>
+              <th style={{ padding: '10px 14px' }}>Peso Físico (kg)</th>
               <th style={{ padding: '10px 14px' }}>Ubicación Sede</th>
               <th style={{ padding: '10px 14px' }}>Anaquel & Piso (WMS)</th>
               <th style={{ padding: '10px 14px' }}>Estado</th>
@@ -152,8 +152,8 @@ export default function InventoryTable({
                       <div style={{ fontWeight: 800, color: '#0f172a' }}>
                         {Number(pkg.pesoKg || 0).toFixed(2)} kg
                       </div>
-                      <div style={{ fontSize: '11px', color: '#059669', fontWeight: 700 }}>
-                        ${Number(pkg.valorDeclaradoUsd || 0).toFixed(2)} USD
+                      <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+                        Custodia Almacén
                       </div>
                     </td>
                     <td style={{ padding: '10px 14px' }}>

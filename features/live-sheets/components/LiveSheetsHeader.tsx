@@ -5,10 +5,9 @@ import {
   CloudCheck,
   CheckCircle2,
   AlertTriangle,
-  Copy
+  ArrowLeft
 } from 'lucide-react';
 import { Collaborator, SheetStats } from '../types';
-import { getSheetLongCode } from '@/components/tabs/SheetsHub';
 
 interface LiveSheetsHeaderProps {
   activeHojaId: string;
@@ -45,54 +44,40 @@ export function LiveSheetsHeader({
   onLoadFromDatabase,
   onResetScans
 }: LiveSheetsHeaderProps) {
-  const longCode = getSheetLongCode(activeHojaId);
-
-  const handleCopyCode = () => {
-    navigator.clipboard.writeText(longCode);
-    alert(`Código largo copiado: ${longCode}`);
-  };
-
   return (
     <>
-      {/* Barra de URL estilo Google Sheets */}
-      <div className="gsheet-url-banner">
-        <button
-          type="button"
-          className="gsheet-url-back-btn"
-          onClick={onBackToHub}
-          title="Volver a la galería de libros de Amex Excel"
-        >
-          ← Amex Excel
-        </button>
-        <span className="text-slate-400">docs.google.com/spreadsheets/d/</span>
-        <span className="gsheet-url-tag" title="Código largo único del libro">
-          {longCode}
-        </span>
-        <span className="text-slate-400">/edit?gid=0#gid=0</span>
-        <button
-          type="button"
-          onClick={handleCopyCode}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: '#1a73e8',
-            cursor: 'pointer',
-            padding: '1px 6px',
-            fontSize: '11px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px'
-          }}
-          title="Copiar código al portapapeles"
-        >
-          <Copy size={11} />
-          <span>Copiar código</span>
-        </button>
-      </div>
-
-      {/* 1. Header Superior de Google Sheets */}
+      {/* 1. Header Superior de Amex Excel */}
       <header className="gsheet-header-top">
         <div className="gsheet-header-left">
+          {onBackToHub && (
+            <button
+              type="button"
+              className="gsheet-back-to-hub-btn"
+              onClick={onBackToHub}
+              title="Volver a Amex Excel (Galería de libros)"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '5px 8px',
+                borderRadius: '6px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                color: '#3c4043',
+                fontSize: '12.5px',
+                fontWeight: 600,
+                marginRight: '6px',
+                transition: 'background 0.15s'
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#f1f3f4')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              <ArrowLeft size={16} />
+              <span>Amex Excel</span>
+            </button>
+          )}
+
           <div
             className="gsheet-logo-icon"
             onClick={onBackToHub}

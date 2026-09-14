@@ -6,7 +6,7 @@
 .gsheet-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 75px);
+  height: 100%;
   width: 100%;
   background-color: #ffffff;
   font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
@@ -337,7 +337,8 @@
   border-collapse: collapse;
   table-layout: fixed;
   background: #ffffff;
-  user-select: text;
+  user-select: none;
+  -webkit-user-select: none;
   font-size: 13px;
 }
 
@@ -444,6 +445,14 @@
   z-index: 6;
 }
 
+.gsheet-cell.editing-cell {
+  z-index: 7 !important;
+}
+
+.gsheet-cell.editing-cell::after {
+  display: none !important;
+}
+
 /* ==========================================================================
    COLORES Y ESTILOS EXACTOS DE LA CAPTURA DE GOOGLE SHEETS
    ========================================================================== */
@@ -547,10 +556,11 @@
 }
 
 .gsheet-tab-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
+  padding: 6px 10px 6px 14px;
   background: #ffffff;
   border-top: 2px solid transparent;
   border-left: 1px solid #dadce0;
@@ -573,6 +583,87 @@
 
 .gsheet-tab-item:hover:not(.active) {
   background: #f1f3f4;
+}
+
+.gsheet-tab-options-btn {
+  background: transparent;
+  border: none;
+  padding: 2px;
+  border-radius: 3px;
+  color: #5f6368;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.gsheet-tab-item:hover .gsheet-tab-options-btn,
+.gsheet-tab-item.active .gsheet-tab-options-btn {
+  opacity: 1;
+}
+
+.gsheet-tab-options-btn:hover {
+  background: #e8eaed;
+  color: #202124;
+}
+
+.gsheet-tab-dropdown {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  min-width: 140px;
+  padding: 4px 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+}
+
+.gsheet-tab-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #3c4043;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.1s;
+}
+
+.gsheet-tab-dropdown-item:hover {
+  background: #f1f3f4;
+  color: #202124;
+}
+
+.gsheet-tab-dropdown-item.danger {
+  color: #d93025;
+}
+
+.gsheet-tab-dropdown-item.danger:hover {
+  background: #fce8e6;
+}
+
+.gsheet-tab-inline-input {
+  font-size: 12px;
+  font-weight: 700;
+  color: #202124;
+  border: 1px solid #1a73e8;
+  border-radius: 2px;
+  padding: 1px 4px;
+  outline: none;
+  background: #ffffff;
+  min-width: 60px;
+  max-width: 130px;
 }
 
 .gsheet-bottom-right {
@@ -781,23 +872,78 @@
   letter-spacing: 0.2px;
 }
 
-/* Editor en Celda (Inline Input) */
+/* Editor en Celda (Inline Input) - Se integra perfectamente en la celda sin crear doble borde */
 .gsheet-cell-inline-input {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  border: 2px solid #1a73e8 !important;
+  border: none !important;
   outline: none !important;
+  box-shadow: none !important;
   font-size: inherit;
   font-family: inherit;
   font-weight: inherit;
-  padding: 2px 5px;
+  padding: 4px 8px;
   background: #ffffff !important;
   color: #202124 !important;
   box-sizing: border-box;
+  margin: 0;
+  z-index: 5;
 }
 
 .gsheet-sync-badge.live-synced {
   color: #0d652d;
   font-weight: 600;
 }
+
+/* Rango de Selección interactivo (Click & Drag, Shift + Click, Shift + Flechas) */
+.selected-range-cell {
+  background-color: rgba(26, 115, 232, 0.14) !important;
+  position: relative;
+}
+
+.selected-range-top {
+  border-top: 2px solid #1a73e8 !important;
+}
+
+.selected-range-bottom {
+  border-bottom: 2px solid #1a73e8 !important;
+}
+
+.selected-range-left {
+  border-left: 2px solid #1a73e8 !important;
+}
+
+.selected-range-right {
+  border-right: 2px solid #1a73e8 !important;
+}
+
+/* Barra de Estadísticas estilo Excel (Average, Count, Sum) */
+.gsheet-stats-excel-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 11.5px;
+  color: #444746;
+  letter-spacing: 0.1px;
+}
+
+.gsheet-stat-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gsheet-stat-item strong {
+  color: #1f1f1f;
+  font-weight: 600;
+}
+
+.gsheet-stats-ready {
+  color: #80868b;
+  font-style: normal;
+}
+
 

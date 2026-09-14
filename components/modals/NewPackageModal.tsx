@@ -48,6 +48,7 @@ interface NewPackageModalProps {
   onChange: (form: NewPkgFormData) => void;
   onSave: (e: React.FormEvent) => void;
   onClose: () => void;
+  isWarehouseMode?: boolean;
 }
 
 export default function NewPackageModal({
@@ -55,7 +56,8 @@ export default function NewPackageModal({
   clientes,
   onChange,
   onSave,
-  onClose
+  onClose,
+  isWarehouseMode = false
 }: NewPackageModalProps) {
   const [activeTab, setActiveTab] = useState<'general' | 'carga' | 'resumen'>('general');
   const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
@@ -454,20 +456,22 @@ export default function NewPackageModal({
                     </div>
                   </div>
 
-                  <div>
-                    <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                      Valor Declarado (USD)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={form.valorDeclaradoUsd}
-                      onChange={e => set('valorDeclaradoUsd', e.target.value)}
-                      placeholder="0.00"
-                      style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', outline: 'none' }}
-                    />
-                  </div>
+                  {!isWarehouseMode && (
+                    <div>
+                      <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
+                        Valor Declarado (USD)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={form.valorDeclaradoUsd}
+                        onChange={e => set('valorDeclaradoUsd', e.target.value)}
+                        placeholder="0.00"
+                        style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', outline: 'none' }}
+                      />
+                    </div>
+                  )}
 
                   <div>
                     <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
@@ -530,39 +534,73 @@ export default function NewPackageModal({
                     </div>
                   </div>
 
-                  {/* Real-time Rate Ticket Card */}
-                  <div style={{ padding: '14px', background: '#0f172a', color: '#ffffff', borderRadius: '12px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 800, borderBottom: '1px solid #334155', paddingBottom: '6px', color: '#94a3b8' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <DollarSign style={{ width: '14px', height: '14px', color: '#10b981' }} />
-                        Desglose de Liquidación
-                      </span>
-                      <span style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 900 }}>AMEX RATE</span>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11.5px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
-                        <span>Flete Aéreo ({previewPeso.toFixed(1)} kg × $12):</span>
-                        <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#ffffff' }}>${previewFlete.toFixed(2)}</span>
+                  {/* Real-time Rate Ticket Card vs Ficha de Custodia WMS */}
+                  {isWarehouseMode ? (
+                    <div style={{ padding: '14px', background: '#0f172a', color: '#ffffff', borderRadius: '12px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 800, borderBottom: '1px solid #334155', paddingBottom: '6px', color: '#94a3b8' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Boxes style={{ width: '14px', height: '14px', color: '#38bdf8' }} />
+                          Ficha de Ingreso a Almacén
+                        </span>
+                        <span style={{ fontFamily: 'monospace', color: '#38bdf8', fontWeight: 900 }}>WMS LINCE</span>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
-                        <span>Cargo Administrativo / Guía:</span>
-                        <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#ffffff' }}>${previewAdmin.toFixed(2)}</span>
-                      </div>
-                    </div>
 
-                    <div style={{ paddingTop: '6px', borderTop: '1px solid #334155', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-                      <span style={{ fontWeight: 900, fontSize: '13px', color: '#f8fafc' }}>Total a Cobrar:</span>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '16px', fontWeight: 900, fontFamily: 'monospace', color: '#10b981' }}>
-                          ${previewTotalUsd.toFixed(2)} USD
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '11.5px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
+                          <span>Peso Físico:</span>
+                          <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#ffffff' }}>{previewPeso.toFixed(2)} kg</span>
                         </div>
-                        <div style={{ fontSize: '11.5px', fontWeight: 700, fontFamily: 'monospace', color: '#94a3b8' }}>
-                          ≈ S/ {previewTotalPen.toFixed(2)} PEN
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
+                          <span>Tipo Empaque:</span>
+                          <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#ffffff' }}>{form.tipoEmpaque || 'CAJA'}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
+                          <span>Ubicación Estantería:</span>
+                          <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#a855f7' }}>{currentEstante || 'REC (Recepción)'}</span>
                         </div>
                       </div>
+
+                      <div style={{ paddingTop: '6px', borderTop: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontWeight: 800, fontSize: '11.5px', color: '#94a3b8' }}>Destino Custodia:</span>
+                        <span style={{ fontSize: '12px', fontWeight: 800, color: '#38bdf8' }}>
+                          {form.ubicacionActual === 'AmexLince' ? 'Almacén Central Lince' : form.ubicacionActual}
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div style={{ padding: '14px', background: '#0f172a', color: '#ffffff', borderRadius: '12px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 800, borderBottom: '1px solid #334155', paddingBottom: '6px', color: '#94a3b8' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <DollarSign style={{ width: '14px', height: '14px', color: '#10b981' }} />
+                          Desglose de Liquidación
+                        </span>
+                        <span style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 900 }}>AMEX RATE</span>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11.5px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
+                          <span>Flete Aéreo ({previewPeso.toFixed(1)} kg × $12):</span>
+                          <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#ffffff' }}>${previewFlete.toFixed(2)}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
+                          <span>Cargo Administrativo / Guía:</span>
+                          <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#ffffff' }}>${previewAdmin.toFixed(2)}</span>
+                        </div>
+                      </div>
+
+                      <div style={{ paddingTop: '6px', borderTop: '1px solid #334155', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                        <span style={{ fontWeight: 900, fontSize: '13px', color: '#f8fafc' }}>Total a Cobrar:</span>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '16px', fontWeight: 900, fontFamily: 'monospace', color: '#10b981' }}>
+                            ${previewTotalUsd.toFixed(2)} USD
+                          </div>
+                          <div style={{ fontSize: '11.5px', fontWeight: 700, fontFamily: 'monospace', color: '#94a3b8' }}>
+                            ≈ S/ {previewTotalPen.toFixed(2)} PEN
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

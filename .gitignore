@@ -46,3 +46,8 @@ desktop.ini
 .env*
 !.env.example
 certificates/
+
+# Excel data files & TypeScript cache
+*.xlsx
+*.xls
+*.tsbuildinfo

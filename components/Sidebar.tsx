@@ -16,7 +16,7 @@ export default function Sidebar({
   onCloseSidebar
 }: SidebarProps) {
   const navItem = (tab: string, icon: string, label: string) => {
-    const isActive = activeTab === tab;
+    const isActive = activeTab === tab || (tab === 'directorio-clientes' && activeTab === 'clientes-360');
     return (
       <div
         className={`nav-item ${isActive ? 'active' : ''}`}
@@ -104,12 +104,13 @@ export default function Sidebar({
           {navItem('mm-lince', 'fa-solid fa-store', '2. Almacén Central (Lince)')}
           {navItem('shp-entregas', 'fa-solid fa-box-open', '3. Entregas & Búsqueda WR')}
           {navItem('fico-cobros', 'fa-solid fa-receipt', '4. Cobros & Vouchers')}
-          {navItem('shp-deliveries', 'fa-solid fa-car-side', '5. Despacho Carro AMEX')}
-          {navItem('wms-picking', 'fa-solid fa-clipboard-list', '6. Picking Shalom/Olva')}
-          {navItem('mobile-scanner', 'fa-solid fa-barcode', '7. Escáner de Códigos')}
-          {navItem('dni-matrix', 'fa-solid fa-id-card', '8. 🪪 Procesador de DNI')}
-          {navItem('rotulos-a4', 'fa-solid fa-tags', '9. 🏷️ Rótulos Agencias')}
-          {navItem('boletas-shalom', 'fa-solid fa-receipt', '10. 📦 Boletas Shalom')}
+          {navItem('directorio-clientes', 'fa-solid fa-users', '5. Directorio de Clientes')}
+          {navItem('shp-deliveries', 'fa-solid fa-car-side', '6. Despacho Carro AMEX')}
+          {navItem('wms-picking', 'fa-solid fa-clipboard-list', '7. Picking Shalom/Olva')}
+          {navItem('mobile-scanner', 'fa-solid fa-barcode', '8. Escáner de Códigos')}
+          {navItem('dni-matrix', 'fa-solid fa-id-card', '9. 🪪 Procesador de DNI')}
+          {navItem('rotulos-a4', 'fa-solid fa-tags', '10. 🏷️ Rótulos Agencias')}
+          {navItem('boletas-shalom', 'fa-solid fa-receipt', '11. 📦 Boletas Shalom')}
         </div>
       </div>
     </nav>

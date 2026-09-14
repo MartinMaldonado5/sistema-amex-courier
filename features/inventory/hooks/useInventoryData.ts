@@ -334,7 +334,7 @@ export function useInventoryData({
       piso: pis,
       posicionEstante: pos,
       pesoKg: Number(editFormData.pesoKg || 0),
-      valorDeclaradoUsd: Number(editFormData.valorDeclaradoUsd || 0)
+      valorDeclaradoUsd: editFormData.valorDeclaradoUsd !== undefined ? Number(editFormData.valorDeclaradoUsd) : (selectedPackageForAction.valorDeclaradoUsd || 0)
     };
 
     if (onUpdatePackage) {

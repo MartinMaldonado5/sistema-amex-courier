@@ -96,7 +96,7 @@ export default function PickingTab({
   };
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div style={{ width: '100%', maxWidth: '100%', margin: 0, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '16px', boxSizing: 'border-box' }}>
       <div className="sap-breadcrumb">
         <span>Operaciones y Almacenes</span> / <span>Listas de Picking, Búsqueda de WRs y Despacho a Agencias</span>
       </div>

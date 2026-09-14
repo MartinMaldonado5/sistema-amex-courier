@@ -171,7 +171,12 @@ body {
   .main-content {
     grid-area: main !important;
     height: 100vh !important;
+    max-height: 100vh !important;
     overflow-y: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
 }
 
@@ -231,23 +236,50 @@ body {
   box-shadow: 0 4px 10px rgba(0, 112, 242, 0.4);
 }
 
-/* Main Workspace Content */
+/* Main Workspace Content: 100% full-width, edge-to-edge for all current & future modules */
 .main-content {
   flex: 1;
-  padding: 16px 20px;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
   overscroll-behavior-y: contain;
   scroll-behavior: smooth;
-  background: #f8fafc !important;
-  color: var(--sap-text) !important;
+  background: #f8fafc;
+  color: var(--sap-text);
   display: flex;
   flex-direction: column;
+  position: relative;
+  box-sizing: border-box;
 }
 
-/* Modo DNI Matrix: Integración Dark 100% inmersiva sin bordes ni fondo blanco */
+/* Modo Cobros: Ancho completo 100% fluido e independiente */
+.main-content.cobros-mode {
+  padding: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* Modo Live Sheets (Amex Excel): Fullscreen sin padding, fondo blanco, scroll propio */
+.main-content.live-sheets-mode {
+  padding: 0 !important;
+  background: #ffffff !important;
+  overflow: hidden !important;
+}
+
+/* Modo DNI Matrix & Módulos Oscuros: Integración Dark 100% inmersiva sin bordes ni fondo blanco */
+.main-content.dark-tab-mode,
 .main-content.dni-matrix-mode,
+.main-content.rotulos-mode,
 .main-content.boletas-shalom-mode {
   background: #0a0d14 !important;
   padding: 0 !important;
@@ -258,25 +290,37 @@ body {
   scrollbar-color: #334155 #0a0d14;
 }
 
+.main-content.rotulos-mode {
+  background: #080d1a !important;
+}
+
+.main-content.dark-tab-mode::-webkit-scrollbar,
 .main-content.dni-matrix-mode::-webkit-scrollbar,
+.main-content.rotulos-mode::-webkit-scrollbar,
 .main-content.boletas-shalom-mode::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
+.main-content.dark-tab-mode::-webkit-scrollbar-track,
 .main-content.dni-matrix-mode::-webkit-scrollbar-track,
+.main-content.rotulos-mode::-webkit-scrollbar-track,
 .main-content.boletas-shalom-mode::-webkit-scrollbar-track {
   background: #0a0d14;
 }
 
+.main-content.dark-tab-mode::-webkit-scrollbar-thumb,
 .main-content.dni-matrix-mode::-webkit-scrollbar-thumb,
+.main-content.rotulos-mode::-webkit-scrollbar-thumb,
 .main-content.boletas-shalom-mode::-webkit-scrollbar-thumb {
   background: #1e293b;
   border-radius: 9999px;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.main-content.dark-tab-mode::-webkit-scrollbar-thumb:hover,
 .main-content.dni-matrix-mode::-webkit-scrollbar-thumb:hover,
+.main-content.rotulos-mode::-webkit-scrollbar-thumb:hover,
 .main-content.boletas-shalom-mode::-webkit-scrollbar-thumb:hover {
   background: #38bdf8;
 }
@@ -843,7 +887,8 @@ tr:hover { background: #f8fafc !important; }
     display: none;
   }
   .main-content {
-    padding: 16px 12px;
+    padding: 0 !important;
+    width: 100% !important;
   }
   .page-title-bar {
     flex-direction: column;
@@ -926,11 +971,14 @@ tr:hover { background: #f8fafc !important; }
     padding-bottom: 0;
   }
   .main-content {
-    padding: 14px 12px 76px 12px !important;
+    padding: 0 0 76px 0 !important;
+    width: 100% !important;
   }
+  .main-content.dark-tab-mode,
   .main-content.dni-matrix-mode,
+  .main-content.rotulos-mode,
   .main-content.boletas-shalom-mode {
-    padding: 0 !important;
+    padding: 0 0 76px 0 !important;
   }
   .sidebar-backdrop {
     display: block !important;
@@ -1542,7 +1590,8 @@ tr:hover { background: #f8fafc !important; }
   flex-direction: column;
   height: 100%;
   width: 100%;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   background: #f8fafc;
 }
 

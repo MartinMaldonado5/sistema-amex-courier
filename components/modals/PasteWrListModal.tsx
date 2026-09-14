@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Paquete } from '@/types';
 import { X, ClipboardPaste, CheckCircle2, AlertTriangle, ArrowRight, Sparkles, Database } from 'lucide-react';
 import { soundEffects } from '@/lib/audio/soundEffects';
+import { parseClipboardSpreadsheet } from '@/features/live-sheets/utils/clipboardParser';
 
 interface ParsedItem {
   codigoWr: string;
@@ -37,7 +38,7 @@ export default function PasteWrListModal({
   const parsedResults = useMemo(() => {
     if (!rawText.trim()) return { items: [], totalLines: 0, duplicatesCount: 0 };
 
-    const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+    const matrix = parseClipboardSpreadsheet(rawText);
     const seenCodes = new Set<string>();
     const items: ParsedItem[] = [];
     let duplicates = 0;
@@ -49,93 +50,62 @@ export default function PasteWrListModal({
       }
     });
 
-    for (const line of lines) {
-      if (line.includes('\t') || line.includes(';')) {
-        const delimiter = line.includes('\t') ? '\t' : ';';
-        const cols = line.split(delimiter).map(c => c.trim().replace(/^["']|["']$/g, ''));
-        if (cols.length === 0 || !cols[0]) continue;
+    for (const cols of matrix) {
+      if (cols.length === 0 || !cols[0]) continue;
 
-        // Saltar línea de encabezado ("NOMBRE \t CODIGO WAREHOUSE \t CODIGO TIB")
-        if (/^(NOMBRE|CLIENTE|CONSIGNATARIO)/i.test(cols[0]) && /^(CODIGO|WR|WAREHOUSE|TIB)/i.test(cols[1] || '')) {
-          continue;
-        }
+      let consignee = '';
+      let rawCode = '';
+      let tib = '';
 
-        let consignee = '';
-        let rawCode = '';
-        let tib = '';
-
-        // Detección inteligente del formato Google Sheets AMEX:
-        // Col 0 = NOMBRE ("GABRIELA MORE"), Col 1 = CODIGO WAREHOUSE ("WR000457269"), Col 2 = CODIGO TIB ("457269")
-        if (cols[1] && (cols[1].toUpperCase().includes('WR') || /^\d{4,9}$/.test(cols[1]))) {
-          consignee = cols[0].toUpperCase();
+      if (cols.length >= 2) {
+        if (cols[1].toUpperCase().includes('WR') || /^\d{4,9}$/.test(cols[1])) {
+          consignee = cols[0];
           rawCode = cols[1];
           tib = cols[2] ? cols[2].toUpperCase().trim() : '';
-        } else {
-          // Formato estándar: Col 0 = CODIGO WR, Col 1 = Tracking / Consignatario
+        } else if (cols[0].toUpperCase().includes('WR') || /^\d{4,9}$/.test(cols[0])) {
           rawCode = cols[0];
-          consignee = cols[1] ? cols[1].toUpperCase() : '';
+          consignee = cols[1];
+          tib = cols[2] ? cols[2].toUpperCase().trim() : '';
+        } else {
+          consignee = cols[0];
+          rawCode = cols[1];
           tib = cols[2] ? cols[2].toUpperCase().trim() : '';
         }
-
-        if (!rawCode) continue;
-        const cleanCode = rawCode.toUpperCase().replace(/\s+/g, '');
-        const normalizedCode = /^\d{3,8}$/.test(cleanCode) ? `WR${cleanCode}` : cleanCode;
-
-        if (seenCodes.has(normalizedCode)) {
-          duplicates++;
-          continue;
-        }
-        seenCodes.add(normalizedCode);
-
-        // Si no se proporcionó TIB, extraer dígitos del código WR (ej: WR000457269 -> 457269)
-        const safeTib = tib || normalizedCode.replace(/^[A-Za-z]+0*/, '');
-        const dbMatch = autoEnrich ? dbMap.get(normalizedCode) : undefined;
-
-        items.push({
-          codigoWr: normalizedCode,
-          trackingUsa: safeTib || dbMatch?.trackingUsa || '',
-          casillero: safeTib || dbMatch?.codigoCasillero || '',
-          consignatario: consignee || dbMatch?.nombreConsignatario || '',
-          pesoKg: Number(cols[3] || cols[4]) || dbMatch?.pesoKg || 0,
-          posicionEstante: dbMatch?.posicionEstante || 'REC',
-          notas: '',
-          matchedInDb: !!dbMatch
-        });
       } else {
-        const codeMatch = line.match(/(?:WR[-\s]?)?\d{3,8}|[A-Z0-9_-]{5,25}/i);
-        const code = codeMatch ? codeMatch[0].toUpperCase().replace(/\s+/g, '') : line.toUpperCase();
-
-        if (!code) continue;
-        // Saltar si es la palabra "CODIGO" o "NOMBRE"
-        if (/^(NOMBRE|CODIGO|WAREHOUSE|TIB)$/i.test(code)) continue;
-
-        const normalizedCode = /^\d{3,8}$/.test(code) ? `WR${code}` : code;
-
-        if (seenCodes.has(normalizedCode)) {
-          duplicates++;
-          continue;
-        }
-        seenCodes.add(normalizedCode);
-
-        const safeTib = normalizedCode.replace(/^[A-Za-z]+0*/, '');
-        const dbMatch = autoEnrich ? dbMap.get(normalizedCode) : undefined;
-
-        items.push({
-          codigoWr: normalizedCode,
-          trackingUsa: safeTib || dbMatch?.trackingUsa || '',
-          casillero: safeTib || dbMatch?.codigoCasillero || '',
-          consignatario: dbMatch?.nombreConsignatario || '',
-          pesoKg: dbMatch?.pesoKg || 0,
-          posicionEstante: dbMatch?.posicionEstante || 'REC',
-          notas: dbMatch?.descripcion || '',
-          matchedInDb: !!dbMatch
-        });
+        rawCode = cols[0];
       }
+
+      if (!rawCode) continue;
+      if (/^(NOMBRE|CODIGO|WAREHOUSE|TIB)$/i.test(rawCode)) continue;
+
+      const cleanCode = rawCode.toUpperCase().replace(/\s+/g, '');
+      const normalizedCode = /^\d{3,8}$/.test(cleanCode) ? `WR${cleanCode}` : cleanCode;
+
+      if (seenCodes.has(normalizedCode)) {
+        duplicates++;
+        continue;
+      }
+      seenCodes.add(normalizedCode);
+
+      const safeTib = tib || normalizedCode.replace(/^[A-Za-z]+0*/, '');
+      const dbMatch = autoEnrich ? dbMap.get(normalizedCode) : undefined;
+      const finalConsignee = (consignee && consignee !== '[NOMBRE]') ? consignee : (dbMatch?.nombreConsignatario || consignee || '');
+
+      items.push({
+        codigoWr: normalizedCode,
+        trackingUsa: safeTib || dbMatch?.trackingUsa || '',
+        casillero: safeTib || dbMatch?.codigoCasillero || '',
+        consignatario: finalConsignee,
+        pesoKg: Number(cols[3] || cols[4]) || dbMatch?.pesoKg || 0,
+        posicionEstante: dbMatch?.posicionEstante || 'REC',
+        notas: dbMatch?.descripcion || '',
+        matchedInDb: !!dbMatch
+      });
     }
 
     return {
       items,
-      totalLines: lines.length,
+      totalLines: matrix.length,
       duplicatesCount: duplicates
     };
   }, [rawText, autoEnrich, paquetes]);

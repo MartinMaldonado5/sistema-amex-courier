@@ -22,6 +22,8 @@ export const sheetsService = {
 
     return data.map(h => ({
       id: h.id,
+      libroId: h.libro_id || null,
+      nombreHoja: h.nombre_hoja || (h.libro_id ? h.titulo : 'Hoja 1'),
       titulo: h.titulo,
       descripcion: h.descripcion || '',
       tipoProceso: (h.tipo_proceso as TipoProcesoCotejo) || 'RECEPCION_LINCE',
@@ -34,17 +36,23 @@ export const sheetsService = {
   },
 
   async fetchItems(hojaId: string): Promise<ItemCotejo[]> {
-    if (!hojaId) return [];
+    if (!hojaId || typeof hojaId !== 'string') return [];
+
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hojaId.trim());
+    if (!isUuid) {
+      console.warn('[sheetsService] fetchItems llamado con ID no-UUID:', hojaId);
+      return [];
+    }
 
     const { data, error } = await supabase
       .from('hojas_cotejo_items')
       .select('*')
-      .eq('hoja_id', hojaId)
+      .eq('hoja_id', hojaId.trim())
       .order('orden', { ascending: true });
 
     if (error) {
-      console.error('Error fetching items:', error);
-      throw error;
+      console.error('[sheetsService] Error fetching items:', error.message || error, error.details || '', error.code || '', 'hojaId:', hojaId);
+      return [];
     }
 
     if (!data) return [];
@@ -72,7 +80,15 @@ export const sheetsService = {
   async updateSheetTitle(hojaId: string, titulo: string): Promise<void> {
     const { error } = await supabase
       .from('hojas_cotejo')
-      .update({ titulo: titulo.trim() })
+      .update({ titulo: titulo.trim(), actualizado_en: new Date().toISOString() })
+      .eq('id', hojaId);
+    if (error) throw error;
+  },
+
+  async updateSheetTabName(hojaId: string, nombreHoja: string): Promise<void> {
+    const { error } = await supabase
+      .from('hojas_cotejo')
+      .update({ nombre_hoja: nombreHoja.trim(), actualizado_en: new Date().toISOString() })
       .eq('id', hojaId);
     if (error) throw error;
   },
@@ -81,15 +97,20 @@ export const sheetsService = {
     titulo: string,
     descripcion: string = 'Cotejo y pistoleo en tiempo real de bultos recibidos',
     tipoProceso: TipoProcesoCotejo = 'RECEPCION_LINCE',
-    creadoPor: string = 'AMEX'
+    creadoPor: string = 'AMEX',
+    libroId?: string | null,
+    nombreHoja?: string | null
   ): Promise<HojaCotejo | null> {
+    const defaultTabName = nombreHoja || (libroId ? titulo : 'Hoja 1');
     const { data, error } = await supabase
       .from('hojas_cotejo')
       .insert({
         titulo: titulo || 'AMEX WR',
+        nombre_hoja: defaultTabName,
         descripcion,
         tipo_proceso: tipoProceso,
-        creado_por: creadoPor
+        creado_por: creadoPor,
+        libro_id: libroId || null
       })
       .select()
       .single();
@@ -103,6 +124,8 @@ export const sheetsService = {
 
     return {
       id: data.id,
+      libroId: data.libro_id || null,
+      nombreHoja: data.nombre_hoja || defaultTabName,
       titulo: data.titulo,
       descripcion: data.descripcion || '',
       tipoProceso: (data.tipo_proceso as TipoProcesoCotejo) || 'RECEPCION_LINCE',
@@ -114,6 +137,22 @@ export const sheetsService = {
     };
   },
 
+  async createSubSheet(
+    libroId: string,
+    nombreHoja: string,
+    operatorName: string = 'AMEX',
+    tipoProceso: TipoProcesoCotejo = 'RECEPCION_LINCE'
+  ): Promise<HojaCotejo | null> {
+    return this.createSheet(
+      nombreHoja,
+      'Pestaña de hoja de cotejo',
+      tipoProceso,
+      operatorName,
+      libroId,
+      nombreHoja
+    );
+  },
+
   async deleteSheet(hojaId: string): Promise<void> {
     await supabase.from('hojas_cotejo_items').delete().eq('hoja_id', hojaId);
     const { error } = await supabase.from('hojas_cotejo').delete().eq('id', hojaId);
@@ -121,11 +160,21 @@ export const sheetsService = {
   },
 
   async duplicateSheet(hojaId: string, operatorName: string, originalSheet: HojaCotejo): Promise<HojaCotejo | null> {
+    const isSubSheet = !!originalSheet.libroId;
+    const title = isSubSheet
+      ? `${originalSheet.nombreHoja || originalSheet.titulo} (Copia)`
+      : `${originalSheet.titulo} (Copia)`;
+    const tabName = isSubSheet
+      ? `${originalSheet.nombreHoja || originalSheet.titulo} (Copia)`
+      : 'Hoja 1';
+
     const newSheet = await this.createSheet(
-      `${originalSheet.titulo} (Copia)`,
+      title,
       originalSheet.descripcion,
       originalSheet.tipoProceso,
-      operatorName
+      operatorName,
+      originalSheet.libroId || null,
+      tabName
     );
 
     if (!newSheet) return null;

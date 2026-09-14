@@ -89,3 +89,29 @@ export interface SheetStats {
   pendientes: number;
   progreso: number;
 }
+
+export interface CellSelectionRange {
+  startCol: string;
+  startRow: number;
+  endCol: string;
+  endRow: number;
+}
+
+export interface SelectionStats {
+  count: number;
+  numericCount: number;
+  sum: number;
+  average: number;
+  hasNumbers: boolean;
+}
+
+export const SPREADSHEET_COLUMNS = [
+  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+  'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+  'U', 'V', 'W', 'X', 'Y', 'Z'
+] as const;
+
+export type SpreadsheetColumn = typeof SPREADSHEET_COLUMNS[number];
+
+export const MAX_SPREADSHEET_ROWS = 1000;
+

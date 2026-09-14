@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import { sheetsService } from '../services/sheets.service';
 import { SheetRow, SheetStats } from '../types';
 import { getSheetLongCode } from '@/components/tabs/SheetsHub';
+import { extractLast6Digits } from '../utils/codeFormatters';
 
 interface UseLiveSheetsDataProps {
   paquetes: Paquete[];
@@ -14,6 +15,7 @@ interface UseLiveSheetsDataProps {
 export function useLiveSheetsData({ paquetes, operatorName }: UseLiveSheetsDataProps) {
   // State: Hojas & Items
   const [hojas, setHojas] = useState<HojaCotejo[]>([]);
+  const [activeLibroId, setActiveLibroId] = useState<string | null>(null);
   const [activeHojaId, setActiveHojaId] = useState<string | null>(null);
   const [items, setItems] = useState<ItemCotejo[]>([]);
   const [isLoadingSheets, setIsLoadingSheets] = useState(true);
@@ -26,14 +28,27 @@ export function useLiveSheetsData({ paquetes, operatorName }: UseLiveSheetsDataP
   // Search filter
   const [searchInSheet, setSearchInSheet] = useState('');
 
+  // Libros principales (Workbooks independientes para la galería / SheetsHub)
+  const libros = useMemo(() => {
+    return hojas.filter(h => !h.libroId);
+  }, [hojas]);
+
+  // Hojas pertenecientes ÚNICAMENTE al libro activo actual
+  const activeBookSheets = useMemo(() => {
+    if (!activeLibroId) return [];
+    return hojas
+      .filter(h => h.id === activeLibroId || h.libroId === activeLibroId)
+      .sort((a, b) => new Date(a.creadoEn).getTime() - new Date(b.creadoEn).getTime());
+  }, [hojas, activeLibroId]);
+
   // 1. Fetch Hojas
   const fetchHojas = useCallback(async () => {
     try {
       setIsLoadingSheets(true);
       const mapped = await sheetsService.fetchHojas();
       setHojas(mapped);
-      if (activeHojaId) {
-        const found = mapped.find(h => h.id === activeHojaId);
+      if (activeLibroId) {
+        const found = mapped.find(h => h.id === activeLibroId);
         if (found) setDocTitle(found.titulo || 'AMEX WR');
       }
     } catch (err) {
@@ -41,7 +56,7 @@ export function useLiveSheetsData({ paquetes, operatorName }: UseLiveSheetsDataP
     } finally {
       setIsLoadingSheets(false);
     }
-  }, [activeHojaId]);
+  }, [activeLibroId]);
 
   // 2. Fetch Items
   const fetchItems = useCallback(async (hojaId: string) => {
@@ -49,9 +64,18 @@ export function useLiveSheetsData({ paquetes, operatorName }: UseLiveSheetsDataP
     try {
       setIsLoadingItems(true);
       const mappedItems = await sheetsService.fetchItems(hojaId);
-      setItems(mappedItems);
-    } catch (err) {
-      console.error('Error in fetchItems:', err);
+      // Deduplicar items por id para evitar colisiones
+      const seen = new Set<string>();
+      const deduped: ItemCotejo[] = [];
+      for (const item of mappedItems) {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          deduped.push(item);
+        }
+      }
+      setItems(deduped);
+    } catch (err: any) {
+      console.error('Error in fetchItems:', err?.message || err);
     } finally {
       setIsLoadingItems(false);
     }
@@ -62,16 +86,22 @@ export function useLiveSheetsData({ paquetes, operatorName }: UseLiveSheetsDataP
     fetchHojas();
   }, [fetchHojas]);
 
-  // Sync active sheet items and title
+  // Sync active sheet items
   useEffect(() => {
     if (activeHojaId) {
       fetchItems(activeHojaId);
-      const activeSheet = hojas.find(h => h.id === activeHojaId);
-      if (activeSheet) {
-        setDocTitle(activeSheet.titulo || 'AMEX WR');
+    }
+  }, [activeHojaId, fetchItems]);
+
+  // Sync active workbook title
+  useEffect(() => {
+    if (activeLibroId) {
+      const activeBook = hojas.find(h => h.id === activeLibroId);
+      if (activeBook) {
+        setDocTitle(activeBook.titulo || 'AMEX WR');
       }
     }
-  }, [activeHojaId, fetchItems, hojas]);
+  }, [activeLibroId, hojas]);
 
   // Sincronización con URL limpia (/amex-excel/d/...) o Hash legado (#d/...)
   useEffect(() => {
@@ -85,19 +115,26 @@ export function useLiveSheetsData({ paquetes, operatorName }: UseLiveSheetsDataP
       targetCode = window.location.hash.replace('#d/', '').trim();
     }
 
+    if (targetCode) {
+      targetCode = targetCode.split('/')[0].split('?')[0].split('#')[0].trim();
+    }
+
     if (targetCode && hojas.length > 0) {
       const found = hojas.find(h => getSheetLongCode(h.id) === targetCode || h.id === targetCode);
       if (found) {
+        const rootId = found.libroId || found.id;
+        setActiveLibroId(rootId);
         setActiveHojaId(found.id);
-        setDocTitle(found.titulo || 'AMEX WR');
+        const rootBook = hojas.find(h => h.id === rootId);
+        if (rootBook) setDocTitle(rootBook.titulo || 'AMEX WR');
       }
     }
   }, [hojas]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      if (activeHojaId) {
-        const code = getSheetLongCode(activeHojaId);
+      if (activeLibroId) {
+        const code = getSheetLongCode(activeLibroId);
         window.history.replaceState(null, '', `/amex-excel/d/${code}`);
       } else {
         if (window.location.pathname.startsWith('/amex-excel/d/')) {
@@ -105,7 +142,7 @@ export function useLiveSheetsData({ paquetes, operatorName }: UseLiveSheetsDataP
         }
       }
     }
-  }, [activeHojaId]);
+  }, [activeLibroId]);
 
   // Códigos escaneados en columna D
   const allScannedCodes = useMemo(() => {
@@ -152,22 +189,27 @@ export function useLiveSheetsData({ paquetes, operatorName }: UseLiveSheetsDataP
   // Transformar ítems en filas de hoja de cálculo
   const sheetRows = useMemo(() => {
     const rows: SheetRow[] = [];
+    const seenRowIds = new Set<string>();
     let prevConsignee = '';
 
     items.forEach((it, idx) => {
       const consignee = (it.consignatario || '').trim();
 
       if (prevConsignee && consignee && consignee !== prevConsignee) {
-        rows.push({
-          id: `sep-${it.id}`,
-          nombre: '',
-          codigoWarehouse: '',
-          codigoTib: '',
-          codigoEscaneado: '',
-          estado: 'PENDIENTE',
-          nombreEscaneado: '',
-          isSeparator: true
-        });
+        const sepId = `sep-${it.id || idx}-${idx}`;
+        if (!seenRowIds.has(sepId)) {
+          seenRowIds.add(sepId);
+          rows.push({
+            id: sepId,
+            nombre: '',
+            codigoWarehouse: '',
+            codigoTib: '',
+            codigoEscaneado: '',
+            estado: 'PENDIENTE',
+            nombreEscaneado: '',
+            isSeparator: true
+          });
+        }
       }
 
       prevConsignee = consignee;
@@ -187,29 +229,56 @@ export function useLiveSheetsData({ paquetes, operatorName }: UseLiveSheetsDataP
       let scannedName = (it.notas || '').trim();
 
       if (scannedCode) {
-        if (it.estado === 'ESCANEADO') {
+        const cleanScanned = scannedCode.toUpperCase().replace(/\s+/g, '');
+        const cleanDigits = cleanScanned.replace(/^[A-Za-z]+0*/, '');
+
+        // 1. Buscar coincidencia en el manifiesto de la hoja (relacionado con columna B y columna A)
+        const manifestMatch = checkCodeInManifest(scannedCode);
+
+        // 2. Buscar coincidencia en la base de datos de paquetes
+        const dbPackage = paquetes.find(
+          p =>
+            (p.numeroReciboBodega && p.numeroReciboBodega.toUpperCase().replace(/\s+/g, '') === cleanScanned) ||
+            (p.numeroReciboBodega && `WR${p.numeroReciboBodega.toUpperCase().replace(/\s+/g, '')}` === cleanScanned) ||
+            (p.numeroReciboBodega && p.numeroReciboBodega.replace(/^[A-Za-z]+0*/, '') === cleanDigits)
+        );
+
+        // 3. Resolver el nombre correspondiente a la columna A y B
+        const relatedName =
+          manifestMatch && manifestMatch.consignatario && manifestMatch.consignatario !== '[NOMBRE]'
+            ? manifestMatch.consignatario
+            : dbPackage?.nombreConsignatario
+            ? dbPackage.nombreConsignatario
+            : manifestMatch?.consignatario && manifestMatch.consignatario !== '[NOMBRE]'
+            ? manifestMatch.consignatario
+            : (it.consignatario && it.consignatario !== '[NOMBRE]' ? it.consignatario : '');
+
+        if (manifestMatch || dbPackage) {
           displayEstado = 'ENCONTRADO';
+          scannedName = relatedName || scannedName || 'CLIENTE AMEX';
+        } else if (it.estado === 'ESCANEADO') {
+          displayEstado = 'ENCONTRADO';
+          scannedName = relatedName || scannedName || it.consignatario || 'CLIENTE AMEX';
         } else if (it.estado === 'NO_LISTADO') {
           displayEstado = 'NO ENCONTRADO';
-          if (!scannedName) scannedName = 'NO ASIGNADO';
+          scannedName = scannedName || 'NO ASIGNADO';
         } else {
-          const match = checkCodeInManifest(scannedCode);
-          if (match) {
-            displayEstado = 'ENCONTRADO';
-            scannedName = match.consignatario || 'CLIENTE AMEX';
-          } else {
-            displayEstado = 'NO ENCONTRADO';
-            scannedName = 'NO ASIGNADO';
-          }
+          displayEstado = 'NO ENCONTRADO';
+          scannedName = 'NO ASIGNADO';
         }
       }
 
-      const tib = it.casillero || (it.codigoWr ? it.codigoWr.replace(/^[A-Za-z]+0*/, '') : '');
+      const tib = extractLast6Digits(it.codigoWr) || it.casillero || '';
       const isGroupStart = (idx === 0 || (items[idx - 1]?.consignatario || '').trim() !== consignee) && !!consignee;
       const isGroupEnd = (idx === items.length - 1 || (items[idx + 1]?.consignatario || '').trim() !== consignee) && !!consignee;
 
+      // Asegurar id 100% único
+      const baseId = it.id || `item-${idx}`;
+      const uniqueRowId = seenRowIds.has(baseId) ? `${baseId}-${idx}` : baseId;
+      seenRowIds.add(uniqueRowId);
+
       rows.push({
-        id: it.id,
+        id: uniqueRowId,
         nombre: consignee,
         codigoWarehouse: it.codigoWr || '',
         codigoTib: tib,
@@ -225,7 +294,7 @@ export function useLiveSheetsData({ paquetes, operatorName }: UseLiveSheetsDataP
     });
 
     return rows;
-  }, [allScannedCodes, checkCodeInManifest, items]);
+  }, [allScannedCodes, checkCodeInManifest, items, paquetes]);
 
   // Filtrado de filas
   const visibleRows = useMemo(() => {
@@ -397,22 +466,128 @@ export function useLiveSheetsData({ paquetes, operatorName }: UseLiveSheetsDataP
   }, []);
 
   const handleTitleBlur = async () => {
-    if (!activeHojaId || !docTitle.trim()) return;
+    if (!activeLibroId || !docTitle.trim()) return;
     try {
-      await sheetsService.updateSheetTitle(activeHojaId, docTitle);
+      await sheetsService.updateSheetTitle(activeLibroId, docTitle.trim());
+      setHojas(prev => prev.map(h => (h.id === activeLibroId ? { ...h, titulo: docTitle.trim() } : h)));
     } catch (err) {
       console.error('Error updating title:', err);
     }
   };
 
-  // Hub callbacks
+  // Abrir y cerrar libros
+  const openWorkbook = useCallback((libroId: string) => {
+    setActiveLibroId(libroId);
+    const root = hojas.find(h => h.id === libroId);
+    if (root) setDocTitle(root.titulo || 'AMEX WR');
+
+    const subSheets = hojas
+      .filter(h => h.id === libroId || h.libroId === libroId)
+      .sort((a, b) => new Date(a.creadoEn).getTime() - new Date(b.creadoEn).getTime());
+
+    if (subSheets.length > 0) {
+      setActiveHojaId(subSheets[0].id);
+    } else {
+      setActiveHojaId(libroId);
+    }
+  }, [hojas]);
+
+  const closeWorkbook = useCallback(() => {
+    setActiveLibroId(null);
+    setActiveHojaId(null);
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/amex-excel/d/')) {
+      window.history.replaceState(null, '', '/amex-excel');
+    }
+  }, []);
+
+  // Gestión de pestañas (hojas) dentro del libro activo
+  const handleAddSubSheet = useCallback(async (customName?: string) => {
+    if (!activeLibroId) return;
+    const activeLibro = hojas.find(h => h.id === activeLibroId);
+    const currentCount = activeBookSheets.length;
+    const tabName = customName?.trim() || `Hoja ${currentCount + 1}`;
+
+    try {
+      const newSubSheet = await sheetsService.createSubSheet(
+        activeLibroId,
+        tabName,
+        operatorName,
+        activeLibro?.tipoProceso || 'RECEPCION_LINCE'
+      );
+      if (newSubSheet) {
+        setHojas(prev => [...prev, newSubSheet]);
+        setActiveHojaId(newSubSheet.id);
+        soundEffects.playBulkLoaded();
+      }
+    } catch (err) {
+      console.error('Error creating sub-sheet:', err);
+    }
+  }, [activeLibroId, activeBookSheets.length, hojas, operatorName]);
+
+  const handleRenameTab = useCallback(async (sheetId: string, newTabName: string) => {
+    if (!newTabName.trim()) return;
+    try {
+      await sheetsService.updateSheetTabName(sheetId, newTabName.trim());
+      setHojas(prev =>
+        prev.map(h =>
+          h.id === sheetId
+            ? { ...h, nombreHoja: newTabName.trim(), ...(h.libroId ? { titulo: newTabName.trim() } : {}) }
+            : h
+        )
+      );
+    } catch (err) {
+      console.error('Error renaming tab:', err);
+    }
+  }, []);
+
+  const handleDeleteTab = useCallback(async (sheetId: string) => {
+    if (activeBookSheets.length <= 1) {
+      alert('Un libro de cálculo debe tener al menos una hoja.');
+      return;
+    }
+
+    const sheetToDelete = hojas.find(h => h.id === sheetId);
+    const sheetName = sheetToDelete?.nombreHoja || sheetToDelete?.titulo || 'esta hoja';
+    if (!confirm(`¿Eliminar definitivamente la pestaña "${sheetName}" y todos sus datos cotejados?`)) {
+      return;
+    }
+
+    try {
+      await sheetsService.deleteSheet(sheetId);
+      const remaining = activeBookSheets.filter(h => h.id !== sheetId);
+      setHojas(prev => prev.filter(h => h.id !== sheetId));
+      if (activeHojaId === sheetId && remaining.length > 0) {
+        setActiveHojaId(remaining[0].id);
+      }
+    } catch (err) {
+      console.error('Error deleting tab:', err);
+    }
+  }, [activeBookSheets, activeHojaId, hojas]);
+
+  const handleDuplicateTab = useCallback(async (sheetId: string) => {
+    const target = hojas.find(h => h.id === sheetId);
+    if (!target) return;
+    try {
+      const dup = await sheetsService.duplicateSheet(sheetId, operatorName, target);
+      if (dup) {
+        setHojas(prev => [...prev, dup]);
+        setActiveHojaId(dup.id);
+        soundEffects.playBulkLoaded();
+      }
+    } catch (err) {
+      console.error('Error duplicating tab:', err);
+    }
+  }, [hojas, operatorName]);
+
+  // Hub callbacks (para libros completos)
   const handleCreateSheetFromHub = async (title: string, tipoProceso?: TipoProcesoCotejo) => {
     try {
-      const newSheet = await sheetsService.createSheet(title, undefined, tipoProceso, operatorName);
-      if (newSheet) {
-        await fetchHojas();
-        setActiveHojaId(newSheet.id);
-        setDocTitle(newSheet.titulo);
+      const newBook = await sheetsService.createSheet(title, undefined, tipoProceso, operatorName);
+      if (newBook) {
+        setHojas(prev => [newBook, ...prev]);
+        setActiveLibroId(newBook.id);
+        setActiveHojaId(newBook.id);
+        setDocTitle(newBook.titulo);
       }
     } catch (err) {
       console.error('Error creating sheet from hub:', err);
@@ -423,7 +598,7 @@ export function useLiveSheetsData({ paquetes, operatorName }: UseLiveSheetsDataP
     try {
       await sheetsService.updateSheetTitle(sheetId, newTitle);
       setHojas(prev => prev.map(h => (h.id === sheetId ? { ...h, titulo: newTitle } : h)));
-      if (activeHojaId === sheetId) setDocTitle(newTitle);
+      if (activeLibroId === sheetId) setDocTitle(newTitle);
     } catch (err) {
       console.error('Error renaming sheet:', err);
     }
@@ -432,8 +607,9 @@ export function useLiveSheetsData({ paquetes, operatorName }: UseLiveSheetsDataP
   const handleDeleteSheetFromHub = async (sheetId: string) => {
     try {
       await sheetsService.deleteSheet(sheetId);
-      setHojas(prev => prev.filter(h => h.id !== sheetId));
-      if (activeHojaId === sheetId) {
+      setHojas(prev => prev.filter(h => h.id !== sheetId && h.libroId !== sheetId));
+      if (activeLibroId === sheetId) {
+        setActiveLibroId(null);
         setActiveHojaId(null);
       }
     } catch (err) {
@@ -446,10 +622,12 @@ export function useLiveSheetsData({ paquetes, operatorName }: UseLiveSheetsDataP
     if (!original) return;
 
     try {
-      const newSheet = await sheetsService.duplicateSheet(sheetId, operatorName, original);
-      if (newSheet) {
-        await fetchHojas();
-        setActiveHojaId(newSheet.id);
+      const newBook = await sheetsService.duplicateSheet(sheetId, operatorName, original);
+      if (newBook) {
+        setHojas(prev => [newBook, ...prev]);
+        setActiveLibroId(newBook.id);
+        setActiveHojaId(newBook.id);
+        setDocTitle(newBook.titulo);
       }
     } catch (err) {
       console.error('Error duplicating sheet:', err);
@@ -459,8 +637,18 @@ export function useLiveSheetsData({ paquetes, operatorName }: UseLiveSheetsDataP
   return {
     hojas,
     setHojas,
+    libros,
+    activeBookSheets,
+    activeLibroId,
+    setActiveLibroId,
     activeHojaId,
     setActiveHojaId,
+    openWorkbook,
+    closeWorkbook,
+    handleAddSubSheet,
+    handleRenameTab,
+    handleDeleteTab,
+    handleDuplicateTab,
     items,
     setItems,
     isLoadingSheets,

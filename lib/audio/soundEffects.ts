@@ -3,8 +3,20 @@
 class SoundSynthesizer {
   private ctx: AudioContext | null = null;
   private isMuted: boolean = false;
-  private volume: number = 0.8;
-  private voiceEnabled: boolean = false;
+  private volume: number = 0.9;
+  private voiceEnabled: boolean = true;
+
+  constructor() {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        try {
+          window.speechSynthesis.getVoices();
+        } catch {
+          // ignore
+        }
+      };
+    }
+  }
 
   private getAudioContext(): AudioContext | null {
     if (typeof window === 'undefined') return null;
@@ -208,17 +220,53 @@ class SoundSynthesizer {
     }
   }
 
-  // 6. Síntesis de voz opcional ("WR 451 Encontrado")
+  // 6. Síntesis de voz hablada en español (Dice el nombre o "No encontrado")
   public speak(text: string) {
-    if (!this.voiceEnabled || typeof window === 'undefined' || !window.speechSynthesis) return;
+    if (this.isMuted || !this.voiceEnabled || typeof window === 'undefined' || !window.speechSynthesis) return;
+    const cleanText = text.trim();
+    if (!cleanText) return;
+
     try {
-      window.speechSynthesis.cancel(); // Cancelar anteriores para no saturar
-      const utterance = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = 'es-PE';
-      utterance.rate = 1.15;
+      utterance.rate = 1.08;
       utterance.pitch = 1.0;
-      utterance.volume = this.volume;
-      window.speechSynthesis.speak(utterance);
+      utterance.volume = Math.max(0.7, this.volume);
+
+      // Intentar asignar una voz en español
+      try {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices && voices.length > 0) {
+          const spanishVoice =
+            voices.find(v => v.lang === 'es-PE') ||
+            voices.find(v => v.lang === 'es-419') ||
+            voices.find(v => v.lang === 'es-US') ||
+            voices.find(v => v.lang === 'es-ES') ||
+            voices.find(v => v.lang.toLowerCase().startsWith('es'));
+          if (spanishVoice) {
+            utterance.voice = spanishVoice;
+          }
+        }
+      } catch {
+        // Fallback al idioma por defecto del utterance
+      }
+
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+
+      setTimeout(() => {
+        try {
+          if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+          }
+          window.speechSynthesis.speak(utterance);
+        } catch (err) {
+          console.warn('Speech synthesis speak error:', err);
+        }
+      }, 20);
     } catch (e) {
       console.warn('Speech synthesis error:', e);
     }

@@ -54,20 +54,20 @@ export const CobrosToolbar: React.FC<CobrosToolbarProps> = ({
         }}
       >
         <div>
-          <h1
+          <div
             style={{
-              fontSize: '22px',
-              fontWeight: 900,
+              fontSize: '16px',
+              fontWeight: 800,
               color: '#0f172a',
               display: 'flex',
               alignItems: 'center',
-              gap: '10px'
+              gap: '8px'
             }}
           >
-            <Receipt className="w-7 h-7 text-emerald-600" /> Cobros & Vouchers de WhatsApp
-          </h1>
-          <p style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>
-            Pega con <strong style={{ color: '#0f172a' }}>Ctrl + V</strong> o arrastra comprobantes de Yape, Plin y BCP desde WhatsApp Web directamente a Cloudflare R2
+            <Receipt className="w-5 h-5 text-emerald-600" /> Vouchers & Comprobantes Bancarios
+          </div>
+          <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0 0 0' }}>
+            Pega con <strong style={{ color: '#0f172a' }}>Ctrl + V</strong> o arrastra comprobantes de Yape, Plin y transferencias bancarias para conciliar
           </p>
         </div>
 

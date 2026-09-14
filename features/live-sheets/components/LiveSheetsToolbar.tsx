@@ -12,6 +12,7 @@ import {
   Camera,
   Volume2,
   VolumeX,
+  Mic,
   ArrowRight
 } from 'lucide-react';
 
@@ -30,6 +31,8 @@ interface LiveSheetsToolbarProps {
   onOpenCameraScanner: () => void;
   isMuted: boolean;
   setIsMuted: (val: boolean) => void;
+  isVoiceEnabled?: boolean;
+  setIsVoiceEnabled?: (val: boolean) => void;
   onSyncToMainPackages: () => void;
 }
 
@@ -48,6 +51,8 @@ export function LiveSheetsToolbar({
   onOpenCameraScanner,
   isMuted,
   setIsMuted,
+  isVoiceEnabled,
+  setIsVoiceEnabled,
   onSyncToMainPackages
 }: LiveSheetsToolbarProps) {
   return (
@@ -142,7 +147,6 @@ export function LiveSheetsToolbar({
           value={barcodeInput}
           onChange={e => setBarcodeInput(e.target.value)}
           placeholder="Apunta y dispara la pistola de código de barras aquí..."
-          autoFocus
         />
         <button
           type="button"
@@ -156,13 +160,31 @@ export function LiveSheetsToolbar({
 
       {/* Audio y Sync Tools */}
       <div className="gsheet-tool-group">
+        {/* Control de Voz Hablada */}
+        {typeof isVoiceEnabled === 'boolean' && setIsVoiceEnabled && (
+          <button
+            type="button"
+            className={`gsheet-btn-tool ${isVoiceEnabled ? 'active' : ''}`}
+            onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
+            title={
+              isVoiceEnabled
+                ? 'Voz activada: dice el nombre del cliente o "No encontrado"'
+                : 'Voz desactivada (clic para activar)'
+            }
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '0 8px', fontSize: '11px' }}
+          >
+            <Mic size={13} className={isVoiceEnabled ? 'text-emerald-600' : 'text-slate-400'} />
+            <span style={{ fontSize: '11px', fontWeight: 600 }}>{isVoiceEnabled ? 'Voz' : 'Voz Off'}</span>
+          </button>
+        )}
+
         <button
           type="button"
           className={`gsheet-btn-tool ${!isMuted ? 'active' : ''}`}
           onClick={() => setIsMuted(!isMuted)}
-          title={isMuted ? 'Activar Bip de Pistola' : 'Silenciar Bip'}
+          title={isMuted ? 'Audio silenciado (clic para activar)' : 'Silenciar todo el audio'}
         >
-          {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+          {isMuted ? <VolumeX size={14} className="text-red-500" /> : <Volume2 size={14} />}
         </button>
 
         <button

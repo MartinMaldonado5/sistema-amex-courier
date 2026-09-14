@@ -32,32 +32,47 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    return [
-      { source: '/dashboard', destination: '/' },
-      { source: '/amex-excel', destination: '/' },
-      { source: '/amex-excel/:path*', destination: '/' },
-      { source: '/inventario', destination: '/' },
-      { source: '/entregas', destination: '/' },
-      { source: '/cobros', destination: '/' },
-      { source: '/despacho', destination: '/' },
-      { source: '/picking', destination: '/' },
-      { source: '/escaner', destination: '/' },
-      { source: '/matriz-dni', destination: '/' },
-      { source: '/rotulos', destination: '/' },
-      { source: '/boletas-shalom', destination: '/' },
-      // Aliases para retrocompatibilidad
-      { source: '/live-sheets', destination: '/' },
-      { source: '/sheets', destination: '/' },
-      { source: '/dni-matrix', destination: '/' },
-      { source: '/rotulos-a4', destination: '/' },
-      { source: '/mobile-scanner', destination: '/' },
-      { source: '/wms-picking', destination: '/' },
-      { source: '/fico-cobros', destination: '/' },
-      { source: '/shp-entregas', destination: '/' },
-      { source: '/shp-deliveries', destination: '/' },
-      { source: '/mm-lince', destination: '/' },
-      { source: '/mm-inventory', destination: '/' },
-    ];
+    return {
+      beforeFiles: [],
+      afterFiles: [
+        { source: '/dashboard', destination: '/' },
+        { source: '/amex-excel', destination: '/' },
+        { source: '/amex-excel/:path*', destination: '/' },
+        { source: '/inventario', destination: '/' },
+        { source: '/entregas', destination: '/' },
+        { source: '/cobros', destination: '/' },
+        { source: '/directorio-clientes', destination: '/' },
+        { source: '/directorio', destination: '/' },
+        { source: '/clientes-360', destination: '/' },
+        { source: '/clientes360', destination: '/' },
+        { source: '/clientes', destination: '/' },
+        { source: '/crm-clientes', destination: '/' },
+        { source: '/despacho', destination: '/' },
+        { source: '/picking', destination: '/' },
+        { source: '/escaner', destination: '/' },
+        { source: '/matriz-dni', destination: '/' },
+        { source: '/rotulos', destination: '/' },
+        { source: '/boletas-shalom', destination: '/' },
+        // Aliases para retrocompatibilidad
+        { source: '/live-sheets', destination: '/' },
+        { source: '/sheets', destination: '/' },
+        { source: '/dni-matrix', destination: '/' },
+        { source: '/rotulos-a4', destination: '/' },
+        { source: '/mobile-scanner', destination: '/' },
+        { source: '/wms-picking', destination: '/' },
+        { source: '/fico-cobros', destination: '/' },
+        { source: '/shp-entregas', destination: '/' },
+        { source: '/shp-deliveries', destination: '/' },
+        { source: '/mm-lince', destination: '/' },
+        { source: '/mm-inventory', destination: '/' },
+      ],
+      fallback: [
+        {
+          source: '/:path*',
+          destination: '/',
+        },
+      ],
+    };
   },
 };
 

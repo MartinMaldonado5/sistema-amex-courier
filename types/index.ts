@@ -258,6 +258,8 @@ export type TipoEstadoItemCotejo = 'PENDIENTE' | 'ESCANEADO' | 'NO_LISTADO' | 'O
 
 export interface HojaCotejo {
   id: string;
+  libroId?: string | null;
+  nombreHoja?: string | null;
   titulo: string;
   descripcion?: string;
   tipoProceso: TipoProcesoCotejo;

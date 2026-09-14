@@ -53,6 +53,11 @@ const CobrosTab = dynamic(() => import('@/components/tabs/CobrosTab'), {
   loading: () => <CobrosSkeleton />
 });
 
+const DirectorioClientesTab = dynamic(() => import('@/components/tabs/DirectorioClientesTab'), {
+  ssr: false,
+  loading: () => <CobrosSkeleton />
+});
+
 const DeliveriesTab = dynamic(() => import('@/components/tabs/DeliveriesTab'), {
   ssr: false,
   loading: () => <DeliveriesSkeleton />
@@ -132,6 +137,8 @@ const VALID_TABS = [
   'mm-inventory',
   'shp-entregas',
   'fico-cobros',
+  'directorio-clientes',
+  'clientes-360',
   'shp-deliveries',
   'wms-picking',
   'mobile-scanner',
@@ -223,6 +230,19 @@ export default function DashboardPage() {
       }
     }
   }, []);
+
+  const [targetCliente360, setTargetCliente360] = useState<string | undefined>(undefined);
+  const [targetClienteCobros, setTargetClienteCobros] = useState<string | undefined>(undefined);
+
+  const handleNavigateToClientes360 = useCallback((clienteNombre?: string) => {
+    setTargetCliente360(clienteNombre);
+    setActiveTab('directorio-clientes');
+  }, [setActiveTab]);
+
+  const handleNavigateToCobros = useCallback((clienteNombre?: string) => {
+    setTargetClienteCobros(clienteNombre);
+    setActiveTab('fico-cobros');
+  }, [setActiveTab]);
 
   const handleUpdatePackage = useCallback((updated: Paquete) => {
     setPaquetes(prev => prev.map(p => (p.id === updated.id ? updated : p)));
@@ -656,7 +676,7 @@ export default function DashboardPage() {
           onCloseSidebar={() => setIsSidebarCollapsed(true)}
         />
 
-        <main className={`main-content ${activeTab === 'dni-matrix' ? 'dni-matrix-mode' : ''} ${activeTab === 'rotulos-a4' ? 'rotulos-mode' : ''} ${activeTab === 'boletas-shalom' ? 'boletas-shalom-mode' : ''}`}>
+        <main className={`main-content tab-${activeTab} ${['dni-matrix', 'rotulos-a4', 'boletas-shalom'].includes(activeTab) ? 'dark-tab-mode' : ''} ${activeTab === 'live-sheets' ? 'live-sheets-mode' : ''} ${activeTab === 'dni-matrix' ? 'dni-matrix-mode' : ''} ${activeTab === 'rotulos-a4' ? 'rotulos-mode' : ''} ${activeTab === 'boletas-shalom' ? 'boletas-shalom-mode' : ''} ${activeTab === 'fico-cobros' ? 'cobros-mode' : ''}`}>
           {isLoadingInitialData ? (
             <PageSkeleton activeTab={activeTab} />
           ) : (
@@ -710,6 +730,17 @@ export default function DashboardPage() {
                   paquetes={paquetes}
                   clientes={clientes}
                   onUpdatePackage={handleUpdatePackage}
+                  onNavigateToClientes360={handleNavigateToClientes360}
+                  filterClienteInicial={targetClienteCobros}
+                />
+              )}
+
+              {(activeTab === 'directorio-clientes' || activeTab === 'clientes-360') && (
+                <DirectorioClientesTab
+                  paquetes={paquetes}
+                  clientes={clientes}
+                  initialClientName={targetCliente360}
+                  onNavigateToCobros={handleNavigateToCobros}
                 />
               )}
 
@@ -853,6 +884,7 @@ export default function DashboardPage() {
           onChange={setNewPkgForm}
           onSave={handleSavePackage}
           onClose={() => setIsNewPkgModalOpen(false)}
+          isWarehouseMode={activeTab === 'mm-lince' || activeTab === 'mm-inventory'}
         />
       )}
 

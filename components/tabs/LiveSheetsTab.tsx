@@ -58,20 +58,19 @@ export default function LiveSheetsTab({
     operatorName: presence.operatorName,
     checkCodeInManifest: data.checkCodeInManifest,
     handleClearScanAtRow: data.handleClearScanAtRow,
-    broadcastActiveCell: presence.broadcastActiveCell
+    broadcastActiveCell: presence.broadcastActiveCell,
+    fetchItems: data.fetchItems
   });
 
-  // Si no hay hoja abierta, mostrar el Hub de Hojas de Cálculo
-  if (!data.activeHojaId) {
+  // Si no hay hoja o libro abierto, mostrar el Hub de Hojas de Cálculo
+  if (!data.activeHojaId && !data.activeLibroId) {
     return (
       <SheetsHub
-        hojas={data.hojas}
+        hojas={data.libros}
         isLoading={data.isLoadingSheets}
         currentUser={currentUser}
         onOpenSheet={sheetId => {
-          data.setActiveHojaId(sheetId);
-          const found = data.hojas.find(h => h.id === sheetId);
-          if (found) data.setDocTitle(found.titulo || 'AMEX WR');
+          data.openWorkbook(sheetId);
         }}
         onCreateSheet={data.handleCreateSheetFromHub}
         onRenameSheet={data.handleRenameSheetFromHub}
@@ -85,7 +84,7 @@ export default function LiveSheetsTab({
     <div className="gsheet-container">
       {/* Barra de URL + Header superior */}
       <LiveSheetsHeader
-        activeHojaId={data.activeHojaId}
+        activeHojaId={data.activeLibroId || data.activeHojaId || ''}
         docTitle={data.docTitle}
         setDocTitle={data.setDocTitle}
         onTitleBlur={data.handleTitleBlur}
@@ -94,7 +93,7 @@ export default function LiveSheetsTab({
         realtimeStatus={presence.realtimeStatus}
         collaborators={presence.collaborators}
         stats={data.stats}
-        onBackToHub={() => data.setActiveHojaId(null)}
+        onBackToHub={data.closeWorkbook}
         onExportExcel={data.handleExportExcel}
         onOpenPasteModal={() => keyboard.setIsPasteModalOpen(true)}
         onFocusBarcodeInput={keyboard.focusBarcodeInput}
@@ -118,6 +117,8 @@ export default function LiveSheetsTab({
         onOpenCameraScanner={() => keyboard.setIsCameraScannerOpen(true)}
         isMuted={keyboard.isMuted}
         setIsMuted={keyboard.setIsMuted}
+        isVoiceEnabled={keyboard.isVoiceEnabled}
+        setIsVoiceEnabled={keyboard.setIsVoiceEnabled}
         onSyncToMainPackages={data.handleSyncToMainPackages}
       />
 
@@ -134,6 +135,7 @@ export default function LiveSheetsTab({
         isLoadingSheets={data.isLoadingSheets}
         visibleRows={data.visibleRows}
         activeCell={keyboard.activeCell}
+        selectionRange={keyboard.selectionRange}
         editingCell={keyboard.editingCell}
         editingValue={keyboard.editingValue}
         setEditingValue={keyboard.setEditingValue}
@@ -142,6 +144,8 @@ export default function LiveSheetsTab({
         getRemoteUserOnCell={presence.getRemoteUserOnCell}
         handleCellClick={keyboard.handleCellClick}
         handleCellDoubleClick={keyboard.handleCellDoubleClick}
+        handleCellMouseDown={keyboard.handleCellMouseDown}
+        handleCellMouseEnter={keyboard.handleCellMouseEnter}
         commitInlineCellEdit={keyboard.commitInlineCellEdit}
         getCellValue={keyboard.getCellValue}
         getItemIdForRow={keyboard.getItemIdForRow}
@@ -153,12 +157,16 @@ export default function LiveSheetsTab({
 
       {/* Barra inferior de pestañas de hojas */}
       <LiveSheetsBottomBar
-        hojas={data.hojas}
-        activeHojaId={data.activeHojaId}
+        hojas={data.activeBookSheets}
+        activeHojaId={data.activeHojaId || ''}
         setActiveHojaId={data.setActiveHojaId}
-        onOpenNewSheetModal={() => keyboard.setIsNewSheetModalOpen(true)}
+        onAddSheet={() => data.handleAddSubSheet()}
+        onRenameSheet={data.handleRenameTab}
+        onDuplicateSheet={data.handleDuplicateTab}
+        onDeleteSheet={data.handleDeleteTab}
         totalRows={data.items.length}
         stats={data.stats}
+        selectionStats={keyboard.selectionStats}
       />
 
       {/* Modales */}

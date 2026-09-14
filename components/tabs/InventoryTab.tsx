@@ -152,7 +152,7 @@ export default function InventoryTab({
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', maxWidth: '100%', padding: '16px 20px', boxSizing: 'border-box' }}>
       {/* Barra de herramientas, subpestañas y filtros */}
       <InventoryToolbar
         activeSubTab={activeSubTab}
