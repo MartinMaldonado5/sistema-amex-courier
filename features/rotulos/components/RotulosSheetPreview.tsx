@@ -122,9 +122,10 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
 
   return (
     <div className="rotulos-preview-container">
-      {/* Barra Navegadora de Hojas A4 */}
+      {/* Barra Navegadora de Hojas A4 Optimizada y Amplia */}
       <div className="preview-sheet-navigator">
-        <div className="sheet-nav-left">
+        {/* Fila 1: Pestañas de Hojas Amplias y Legibles + Botón Agregar */}
+        <div className="sheet-nav-primary-row">
           <div className="sheet-tabs-list">
             {Array.from({ length: totalSheets }, (_, i) => {
               const sheetNum = i + 1;
@@ -140,7 +141,7 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
                   onClick={() => handleSelectSheet(sheetNum)}
                   title={`Ver Hoja ${sheetNum} (${filledCount}/5 con datos)`}
                 >
-                  <i className="fa-regular fa-file"></i>
+                  <i className={isActive ? 'fa-solid fa-file-lines' : 'fa-regular fa-file'}></i>
                   <span className="sheet-tab-name">Hoja {sheetNum}</span>
                   <span className={`sheet-tab-pill ${filledCount === 5 ? 'full' : filledCount > 0 ? 'partial' : 'empty'}`}>
                     {filledCount}/5
@@ -163,53 +164,60 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
           )}
         </div>
 
-        <div className="sheet-nav-right">
-          {/* Controles de Zoom para Vista Previa en Pantalla */}
-          <div className="preview-zoom-controls" title="Ajustar tamaño visual de la hoja en pantalla">
-            <button
-              type="button"
-              className="btn-zoom"
-              onClick={() => setZoomLevel((prev) => Math.max(75, prev - 10))}
-              disabled={zoomLevel <= 75}
-              title="Reducir vista previa (-10%)"
-            >
-              <i className="fa-solid fa-magnifying-glass-minus"></i>
-            </button>
-            <button
-              type="button"
-              className="btn-zoom-reset"
-              onClick={() => setZoomLevel(100)}
-              title="Restablecer zoom a 100%"
-            >
-              <span>{zoomLevel}%</span>
-            </button>
-            <button
-              type="button"
-              className="btn-zoom"
-              onClick={() => setZoomLevel((prev) => Math.min(135, prev + 10))}
-              disabled={zoomLevel >= 135}
-              title="Aumentar vista previa (+10%)"
-            >
-              <i className="fa-solid fa-magnifying-glass-plus"></i>
-            </button>
+        {/* Fila 2: Información de Estado, Zoom y Acciones de Hoja */}
+        <div className="sheet-nav-secondary-row">
+          <div className="sheet-nav-info">
+            <span className="sheet-nav-total-pill">
+              <i className="fa-solid fa-layer-group"></i>
+              <span>
+                Visualizando <strong>Hoja {currentSheet} de {totalSheets}</strong> • {slots.length} rótulos ({slots.filter((s) => Boolean(s.nombre?.trim() || s.destino?.trim())).length} con datos)
+              </span>
+            </span>
           </div>
 
-          <span className="sheet-nav-total-pill">
-            <i className="fa-solid fa-layer-group"></i>
-            <span>{slots.length} rótulos ({totalSheets}/{MAX_SHEETS} {totalSheets === 1 ? 'hoja' : 'hojas'})</span>
-          </span>
+          <div className="sheet-nav-actions">
+            {/* Controles de Zoom para Vista Previa en Pantalla */}
+            <div className="preview-zoom-controls" title="Ajustar tamaño visual de la hoja en pantalla">
+              <button
+                type="button"
+                className="btn-zoom"
+                onClick={() => setZoomLevel((prev) => Math.max(75, prev - 10))}
+                disabled={zoomLevel <= 75}
+                title="Reducir vista previa (-10%)"
+              >
+                <i className="fa-solid fa-magnifying-glass-minus"></i>
+              </button>
+              <button
+                type="button"
+                className="btn-zoom-reset"
+                onClick={() => setZoomLevel(100)}
+                title="Restablecer zoom a 100%"
+              >
+                <span>{zoomLevel}%</span>
+              </button>
+              <button
+                type="button"
+                className="btn-zoom"
+                onClick={() => setZoomLevel((prev) => Math.min(135, prev + 10))}
+                disabled={zoomLevel >= 135}
+                title="Aumentar vista previa (+10%)"
+              >
+                <i className="fa-solid fa-magnifying-glass-plus"></i>
+              </button>
+            </div>
 
-          {totalSheets > 1 && (
-            <button
-              type="button"
-              className="btn-delete-current-sheet"
-              onClick={handleDeleteCurrentSheet}
-              title={`Eliminar la Hoja #${currentSheet} que estás visualizando`}
-            >
-              <i className="fa-solid fa-trash-can"></i>
-              <span>Eliminar Hoja {currentSheet}</span>
-            </button>
-          )}
+            {totalSheets > 1 && (
+              <button
+                type="button"
+                className="btn-delete-current-sheet"
+                onClick={handleDeleteCurrentSheet}
+                title={`Eliminar la Hoja #${currentSheet} que estás visualizando`}
+              >
+                <i className="fa-solid fa-trash-can"></i>
+                <span>Eliminar Hoja {currentSheet}</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
