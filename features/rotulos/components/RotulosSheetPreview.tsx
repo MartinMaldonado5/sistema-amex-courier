@@ -29,8 +29,6 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
   handleAddNewSheet,
   handleDeleteCurrentSheet
 }) => {
-  const [zoomLevel, setZoomLevel] = React.useState<number>(100);
-
   const renderStrip = (slot: RotuloSlotData, isInteractive = true) => {
     const hasData = Boolean(slot.nombre || slot.dni || slot.celular || slot.destino);
     const agencyClass = getAgencyClass(slot.agencia);
@@ -122,9 +120,13 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
 
   return (
     <div className="rotulos-preview-container">
-      {/* Barra Navegadora de Hojas A4 Optimizada y Amplia */}
-      <div className="preview-sheet-navigator">
-        {/* Fila 1: Pestañas de Hojas Amplias y Legibles + Botón Agregar */}
+      {/* 1. Hoja A4 en Pantalla (Directamente arriba para máxima visibilidad) */}
+      <div className="rotulos-a4-sheet screen-only-sheet">
+        {currentSheetSlots.map((slot) => renderStrip(slot, true))}
+      </div>
+
+      {/* 2. Barra de Navegación y Gestión de Hojas ABAJO del Módulo */}
+      <div className="preview-sheet-navigator preview-sheet-bottom-bar">
         <div className="sheet-nav-primary-row">
           <div className="sheet-tabs-list">
             {Array.from({ length: totalSheets }, (_, i) => {
@@ -149,62 +151,27 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
                 </button>
               );
             })}
-          </div>
 
-          {totalSheets < MAX_SHEETS && (
-            <button
-              type="button"
-              className="btn-add-sheet"
-              onClick={handleAddNewSheet}
-              title="Agregar una nueva hoja A4 (+5 rótulos)"
-            >
-              <i className="fa-solid fa-plus"></i>
-              <span>Nueva Hoja</span>
-            </button>
-          )}
-        </div>
-
-        {/* Fila 2: Información de Estado, Zoom y Acciones de Hoja */}
-        <div className="sheet-nav-secondary-row">
-          <div className="sheet-nav-info">
-            <span className="sheet-nav-total-pill">
-              <i className="fa-solid fa-layer-group"></i>
-              <span>
-                Visualizando <strong>Hoja {currentSheet} de {totalSheets}</strong> • {slots.length} rótulos ({slots.filter((s) => Boolean(s.nombre?.trim() || s.destino?.trim())).length} con datos)
-              </span>
-            </span>
+            {totalSheets < MAX_SHEETS && (
+              <button
+                type="button"
+                className="btn-add-sheet"
+                onClick={handleAddNewSheet}
+                title="Agregar una nueva hoja A4 (+5 rótulos)"
+              >
+                <i className="fa-solid fa-plus"></i>
+                <span>Nueva Hoja</span>
+              </button>
+            )}
           </div>
 
           <div className="sheet-nav-actions">
-            {/* Controles de Zoom para Vista Previa en Pantalla */}
-            <div className="preview-zoom-controls" title="Ajustar tamaño visual de la hoja en pantalla">
-              <button
-                type="button"
-                className="btn-zoom"
-                onClick={() => setZoomLevel((prev) => Math.max(75, prev - 10))}
-                disabled={zoomLevel <= 75}
-                title="Reducir vista previa (-10%)"
-              >
-                <i className="fa-solid fa-magnifying-glass-minus"></i>
-              </button>
-              <button
-                type="button"
-                className="btn-zoom-reset"
-                onClick={() => setZoomLevel(100)}
-                title="Restablecer zoom a 100%"
-              >
-                <span>{zoomLevel}%</span>
-              </button>
-              <button
-                type="button"
-                className="btn-zoom"
-                onClick={() => setZoomLevel((prev) => Math.min(135, prev + 10))}
-                disabled={zoomLevel >= 135}
-                title="Aumentar vista previa (+10%)"
-              >
-                <i className="fa-solid fa-magnifying-glass-plus"></i>
-              </button>
-            </div>
+            <span className="sheet-nav-total-pill">
+              <i className="fa-solid fa-layer-group"></i>
+              <span>
+                Hoja <strong>{currentSheet} de {totalSheets}</strong> ({slots.length} rótulos)
+              </span>
+            </span>
 
             {totalSheets > 1 && (
               <button
@@ -219,14 +186,6 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
             )}
           </div>
         </div>
-      </div>
-
-      {/* Hoja A4 en Pantalla con Escala Visual y Altura Adaptativa */}
-      <div
-        className="rotulos-a4-sheet screen-only-sheet"
-        style={zoomLevel !== 100 ? { zoom: `${zoomLevel}%` } : undefined}
-      >
-        {currentSheetSlots.map((slot) => renderStrip(slot, true))}
       </div>
 
       {/* Contenedor Oculto para Impresión (window.print()) con todas las hojas físicas */}
