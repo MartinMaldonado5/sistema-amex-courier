@@ -1864,3 +1864,23 @@ tr:hover { background: #f8fafc !important; }
   gap: 4px;
 }
 
+/* ==========================================================================
+   RESET GLOBAL PARA IMPRESIÓN FÍSICA (MULTI-PÁGINA SIN RECORTE)
+   ========================================================================== */
+@media print {
+  html,
+  body,
+  .app-layout-shell,
+  .app-container,
+  .main-content {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    display: block !important;
+    position: static !important;
+  }
+}
+
