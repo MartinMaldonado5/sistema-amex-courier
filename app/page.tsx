@@ -22,10 +22,7 @@ import {
   PageSkeleton,
   DashboardSkeleton,
   InventorySkeleton,
-  EntregasSkeleton,
   CobrosSkeleton,
-  DeliveriesSkeleton,
-  PickingSkeleton,
   ScannerSkeleton,
   LiveSheetsSkeleton,
   DniMatrixSkeleton,
@@ -43,11 +40,6 @@ const InventoryTab = dynamic(() => import('@/components/tabs/InventoryTab'), {
   loading: () => <InventorySkeleton />
 });
 
-const EntregasTab = dynamic(() => import('@/components/tabs/EntregasTab'), {
-  ssr: false,
-  loading: () => <EntregasSkeleton />
-});
-
 const CobrosTab = dynamic(() => import('@/components/tabs/CobrosTab'), {
   ssr: false,
   loading: () => <CobrosSkeleton />
@@ -56,16 +48,6 @@ const CobrosTab = dynamic(() => import('@/components/tabs/CobrosTab'), {
 const DirectorioClientesTab = dynamic(() => import('@/components/tabs/DirectorioClientesTab'), {
   ssr: false,
   loading: () => <CobrosSkeleton />
-});
-
-const DeliveriesTab = dynamic(() => import('@/components/tabs/DeliveriesTab'), {
-  ssr: false,
-  loading: () => <DeliveriesSkeleton />
-});
-
-const PickingTab = dynamic(() => import('@/components/tabs/PickingTab'), {
-  ssr: false,
-  loading: () => <PickingSkeleton />
 });
 
 const ScannerTab = dynamic(() => import('@/components/tabs/ScannerTab'), {
@@ -122,7 +104,7 @@ const EMPTY_PKG_FORM: NewPkgFormData = {
   descripcion: '',
   pesoKg: '1.0',
   valorDeclaradoUsd: '50.0',
-  ubicacionActual: 'TibCourierMiami',
+  ubicacionActual: 'AmexLince',
   anaquel: 'A1',
   piso: 'P1',
   posicionEstante: 'A1-P1',
@@ -135,12 +117,9 @@ const VALID_TABS = [
   'live-sheets',
   'mm-lince',
   'mm-inventory',
-  'shp-entregas',
   'fico-cobros',
   'directorio-clientes',
   'clientes-360',
-  'shp-deliveries',
-  'wms-picking',
   'mobile-scanner',
   'dni-matrix',
   'rotulos-a4',
@@ -339,7 +318,7 @@ export default function DashboardPage() {
           descripcion: p.descripcion || '',
           pesoKg: Number(p.peso_kg || 0),
           valorDeclaradoUsd: Number(p.valor_declarado_usd || 0),
-          ubicacionActual: (p.ubicacion_actual as TipoUbicacion) || 'TibCourierMiami',
+          ubicacionActual: (p.ubicacion_actual as TipoUbicacion) || 'AmexLince',
           anaquel: p.anaquel || ana,
           piso: p.piso || pis,
           posicionEstante: pos,
@@ -389,7 +368,7 @@ export default function DashboardPage() {
               descripcion: String(p.descripcion || ''),
               pesoKg: Number(p.peso_kg || 0),
               valorDeclaradoUsd: Number(p.valor_declarado_usd || 0),
-              ubicacionActual: (p.ubicacion_actual as TipoUbicacion) || 'TibCourierMiami',
+              ubicacionActual: (p.ubicacion_actual as TipoUbicacion) || 'AmexLince',
               anaquel: (p.anaquel as string) || ana,
               piso: (p.piso as string) || pis,
               posicionEstante: pos,
@@ -607,6 +586,11 @@ export default function DashboardPage() {
     }
   };
 
+  const openNewClientModal = () => {
+    setNewClientForm(EMPTY_CLIENT_FORM);
+    setIsNewClientModalOpen(true);
+  };
+
   const openNewPkgModal = () => {
     setNewPkgForm({
       ...EMPTY_PKG_FORM,
@@ -716,15 +700,6 @@ export default function DashboardPage() {
                 />
               )}
 
-              {activeTab === 'shp-entregas' && (
-                <EntregasTab
-                  paquetes={paquetes}
-                  clientes={clientes}
-                  onUpdatePackage={handleUpdatePackage}
-                  onViewPdf={setSelectedPdfUrl}
-                />
-              )}
-
               {activeTab === 'fico-cobros' && (
                 <CobrosTab
                   paquetes={paquetes}
@@ -741,23 +716,7 @@ export default function DashboardPage() {
                   clientes={clientes}
                   initialClientName={targetCliente360}
                   onNavigateToCobros={handleNavigateToCobros}
-                />
-              )}
-
-              {activeTab === 'shp-deliveries' && (
-                <DeliveriesTab
-                  paquetes={paquetes}
-                  clientes={clientes}
-                  onUpdatePackage={handleUpdatePackage}
-                  onViewPdf={setSelectedPdfUrl}
-                  onRefreshData={fetchSupabaseData}
-                />
-              )}
-
-              {activeTab === 'wms-picking' && (
-                <PickingTab
-                  paquetes={paquetes}
-                  clientes={clientes}
+                  onOpenNewClientModal={openNewClientModal}
                 />
               )}
 
@@ -825,11 +784,11 @@ export default function DashboardPage() {
 
         <button
           type="button"
-          onClick={() => setActiveTab('shp-entregas')}
-          className={`mobile-nav-btn ${activeTab === 'shp-entregas' ? 'active' : ''}`}
+          onClick={() => setActiveTab('fico-cobros')}
+          className={`mobile-nav-btn ${activeTab === 'fico-cobros' ? 'active' : ''}`}
         >
-          <i className="fa-solid fa-box-open"></i>
-          <span>Entregas</span>
+          <i className="fa-solid fa-receipt"></i>
+          <span>Cobros</span>
         </button>
 
         <button
@@ -843,11 +802,11 @@ export default function DashboardPage() {
 
         <button
           type="button"
-          onClick={() => setActiveTab('shp-deliveries')}
-          className={`mobile-nav-btn ${activeTab === 'shp-deliveries' ? 'active' : ''}`}
+          onClick={() => setActiveTab('mobile-scanner')}
+          className={`mobile-nav-btn ${activeTab === 'mobile-scanner' ? 'active' : ''}`}
         >
-          <i className="fa-solid fa-truck"></i>
-          <span>Chofer</span>
+          <i className="fa-solid fa-barcode"></i>
+          <span>Escáner</span>
         </button>
 
         <button

@@ -1,6 +1,6 @@
 // Definiciones de tipos en español para AMEX Courier ERP
 
-export type TipoUbicacion = 'TibCourierMiami' | 'TibCourierTingoMaria' | 'TibTingoMaria' | 'AmexLince' | 'Entregado';
+export type TipoUbicacion = 'AmexLince' | 'Entregado';
 export type TipoMetodoEntrega = 'RecojoLince' | 'CarroAmexDomicilio' | 'AgenciaProvincia';
 export type TipoEstadoEntrega = 'EnAlmacen' | 'EnRutaCarroAmex' | 'EntregadoDomicilio' | 'RecogidoAlmacen' | 'ListoParaRecojo' | 'Entregado';
 export type TipoMonedaPago = 'PEN' | 'USD';
@@ -247,7 +247,6 @@ export interface CobroVoucher {
 }
 export type TipoProcesoCotejo =
   | 'RECEPCION_GENERAL'
-  | 'RECEPCION_MIAMI'
   | 'RECEPCION_LINCE'
   | 'DESPACHO_RUTA'
   | 'INVENTARIO_ANAQUEL'

@@ -10,7 +10,7 @@ import {
   UploadCloud,
   X
 } from 'lucide-react';
-import { Paquete, VoucherFormValues, CobrosSubtab } from '../types';
+import { Paquete, Cliente, VoucherFormValues, CobrosSubtab } from '../types';
 
 interface NewVoucherFormProps {
   voucherFile: File | null;
@@ -26,6 +26,8 @@ interface NewVoucherFormProps {
   wrSearchQuery: string;
   setWrSearchQuery: (query: string) => void;
   paquetesDisponibles: Paquete[];
+  clientes?: Cliente[];
+  onNavigateToClientes?: () => void;
   processImageFile: (file: File) => void;
   handleDragOver: (e: React.DragEvent) => void;
   handleDragLeave: () => void;
@@ -48,6 +50,8 @@ export const NewVoucherForm: React.FC<NewVoucherFormProps> = ({
   wrSearchQuery,
   setWrSearchQuery,
   paquetesDisponibles,
+  clientes = [],
+  onNavigateToClientes,
   processImageFile,
   handleDragOver,
   handleDragLeave,
@@ -223,17 +227,50 @@ export const NewVoucherForm: React.FC<NewVoucherFormProps> = ({
         {/* CAMPOS DEL FORMULARIO */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
           <div className="form-group">
-            <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>
-              Cliente / Consignatario *
-            </label>
-            <input
-              type="text"
-              placeholder="Ej: Juan Pérez García"
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>
+                Cliente del Directorio *
+              </label>
+              {onNavigateToClientes && (
+                <button
+                  type="button"
+                  onClick={onNavigateToClientes}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#2563eb',
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    padding: 0
+                  }}
+                >
+                  Directorio →
+                </button>
+              )}
+            </div>
+            <select
               value={formValues.clienteNombre}
-              onChange={(e) => setFormValues({ ...formValues, clienteNombre: e.target.value })}
+              onChange={(e) => {
+                const selName = e.target.value;
+                const found = clientes.find((c) => c.nombre === selName);
+                setFormValues({
+                  ...formValues,
+                  clienteNombre: selName,
+                  clienteCasillero: found?.codigoCasillero || formValues.clienteCasillero,
+                  clienteTelefono: found?.telefono || formValues.clienteTelefono
+                });
+              }}
               className="form-control"
               required
-            />
+            >
+              <option value="">-- Seleccionar cliente del Directorio --</option>
+              {clientes.map((c) => (
+                <option key={c.id} value={c.nombre}>
+                  {c.nombre} {c.codigoCasillero ? `(${c.codigoCasillero})` : ''} {c.documentoIdentidad ? `- Doc: ${c.documentoIdentidad}` : ''}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="form-group">

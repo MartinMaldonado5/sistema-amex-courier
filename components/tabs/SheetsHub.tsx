@@ -374,28 +374,6 @@ export default function SheetsHub({
               <span className="gsheet-hub-card-label">Cotejo Lince Express</span>
             </div>
 
-            {/* Tarjeta 4: Recepción Miami WMS */}
-            <div
-              className="gsheet-hub-card-item"
-              onClick={() => onCreateSheet('Recepción Miami WMS', 'RECEPCION_MIAMI')}
-            >
-              <div className="gsheet-hub-card-preview">
-                <div className="template-mock-grid">
-                  <div className="template-mock-header" style={{ background: '#ea4335' }} />
-                  <div className="template-mock-row">
-                    <div className="template-mock-cell" style={{ width: '35%' }} />
-                    <div className="template-mock-cell" style={{ width: '35%' }} />
-                    <div className="template-mock-cell" style={{ width: '30%' }} />
-                  </div>
-                  <div className="template-mock-row">
-                    <div className="template-mock-cell" style={{ width: '35%' }} />
-                    <div className="template-mock-cell" style={{ width: '35%' }} />
-                    <div className="template-mock-cell" style={{ width: '30%' }} />
-                  </div>
-                </div>
-              </div>
-              <span className="gsheet-hub-card-label">Recepción Miami WMS</span>
-            </div>
 
             {/* Tarjeta 5: Inventario Central */}
             <div

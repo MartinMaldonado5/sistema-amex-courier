@@ -62,8 +62,6 @@ export default function TransferModal({
               required
             >
               <option value="AmexLince">Sede Central Lince (Lima)</option>
-              <option value="TibTingoMaria">Almacén Regional Tingo María</option>
-              <option value="TibCourierMiami">Bodega Hub Miami (USA)</option>
               <option value="Entregado">Entregado a Cliente / Finalizado</option>
             </select>
           </div>
@@ -112,7 +110,7 @@ export default function TransferModal({
               required
             >
               <option value="Reubicación WMS de Almacén">Reubicación WMS de Almacén</option>
-              <option value="Ingreso de Carga Vuelo Miami">Ingreso de Carga Vuelo Miami</option>
+              <option value="Ingreso de Carga a Almacén Lince">Ingreso de Carga a Almacén Lince</option>
               <option value="Traslado a Zona de Despacho">Traslado a Zona de Despacho</option>
               <option value="Ajuste de Espacio / Reordenamiento">Ajuste de Espacio / Reordenamiento</option>
               <option value="Pase a Ruta de Reparto Lince">Pase a Ruta de Reparto Lince</option>

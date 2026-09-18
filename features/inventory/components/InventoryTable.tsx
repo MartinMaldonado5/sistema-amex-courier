@@ -166,26 +166,12 @@ export default function InventoryTable({
                           borderRadius: '9999px',
                           fontSize: '11px',
                           fontWeight: 800,
-                          background:
-                            pkg.ubicacionActual === 'AmexLince'
-                              ? '#dcfce7'
-                              : pkg.ubicacionActual === 'TibCourierMiami'
-                              ? '#dbeafe'
-                              : '#fef3c7',
-                          color:
-                            pkg.ubicacionActual === 'AmexLince'
-                              ? '#15803d'
-                              : pkg.ubicacionActual === 'TibCourierMiami'
-                              ? '#1e40af'
-                              : '#b45309'
+                          background: pkg.ubicacionActual === 'Entregado' ? '#f1f5f9' : '#dcfce7',
+                          color: pkg.ubicacionActual === 'Entregado' ? '#475569' : '#15803d'
                         }}
                       >
                         <MapPin className="w-3 h-3" />
-                        {pkg.ubicacionActual === 'AmexLince'
-                          ? 'Sede Lince'
-                          : pkg.ubicacionActual === 'TibCourierMiami'
-                          ? 'Miami Hub'
-                          : pkg.ubicacionActual || 'Almacén'}
+                        {pkg.ubicacionActual === 'Entregado' ? 'Entregado' : 'Almacén Lince'}
                       </span>
                     </td>
                     <td style={{ padding: '10px 14px' }}>

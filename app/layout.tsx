@@ -4,7 +4,7 @@ import SmoothScrollProvider from "@/components/providers/SmoothScrollProvider";
 
 export const metadata: Metadata = {
   title: "SISTEMA AMEX COURIER",
-  description: "Plataforma Logística para Gestión de Casilleros, Almacén Miami, Sede Lince y Despachos",
+  description: "Plataforma Logística para Gestión de Casilleros, Almacén Central Lince y Despachos",
 };
 
 export const viewport: Viewport = {

@@ -141,7 +141,7 @@ export interface ExtractedRotuloData {
 
 /**
  * AMEXito IA: Interpreta capturas de pantalla de WhatsApp o textos no estructurados
- * y extrae todos los campos requeridos para el rótulo de agencias (Módulo 9)
+ * y extrae todos los campos requeridos para el rótulo de agencias (Módulo 8)
  */
 export async function parseRotuloWithAi(input: {
   text?: string;

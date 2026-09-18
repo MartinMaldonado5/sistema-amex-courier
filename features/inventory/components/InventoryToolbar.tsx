@@ -444,10 +444,8 @@ export default function InventoryToolbar({
                   background: '#ffffff'
                 }}
               >
-                <option value="ALL">Todas las Sedes</option>
-                <option value="TibCourierMiami">Miami Hub (USA)</option>
-                <option value="TibTingoMaria">Tingo María</option>
-                <option value="AmexLince">Sede Central Lince</option>
+                <option value="ALL">Todos los Bultos</option>
+                <option value="AmexLince">Almacén Central Lince</option>
                 <option value="Entregado">Entregados</option>
               </select>
             </div>

@@ -18,7 +18,7 @@ export const ShalomHeader: React.FC<ShalomHeaderProps> = ({
     <header className="shalom-header">
       <div className="shalom-header-left">
         <div className="shalom-title-row">
-          <span className="shalom-badge">Módulo 10</span>
+          <span className="shalom-badge">Módulo 9</span>
           <h1 className="shalom-title">
             <Package className="text-sky-400" size={24} /> Boletas de Shalom
           </h1>

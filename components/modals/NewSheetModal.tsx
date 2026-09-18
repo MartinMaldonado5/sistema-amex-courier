@@ -80,11 +80,6 @@ export default function NewSheetModal({
       desc: 'Cotejo y pistoleo de bultos ingresando a almacén Lince'
     },
     {
-      id: 'RECEPCION_MIAMI',
-      label: '✈️ Recepción Miami Hub',
-      desc: 'Ingreso inicial y armado de manifiesto aéreo'
-    },
-    {
       id: 'DESPACHO_RUTA',
       label: '🚚 Despacho y Reparto',
       desc: 'Verificación de paquetes para Carro AMEX o Agencias'

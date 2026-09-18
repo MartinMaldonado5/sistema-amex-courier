@@ -14,9 +14,13 @@ import {
   CheckCircle2,
   Search,
   Sparkles,
-  ArrowRightLeft
+  ArrowRightLeft,
+  ShieldCheck,
+  ShieldAlert,
+  ArrowRight,
+  ExternalLink
 } from 'lucide-react';
-import { CotizacionKambista } from '../types';
+import { CotizacionKambista, Cliente } from '../types';
 import { KambistaService } from '../services/kambista.service';
 
 interface WrItemDraft {
@@ -32,9 +36,11 @@ interface RegistrarCobroDiarioModalProps {
   isOpen: boolean;
   onClose: () => void;
   availableFechas?: string[];
-  allClientNames: string[];
+  allClientNames?: string[];
+  clientes?: Cliente[];
   cotizacionKambista: CotizacionKambista;
   getTarifaCliente?: (clienteNombre: string) => { tarifa: number; personalizada: boolean };
+  onNavigateToClientes?: () => void;
   onGuardarCobro: (params: {
     fechaLote?: string;
     clienteNombre: string;
@@ -56,32 +62,78 @@ interface RegistrarCobroDiarioModalProps {
 export const RegistrarCobroDiarioModal: React.FC<RegistrarCobroDiarioModalProps> = ({
   isOpen,
   onClose,
-  allClientNames,
+  allClientNames = [],
+  clientes = [],
   cotizacionKambista,
   getTarifaCliente,
+  onNavigateToClientes,
   onGuardarCobro
 }) => {
   if (!isOpen) return null;
 
-  // Persona / Cliente
-  const [modoCliente, setModoCliente] = useState<'existente' | 'nuevo'>('existente');
+  // Cliente seleccionado del Directorio
   const [clienteSearch, setClienteSearch] = useState('');
   const [clienteSeleccionado, setClienteSeleccionado] = useState('');
-  const [nuevoNombreCliente, setNuevoNombreCliente] = useState('');
   const [esCorporativo, setEsCorporativo] = useState(false);
   const [observaciones, setObservaciones] = useState('');
 
   // Tarifa por kilo asignada al cliente
   const [tarifaPorKg, setTarifaPorKg] = useState<number>(7.0);
 
-  const clienteFinal = modoCliente === 'existente' ? clienteSeleccionado : nuevoNombreCliente.trim();
-
-  useEffect(() => {
-    if (clienteFinal && getTarifaCliente) {
-      const info = getTarifaCliente(clienteFinal);
-      setTarifaPorKg(info.tarifa);
+  // Normalizar lista de clientes con datos del Directorio
+  const directoryClients = useMemo(() => {
+    if (clientes && clientes.length > 0) {
+      return clientes.map((c) => {
+        const doc = c.documentoIdentidad?.trim() || '';
+        const isEmpresa =
+          doc.length === 11 ||
+          /^(20|10)\d{9}$/.test(doc) ||
+          /(S\.A\.C\.|S\.R\.L\.|E\.I\.R\.L\.|CORP|EMPRESA|GRUPO|IMPORT|LOGISTIC)/i.test(c.nombre);
+        return {
+          id: c.id,
+          nombre: c.nombre.trim(),
+          documentoIdentidad: doc,
+          codigoCasillero: c.codigoCasillero || '',
+          telefono: c.telefono || '',
+          direccionEntrega: c.direccionEntrega || '',
+          esEmpresa: isEmpresa
+        };
+      });
     }
-  }, [clienteFinal, getTarifaCliente]);
+    // Fallback con nombres existentes
+    return allClientNames.map((name, idx) => ({
+      id: `cli_${idx}`,
+      nombre: name.trim(),
+      documentoIdentidad: '',
+      codigoCasillero: '',
+      telefono: '',
+      direccionEntrega: '',
+      esEmpresa: /(CORP|SAC|SRL|EMPRESA)/i.test(name)
+    }));
+  }, [clientes, allClientNames]);
+
+  // Cliente actualmente seleccionado
+  const selectedClientObj = useMemo(() => {
+    if (!clienteSeleccionado) return null;
+    return (
+      directoryClients.find(
+        (c) => c.nombre.toUpperCase() === clienteSeleccionado.toUpperCase()
+      ) || null
+    );
+  }, [directoryClients, clienteSeleccionado]);
+
+  // Actualizar tarifa y tipo de cuenta al seleccionar cliente
+  useEffect(() => {
+    if (clienteSeleccionado) {
+      if (getTarifaCliente) {
+        const info = getTarifaCliente(clienteSeleccionado);
+        setTarifaPorKg(info.tarifa);
+      }
+      if (selectedClientObj?.esEmpresa) {
+        setEsCorporativo(true);
+      }
+    }
+  }, [clienteSeleccionado, getTarifaCliente, selectedClientObj]);
 
   // Estado Inicial
   const [estadoInicialPago, setEstadoInicialPago] = useState<'PAGADO' | 'FALTA'>('FALTA');
@@ -92,12 +144,21 @@ export const RegistrarCobroDiarioModal: React.FC<RegistrarCobroDiarioModalProps>
     { wr: '', pesoKg: '', precioUsd: '', cajaNumero: '', consignatarioNombre: '', notas: '' }
   ]);
 
-  // Filtrar clientes registrados
+  // Filtrar clientes registrados en el Directorio
   const clientesFiltrados = useMemo(() => {
-    if (!clienteSearch.trim()) return allClientNames.slice(0, 15);
     const q = clienteSearch.trim().toUpperCase();
-    return allClientNames.filter((name) => name.toUpperCase().includes(q)).slice(0, 15);
-  }, [allClientNames, clienteSearch]);
+    if (!q) return directoryClients.slice(0, 16);
+    return directoryClients
+      .filter((c) => {
+        return (
+          c.nombre.toUpperCase().includes(q) ||
+          (c.documentoIdentidad && c.documentoIdentidad.toUpperCase().includes(q)) ||
+          (c.codigoCasillero && c.codigoCasillero.toUpperCase().includes(q)) ||
+          (c.telefono && c.telefono.includes(q))
+        );
+      })
+      .slice(0, 20);
+  }, [directoryClients, clienteSearch]);
 
   const addWrRow = () => {
     setItemsWR((prev) => [
@@ -147,8 +208,8 @@ export const RegistrarCobroDiarioModal: React.FC<RegistrarCobroDiarioModalProps>
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!clienteFinal) {
-      alert('Por favor selecciona un cliente registrado o escribe el nombre del nuevo cliente.');
+    if (!clienteSeleccionado) {
+      alert('Por favor selecciona un cliente registrado en el Directorio de Clientes.');
       return;
     }
 
@@ -160,7 +221,7 @@ export const RegistrarCobroDiarioModal: React.FC<RegistrarCobroDiarioModalProps>
 
     onGuardarCobro({
       fechaLote: new Date().toLocaleDateString('es-PE'),
-      clienteNombre: clienteFinal,
+      clienteNombre: clienteSeleccionado,
       esCorporativo,
       observaciones: observaciones.trim() || undefined,
       itemsWR: wrsValidos.map((w, idx) => ({
@@ -266,9 +327,10 @@ export const RegistrarCobroDiarioModal: React.FC<RegistrarCobroDiarioModalProps>
         {/* MODAL BODY */}
         <form onSubmit={handleSubmit} style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* SELECCIÓN DE PERSONA / REGISTRO DE NUEVA PERSONA */}
+          {/* SELECCIÓN OBLIGATORIA DE CLIENTE DEL DIRECTORIO */}
           <div
             style={{
-              padding: '14px',
+              padding: '16px',
               borderRadius: '12px',
               backgroundColor: '#f8fafc',
               border: '1px solid #e2e8f0',
@@ -277,75 +339,73 @@ export const RegistrarCobroDiarioModal: React.FC<RegistrarCobroDiarioModalProps>
               gap: '12px'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <User style={{ width: '15px', height: '15px', color: '#059669' }} /> ¿A quién le pertenecen estos cobros? (Persona / Empresa)
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 800, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <User style={{ width: '15px', height: '15px', color: '#2563eb' }} />
+                Cliente o Empresa Registrada *
               </label>
 
-              <div style={{ display: 'flex', backgroundColor: '#ffffff', borderRadius: '8px', padding: '2px', border: '1px solid #cbd5e1', fontSize: '12px' }}>
-                <button
-                  type="button"
-                  onClick={() => setModoCliente('existente')}
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: '6px',
-                    fontWeight: 700,
-                    border: 'none',
-                    cursor: 'pointer',
-                    backgroundColor: modoCliente === 'existente' ? '#2563eb' : 'transparent',
-                    color: modoCliente === 'existente' ? '#ffffff' : '#64748b'
-                  }}
-                >
-                  Persona Registrada
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setModoCliente('nuevo')}
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: '6px',
-                    fontWeight: 700,
-                    border: 'none',
-                    cursor: 'pointer',
-                    backgroundColor: modoCliente === 'nuevo' ? '#2563eb' : 'transparent',
-                    color: modoCliente === 'nuevo' ? '#ffffff' : '#64748b'
-                  }}
-                >
-                  + Nueva Persona
-                </button>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 8px', borderRadius: '6px', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', fontSize: '11px', fontWeight: 700, color: '#1d4ed8' }}>
+                <ShieldCheck style={{ width: '13px', height: '13px', color: '#2563eb' }} />
+                <span>Directorio AMEX</span>
+                <span style={{ backgroundColor: '#2563eb', color: '#ffffff', padding: '1px 5px', borderRadius: '10px', fontSize: '10px', fontFamily: 'monospace' }}>
+                  {directoryClients.length}
+                </span>
               </div>
             </div>
 
-            {modoCliente === 'existente' ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ position: 'relative' }}>
-                  <Search style={{ width: '14px', height: '14px', position: 'absolute', left: '12px', top: '10px', color: '#94a3b8' }} />
-                  <input
-                    type="text"
-                    placeholder="Escribe para buscar cliente registrado (ej: FLAVIO, MARYORI, CORP...)..."
-                    value={clienteSearch}
-                    onChange={(e) => setClienteSearch(e.target.value)}
-                    style={{
-                      width: '100%',
-                      paddingLeft: '34px',
-                      paddingRight: '12px',
-                      paddingTop: '7px',
-                      paddingBottom: '7px',
-                      fontSize: '12px',
-                      backgroundColor: '#ffffff',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      color: '#0f172a'
-                    }}
-                  />
-                </div>
+            {/* BUSCADOR DE CLIENTES EN DIRECTORIO */}
+            <div style={{ position: 'relative' }}>
+              <Search style={{ width: '15px', height: '15px', position: 'absolute', left: '12px', top: '10px', color: '#94a3b8' }} />
+              <input
+                type="text"
+                placeholder="Buscar por Nombre, DNI, RUC o Casillero (ej: JUAN, 48392011, AMEX-PER-1002)..."
+                value={clienteSearch}
+                onChange={(e) => setClienteSearch(e.target.value)}
+                style={{
+                  width: '100%',
+                  paddingLeft: '36px',
+                  paddingRight: clienteSearch ? '32px' : '12px',
+                  paddingTop: '8px',
+                  paddingBottom: '8px',
+                  fontSize: '12.5px',
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  color: '#0f172a',
+                  outline: 'none',
+                  fontWeight: 600
+                }}
+              />
+              {clienteSearch && (
+                <button
+                  type="button"
+                  onClick={() => setClienteSearch('')}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '8px',
+                    background: 'none',
+                    border: 'none',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
 
+            {/* LISTA DE RESULTADOS O ALERTA DE CLIENTE NO ENCONTRADO */}
+            {clientesFiltrados.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div
                   style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
                     gap: '6px',
-                    maxHeight: '110px',
+                    maxHeight: '130px',
                     overflowY: 'auto',
                     padding: '6px',
                     backgroundColor: '#ffffff',
@@ -353,102 +413,269 @@ export const RegistrarCobroDiarioModal: React.FC<RegistrarCobroDiarioModalProps>
                     border: '1px solid #e2e8f0'
                   }}
                 >
-                  {clientesFiltrados.map((name) => (
-                    <button
-                      key={name}
-                      type="button"
-                      onClick={() => setClienteSeleccionado(name)}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: '6px',
-                        fontSize: '11.5px',
-                        fontWeight: 600,
-                        border: clienteSeleccionado === name ? '1px solid #1d4ed8' : '1px solid #e2e8f0',
-                        cursor: 'pointer',
-                        backgroundColor: clienteSeleccionado === name ? '#2563eb' : '#f1f5f9',
-                        color: clienteSeleccionado === name ? '#ffffff' : '#334155'
-                      }}
-                    >
-                      {name}
-                    </button>
-                  ))}
+                  {clientesFiltrados.map((cli) => {
+                    const isSelected = clienteSeleccionado.toUpperCase() === cli.nombre.toUpperCase();
+                    return (
+                      <button
+                        key={cli.id}
+                        type="button"
+                        onClick={() => setClienteSeleccionado(cli.nombre)}
+                        style={{
+                          textAlign: 'left',
+                          padding: '6px 10px',
+                          borderRadius: '8px',
+                          border: isSelected ? '1.5px solid #2563eb' : '1px solid #e2e8f0',
+                          backgroundColor: isSelected ? '#eff6ff' : '#f8fafc',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '2px',
+                          transition: 'all 0.1s ease'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 800, color: isSelected ? '#1d4ed8' : '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {cli.nombre}
+                          </span>
+                          {cli.esEmpresa ? (
+                            <span style={{ fontSize: '9.5px', fontWeight: 800, backgroundColor: '#f3e8ff', color: '#7e22ce', padding: '1px 5px', borderRadius: '4px', flexShrink: 0 }}>
+                              EMPRESA
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: '9.5px', fontWeight: 700, backgroundColor: '#f1f5f9', color: '#475569', padding: '1px 5px', borderRadius: '4px', flexShrink: 0 }}>
+                              PERSONA
+                            </span>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10.5px', color: '#64748b' }}>
+                          {cli.codigoCasillero && (
+                            <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#059669' }}>
+                              {cli.codigoCasillero}
+                            </span>
+                          )}
+                          {cli.documentoIdentidad && (
+                            <span>&bull; Doc: {cli.documentoIdentidad}</span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
 
-                {clienteSeleccionado && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', background: '#eff6ff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
-                    <div style={{ fontSize: '12px', color: '#1e40af', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <CheckCircle2 style={{ width: '16px', height: '16px', color: '#2563eb' }} />
-                      Cliente: <span style={{ textDecoration: 'underline' }}>{clienteSeleccionado}</span>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>Tarifa:</span>
-                      <span style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '12px', color: '#1d4ed8', background: '#ffffff', padding: '2px 8px', borderRadius: '6px', border: '1px solid #93c5fd' }}>
-                        ${tarifaPorKg.toFixed(2)} USD/kg
-                      </span>
-                      {[6.0, 7.0, 8.0].map((preset) => (
-                        <button
-                          key={preset}
-                          type="button"
-                          onClick={() => {
-                            setTarifaPorKg(preset);
-                            setItemsWR((prev) =>
-                              prev.map((item) => {
-                                const p = parseFloat(item.pesoKg);
-                                if (!isNaN(p) && p > 0) {
-                                  return { ...item, precioUsd: (Math.round(p * preset * 100) / 100).toFixed(2) };
-                                }
-                                return item;
-                              })
-                            );
-                          }}
-                          style={{
-                            fontSize: '10.5px',
-                            fontFamily: 'monospace',
-                            fontWeight: 800,
-                            padding: '2px 6px',
-                            borderRadius: '5px',
-                            border: tarifaPorKg === preset ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
-                            background: tarifaPorKg === preset ? '#2563eb' : '#ffffff',
-                            color: tarifaPorKg === preset ? '#ffffff' : '#334155',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          ${preset.toFixed(0)}/kg
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {/* PIE DE AYUDA Y REDIRECCIÓN */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: '#64748b', padding: '2px 4px', flexWrap: 'wrap', gap: '6px' }}>
+                  <span>¿No encuentras a la persona o empresa? Todo cobro exige registro formal en el Directorio.</span>
+                  {onNavigateToClientes && (
+                    <button
+                      type="button"
+                      onClick={onNavigateToClientes}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#2563eb',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: 0
+                      }}
+                    >
+                      <span>Abrir Directorio de Clientes</span>
+                      <ArrowRight style={{ width: '12px', height: '12px' }} />
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <input
-                  type="text"
-                  required
-                  placeholder="Nombre y apellido de la nueva persona o empresa..."
-                  value={nuevoNombreCliente}
-                  onChange={(e) => setNuevoNombreCliente(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    fontSize: '12.5px',
-                    fontWeight: 700,
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '8px',
-                    color: '#0f172a'
-                  }}
-                />
+              /* ALERTA DE SEGURIDAD CUANDO NO EXISTE EL CLIENTE */
+              <div
+                style={{
+                  padding: '14px 16px',
+                  backgroundColor: '#fffbeb',
+                  border: '1.5px solid #fcd34d',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                  <ShieldAlert style={{ width: '22px', height: '22px', color: '#d97706', flexShrink: 0, marginTop: '2px' }} />
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#92400e' }}>
+                      Cliente o Empresa no encontrada en el Directorio
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#b45309', margin: '3px 0 0 0', lineHeight: 1.45 }}>
+                      Por políticas de seguridad contable, control fiscal y trazabilidad de entrega, <strong>no se permite crear cobros a personas no registradas</strong>. Es obligatorio que los datos de la persona, empresa o clientes de la empresa se registren primero en el <strong>Directorio de Clientes</strong> con su DNI/RUC, teléfono y dirección.
+                    </p>
+                  </div>
+                </div>
 
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: '#334155' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginTop: '2px' }}>
+                  {onNavigateToClientes && (
+                    <button
+                      type="button"
+                      onClick={onNavigateToClientes}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '8px 14px',
+                        backgroundColor: '#2563eb',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 4px rgba(37,99,235,0.2)'
+                      }}
+                      className="hover:opacity-95"
+                    >
+                      <Users style={{ width: '14px', height: '14px' }} />
+                      Ir al Directorio de Clientes para Registrar
+                      <ArrowRight style={{ width: '13px', height: '13px' }} />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    style={{
+                      padding: '8px 14px',
+                      backgroundColor: '#ffffff',
+                      color: '#475569',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cerrar Ventana
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* TARJETA DE VALIDACIÓN DE CLIENTE SELECCIONADO */}
+            {selectedClientObj && (
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+                  padding: '12px 14px',
+                  borderRadius: '10px',
+                  border: '1.5px solid #93c5fd',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 900, color: '#1e40af' }}>
+                      {selectedClientObj.nombre}
+                    </span>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '2px 8px',
+                        borderRadius: '9999px',
+                        fontSize: '10.5px',
+                        fontWeight: 800,
+                        backgroundColor: '#dcfce7',
+                        color: '#15803d',
+                        border: '1px solid #86efac'
+                      }}
+                    >
+                      <CheckCircle2 style={{ width: '12px', height: '12px' }} />
+                      Cliente Verificado en Directorio
+                    </span>
+                    {selectedClientObj.esEmpresa && (
+                      <span
+                        style={{
+                          fontSize: '10.5px',
+                          fontWeight: 800,
+                          backgroundColor: '#f3e8ff',
+                          color: '#7e22ce',
+                          padding: '2px 8px',
+                          borderRadius: '9999px',
+                          border: '1px solid #d8b4fe'
+                        }}
+                      >
+                        🏢 Cuenta Corporativa
+                      </span>
+                    )}
+                  </div>
+
+                  {/* SELECTOR DE TARIFA */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>Tarifa Flete:</span>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '12px', color: '#1d4ed8', background: '#ffffff', padding: '2px 8px', borderRadius: '6px', border: '1px solid #93c5fd' }}>
+                      ${tarifaPorKg.toFixed(2)} USD/kg
+                    </span>
+                    {[6.0, 7.0, 8.0].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => {
+                          setTarifaPorKg(preset);
+                          setItemsWR((prev) =>
+                            prev.map((item) => {
+                              const p = parseFloat(item.pesoKg);
+                              if (!isNaN(p) && p > 0) {
+                                return { ...item, precioUsd: (Math.round(p * preset * 100) / 100).toFixed(2) };
+                              }
+                              return item;
+                            })
+                          );
+                        }}
+                        style={{
+                          fontSize: '10.5px',
+                          fontFamily: 'monospace',
+                          fontWeight: 800,
+                          padding: '2px 6px',
+                          borderRadius: '5px',
+                          border: tarifaPorKg === preset ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
+                          background: tarifaPorKg === preset ? '#2563eb' : '#ffffff',
+                          color: tarifaPorKg === preset ? '#ffffff' : '#334155',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        ${preset.toFixed(0)}/kg
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* METADATOS DEL EXPEDIENTE DEL CLIENTE */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '11px', color: '#475569', paddingTop: '4px', borderTop: '1px dashed #bfdbfe' }}>
+                  {selectedClientObj.codigoCasillero && (
+                    <span><strong>Casillero:</strong> <code style={{ color: '#059669', fontWeight: 800 }}>{selectedClientObj.codigoCasillero}</code></span>
+                  )}
+                  {selectedClientObj.documentoIdentidad && (
+                    <span><strong>Doc:</strong> {selectedClientObj.documentoIdentidad}</span>
+                  )}
+                  {selectedClientObj.telefono && (
+                    <span><strong>WhatsApp / Tel:</strong> {selectedClientObj.telefono}</span>
+                  )}
+                  {selectedClientObj.direccionEntrega && (
+                    <span><strong>Dirección:</strong> {selectedClientObj.direccionEntrega}</span>
+                  )}
+                </div>
+
+                {/* OPCIÓN CORPORATIVA */}
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '11.5px', fontWeight: 700, color: '#334155', marginTop: '2px' }}>
                   <input
                     type="checkbox"
                     checked={esCorporativo}
                     onChange={(e) => setEsCorporativo(e.target.checked)}
-                    style={{ width: '16px', height: '16px' }}
+                    style={{ width: '15px', height: '15px' }}
                   />
-                  <span>¿Es una cuenta corporativa / empresa con varios destinatarios? (ej: CORP. FRAGMANI)</span>
+                  <span>Habilitar columna de sub-destinatarios (para empresas que reciben paquetes para diferentes personas)</span>
                 </label>
               </div>
             )}
@@ -458,7 +685,7 @@ export const RegistrarCobroDiarioModal: React.FC<RegistrarCobroDiarioModalProps>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Package style={{ width: '15px', height: '15px', color: '#059669' }} /> Warehouses (WRs) Asignados a {clienteFinal || 'la persona'}
+                <Package style={{ width: '15px', height: '15px', color: '#059669' }} /> Warehouses (WRs) Asignados a {clienteSeleccionado || 'la persona'}
               </label>
               <button
                 type="button"
@@ -636,7 +863,7 @@ export const RegistrarCobroDiarioModal: React.FC<RegistrarCobroDiarioModalProps>
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#14532d' }}>
-                Total Asignado a {clienteFinal || 'esta persona'}:
+                Total Asignado a {clienteSeleccionado || 'esta persona'}:
               </span>
               <span style={{ fontSize: '12px', fontFamily: 'monospace', color: '#4b5563' }}>
                 ({itemsWR.length} WRs &bull; {totalPeso.toFixed(2)} kg)
@@ -772,7 +999,7 @@ export const RegistrarCobroDiarioModal: React.FC<RegistrarCobroDiarioModalProps>
             }}
           >
             <CheckCircle2 style={{ width: '16px', height: '16px' }} />
-            Guardar Cobro para {clienteFinal || 'Cliente'}
+            Guardar Cobro para {clienteSeleccionado || 'Cliente'}
           </button>
         </div>
       </div>

@@ -192,6 +192,7 @@ export default function CobrosTab({
         lotes={lotesFiltrados}
         availableFechas={availableFechas}
         allClientNames={allClientNames}
+        clientes={clientes}
         filtros={filtros}
         setFiltros={setFiltros}
         cotizacionKambista={cotizacionKambista}

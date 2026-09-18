@@ -139,7 +139,7 @@ export default function NewPackageModal({
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h2 style={{ fontSize: '15px', fontWeight: 900, margin: 0 }}>Registrar Paquete WR</h2>
                 <span style={{ padding: '2px 8px', borderRadius: '9999px', fontSize: '10px', fontWeight: 900, background: 'rgba(59,130,246,0.2)', color: '#93c5fd', border: '1px solid rgba(96,165,250,0.3)' }}>
-                  Miami Hub · Ingreso
+                  Almacén Central Lince · Ingreso
                 </span>
               </div>
               <p style={{ fontSize: '11.5px', color: '#94a3b8', margin: '2px 0 0 0' }}>Asigna código WR, casillero, peso y ubicación en almacén</p>
@@ -482,9 +482,7 @@ export default function NewPackageModal({
                       onChange={e => set('ubicacionActual', e.target.value)}
                       style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', fontWeight: 700, outline: 'none' }}
                     >
-                      <option value="TibCourierMiami">✈️ Almacén Miami (USA)</option>
                       <option value="AmexLince">🏢 Almacén Central Lince (Lima)</option>
-                      <option value="TingoMaria">📦 Sucursal Tingo María</option>
                     </select>
                   </div>
                 </div>

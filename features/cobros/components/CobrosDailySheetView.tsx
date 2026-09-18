@@ -37,7 +37,8 @@ import {
   CotizacionKambista,
   FiltrosCobrosLote,
   ResumenCliente360,
-  CobroVoucher
+  CobroVoucher,
+  Cliente
 } from '../types';
 import { KambistaService } from '../services/kambista.service';
 import { CobroPaymentModal } from './CobroPaymentModal';
@@ -50,6 +51,7 @@ interface CobrosDailySheetViewProps {
   lotes: ClienteCobroLote[];
   availableFechas: string[];
   allClientNames: string[];
+  clientes?: Cliente[];
   filtros: FiltrosCobrosLote;
   setFiltros: React.Dispatch<React.SetStateAction<FiltrosCobrosLote>>;
   cotizacionKambista: CotizacionKambista;
@@ -78,7 +80,7 @@ interface CobrosDailySheetViewProps {
   getResumenCliente360: (clienteNombre: string) => ResumenCliente360 | null;
   onOpenImporter?: () => void;
   onOpenVoucherViewer?: (voucher: CobroVoucher) => void;
-  onNavigateToClientes360?: (clienteNombre: string) => void;
+  onNavigateToClientes360?: (clienteNombre?: string) => void;
   getTarifaCliente?: (clienteNombre: string) => { tarifa: number; personalizada: boolean };
 }
 
@@ -86,6 +88,7 @@ export const CobrosDailySheetView: React.FC<CobrosDailySheetViewProps> = ({
   lotes,
   availableFechas,
   allClientNames,
+  clientes = [],
   filtros,
   setFiltros,
   cotizacionKambista,
@@ -1288,8 +1291,15 @@ export const CobrosDailySheetView: React.FC<CobrosDailySheetViewProps> = ({
         onClose={() => setIsNuevoCobroOpen(false)}
         availableFechas={availableFechas}
         allClientNames={allClientNames}
+        clientes={clientes}
         cotizacionKambista={cotizacionKambista}
         getTarifaCliente={getTarifaCliente}
+        onNavigateToClientes={() => {
+          setIsNuevoCobroOpen(false);
+          if (onNavigateToClientes360) {
+            onNavigateToClientes360();
+          }
+        }}
         onGuardarCobro={onGuardarNuevoCobroPersona}
       />
 

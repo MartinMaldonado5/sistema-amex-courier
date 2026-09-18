@@ -75,11 +75,6 @@ export function useDashboardMetrics({
     [paquetes]
   );
 
-  const paquetesMiami = useMemo(
-    () => paquetes.filter(p => p.ubicacionActual === 'TibCourierMiami'),
-    [paquetes]
-  );
-
   const paquetesEnRuta = useMemo(
     () => paquetes.filter(p => p.estadoEntrega === 'EnRutaCarroAmex'),
     [paquetes]
@@ -206,7 +201,6 @@ export function useDashboardMetrics({
       totalPaquetes: totalPkg,
       paquetesEnLince: paquetesLince.length,
       paquetesEnRuta: paquetesEnRuta.length,
-      paquetesEnMiami: paquetesMiami.length,
       paquetesEntregados: deliveredPkg,
       paquetesSinUbicar: paquetesSinUbicar.length,
       totalPesoKgLince: Number(totalPesoLince.toFixed(1)),
@@ -222,7 +216,6 @@ export function useDashboardMetrics({
     paquetes,
     paquetesLince,
     paquetesEnRuta,
-    paquetesMiami,
     paquetesEntregados,
     paquetesSinUbicar,
     totalPesoLince,
@@ -278,8 +271,8 @@ export function useDashboardMetrics({
         badgeText: `${ordenesActivas.length} órdenes`,
         urgency: 'info',
         icon: 'Store',
-        targetTab: 'shp-entregas',
-        actionLabel: 'Atender Mostrador'
+        targetTab: 'mm-lince',
+        actionLabel: 'Ver en Almacén'
       });
     }
 
@@ -293,26 +286,26 @@ export function useDashboardMetrics({
         badgeText: `${paquetesEnRuta.length} en ruta`,
         urgency: 'info',
         icon: 'Car',
-        targetTab: 'shp-deliveries',
-        actionLabel: 'Monitorear Ruta'
+        targetTab: 'mm-lince',
+        actionLabel: 'Ver en Almacén'
       });
     }
 
-    // 5. Picking Agencias de Provincia (Shalom / Olva)
+    // 5. Envíos Agencias de Provincia (Shalom / Olva)
     const paquetesAgencia = paquetes.filter(
       p => p.metodoEntrega === 'AgenciaProvincia' && p.estadoEntrega !== 'Entregado'
     );
     if (paquetesAgencia.length > 0) {
       tasks.push({
         id: 'task-picking',
-        title: 'Picking Shalom / Olva',
-        description: `${paquetesAgencia.length} paquetes destinados a agencias de provincia por consolidar`,
+        title: 'Envíos Shalom / Olva',
+        description: `${paquetesAgencia.length} paquetes destinados a agencias de provincia`,
         count: paquetesAgencia.length,
         badgeText: `${paquetesAgencia.length} provincia`,
         urgency: 'info',
         icon: 'ClipboardList',
-        targetTab: 'wms-picking',
-        actionLabel: 'Iniciar Picking'
+        targetTab: 'rotulos-a4',
+        actionLabel: 'Generar Rótulos'
       });
     }
 
@@ -526,8 +519,6 @@ export function useDashboardMetrics({
         if (!isLince) return false;
       } else if (packageFilter === 'EN_RUTA') {
         if (p.estadoEntrega !== 'EnRutaCarroAmex') return false;
-      } else if (packageFilter === 'MIAMI') {
-        if (p.ubicacionActual !== 'TibCourierMiami') return false;
       } else if (packageFilter === 'ENTREGADO') {
         const isDelivered =
           p.estadoEntrega === 'Entregado' ||

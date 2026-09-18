@@ -1,7 +1,7 @@
 import { Paquete, Cliente, OrdenEntrega, CobroVoucher } from '@/types';
 
 export type TimeFilter = 'ALL' | 'TODAY' | 'WEEK' | 'MONTH';
-export type PackageStatusFilter = 'ALL' | 'LINCE' | 'EN_RUTA' | 'MIAMI' | 'ENTREGADO' | 'PENDIENTE_PAGO';
+export type PackageStatusFilter = 'ALL' | 'LINCE' | 'EN_RUTA' | 'ENTREGADO' | 'PENDIENTE_PAGO';
 
 export interface DailyTaskItem {
   id: string;
@@ -69,7 +69,6 @@ export interface ExecutiveKpis {
   totalPaquetes: number;
   paquetesEnLince: number;
   paquetesEnRuta: number;
-  paquetesEnMiami: number;
   paquetesEntregados: number;
   paquetesSinUbicar: number;
   totalPesoKgLince: number;

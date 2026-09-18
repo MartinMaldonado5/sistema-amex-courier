@@ -4,7 +4,8 @@ import React, { useMemo } from 'react';
 import {
   Users,
   Wallet,
-  ArrowRight
+  ArrowRight,
+  UserPlus
 } from 'lucide-react';
 import {
   useCobrosOperaciones,
@@ -17,13 +18,15 @@ interface DirectorioClientesTabProps {
   clientes?: Cliente[];
   initialClientName?: string;
   onNavigateToCobros?: (clienteNombre?: string) => void;
+  onOpenNewClientModal?: () => void;
 }
 
 export default function DirectorioClientesTab({
   paquetes = [],
   clientes = [],
   initialClientName,
-  onNavigateToCobros
+  onNavigateToCobros,
+  onOpenNewClientModal
 }: DirectorioClientesTabProps) {
   const {
     lotes,
@@ -127,46 +130,75 @@ export default function DirectorioClientesTab({
             </p>
           </div>
 
-          {/* BOTÓN DE INTERCONEXIÓN RÁPIDA CON MÓDULO DE COBROS */}
-          {onNavigateToCobros && (
-            <button
-              type="button"
-              onClick={() => onNavigateToCobros()}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                color: '#ffffff',
-                border: 'none',
-                padding: '10px 18px',
-                borderRadius: '10px',
-                fontWeight: 800,
-                fontSize: '13px',
-                cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(5,150,105,0.25)',
-                transition: 'all 0.15s ease'
-              }}
-              className="hover:opacity-90"
-            >
-              <Wallet style={{ width: '16px', height: '16px' }} />
-              <span>Ir a Módulo de Cobros</span>
-              {statsActivas.pendienteUsd > 0 && (
-                <span
-                  style={{
-                    background: 'rgba(255,255,255,0.25)',
-                    padding: '2px 7px',
-                    borderRadius: '8px',
-                    fontSize: '11px',
-                    fontFamily: 'monospace'
-                  }}
-                >
-                  Falta: ${statsActivas.pendienteUsd.toFixed(2)}
-                </span>
-              )}
-              <ArrowRight style={{ width: '14px', height: '14px' }} />
-            </button>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            {/* BOTÓN REGISTRAR NUEVO CLIENTE EN DIRECTORIO */}
+            {onOpenNewClientModal && (
+              <button
+                type="button"
+                onClick={onOpenNewClientModal}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '10px 18px',
+                  borderRadius: '10px',
+                  fontWeight: 800,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(37,99,235,0.25)',
+                  transition: 'all 0.15s ease'
+                }}
+                className="hover:opacity-95"
+              >
+                <UserPlus style={{ width: '16px', height: '16px' }} />
+                <span>+ Registrar Nuevo Cliente / Empresa</span>
+              </button>
+            )}
+
+            {/* BOTÓN DE INTERCONEXIÓN RÁPIDA CON MÓDULO DE COBROS */}
+            {onNavigateToCobros && (
+              <button
+                type="button"
+                onClick={() => onNavigateToCobros()}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '10px 18px',
+                  borderRadius: '10px',
+                  fontWeight: 800,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(5,150,105,0.25)',
+                  transition: 'all 0.15s ease'
+                }}
+                className="hover:opacity-90"
+              >
+                <Wallet style={{ width: '16px', height: '16px' }} />
+                <span>Ir a Módulo de Cobros</span>
+                {statsActivas.pendienteUsd > 0 && (
+                  <span
+                    style={{
+                      background: 'rgba(255,255,255,0.25)',
+                      padding: '2px 7px',
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                      fontFamily: 'monospace'
+                    }}
+                  >
+                    Falta: ${statsActivas.pendienteUsd.toFixed(2)}
+                  </span>
+                )}
+                <ArrowRight style={{ width: '14px', height: '14px' }} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

@@ -58,13 +58,9 @@ export function exportPaquetesToExcel(paquetes: Paquete[], filenamePrefix = 'Inv
     'Descripción del Paquete': p.descripcion || '',
     'Tipo Empaque': p.tipoEmpaque || 'CAJA',
     'Peso (Kg)': Number(p.pesoKg || 0),
-    'Almacén Actual': p.ubicacionActual === 'AmexLince'
-      ? 'Almacén Central Lince'
-      : p.ubicacionActual === 'TibCourierMiami'
-      ? 'Miami Hub (USA)'
-      : p.ubicacionActual === 'TibTingoMaria'
-      ? 'Tingo María'
-      : p.ubicacionActual,
+    'Almacén Actual': p.ubicacionActual === 'Entregado'
+      ? 'Entregado'
+      : 'Almacén Central Lince',
     'Anaquel': p.anaquel || '',
     'Piso': p.piso || '',
     'Posición WMS': p.posicionEstante || (p.anaquel && p.piso ? `${p.anaquel}-${p.piso}` : 'REC'),

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Boxes, Warehouse, MapPin, Truck, Layers } from 'lucide-react';
+import { Boxes, Warehouse, MapPin, Layers } from 'lucide-react';
 import { Paquete } from '@/types';
 
 export interface InventoryStatsCardsProps {
@@ -12,21 +12,15 @@ export default function InventoryStatsCards({ paquetes }: InventoryStatsCardsPro
   const totalExistencias = paquetes.length;
   const totalPesoKg = paquetes.reduce((acc, p) => acc + (Number(p.pesoKg) || 0), 0);
 
-  // Métricas logísticas y de estantería para el personal de Almacén
+  // Métricas logísticas y de estantería para el personal de Almacén Lince
   const paquetesEnEstante = paquetes.filter(
     p => p.posicionEstante && !p.posicionEstante.startsWith('REC') && p.posicionEstante !== 'SIN_ASIGNAR'
   ).length;
   const paquetesSinUbicar = totalExistencias - paquetesEnEstante;
 
-  const countMiami = paquetes.filter(p => p.ubicacionActual === 'TibCourierMiami').length;
-  const countTingo = paquetes.filter(
-    p => p.ubicacionActual === 'TibTingoMaria' || p.ubicacionActual === 'TibCourierTingoMaria'
-  ).length;
-  const countLince = paquetes.filter(p => p.ubicacionActual === 'AmexLince').length;
-
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-      {/* Total Existencias */}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+      {/* Total Existencias Lince */}
       <div
         style={{
           background: '#ffffff',
@@ -38,7 +32,7 @@ export default function InventoryStatsCards({ paquetes }: InventoryStatsCardsPro
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
           <span style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
-            Total Existencias
+            Total Existencias Lince
           </span>
           <Boxes className="w-5 h-5 text-blue-600" />
         </div>
@@ -50,7 +44,7 @@ export default function InventoryStatsCards({ paquetes }: InventoryStatsCardsPro
         </div>
       </div>
 
-      {/* Peso Total */}
+      {/* Peso Total en Custodia */}
       <div
         style={{
           background: '#ffffff',
@@ -62,7 +56,7 @@ export default function InventoryStatsCards({ paquetes }: InventoryStatsCardsPro
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
           <span style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
-            Peso Total en Custodia
+            Peso en Custodia (Lince)
           </span>
           <Warehouse className="w-5 h-5 text-indigo-600" />
         </div>
@@ -74,7 +68,7 @@ export default function InventoryStatsCards({ paquetes }: InventoryStatsCardsPro
         </div>
       </div>
 
-      {/* En Anaqueles (Slotting WMS) - Enfocado 100% en Almacenamiento */}
+      {/* En Anaqueles (Slotting WMS) */}
       <div
         style={{
           background: '#ffffff',
@@ -98,7 +92,7 @@ export default function InventoryStatsCards({ paquetes }: InventoryStatsCardsPro
         </div>
       </div>
 
-      {/* Sede Central Lince */}
+      {/* Almacén Central Lince */}
       <div
         style={{
           background: '#eff6ff',
@@ -110,63 +104,15 @@ export default function InventoryStatsCards({ paquetes }: InventoryStatsCardsPro
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
           <span style={{ fontSize: '11px', fontWeight: 800, color: '#1e40af', textTransform: 'uppercase' }}>
-            Sede Lince (Lima)
+            Sede Central Lince
           </span>
           <MapPin className="w-5 h-5 text-blue-600" />
         </div>
         <div style={{ fontSize: '22px', fontWeight: 800, color: '#1e3a8a' }}>
-          {countLince} <span style={{ fontSize: '12px', color: '#3b82f6', fontWeight: 600 }}>paquetes</span>
+          {totalExistencias} <span style={{ fontSize: '12px', color: '#3b82f6', fontWeight: 600 }}>bultos en sede</span>
         </div>
         <div style={{ fontSize: '11px', color: '#1d4ed8', marginTop: '4px', fontWeight: 600 }}>
-          Almacén Central Activo
-        </div>
-      </div>
-
-      {/* Miami Hub */}
-      <div
-        style={{
-          background: '#ffffff',
-          border: '1px solid #e2e8f0',
-          borderRadius: '12px',
-          padding: '14px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
-            Hub Miami (USA)
-          </span>
-          <Truck className="w-5 h-5 text-amber-600" />
-        </div>
-        <div style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a' }}>
-          {countMiami} <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>paquetes</span>
-        </div>
-        <div style={{ fontSize: '11px', color: '#d97706', marginTop: '4px', fontWeight: 600 }}>
-          Por embarcar / En tránsito
-        </div>
-      </div>
-
-      {/* Tingo María */}
-      <div
-        style={{
-          background: '#ffffff',
-          border: '1px solid #e2e8f0',
-          borderRadius: '12px',
-          padding: '14px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
-            Tingo María
-          </span>
-          <MapPin className="w-5 h-5 text-emerald-600" />
-        </div>
-        <div style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a' }}>
-          {countTingo} <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>paquetes</span>
-        </div>
-        <div style={{ fontSize: '11px', color: '#059669', marginTop: '4px', fontWeight: 600 }}>
-          Almacén Selva Central
+          Almacén Central Único y Activo
         </div>
       </div>
     </div>

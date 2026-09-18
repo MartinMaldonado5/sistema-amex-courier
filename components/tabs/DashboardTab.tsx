@@ -65,10 +65,13 @@ export default function DashboardTab({
         width: '100%',
         overflowY: 'auto',
         overflowX: 'hidden',
-        background: '#f8fafc'
+        background: '#f8fafc',
+        padding: '24px 32px',
+        gap: '24px',
+        boxSizing: 'border-box'
       }}
     >
-      {/* 1. BARRA SUPERIOR: CENTRO DE COMANDO & ACCIONES */}
+      {/* 1. CABECERA OPERATIVA: ESTADO DEL SISTEMA & ACCIONES PRINCIPALES */}
       <DashboardHeader
         timeFilter={timeFilter}
         onChangeTimeFilter={setTimeFilter}
@@ -78,19 +81,19 @@ export default function DashboardTab({
         onNavigateTab={onNavigateTab}
       />
 
-      {/* 2. GRILLA DE KPIs EJECUTIVOS MAESTROS (FINANZAS, VOLUMEN, ALMACÉN, CLIENTES) */}
+      {/* 2. GRID DE KPIS OPERATIVOS (CON MÉTRICA REINA EN RATIO 2.5X) */}
       <ExecutiveKpiGrid
         kpis={kpis}
         onNavigateTab={onNavigateTab}
       />
 
-      {/* 3. TAREAS DIARIAS CRÍTICAS & PRIORIDADES OPERATIVAS DEL DÍA */}
+      {/* 3. TAREAS OPERATIVAS DIARIAS & PRIORIDADES */}
       <DailyTasksSection
         tasks={dailyTasks}
         onNavigateTab={onNavigateTab}
       />
 
-      {/* 4. GRÁFICOS ANALÍTICOS: OCUPACIÓN WMS, CANALES DE ENVÍO Y MEDIOS DE PAGO */}
+      {/* 4. SECCIÓN ANALÍTICA: CAPACIDAD WMS, CANALES & RECAUDACIÓN */}
       <AnalyticsChartsSection
         shelfStats={shelfStats}
         paymentStats={paymentStats}
@@ -99,13 +102,12 @@ export default function DashboardTab({
         onNavigateTab={onNavigateTab}
       />
 
-      {/* 5. CONSOLA DE RASTREO EN VIVO DE WRs & BULTOS */}
+      {/* 5. FLUJO OPERATIVO EN VIVO: CONSOLA DE RASTREO WRs */}
       <LivePackagesStream
         paquetes={filteredPaquetes}
         allPaquetesCount={paquetes.length}
         linceCount={kpis.paquetesEnLince}
         rutaCount={kpis.paquetesEnRuta}
-        miamiCount={kpis.paquetesEnMiami}
         entregadosCount={kpis.paquetesEntregados}
         packageFilter={packageFilter}
         onChangeFilter={setPackageFilter}

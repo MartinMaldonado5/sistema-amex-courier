@@ -779,14 +779,8 @@ export function PageSkeleton({ activeTab, tab }: { activeTab?: string; tab?: str
     case 'mm-lince':
     case 'mm-inventory':
       return <InventorySkeleton />;
-    case 'shp-entregas':
-      return <EntregasSkeleton />;
     case 'fico-cobros':
       return <CobrosSkeleton />;
-    case 'shp-deliveries':
-      return <DeliveriesSkeleton />;
-    case 'wms-picking':
-      return <PickingSkeleton />;
     case 'mobile-scanner':
       return <ScannerSkeleton />;
     case 'dni-matrix':

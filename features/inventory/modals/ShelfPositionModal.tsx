@@ -171,8 +171,6 @@ export default function ShelfPositionModal({
                   className="form-control"
                 >
                   <option value="LIN">Sede Central Lince (Lima)</option>
-                  <option value="MIA">Miami Hub (USA)</option>
-                  <option value="TGO">Tingo María</option>
                 </select>
               </div>
             </div>
@@ -241,8 +239,6 @@ export default function ShelfPositionModal({
                   className="form-control"
                 >
                   <option value="LIN">Sede Central Lince</option>
-                  <option value="MIA">Miami Hub (USA)</option>
-                  <option value="TGO">Tingo María</option>
                 </select>
               </div>
 

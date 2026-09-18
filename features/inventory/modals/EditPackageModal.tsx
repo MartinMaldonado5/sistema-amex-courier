@@ -122,8 +122,6 @@ export default function EditPackageModal({
                 className="form-control"
               >
                 <option value="AmexLince">Sede Central Lince</option>
-                <option value="TibCourierMiami">Miami Hub (USA)</option>
-                <option value="TibTingoMaria">Tingo María</option>
                 <option value="Entregado">Entregado</option>
               </select>
             </div>

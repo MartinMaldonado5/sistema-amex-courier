@@ -23,7 +23,6 @@ interface LivePackagesStreamProps {
   allPaquetesCount: number;
   linceCount: number;
   rutaCount: number;
-  miamiCount: number;
   entregadosCount: number;
   packageFilter: PackageStatusFilter;
   onChangeFilter: (filter: PackageStatusFilter) => void;
@@ -39,7 +38,6 @@ export function LivePackagesStream({
   allPaquetesCount,
   linceCount,
   rutaCount,
-  miamiCount,
   entregadosCount,
   packageFilter,
   onChangeFilter,
@@ -55,19 +53,19 @@ export function LivePackagesStream({
         return (
           <span
             style={{
-              padding: '2px 6px',
+              padding: '2px 8px',
               borderRadius: '4px',
-              fontSize: '10px',
-              fontWeight: 800,
-              background: '#faf5ff',
-              color: '#7e22ce',
-              border: '1px solid #f3e8ff',
+              fontSize: '12px',
+              fontWeight: 500,
+              background: '#f8fafc',
+              color: '#475569',
+              border: '1px solid #e2e8f0',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '3px'
+              gap: '6px'
             }}
           >
-            <Truck style={{ width: '10px', height: '10px' }} />
+            <Truck style={{ width: '12px', height: '12px', color: '#64748b' }} />
             Carro AMEX
           </span>
         );
@@ -75,39 +73,39 @@ export function LivePackagesStream({
         return (
           <span
             style={{
-              padding: '2px 6px',
+              padding: '2px 8px',
               borderRadius: '4px',
-              fontSize: '10px',
-              fontWeight: 800,
-              background: '#ecfdf5',
-              color: '#047857',
-              border: '1px solid #a7f3d0',
+              fontSize: '12px',
+              fontWeight: 500,
+              background: '#f8fafc',
+              color: '#475569',
+              border: '1px solid #e2e8f0',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '3px'
+              gap: '6px'
             }}
           >
-            <MapPin style={{ width: '10px', height: '10px' }} />
-            Agencia Prov.
+            <MapPin style={{ width: '12px', height: '12px', color: '#64748b' }} />
+            Agencia Provincia
           </span>
         );
       default:
         return (
           <span
             style={{
-              padding: '2px 6px',
+              padding: '2px 8px',
               borderRadius: '4px',
-              fontSize: '10px',
-              fontWeight: 800,
-              background: '#eff6ff',
-              color: '#1e40af',
-              border: '1px solid #bfdbfe',
+              fontSize: '12px',
+              fontWeight: 500,
+              background: '#f8fafc',
+              color: '#475569',
+              border: '1px solid #e2e8f0',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '3px'
+              gap: '6px'
             }}
           >
-            <Store style={{ width: '10px', height: '10px' }} />
+            <Store style={{ width: '12px', height: '12px', color: '#64748b' }} />
             Recojo Lince
           </span>
         );
@@ -118,7 +116,21 @@ export function LivePackagesStream({
     switch (estado) {
       case 'EnRutaCarroAmex':
         return (
-          <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 800, background: '#faf5ff', color: '#9333ea', border: '1px solid #f3e8ff' }}>
+          <span
+            style={{
+              padding: '2px 8px',
+              borderRadius: '9999px',
+              fontSize: '12px',
+              fontWeight: 500,
+              background: '#f1f5f9',
+              color: '#334155',
+              border: '1px solid #e2e8f0',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#2563eb' }} />
             En Ruta
           </span>
         );
@@ -126,13 +138,41 @@ export function LivePackagesStream({
       case 'EntregadoDomicilio':
       case 'RecogidoAlmacen':
         return (
-          <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 800, background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0' }}>
+          <span
+            style={{
+              padding: '2px 8px',
+              borderRadius: '9999px',
+              fontSize: '12px',
+              fontWeight: 500,
+              background: '#f1f5f9',
+              color: '#334155',
+              border: '1px solid #e2e8f0',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }} />
             Entregado
           </span>
         );
       default:
         return (
-          <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 800, background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' }}>
+          <span
+            style={{
+              padding: '2px 8px',
+              borderRadius: '9999px',
+              fontSize: '12px',
+              fontWeight: 500,
+              background: '#f1f5f9',
+              color: '#334155',
+              border: '1px solid #e2e8f0',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#64748b' }} />
             En Almacén
           </span>
         );
@@ -142,375 +182,327 @@ export function LivePackagesStream({
   return (
     <div
       style={{
-        padding: '8px 18px 24px 18px',
+        background: '#ffffff',
+        borderRadius: '12px',
+        border: '1px solid #e2e8f0',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
         display: 'flex',
         flexDirection: 'column',
         minHeight: '380px',
+        overflow: 'hidden',
         flexShrink: 0
       }}
     >
+      {/* Cabecera con Segmented Filter y Buscador */}
       <div
         style={{
+          padding: '16px 24px',
           background: '#ffffff',
-          borderRadius: '14px',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+          borderBottom: '1px solid #e2e8f0',
           display: 'flex',
-          flexDirection: 'column',
-          minHeight: '360px',
-          overflow: 'hidden'
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          flexWrap: 'wrap',
+          flexShrink: 0
         }}
       >
-        {/* Cabecera con pestañas y buscador */}
+        {/* Pestañas de Filtro Rápido (Segmented Control) */}
         <div
           style={{
-            padding: '12px 16px',
-            background: '#f8fafc',
-            borderBottom: '1px solid #e2e8f0',
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            flexWrap: 'wrap',
-            flexShrink: 0
+            background: '#f1f5f9',
+            borderRadius: '8px',
+            padding: '4px',
+            border: '1px solid #e2e8f0',
+            gap: '2px',
+            overflowX: 'auto'
           }}
         >
-          {/* Pestañas de Filtro Rápido */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflowX: 'auto' }}>
-            <button
-              type="button"
-              onClick={() => onChangeFilter('ALL')}
-              style={{
-                padding: '5px 12px',
-                borderRadius: '8px',
-                fontSize: '11.5px',
-                fontWeight: 800,
-                border: 'none',
-                cursor: 'pointer',
-                background: packageFilter === 'ALL' ? '#0f172a' : '#ffffff',
-                color: packageFilter === 'ALL' ? '#ffffff' : '#475569',
-                boxShadow: packageFilter === 'ALL' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                borderWidth: '1px',
-                borderStyle: 'solid',
-                borderColor: packageFilter === 'ALL' ? '#0f172a' : '#e2e8f0'
-              }}
-            >
-              Todos ({allPaquetesCount})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onChangeFilter('LINCE')}
-              style={{
-                padding: '5px 12px',
-                borderRadius: '8px',
-                fontSize: '11.5px',
-                fontWeight: 800,
-                border: 'none',
-                cursor: 'pointer',
-                background: packageFilter === 'LINCE' ? '#2563eb' : '#eff6ff',
-                color: packageFilter === 'LINCE' ? '#ffffff' : '#1e40af',
-                borderWidth: '1px',
-                borderStyle: 'solid',
-                borderColor: packageFilter === 'LINCE' ? '#2563eb' : '#bfdbfe'
-              }}
-            >
-              En Almacén Lince ({linceCount})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onChangeFilter('EN_RUTA')}
-              style={{
-                padding: '5px 12px',
-                borderRadius: '8px',
-                fontSize: '11.5px',
-                fontWeight: 800,
-                border: 'none',
-                cursor: 'pointer',
-                background: packageFilter === 'EN_RUTA' ? '#7c3aed' : '#faf5ff',
-                color: packageFilter === 'EN_RUTA' ? '#ffffff' : '#6b21a8',
-                borderWidth: '1px',
-                borderStyle: 'solid',
-                borderColor: packageFilter === 'EN_RUTA' ? '#7c3aed' : '#e9d5ff'
-              }}
-            >
-              En Ruta Carro ({rutaCount})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onChangeFilter('MIAMI')}
-              style={{
-                padding: '5px 12px',
-                borderRadius: '8px',
-                fontSize: '11.5px',
-                fontWeight: 800,
-                border: 'none',
-                cursor: 'pointer',
-                background: packageFilter === 'MIAMI' ? '#0284c7' : '#f0f9ff',
-                color: packageFilter === 'MIAMI' ? '#ffffff' : '#0369a1',
-                borderWidth: '1px',
-                borderStyle: 'solid',
-                borderColor: packageFilter === 'MIAMI' ? '#0284c7' : '#bae6fd'
-              }}
-            >
-              Miami Hub ({miamiCount})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onChangeFilter('ENTREGADO')}
-              style={{
-                padding: '5px 12px',
-                borderRadius: '8px',
-                fontSize: '11.5px',
-                fontWeight: 800,
-                border: 'none',
-                cursor: 'pointer',
-                background: packageFilter === 'ENTREGADO' ? '#059669' : '#ecfdf5',
-                color: packageFilter === 'ENTREGADO' ? '#ffffff' : '#065f46',
-                borderWidth: '1px',
-                borderStyle: 'solid',
-                borderColor: packageFilter === 'ENTREGADO' ? '#059669' : '#a7f3d0'
-              }}
-            >
-              Entregados ({entregadosCount})
-            </button>
-          </div>
-
-          {/* Buscador Rápido */}
-          <div style={{ position: 'relative', width: '240px', flexShrink: 0 }}>
-            <Search
-              style={{
-                width: '14px',
-                height: '14px',
-                color: '#94a3b8',
-                position: 'absolute',
-                left: '10px',
-                top: '50%',
-                transform: 'translateY(-50%)'
-              }}
-            />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => onChangeSearch(e.target.value)}
-              placeholder="Buscar WR#, Tracking, Cliente..."
-              style={{
-                width: '100%',
-                paddingLeft: '32px',
-                paddingRight: '10px',
-                paddingTop: '6px',
-                paddingBottom: '6px',
-                background: '#ffffff',
-                border: '1px solid #cbd5e1',
-                borderRadius: '8px',
-                fontSize: '11.5px',
-                fontWeight: 600,
-                color: '#0f172a',
-                outline: 'none',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
-              }}
-            />
-          </div>
+          {[
+            { key: 'ALL', label: 'Todos', count: allPaquetesCount },
+            { key: 'LINCE', label: 'En Almacén Lince', count: linceCount },
+            { key: 'EN_RUTA', label: 'En Ruta', count: rutaCount },
+            { key: 'ENTREGADO', label: 'Entregados', count: entregadosCount }
+          ].map(f => {
+            const isActive = packageFilter === f.key;
+            return (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => onChangeFilter(f.key as PackageStatusFilter)}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: isActive ? 600 : 500,
+                  border: isActive ? '1px solid #e2e8f0' : '1px solid transparent',
+                  cursor: 'pointer',
+                  background: isActive ? '#ffffff' : 'transparent',
+                  color: isActive ? '#0f172a' : '#64748b',
+                  boxShadow: isActive ? '0 1px 2px rgba(0,0,0,0.04)' : 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 0.12s ease'
+                }}
+              >
+                <span>{f.label}</span>
+                <span
+                  style={{
+                    fontSize: '12px',
+                    fontFamily: 'monospace',
+                    fontWeight: 600,
+                    color: isActive ? '#0f172a' : '#94a3b8'
+                  }}
+                >
+                  ({f.count})
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Lista con Scroll de Bultos */}
-        <div style={{ flex: 1, overflowY: 'auto', minHeight: '260px', maxHeight: '420px' }}>
-          {paquetes.length === 0 ? (
-            <div style={{ padding: '40px 20px', textAlign: 'center', color: '#94a3b8' }}>
-              <Package style={{ width: '40px', height: '40px', color: '#cbd5e1', margin: '0 auto 8px' }} />
-              <p style={{ fontSize: '13px', fontWeight: 800, color: '#475569', margin: 0 }}>
-                No se encontraron paquetes
-              </p>
-              <p style={{ fontSize: '11.5px', color: '#94a3b8', margin: '4px 0 0 0' }}>
-                Ajusta los filtros seleccionados o registra un nuevo recibo de bodega (WR)
-              </p>
-            </div>
-          ) : (
-            <div>
-              {paquetes.slice(0, 60).map(pkg => {
-                const isLince = pkg.ubicacionActual === 'AmexLince' || pkg.estadoEntrega === 'EnAlmacen';
-                const isMiami = pkg.ubicacionActual === 'TibCourierMiami';
+        {/* Buscador de Alta Fidelidad */}
+        <div style={{ position: 'relative', width: '280px', flexShrink: 0 }}>
+          <Search
+            style={{
+              width: '16px',
+              height: '16px',
+              color: '#94a3b8',
+              position: 'absolute',
+              left: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)'
+            }}
+          />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => onChangeSearch(e.target.value)}
+            placeholder="Buscar WR#, Tracking, Cliente..."
+            style={{
+              width: '100%',
+              paddingLeft: '36px',
+              paddingRight: '12px',
+              paddingTop: '8px',
+              paddingBottom: '8px',
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 400,
+              color: '#0f172a',
+              outline: 'none',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+              boxSizing: 'border-box'
+            }}
+          />
+        </div>
+      </div>
 
-                return (
-                  <div
-                    key={pkg.id}
-                    style={{
-                      padding: '10px 16px',
-                      borderBottom: '1px solid #f1f5f9',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '12px',
-                      transition: 'background 0.12s ease'
-                    }}
-                    className="hover:bg-slate-50"
-                  >
-                    {/* Información Principal */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-                      <div
-                        style={{
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '10px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '15px',
-                          flexShrink: 0,
-                          background: isLince ? '#eff6ff' : isMiami ? '#f0f9ff' : '#ecfdf5',
-                          border: isLince ? '1px solid #bfdbfe' : isMiami ? '1px solid #bae6fd' : '1px solid #a7f3d0'
-                        }}
-                      >
-                        {pkg.tipoEmpaque === 'SOBRE' ? '✉️' : '📦'}
-                      </div>
-
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          <span style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '13px', color: '#0f172a' }}>
-                            {pkg.numeroReciboBodega}
-                          </span>
-                          <span
-                            style={{
-                              padding: '1px 6px',
-                              borderRadius: '4px',
-                              fontSize: '10.5px',
-                              fontFamily: 'monospace',
-                              fontWeight: 800,
-                              background: '#f1f5f9',
-                              color: '#334155'
-                            }}
-                          >
-                            {pkg.codigoCasillero}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: '12px',
-                              fontWeight: 700,
-                              color: '#1e293b',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
-                            }}
-                          >
-                            {pkg.nombreConsignatario || 'Cliente AMEX'}
-                          </span>
-                        </div>
-
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            fontSize: '11px',
-                            color: '#64748b',
-                            marginTop: '3px',
-                            flexWrap: 'wrap'
-                          }}
-                        >
-                          <span style={{ fontWeight: 700, color: '#0f172a' }}>
-                            {pkg.pesoKg ? `${pkg.pesoKg} kg` : '0.0 kg'}
-                          </span>
-                          <span>•</span>
-                          <span
-                            style={{
-                              fontFamily: 'monospace',
-                              fontWeight: 800,
-                              color: '#7c3aed',
-                              background: '#faf5ff',
-                              padding: '1px 6px',
-                              borderRadius: '4px',
-                              border: '1px solid #f3e8ff'
-                            }}
-                          >
-                            {pkg.posicionEstante || 'A1-P1'}
-                          </span>
-                          <span>•</span>
-                          {getDeliveryMethodBadge(pkg.metodoEntrega)}
-                          <span>•</span>
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>
-                            {pkg.descripcion || 'Mercancía general'}
-                          </span>
-                        </div>
-                      </div>
+      {/* Lista / Tabla de Bultos */}
+      <div style={{ flex: 1, overflowY: 'auto', minHeight: '280px', maxHeight: '440px' }}>
+        {paquetes.length === 0 ? (
+          <div style={{ padding: '48px 24px', textAlign: 'center', color: '#94a3b8' }}>
+            <Package style={{ width: '36px', height: '36px', color: '#cbd5e1', margin: '0 auto 12px' }} />
+            <p style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', margin: 0 }}>
+              No se encontraron registros
+            </p>
+            <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 0 0' }}>
+              Ajusta los filtros seleccionados o registra un nuevo recibo de bodega (WR)
+            </p>
+          </div>
+        ) : (
+          <div>
+            {paquetes.slice(0, 60).map(pkg => {
+              return (
+                <div
+                  key={pkg.id}
+                  style={{
+                    padding: '12px 24px',
+                    borderBottom: '1px solid #f1f5f9',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '16px',
+                    transition: 'background 0.12s ease'
+                  }}
+                  className="hover:bg-slate-50"
+                >
+                  {/* Identidad del Paquete y Consignatario */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
+                    <div
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        background: '#f1f5f9',
+                        color: '#475569',
+                        border: '1px solid #e2e8f0'
+                      }}
+                    >
+                      {pkg.tipoEmpaque === 'SOBRE' ? (
+                        <FileText style={{ width: '16px', height: '16px' }} />
+                      ) : (
+                        <Package style={{ width: '16px', height: '16px' }} />
+                      )}
                     </div>
 
-                    {/* Estado & Acciones de Fila */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                      {getStatusBadge(pkg.estadoEntrega)}
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>
+                          {pkg.numeroReciboBodega}
+                        </span>
+                        <span
+                          style={{
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontFamily: 'monospace',
+                            fontWeight: 500,
+                            background: '#f1f5f9',
+                            color: '#475569',
+                            border: '1px solid #e2e8f0'
+                          }}
+                        >
+                          {pkg.codigoCasillero}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: '14px',
+                            fontWeight: 500,
+                            color: '#0f172a',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {pkg.nombreConsignatario || 'Cliente AMEX'}
+                        </span>
+                      </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          fontSize: '12px',
+                          color: '#64748b',
+                          marginTop: '4px',
+                          flexWrap: 'wrap'
+                        }}
+                      >
+                        <span style={{ fontWeight: 600, color: '#0f172a' }}>
+                          {pkg.pesoKg ? `${pkg.pesoKg} kg` : '0.0 kg'}
+                        </span>
+                        <span>•</span>
+                        <span
+                          style={{
+                            fontFamily: 'monospace',
+                            fontWeight: 600,
+                            color: '#0f172a',
+                            background: '#f8fafc',
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            border: '1px solid #e2e8f0'
+                          }}
+                        >
+                          {pkg.posicionEstante || 'A1-P1'}
+                        </span>
+                        <span>•</span>
+                        {getDeliveryMethodBadge(pkg.metodoEntrega)}
+                        <span>•</span>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '240px' }}>
+                          {pkg.descripcion || 'Mercancía general'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Estado Operativo & Acciones */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                    {getStatusBadge(pkg.estadoEntrega)}
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <button
+                        type="button"
+                        onClick={() => onPrintLabel(pkg)}
+                        style={{
+                          padding: '6px 10px',
+                          background: '#ffffff',
+                          border: '1px solid #e2e8f0',
+                          color: '#334155',
+                          cursor: 'pointer',
+                          borderRadius: '6px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          fontSize: '12px',
+                          fontWeight: 500,
+                          transition: 'background 0.12s ease'
+                        }}
+                        title="Imprimir Etiqueta Térmica"
+                        className="hover:bg-slate-50"
+                      >
+                        <Printer style={{ width: '13px', height: '13px', color: '#64748b' }} />
+                        <span className="hidden sm:inline">Ticket</span>
+                      </button>
+
+                      {pkg.facturaPdfUrl && (
                         <button
                           type="button"
-                          onClick={() => onPrintLabel(pkg)}
+                          onClick={() => onViewPdf(pkg.facturaPdfUrl || '')}
                           style={{
-                            padding: '6px 8px',
-                            background: '#f8fafc',
+                            padding: '6px 10px',
+                            background: '#ffffff',
                             border: '1px solid #e2e8f0',
-                            color: '#475569',
+                            color: '#334155',
                             cursor: 'pointer',
                             borderRadius: '6px',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '4px',
-                            fontSize: '11px',
-                            fontWeight: 700
+                            gap: '6px',
+                            fontSize: '12px',
+                            fontWeight: 500,
+                            transition: 'background 0.12s ease'
                           }}
-                          title="Imprimir Etiqueta Térmica"
+                          title="Ver Factura PDF en Cloudflare R2"
+                          className="hover:bg-slate-50"
                         >
-                          <Printer style={{ width: '13px', height: '13px' }} />
-                          <span className="hidden sm:inline">Ticket</span>
+                          <FileText style={{ width: '13px', height: '13px', color: '#64748b' }} />
+                          <span className="hidden sm:inline">PDF</span>
                         </button>
+                      )}
 
-                        {pkg.facturaPdfUrl && (
-                          <button
-                            type="button"
-                            onClick={() => onViewPdf(pkg.facturaPdfUrl || '')}
-                            style={{
-                              padding: '6px 8px',
-                              background: '#ecfdf5',
-                              border: '1px solid #a7f3d0',
-                              color: '#047857',
-                              cursor: 'pointer',
-                              borderRadius: '6px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              fontSize: '11px',
-                              fontWeight: 700
-                            }}
-                            title="Ver Factura PDF en Cloudflare R2"
-                          >
-                            <FileText style={{ width: '13px', height: '13px' }} />
-                            <span className="hidden sm:inline">PDF</span>
-                          </button>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => onNavigateTab('mm-lince')}
-                          style={{
-                            padding: '6px',
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#94a3b8',
-                            cursor: 'pointer',
-                            borderRadius: '6px'
-                          }}
-                          title="Ver en Almacén Lince"
-                        >
-                          <ChevronRight style={{ width: '16px', height: '16px' }} />
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => onNavigateTab('mm-lince')}
+                        style={{
+                          padding: '6px',
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#94a3b8',
+                          cursor: 'pointer',
+                          borderRadius: '6px'
+                        }}
+                        title="Ver en Almacén Lince"
+                        className="hover:text-slate-900"
+                      >
+                        <ChevronRight style={{ width: '16px', height: '16px' }} />
+                      </button>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
