@@ -119,7 +119,7 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
             title="Copiar este rótulo en el siguiente espacio libre (omite ocupados y crea hoja si es necesario)"
           >
             <i className="fa-solid fa-bolt-lightning"></i>
-            <span>Copiar en sig. libre</span>
+            <span>Copiar en siguiente espacio</span>
           </button>
           <button
             type="button"
