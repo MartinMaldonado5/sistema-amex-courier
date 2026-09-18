@@ -1329,17 +1329,25 @@
   display: flex;
   flex-direction: column;
   gap: 5px;
+  min-width: 0;
 }
 
 .rotulo-label {
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   font-weight: 700;
   letter-spacing: 0.3px;
   color: #cbd5e1;
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
 }
 
 .rotulo-input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   background: #131d36;
   border: 1.5px solid rgba(255, 255, 255, 0.14);
   border-radius: 8px;
@@ -1372,12 +1380,19 @@
 }
 
 .rotulo-input-siglas {
-  font-size: 0.98rem;
+  font-size: 0.92rem;
   font-weight: 800;
   letter-spacing: 0.6px;
   font-family: var(--font-mono, monospace), system-ui;
   color: #38bdf8;
   text-transform: uppercase;
+}
+
+.rotulo-input-siglas::placeholder {
+  color: #64748b;
+  font-weight: 500;
+  font-size: 0.76rem;
+  letter-spacing: 0.3px;
 }
 
 .rotulo-row-2 {
@@ -1388,8 +1403,10 @@
 
 .rotulo-row-3 {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Tarjeta de Control de Bultos y Embalaje */
@@ -1402,6 +1419,8 @@
   flex-direction: column;
   gap: 8px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .embalaje-card-header {
@@ -2047,25 +2066,27 @@
    ========================================================================== */
 
 /* ==========================================================================
-   NAVEGADOR INFERIOR DE HOJAS A4 (MULTI-HOJA) - DOCKED AL FONDO
+   NAVEGADOR SUPERIOR DE HOJAS A4 (MULTI-HOJA) - EN LA PARTE DE ARRIBA
    ========================================================================== */
 
 .preview-sheet-navigator,
+.preview-sheet-top-bar,
 .preview-sheet-bottom-bar {
   position: sticky;
-  bottom: 0;
-  margin-top: 14px;
-  margin-bottom: 0;
+  top: 0;
+  margin-top: 0;
+  margin-bottom: 14px;
   width: 100%;
-  max-width: 100%;
-  min-width: 0;
+  max-width: 820px;
+  margin-left: auto;
+  margin-right: auto;
   background: rgba(13, 21, 39, 0.96);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
   padding: 10px 14px;
   box-sizing: border-box;
   backdrop-filter: blur(14px);
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
   z-index: 20;
   display: flex;
   flex-direction: column;
@@ -2775,6 +2796,7 @@
   .cut-guide-indicator,
   .sidebar-backdrop,
   .preview-sheet-navigator,
+  .preview-sheet-top-bar,
   .screen-only-sheet,
   .sheet-corner-tag,
   .slot-quick-selector {

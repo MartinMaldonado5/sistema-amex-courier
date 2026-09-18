@@ -316,7 +316,7 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
 
           <div className="rotulo-row-3">
             <div className="rotulo-field-group">
-              <label className="rotulo-label">Cant. Rótulos:</label>
+              <label className="rotulo-label" title="Cantidad de rótulos">Cant. Rótulos:</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -333,7 +333,7 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
             </div>
 
             <div className="rotulo-field-group">
-              <label className="rotulo-label">Total Cajas:</label>
+              <label className="rotulo-label" title="Total de cajas">Total Cajas:</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -350,11 +350,13 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
             </div>
 
             <div className="rotulo-field-group">
-              <label className="rotulo-label">Siglas / Código:</label>
+              <label className="rotulo-label" title="Siglas identificadoras o clave del envío (ej: CE150, CP 68)">
+                Siglas / Código:
+              </label>
               <input
                 type="text"
                 className="rotulo-input rotulo-input-siglas"
-                placeholder=""
+                placeholder="EJ: CE150"
                 value={activeSlot.siglas || ''}
                 onChange={(e) => updateActiveSlot({ siglas: e.target.value.toUpperCase() })}
                 title="Siglas identificadoras o clave del envío (ej: CE150, CP 68)"

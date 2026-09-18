@@ -120,13 +120,8 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
 
   return (
     <div className="rotulos-preview-container">
-      {/* 1. Hoja A4 en Pantalla (Directamente arriba para máxima visibilidad) */}
-      <div className="rotulos-a4-sheet screen-only-sheet">
-        {currentSheetSlots.map((slot) => renderStrip(slot, true))}
-      </div>
-
-      {/* 2. Barra de Navegación y Gestión de Hojas ABAJO del Módulo */}
-      <div className="preview-sheet-navigator preview-sheet-bottom-bar">
+      {/* 1. Barra Superior de Navegación y Gestión de Hojas (Cambio de hoja, añadir y eliminar) */}
+      <div className="preview-sheet-navigator preview-sheet-top-bar">
         <div className="sheet-nav-primary-row">
           <div className="sheet-tabs-list">
             {Array.from({ length: totalSheets }, (_, i) => {
@@ -186,6 +181,11 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
             )}
           </div>
         </div>
+      </div>
+
+      {/* 2. Hoja A4 en Pantalla */}
+      <div className="rotulos-a4-sheet screen-only-sheet">
+        {currentSheetSlots.map((slot) => renderStrip(slot, true))}
       </div>
 
       {/* Contenedor Oculto para Impresión (window.print()) con todas las hojas físicas */}
