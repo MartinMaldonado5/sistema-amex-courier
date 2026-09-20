@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { RotuloSlotData } from '@/lib/rotulos/rotulos-pdf';
 import { generarTextoBulto } from '../types';
 import { RotulosToolbar } from './RotulosToolbar';
+import { Cliente } from '@/types';
 
 interface RotulosSlotEditorProps {
   activeSlot: RotuloSlotData;
@@ -17,6 +18,11 @@ interface RotulosSlotEditorProps {
   handleSmartCopyToNextFreeSlot: () => void;
   handleClearActiveSlot: () => void;
   playSound: (type: 'complete' | 'paste' | 'click' | 'error') => void;
+  // Clientes para autocompletado
+  clientes?: Cliente[];
+  // Deshacer
+  canUndo?: boolean;
+  handleUndo?: () => void;
   // Toolbar props
   isAiCardExpanded: boolean;
   setIsAiCardExpanded: (expanded: boolean) => void;
@@ -64,6 +70,9 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
   handleSmartCopyToNextFreeSlot,
   handleClearActiveSlot,
   playSound,
+  clientes = [],
+  canUndo = false,
+  handleUndo,
   isAiCardExpanded,
   setIsAiCardExpanded,
   aiInputText,
@@ -96,6 +105,96 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
   handleNumericKeyDown,
   handleNumericPaste
 }) => {
+  // Estado para autocompletado de directorio de clientes
+  const [isClientSuggestionsOpen, setIsClientSuggestionsOpen] = useState(false);
+  const clientDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (clientDropdownRef.current && !clientDropdownRef.current.contains(e.target as Node)) {
+        setIsClientSuggestionsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Coincidencias en Directorio de Clientes
+  const clientMatches = useMemo(() => {
+    if (!clientes || clientes.length === 0) return [];
+    const term = (activeSlot.nombre || '').trim().toUpperCase();
+    if (term.length < 2) return [];
+    return clientes
+      .filter((c) => {
+        const nameMatch = c.nombre?.toUpperCase().includes(term);
+        const docMatch = c.documentoIdentidad?.replace(/\D/g, '').includes(term);
+        const phoneMatch = c.telefono?.replace(/\D/g, '').includes(term);
+        return nameMatch || docMatch || phoneMatch;
+      })
+      .slice(0, 6);
+  }, [clientes, activeSlot.nombre]);
+
+  const handleSelectClient = (client: Cliente) => {
+    const rawAgency = (client.transportistaPreferido || '').toUpperCase();
+    let agencia = 'SHALOM';
+    let agenciaOtra = '';
+    if (rawAgency.includes('CRUZ')) {
+      agencia = 'CRUZ DEL SUR';
+    } else if (rawAgency.includes('OLVA')) {
+      agencia = 'OLVA';
+    } else if (rawAgency.includes('SHALOM')) {
+      agencia = 'SHALOM';
+    } else if (rawAgency) {
+      agencia = 'OTRA';
+      agenciaOtra = rawAgency;
+    }
+
+    const ubigeo = [client.departamento, client.provincia, client.distrito].filter(Boolean).join(' - ');
+    const resolvedDestino = client.agenciaDestino || client.direccionEntrega || ubigeo || '';
+
+    updateActiveSlot({
+      nombre: client.nombre.toUpperCase(),
+      dni: client.documentoIdentidad ? client.documentoIdentidad.replace(/\D/g, '').slice(0, 11) : '',
+      celular: client.telefono ? client.telefono.replace(/\D/g, '').slice(0, 9) : '',
+      agencia,
+      agenciaOtra: agenciaOtra || undefined,
+      destino: resolvedDestino.toUpperCase()
+    });
+
+    setIsClientSuggestionsOpen(false);
+    playSound('complete');
+  };
+
+  // Validaciones reactivas visuales
+  const dniLength = activeSlot.dni?.length || 0;
+  let dniBadgeText = `${dniLength} / 11 dígitos`;
+  let dniBadgeColor = '#94a3b8';
+  if (dniLength === 8) {
+    dniBadgeText = '✓ DNI Válido (8)';
+    dniBadgeColor = '#34d399';
+  } else if (dniLength === 11) {
+    dniBadgeText = '✓ RUC Válido (11)';
+    dniBadgeColor = '#34d399';
+  } else if (dniLength > 0) {
+    dniBadgeText = `⚠️ Incompleto (${dniLength} díg.)`;
+    dniBadgeColor = '#f59e0b';
+  }
+
+  const celLength = activeSlot.celular?.length || 0;
+  const startsWithNine = activeSlot.celular ? activeSlot.celular.startsWith('9') : true;
+  let celBadgeText = `${celLength} / 9 dígitos`;
+  let celBadgeColor = '#94a3b8';
+  if (celLength > 0 && !startsWithNine) {
+    celBadgeText = '⚠️ Debe iniciar con 9';
+    celBadgeColor = '#f59e0b';
+  } else if (celLength === 9) {
+    celBadgeText = '✓ Celular Válido (9)';
+    celBadgeColor = '#34d399';
+  } else if (celLength > 0) {
+    celBadgeText = `⚠️ Faltan dígitos (${celLength}/9)`;
+    celBadgeColor = '#f59e0b';
+  }
+
   return (
     <div className="rotulos-editor-card">
       {/* Cabecera del editor */}
@@ -111,7 +210,28 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
           </div>
         </div>
 
-        <div className="slot-header-actions">
+        <div className="slot-header-actions" style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          {/* Botón Deshacer (Undo) */}
+          {handleUndo && (
+            <button
+              type="button"
+              className="btn-clear-slot-header"
+              onClick={handleUndo}
+              disabled={!canUndo}
+              style={{
+                opacity: canUndo ? 1 : 0.45,
+                cursor: canUndo ? 'pointer' : 'not-allowed',
+                background: canUndo ? 'rgba(245, 158, 11, 0.15)' : undefined,
+                color: canUndo ? '#fbbf24' : undefined,
+                borderColor: canUndo ? 'rgba(245, 158, 11, 0.4)' : undefined
+              }}
+              title="Deshacer última acción (Ctrl + Z)"
+            >
+              <i className="fa-solid fa-arrow-rotate-left"></i>
+              <span>Deshacer</span>
+            </button>
+          )}
+
           <button
             type="button"
             className="btn-smart-copy"
@@ -121,6 +241,7 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
             <i className="fa-solid fa-bolt-lightning"></i>
             <span>Copiar en siguiente espacio</span>
           </button>
+
           <button
             type="button"
             className="btn-clear-slot-header"
@@ -194,6 +315,8 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
         handleClearActiveSlot={handleClearActiveSlot}
         handleClearCurrentSheet={handleClearCurrentSheet}
         handleClearAll={handleClearAll}
+        canUndo={canUndo}
+        handleUndo={handleUndo}
       />
 
       {/* Banner si seleccionó 'OTRA' agencia personalizada */}
@@ -213,18 +336,118 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
 
       {/* Formulario de Entrada */}
       <div className="rotulo-form">
-        <div className="rotulo-field-group">
-          <label className="rotulo-label">Nombre(s) y Apellidos del Destinatario:</label>
+        {/* Destinatario con Autocompletado desde Directorio de Clientes */}
+        <div className="rotulo-field-group" ref={clientDropdownRef} style={{ position: 'relative' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <label className="rotulo-label">Nombre(s) y Apellidos del Destinatario:</label>
+            {clientes && clientes.length > 0 && (
+              <span
+                style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  color: '#38bdf8',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  cursor: 'pointer',
+                  userSelect: 'none'
+                }}
+                onClick={() => setIsClientSuggestionsOpen(!isClientSuggestionsOpen)}
+                title="Buscar o autocompletar desde el Directorio de Clientes"
+              >
+                <i className="fa-solid fa-address-book"></i> Directorio ({clientes.length})
+              </span>
+            )}
+          </div>
           <input
             type="text"
             className="rotulo-input"
-            placeholder=""
+            placeholder="Nombre completo o escribe para autocompletar..."
             value={activeSlot.nombre}
-            onChange={(e) => updateActiveSlot({ nombre: e.target.value.toUpperCase() })}
+            onChange={(e) => {
+              const val = e.target.value.toUpperCase();
+              updateActiveSlot({ nombre: val });
+              setIsClientSuggestionsOpen(val.trim().length >= 2);
+            }}
+            onFocus={() => {
+              if ((activeSlot.nombre || '').trim().length >= 2) {
+                setIsClientSuggestionsOpen(true);
+              }
+            }}
             autoFocus
           />
+
+          {/* Menú de sugerencias del directorio de clientes */}
+          {isClientSuggestionsOpen && clientMatches.length > 0 && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                background: '#0f172a',
+                border: '1.5px solid #38bdf8',
+                borderRadius: '8px',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.8)',
+                zIndex: 100,
+                maxHeight: '220px',
+                overflowY: 'auto',
+                marginTop: '4px'
+              }}
+            >
+              <div
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '0.70rem',
+                  fontWeight: 800,
+                  color: '#94a3b8',
+                  borderBottom: '1px solid rgba(255,255,255,0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  textTransform: 'uppercase'
+                }}
+              >
+                <i className="fa-solid fa-users" style={{ color: '#38bdf8' }}></i> Coincidencias en Directorio (1 clic para rellenar)
+              </div>
+              {clientMatches.map((client) => (
+                <div
+                  key={client.id}
+                  onClick={() => handleSelectClient(client)}
+                  style={{
+                    padding: '8px 12px',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2px',
+                    transition: 'background 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(56, 189, 248, 0.15)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 800, color: '#f8fafc', fontSize: '0.85rem' }}>
+                      {client.nombre}
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: '#38bdf8', fontWeight: 700 }}>
+                      {client.documentoIdentidad ? `DNI/RUC: ${client.documentoIdentidad}` : ''}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', fontSize: '0.72rem', color: '#94a3b8' }}>
+                    {client.telefono && <span>📞 {client.telefono}</span>}
+                    {client.transportistaPreferido && <span>🚚 {client.transportistaPreferido}</span>}
+                    {(client.agenciaDestino || client.distrito) && (
+                      <span>📍 {client.agenciaDestino || client.distrito}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
+        {/* DNI con indicador y validación reactiva */}
         <div className="rotulo-field-group">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <label className="rotulo-label">DNI / RUC / CE:</label>
@@ -232,10 +455,10 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
               style={{
                 fontSize: '0.70rem',
                 fontWeight: 700,
-                color: (activeSlot.dni?.length || 0) > 0 ? '#38bdf8' : '#94a3b8'
+                color: dniBadgeColor
               }}
             >
-              {activeSlot.dni?.length || 0} / 11 dígitos
+              {dniBadgeText}
             </span>
           </div>
           <input
@@ -244,7 +467,7 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
             pattern="[0-9]*"
             maxLength={11}
             className="rotulo-input rotulo-input-dni"
-            placeholder="Hasta 11 dígitos numéricos"
+            placeholder="8 dígitos (DNI) u 11 dígitos (RUC)"
             value={activeSlot.dni}
             onChange={(e) => {
               const onlyNums = e.target.value.replace(/\D/g, '').slice(0, 11);
@@ -253,6 +476,7 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
           />
         </div>
 
+        {/* Celular con indicador y validación reactiva */}
         <div className="rotulo-field-group">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <label className="rotulo-label">Celular / Teléfono:</label>
@@ -260,10 +484,10 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
               style={{
                 fontSize: '0.70rem',
                 fontWeight: 700,
-                color: (activeSlot.celular?.length || 0) === 9 ? '#34d399' : (activeSlot.celular?.length || 0) > 0 ? '#38bdf8' : '#94a3b8'
+                color: celBadgeColor
               }}
             >
-              {activeSlot.celular?.length || 0} / 9 dígitos
+              {celBadgeText}
             </span>
           </div>
           <input
@@ -272,7 +496,7 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
             pattern="[0-9]*"
             maxLength={9}
             className="rotulo-input rotulo-input-cel"
-            placeholder="Hasta 9 dígitos numéricos"
+            placeholder="9 dígitos (iniciando en 9)"
             value={activeSlot.celular}
             onChange={(e) => {
               const onlyNums = e.target.value.replace(/\D/g, '').slice(0, 9);

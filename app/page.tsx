@@ -742,7 +742,7 @@ export default function DashboardPage() {
               )}
 
               {activeTab === 'rotulos-a4' && (
-                <RotulosA4Tab />
+                <RotulosA4Tab clientes={clientes} />
               )}
 
               {activeTab === 'boletas-shalom' && (

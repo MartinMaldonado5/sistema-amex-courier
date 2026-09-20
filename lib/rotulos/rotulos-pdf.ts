@@ -19,6 +19,20 @@ export interface RotuloSlotData {
   groupId?: string;
 }
 
+export function sanitizePdfText(text: string | undefined | null): string {
+  if (!text) return '';
+  return text
+    // Reemplazar comillas y guiones tipográficos por estándar
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2013\u2014]/g, '-')
+    // Normalizar viñetas
+    .replace(/[\u2022\u2023\u25E6\u2043\u2219]/g, '•')
+    // Eliminar emojis y caracteres no mapeables por WinAnsi en Helvetica
+    .replace(/[^\x20-\x7E\xA0-\xFF\u2022]/g, '')
+    .trim();
+}
+
 /**
  * Genera un archivo PDF en tamaño físico A4 (210 mm x 297 mm)
  * dividido exactamente en 5 franjas de 59.4 mm de alto cada una.
@@ -57,120 +71,122 @@ export async function generateRotulosA4Pdf(
       const yStart = i * stripHeight;
       const yEnd = yStart + stripHeight;
 
-    // Solo dibujar contenido si la franja tiene datos
-    const hasData = Boolean(
-      slot.nombre?.trim() ||
-      slot.dni?.trim() ||
-      slot.celular?.trim() ||
-      slot.destino?.trim()
-    );
+      // Solo dibujar contenido si la franja tiene datos
+      const hasData = Boolean(
+        slot.nombre?.trim() ||
+        slot.dni?.trim() ||
+        slot.celular?.trim() ||
+        slot.destino?.trim()
+      );
 
-    if (hasData) {
-      // 1. Cabecera pequeña de la franja (Remitente y bulto/embalaje)
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.5);
-      doc.setTextColor(71, 85, 105); // Slate-600
-      const remitenteText = slot.remitente?.trim() || 'AMEX COURIER PERÚ';
-      doc.text(remitenteText.toUpperCase(), 12, yStart + 7.5);
-
-      const bNum = slot.numeroRotulo || 1;
-      const bTotR = slot.totalRotulos || 1;
-      const bTotC = slot.totalCajas || '1';
-      const obsText = (
-        slot.observacion?.trim() ||
-        `RÓTULO ${bNum} DE ${bTotR} • TOTAL: ${bTotC} ${Number(bTotC) === 1 ? 'CAJA' : 'CAJAS'}`
-      ).toUpperCase();
-
-      doc.setFont('helvetica', 'bold');
-      let obsFontSize = 8.8;
-      doc.setFontSize(obsFontSize);
-      doc.setTextColor(15, 23, 42); // Slate-900 (alta legibilidad)
-      const maxObsWidth = pageWidth - 12 - (12 + doc.getTextWidth(remitenteText.toUpperCase()) + 8);
-      while (doc.getTextWidth(obsText) > maxObsWidth && obsFontSize > 6.0) {
-        obsFontSize -= 0.5;
-        doc.setFontSize(obsFontSize);
-      }
-      doc.text(obsText, pageWidth - 12, yStart + 7.5, { align: 'right' });
-
-      // Siglas / Código de envío (alineado a la derecha junto al destinatario)
-      if (slot.siglas?.trim()) {
-        const siglasText = slot.siglas.trim().toUpperCase();
+      if (hasData) {
+        // 1. Cabecera pequeña de la franja (Remitente y bulto/embalaje)
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(14);
-        doc.setTextColor(15, 23, 42); // Slate-900
-        const siglaWidth = Math.max(24, doc.getTextWidth(siglasText) + 8);
-        doc.setFillColor(248, 250, 252);
-        doc.setDrawColor(15, 23, 42);
-        doc.setLineWidth(0.4);
-        doc.roundedRect(pageWidth - 12 - siglaWidth, yStart + 13.5, siglaWidth, 8, 1.2, 1.2, 'FD');
-        doc.text(siglasText, pageWidth - 12 - (siglaWidth / 2), yStart + 19.2, { align: 'center' });
-      }
+        doc.setFontSize(8.5);
+        doc.setTextColor(71, 85, 105); // Slate-600
+        const remitenteText = sanitizePdfText(slot.remitente?.trim() || 'AMEX COURIER PERÚ').toUpperCase();
+        doc.text(remitenteText, 12, yStart + 7.5);
 
-      // 2. Destinatario (Nombres y Apellidos en grande y negrita)
-      doc.setFont('helvetica', 'bold');
-      let nombreFontSize = 19;
-      doc.setFontSize(nombreFontSize);
-      doc.setTextColor(15, 23, 42); // Slate-900
-      const nombreText = (slot.nombre || 'NOMBRE Y APELLIDO').toUpperCase();
-      const maxNombreWidth = slot.siglas?.trim() ? pageWidth - 12 - 40 - 12 : pageWidth - 24;
-      while (doc.getTextWidth(nombreText) > maxNombreWidth && nombreFontSize > 13) {
-        nombreFontSize -= 0.5;
+        const bNum = slot.numeroRotulo || 1;
+        const bTotR = slot.totalRotulos || 1;
+        const bTotC = slot.totalCajas || '1';
+        const obsRaw = (
+          slot.observacion?.trim() ||
+          `RÓTULO ${bNum} DE ${bTotR} • TOTAL: ${bTotC} ${Number(bTotC) === 1 ? 'CAJA' : 'CAJAS'}`
+        ).toUpperCase();
+        const obsText = sanitizePdfText(obsRaw);
+
+        doc.setFont('helvetica', 'bold');
+        let obsFontSize = 8.8;
+        doc.setFontSize(obsFontSize);
+        doc.setTextColor(15, 23, 42); // Slate-900 (alta legibilidad)
+        const maxObsWidth = pageWidth - 12 - (12 + doc.getTextWidth(remitenteText) + 8);
+        while (doc.getTextWidth(obsText) > maxObsWidth && obsFontSize > 6.0) {
+          obsFontSize -= 0.5;
+          doc.setFontSize(obsFontSize);
+        }
+        doc.text(obsText, pageWidth - 12, yStart + 7.5, { align: 'right' });
+
+        // Siglas / Código de envío (alineado a la derecha junto al destinatario)
+        if (slot.siglas?.trim()) {
+          const siglasText = sanitizePdfText(slot.siglas.trim()).toUpperCase();
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(14);
+          doc.setTextColor(15, 23, 42); // Slate-900
+          const siglaWidth = Math.max(24, doc.getTextWidth(siglasText) + 8);
+          doc.setFillColor(248, 250, 252);
+          doc.setDrawColor(15, 23, 42);
+          doc.setLineWidth(0.4);
+          doc.roundedRect(pageWidth - 12 - siglaWidth, yStart + 13.5, siglaWidth, 8, 1.2, 1.2, 'FD');
+          doc.text(siglasText, pageWidth - 12 - (siglaWidth / 2), yStart + 19.2, { align: 'center' });
+        }
+
+        // 2. Destinatario (Nombres y Apellidos en grande y negrita)
+        doc.setFont('helvetica', 'bold');
+        let nombreFontSize = 19;
         doc.setFontSize(nombreFontSize);
-      }
-      doc.text(nombreText, 12, yStart + 19.5);
+        doc.setTextColor(15, 23, 42); // Slate-900
+        const nombreText = sanitizePdfText(slot.nombre || 'NOMBRE Y APELLIDO').toUpperCase();
+        const maxNombreWidth = slot.siglas?.trim() ? pageWidth - 12 - 40 - 12 : pageWidth - 24;
+        while (doc.getTextWidth(nombreText) > maxNombreWidth && nombreFontSize > 13) {
+          nombreFontSize -= 0.5;
+          doc.setFontSize(nombreFontSize);
+        }
+        doc.text(nombreText, 12, yStart + 19.5);
 
-      // 3. DNI / RUC y CELULAR (distribuidos en línea para mayor presencia)
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(13);
-      doc.setTextColor(15, 23, 42); // Slate-900 para máxima nitidez
-      const dniText = slot.dni ? `DNI / RUC: ${slot.dni}` : 'DNI / RUC: —';
-      const celText = slot.celular ? `CEL: ${slot.celular}` : 'CEL: —';
-      doc.text(dniText, 12, yStart + 31.5);
-      const dniWidth = doc.getTextWidth(dniText);
-      doc.text(celText, 12 + dniWidth + 10, yStart + 31.5);
+        // 3. DNI / RUC y CELULAR (distribuidos en línea para mayor presencia)
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(13);
+        doc.setTextColor(15, 23, 42); // Slate-900 para máxima nitidez
+        const dniText = slot.dni ? `DNI / RUC: ${sanitizePdfText(slot.dni)}` : 'DNI / RUC: —';
+        const celText = slot.celular ? `CEL: ${sanitizePdfText(slot.celular)}` : 'CEL: —';
+        doc.text(dniText, 12, yStart + 31.5);
+        const dniWidth = doc.getTextWidth(dniText);
+        doc.text(celText, 12 + dniWidth + 10, yStart + 31.5);
 
-      // 4. Recuadro destacado para la Agencia y el Destino (en la franja inferior)
-      const agencyName = slot.agencia === 'OTRA' && slot.agenciaOtra?.trim()
-        ? slot.agenciaOtra.toUpperCase()
-        : slot.agencia;
+        // 4. Recuadro destacado para la Agencia y el Destino (en la franja inferior)
+        const rawAgencyName = slot.agencia === 'OTRA' && slot.agenciaOtra?.trim()
+          ? slot.agenciaOtra.trim()
+          : (slot.agencia || '').trim();
+        const agencyName = sanitizePdfText(rawAgencyName || 'SHALOM').toUpperCase();
 
-      // Colores según agencia
-      let badgeR = 220, badgeG = 38, badgeB = 38; // Shalom rojo
-      let badgeTextR = 255, badgeTextG = 255, badgeTextB = 255;
+        // Colores según agencia
+        let badgeR = 220, badgeG = 38, badgeB = 38; // Shalom rojo
+        let badgeTextR = 255, badgeTextG = 255, badgeTextB = 255;
 
-      if (agencyName.includes('CRUZ DEL SUR')) {
-        badgeR = 30; badgeG = 58; badgeB = 138; // Navy azul
-      } else if (agencyName.includes('OLVA')) {
-        badgeR = 234; badgeG = 179; badgeB = 8;  // Amarillo Olva
-        badgeTextR = 0; badgeTextG = 0; badgeTextB = 0; // Texto negro
-      } else if (agencyName.includes('MARVISUR')) {
-        badgeR = 234; badgeG = 88; badgeB = 12; // Naranja Marvisur
-      } else if (agencyName.includes('MÓVIL') || agencyName.includes('MOVIL')) {
-        badgeR = 139; badgeG = 92; badgeB = 246; // Púrpura Móvil Bus
-      } else if (agencyName.includes('FLORES')) {
-        badgeR = 16; badgeG = 185; badgeB = 129; // Esmeralda Flores Hermanos
-      } else if (agencyName.includes('CIVA')) {
-        badgeR = 244; badgeG = 63; badgeB = 94; // Rosa / Rojo Civa
-      } else if (agencyName.includes('ANTEZANA')) {
-        badgeR = 2; badgeG = 132; badgeB = 199; // Celeste Antezana
-      } else if (slot.agencia === 'OTRA') {
-        badgeR = 79; badgeG = 70; badgeB = 229; // Indigo
-      }
+        if (agencyName.includes('CRUZ DEL SUR')) {
+          badgeR = 30; badgeG = 58; badgeB = 138; // Navy azul
+        } else if (agencyName.includes('OLVA')) {
+          badgeR = 234; badgeG = 179; badgeB = 8;  // Amarillo Olva
+          badgeTextR = 0; badgeTextG = 0; badgeTextB = 0; // Texto negro
+        } else if (agencyName.includes('MARVISUR')) {
+          badgeR = 234; badgeG = 88; badgeB = 12; // Naranja Marvisur
+        } else if (agencyName.includes('MÓVIL') || agencyName.includes('MOVIL')) {
+          badgeR = 139; badgeG = 92; badgeB = 246; // Púrpura Móvil Bus
+        } else if (agencyName.includes('FLORES')) {
+          badgeR = 16; badgeG = 185; badgeB = 129; // Esmeralda Flores Hermanos
+        } else if (agencyName.includes('CIVA')) {
+          badgeR = 244; badgeG = 63; badgeB = 94; // Rosa / Rojo Civa
+        } else if (agencyName.includes('ANTEZANA')) {
+          badgeR = 2; badgeG = 132; badgeB = 199; // Celeste Antezana
+        } else if (slot.agencia === 'OTRA') {
+          badgeR = 79; badgeG = 70; badgeB = 229; // Indigo
+        }
 
-      // Pastilla de la Agencia
-      const badgeWidth = Math.max(34, doc.getTextWidth(agencyName) + 10);
-      doc.setFillColor(badgeR, badgeG, badgeB);
-      doc.roundedRect(12, yStart + 42, badgeWidth, 9.5, 1.5, 1.5, 'F');
+        // Pastilla de la Agencia
+        const badgeWidth = Math.max(34, doc.getTextWidth(agencyName) + 10);
+        doc.setFillColor(badgeR, badgeG, badgeB);
+        doc.roundedRect(12, yStart + 42, badgeWidth, 9.5, 1.5, 1.5, 'F');
 
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10.5);
-      doc.setTextColor(badgeTextR, badgeTextG, badgeTextB);
-      doc.text(agencyName, 12 + badgeWidth / 2, yStart + 48.2, { align: 'center' });
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10.5);
+        doc.setTextColor(badgeTextR, badgeTextG, badgeTextB);
+        doc.text(agencyName, 12 + badgeWidth / 2, yStart + 48.2, { align: 'center' });
 
-      // Texto del Destino / Agencia de Entrega (adaptado para hasta 80 caracteres)
-      const maxDestWidth = pageWidth - 12 - (12 + badgeWidth + 4);
-      const destinoRaw = slot.destino?.trim() ? slot.destino.trim().toUpperCase() : 'DESTINO NO ESPECIFICADO';
-      const fullDestText = `DESTINO: ${destinoRaw}`;
+        // Texto del Destino / Agencia de Entrega (adaptado para hasta 80 caracteres)
+        const maxDestWidth = pageWidth - 12 - (12 + badgeWidth + 4);
+        const destinoRaw = slot.destino?.trim() ? sanitizePdfText(slot.destino.trim()).toUpperCase() : 'DESTINO NO ESPECIFICADO';
+        const fullDestText = `DESTINO: ${destinoRaw}`;
 
       doc.setFont('helvetica', 'bold');
       let destFontSize = 12.5;

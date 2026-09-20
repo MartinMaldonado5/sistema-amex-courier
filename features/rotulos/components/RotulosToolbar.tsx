@@ -38,6 +38,8 @@ interface RotulosToolbarProps {
   handleClearActiveSlot: () => void;
   handleClearCurrentSheet: () => void;
   handleClearAll: () => void;
+  canUndo?: boolean;
+  handleUndo?: () => void;
 }
 
 export const RotulosToolbar: React.FC<RotulosToolbarProps> = ({
@@ -69,7 +71,9 @@ export const RotulosToolbar: React.FC<RotulosToolbarProps> = ({
   handleDeleteCurrentSheet,
   handleClearActiveSlot,
   handleClearCurrentSheet,
-  handleClearAll
+  handleClearAll,
+  canUndo = false,
+  handleUndo
 }) => {
   return (
     <div className="rotulo-top-toolbar-3col">
@@ -196,6 +200,25 @@ export const RotulosToolbar: React.FC<RotulosToolbarProps> = ({
             </div>
 
             <div className="master-actions-list">
+              {handleUndo && (
+                <button
+                  type="button"
+                  className="master-action-item undo-item"
+                  onClick={() => {
+                    setIsMasterActionsOpen(false);
+                    handleUndo();
+                  }}
+                  disabled={!canUndo}
+                  style={{ opacity: canUndo ? 1 : 0.45 }}
+                  title="Deshacer última acción (Ctrl + Z)"
+                >
+                  <div className="master-action-icon-box" style={{ background: '#f59e0b', color: '#fff' }}>
+                    <i className="fa-solid fa-arrow-rotate-left"></i>
+                  </div>
+                  <span className="master-action-name">Deshacer (Ctrl + Z)</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 className="master-action-item print-item"

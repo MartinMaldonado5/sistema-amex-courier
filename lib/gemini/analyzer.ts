@@ -137,11 +137,12 @@ export interface ExtractedRotuloData {
   celular?: string;
   destino?: string;
   remitente?: string;
+  items?: ExtractedRotuloData[];
 }
 
 /**
  * AMEXito IA: Interpreta capturas de pantalla de WhatsApp o textos no estructurados
- * y extrae todos los campos requeridos para el rótulo de agencias (Módulo 8)
+ * y extrae todos los campos requeridos para el rótulo de agencias (individual o lista múltiple)
  */
 export async function parseRotuloWithAi(input: {
   text?: string;
@@ -155,23 +156,29 @@ export async function parseRotuloWithAi(input: {
   const ai = new GoogleGenAI({ apiKey });
 
   const prompt = `Eres AMEXito IA, el asistente inteligente de AMEX Courier Perú especializado en logística y rotulación de agencias.
-Tu objetivo es analizar el texto y/o la imagen de un mensaje de WhatsApp u orden de envío, y extraer de forma estructurada los datos del destinatario para generar un rótulo de agencia de transporte (Shalom, Olva, Cruz del Sur u otra).
+Tu objetivo es analizar el texto y/o la imagen de un mensaje de WhatsApp u orden de envío, y extraer de forma estructurada los datos del o los destinatarios para generar rótulos de agencia de transporte (Shalom, Olva, Cruz del Sur u otra).
 
-Analiza detalladamente el contenido y extrae los siguientes datos en formato JSON estricto:
+IMPORTANTE: Si el contenido contiene MÁS DE UN PEDIDO O DESTINATARIO (ej: 2, 3, 4 o 5 personas distintas en un mismo mensaje de WhatsApp), extrae CADA UNO en una lista de pedidos.
+
+Estructura de salida requerida en JSON estricto:
 {
-  "siglas": "Código o clave del paquete alfanumérico (ej: 'CE79', 'CE39', 'CP89', 'CP58', 'CE150', 'CP 68'). Si no hay, dejar en blanco ''",
-  "totalCajas": "Cantidad total de cajas o bultos solo el número (ej: '2 cajas' -> '2', '3 cajas' -> '3', si no especifica poner '1')",
-  "agencia": "Debe ser exactamente una de estas 4 opciones en mayúsculas: 'SHALOM', 'CRUZ DEL SUR', 'OLVA', o 'OTRA'",
-  "agenciaOtra": "Si la agencia fue 'OTRA', el nombre de dicha agencia (ej: 'MARVISUR', 'MÓVIL BUS'). Si es Shalom, Cruz del Sur u Olva, dejar en blanco ''",
-  "nombre": "Nombres y apellidos completos del destinatario (en MAYÚSCULAS)",
-  "dni": "Número de identificación del destinatario: DNI (8 dígitos), Carnet de Extranjería / CE (ej: '008619120'), o RUC (11 dígitos). Solo dígitos alfanuméricos limpios sin guiones",
-  "celular": "Número telefónico o de celular del destinatario (ej: '934548741', '981081414'. Solo los 9 dígitos sin espacios ni guiones)",
-  "destino": "Destino completo, departamento/ciudad, agencia de entrega y/o dirección de destino (ej: 'ANCASH - CASMA - CASMA SHALOM AV. MIGUEL GRAU', 'TACNA - AV. VIGIL - SHALOM', 'CHANCAY', 'CHIMBOTE (AV. JOSÉ GÁLVEZ 767)'). En MAYÚSCULAS",
-  "remitente": "Si se especifica un remitente distinto, colocarlo; en caso contrario poner 'AMEX COURIER PERÚ'"
+  "pedidos": [
+    {
+      "siglas": "Código o clave del paquete alfanumérico (ej: 'CE79', 'CE39', 'CP89', 'CP58', 'CE150', 'CP 68'). Si no hay, dejar en blanco ''",
+      "totalCajas": "Cantidad total de cajas o bultos solo el número (ej: '2 cajas' -> '2', '3 cajas' -> '3', si no especifica poner '1')",
+      "agencia": "Debe ser exactamente una de estas 4 opciones en mayúsculas: 'SHALOM', 'CRUZ DEL SUR', 'OLVA', o 'OTRA'",
+      "agenciaOtra": "Si la agencia fue 'OTRA', el nombre de dicha agencia (ej: 'MARVISUR', 'MÓVIL BUS'). Si es Shalom, Cruz del Sur u Olva, dejar en blanco ''",
+      "nombre": "Nombres y apellidos completos del destinatario (en MAYÚSCULAS)",
+      "dni": "Número de identificación del destinatario: DNI (8 dígitos), Carnet de Extranjería / CE (ej: '008619120'), o RUC (11 dígitos). Solo dígitos alfanuméricos limpios sin guiones",
+      "celular": "Número telefónico o de celular del destinatario (ej: '934548741', '981081414'. Solo los 9 dígitos sin espacios ni guiones)",
+      "destino": "Destino completo, departamento/ciudad, agencia de entrega y/o dirección de destino (ej: 'ANCASH - CASMA - CASMA SHALOM AV. MIGUEL GRAU', 'TACNA - AV. VIGIL - SHALOM', 'CHANCAY', 'CHIMBOTE (AV. JOSÉ GÁLVEZ 767)'). En MAYÚSCULAS",
+      "remitente": "Si se especifica un remitente distinto, colocarlo; en caso contrario poner 'AMEX COURIER PERÚ'"
+    }
+  ]
 }
 
 Reglas estrictas:
-1. Devuelve EXCLUSIVAMENTE el objeto JSON válido sin bloques markdown extra, sin comentarios.
+1. Devuelve EXCLUSIVAMENTE el objeto JSON válido con la propiedad "pedidos" conteniendo de 1 a N pedidos detectados.
 2. Limpia los números de teléfono y documentos de espacios o guiones.
 3. Si algún campo no se encuentra en el texto o imagen, devuelve cadena vacía "".
 4. No inventes información; solo extrae lo que esté presente o se deduzca claramente del contexto.`;
@@ -205,30 +212,42 @@ Reglas estrictas:
 
   try {
     const parsed = JSON.parse(cleanJson);
+    const rawList: any[] = Array.isArray(parsed.pedidos)
+      ? parsed.pedidos
+      : (Array.isArray(parsed) ? parsed : [parsed]);
 
-    // Normalizar agencia
-    let agencia: 'SHALOM' | 'CRUZ DEL SUR' | 'OLVA' | 'OTRA' = 'SHALOM';
-    const rawAgencia = String(parsed.agencia || '').toUpperCase();
-    if (rawAgencia.includes('CRUZ')) {
-      agencia = 'CRUZ DEL SUR';
-    } else if (rawAgencia.includes('OLVA')) {
-      agencia = 'OLVA';
-    } else if (rawAgencia.includes('SHALOM')) {
-      agencia = 'SHALOM';
-    } else if (rawAgencia && rawAgencia !== 'SHALOM') {
-      agencia = 'OTRA';
-    }
+    const normalizeOrder = (p: any): ExtractedRotuloData => {
+      let agencia: 'SHALOM' | 'CRUZ DEL SUR' | 'OLVA' | 'OTRA' = 'SHALOM';
+      const rawAgencia = String(p.agencia || '').toUpperCase();
+      if (rawAgencia.includes('CRUZ')) {
+        agencia = 'CRUZ DEL SUR';
+      } else if (rawAgencia.includes('OLVA')) {
+        agencia = 'OLVA';
+      } else if (rawAgencia.includes('SHALOM')) {
+        agencia = 'SHALOM';
+      } else if (rawAgencia && rawAgencia !== 'SHALOM') {
+        agencia = 'OTRA';
+      }
+
+      return {
+        siglas: (p.siglas || '').trim().toUpperCase(),
+        totalCajas: (p.totalCajas || '').trim(),
+        agencia,
+        agenciaOtra: (p.agenciaOtra || '').trim().toUpperCase(),
+        nombre: (p.nombre || '').trim().toUpperCase(),
+        dni: (p.dni || '').trim().toUpperCase(),
+        celular: (p.celular || '').trim(),
+        destino: (p.destino || '').trim().toUpperCase(),
+        remitente: (p.remitente || 'AMEX COURIER PERÚ').trim().toUpperCase()
+      };
+    };
+
+    const items = rawList.map(normalizeOrder).filter((it) => it.nombre || it.destino || it.dni);
+    const firstItem = items[0] || normalizeOrder(parsed);
 
     return {
-      siglas: (parsed.siglas || '').trim().toUpperCase(),
-      totalCajas: (parsed.totalCajas || '').trim(),
-      agencia,
-      agenciaOtra: (parsed.agenciaOtra || '').trim().toUpperCase(),
-      nombre: (parsed.nombre || '').trim().toUpperCase(),
-      dni: (parsed.dni || '').trim().toUpperCase(),
-      celular: (parsed.celular || '').trim(),
-      destino: (parsed.destino || '').trim().toUpperCase(),
-      remitente: (parsed.remitente || 'AMEX COURIER PERÚ').trim().toUpperCase()
+      ...firstItem,
+      items: items.length > 0 ? items : [firstItem]
     };
   } catch (err) {
     console.error('Error al parsear respuesta JSON de Gemini para rótulo:', cleanJson, err);

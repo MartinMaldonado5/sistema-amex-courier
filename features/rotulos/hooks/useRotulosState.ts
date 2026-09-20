@@ -12,6 +12,9 @@ export function useRotulosState() {
   const [isExportingPdf, setIsExportingPdf] = useState<boolean>(false);
   const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
 
+  // Historial para Deshacer (Undo / Ctrl + Z)
+  const [history, setHistory] = useState<RotuloSlotData[][]>([]);
+
   // Controles de embalajes y cantidades (por defecto: 1 rótulo, 1 caja)
   const [totalRotulos, setTotalRotulos] = useState<string>('1');
   const [totalCajas, setTotalCajas] = useState<string>('1');
@@ -84,6 +87,45 @@ export function useRotulosState() {
     setTimeout(() => setFeedbackToast(null), 3500);
   }, []);
 
+  // Registrar estado en la pila de deshacer
+  const pushHistory = useCallback((currentSlots: RotuloSlotData[]) => {
+    setHistory((prev) => {
+      const copy: RotuloSlotData[] = JSON.parse(JSON.stringify(currentSlots));
+      const next = [...prev, copy];
+      if (next.length > 25) return next.slice(next.length - 25);
+      return next;
+    });
+  }, []);
+
+  // Función Deshacer (Undo / Ctrl + Z)
+  const handleUndo = useCallback(() => {
+    if (history.length === 0) return;
+    const previous = history[history.length - 1];
+    setHistory((prev) => prev.slice(0, prev.length - 1));
+    setSlots(previous);
+    RotulosService.saveSlotsToStorage(previous);
+    playSound('click');
+    showToast('↩️ Acción deshecha (Ctrl + Z)');
+  }, [history, playSound, showToast]);
+
+  const canUndo = history.length > 0;
+
+  // Atajo de teclado global para Ctrl + Z (Deshacer)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        const target = e.target as HTMLElement | null;
+        const isInput = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA');
+        if (!isInput && history.length > 0) {
+          e.preventDefault();
+          handleUndo();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleUndo, history.length]);
+
   // Cargar slots guardados
   useEffect(() => {
     const loaded = RotulosService.loadSlotsFromStorage();
@@ -94,14 +136,15 @@ export function useRotulosState() {
     }
   }, []);
 
-  // Sincronizar controles numéricos con slot activo
+  // Sincronizar controles numéricos SOLO cuando cambia el slot activo (elimina bucle y pisado al escribir)
   useEffect(() => {
     const current = slots.find((s) => s.id === activeSlotId);
     if (current) {
       setTotalRotulos(current.totalRotulos ? String(current.totalRotulos) : '1');
       setTotalCajas(current.totalCajas !== undefined && current.totalCajas !== null ? String(current.totalCajas) : '1');
     }
-  }, [activeSlotId, slots]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSlotId]);
 
   // Click outside listener
   useEffect(() => {
@@ -122,7 +165,10 @@ export function useRotulosState() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isAiProcessing]);
 
-  const saveSlots = (newSlots: RotuloSlotData[]) => {
+  const saveSlots = (newSlots: RotuloSlotData[], recordHistory = false) => {
+    if (recordHistory) {
+      pushHistory(slots);
+    }
     setSlots(newSlots);
     RotulosService.saveSlotsToStorage(newSlots);
   };
@@ -138,7 +184,14 @@ export function useRotulosState() {
 
     const updated = slots.map((s) => {
       if (s.id === activeSlotId) {
-        return { ...s, ...fields };
+        const slotTotRots = fields.totalRotulos !== undefined ? fields.totalRotulos : (s.totalRotulos || 1);
+        const slotTotCjs = fields.totalCajas !== undefined ? fields.totalCajas : (s.totalCajas || '1');
+        const numRot = s.numeroRotulo || 1;
+        const autoObs = (fields.totalCajas !== undefined || fields.totalRotulos !== undefined)
+          ? generarTextoBulto(numRot, slotTotRots, slotTotCjs)
+          : (fields.observacion !== undefined ? fields.observacion : s.observacion);
+
+        return { ...s, ...fields, observacion: autoObs };
       }
       if (targetGroupId && s.groupId === targetGroupId) {
         const syncedFields = { ...fields };
@@ -155,10 +208,11 @@ export function useRotulosState() {
       }
       return s;
     });
-    saveSlots(updated);
+    saveSlots(updated, false);
   };
 
   const applyTotalRotulosDuplication = (targetCount: number) => {
+    pushHistory(slots);
     let workingSlots = [...slots];
     const currentSlot = workingSlots.find((s) => s.id === activeSlotId) || workingSlots[0];
     const groupId = currentSlot.groupId || `grp_${currentSlot.id}_${Date.now()}`;
@@ -198,7 +252,7 @@ export function useRotulosState() {
               observacion: '',
               totalRotulos: 1,
               totalCajas: '1',
-              numeroRotulo: s.id,
+              numeroRotulo: 1, // Corregido: era s.id
               siglas: '',
               groupId: undefined
             };
@@ -207,7 +261,27 @@ export function useRotulosState() {
         return s;
       });
 
-      saveSlots(workingSlots);
+      // Poda de hojas vacías sobrantes al final
+      while (workingSlots.length > 5) {
+        const lastSheet = workingSlots.slice(workingSlots.length - 5);
+        const isSheetEmpty = lastSheet.every(
+          (s) => !s.nombre?.trim() && !s.dni?.trim() && !s.celular?.trim() && !s.destino?.trim()
+        );
+        if (isSheetEmpty) {
+          workingSlots = workingSlots.slice(0, workingSlots.length - 5);
+        } else {
+          break;
+        }
+      }
+      const maxAvailableSheet = Math.max(1, Math.ceil(workingSlots.length / 5));
+      if (currentSheet > maxAvailableSheet) {
+        setCurrentSheet(maxAvailableSheet);
+      }
+      if (activeSlotId > workingSlots.length) {
+        setActiveSlotId(workingSlots.length);
+      }
+
+      saveSlots(workingSlots, false);
       if (targetCount > 1) {
         playSound('click');
         showToast(`🔢 Cantidad ajustada a ${targetCount} rótulos.`);
@@ -248,7 +322,7 @@ export function useRotulosState() {
           observacion: '',
           totalRotulos: 1,
           totalCajas: '1',
-          numeroRotulo: id,
+          numeroRotulo: 1, // Corregido: era id
           siglas: ''
         };
       });
@@ -304,7 +378,7 @@ export function useRotulosState() {
       return s;
     });
 
-    saveSlots(workingSlots);
+    saveSlots(workingSlots, false);
     playSound('paste');
     showToast(`⚡ ¡Duplicado automáticamente en ${actualCopiesPossible} espacio(s) libre(s)! (Total: ${finalTotal} rótulos)`);
   };
@@ -333,13 +407,9 @@ export function useRotulosState() {
     const cleanVal = rawVal.replace(/\D/g, '');
     setTotalCajas(cleanVal);
 
-    const currentSlot = slots.find((s) => s.id === activeSlotId) || slots[0];
-    const numRotulo = currentSlot.numeroRotulo || 1;
-    const rotCount = currentSlot.totalRotulos || (Number(totalRotulos) || 1);
-
+    // Se delega a updateActiveSlot para sincronizar consistentemente con el número de rótulo de cada slot del grupo
     updateActiveSlot({
-      totalCajas: cleanVal,
-      observacion: generarTextoBulto(numRotulo, rotCount, cleanVal)
+      totalCajas: cleanVal
     });
   };
 
@@ -365,6 +435,7 @@ export function useRotulosState() {
       showToast(`⚠️ Has alcanzado el límite máximo de ${MAX_SHEETS} hojas (25 rótulos).`);
       return;
     }
+    pushHistory(slots);
     const startId = slots.length + 1;
     const newSheetSlots: RotuloSlotData[] = Array.from({ length: 5 }, (_, idx) => {
       const id = startId + idx;
@@ -386,7 +457,7 @@ export function useRotulosState() {
     });
     const updated = [...slots, ...newSheetSlots];
     const newSheetNum = Math.ceil(updated.length / 5);
-    saveSlots(updated);
+    saveSlots(updated, false);
     setCurrentSheet(newSheetNum);
     setActiveSlotId(startId);
     playSound('complete');
@@ -409,6 +480,7 @@ export function useRotulosState() {
       }
     }
 
+    pushHistory(slots);
     const remainingSlots = slots.filter((_, idx) => idx < startIndex || idx >= startIndex + 5);
     const reindexedSlots = remainingSlots.map((s, idx) => {
       const newId = idx + 1;
@@ -426,7 +498,7 @@ export function useRotulosState() {
     const newCurrentSheet = Math.min(currentSheet, newTotalSheets);
     const newActiveSlotId = (newCurrentSheet - 1) * 5 + 1;
 
-    saveSlots(reindexedSlots);
+    saveSlots(reindexedSlots, false);
     setCurrentSheet(newCurrentSheet);
     setActiveSlotId(newActiveSlotId);
     playSound('click');
@@ -434,6 +506,7 @@ export function useRotulosState() {
   };
 
   const handleClearActiveSlot = () => {
+    pushHistory(slots);
     const updated = slots.map((s) => {
       if (s.id === activeSlotId) {
         return {
@@ -447,7 +520,7 @@ export function useRotulosState() {
           observacion: '',
           totalRotulos: 1,
           totalCajas: '1',
-          numeroRotulo: s.id,
+          numeroRotulo: 1, // Corregido: era s.id
           siglas: '',
           groupId: undefined
         };
@@ -456,12 +529,13 @@ export function useRotulosState() {
     });
     setTotalRotulos('1');
     setTotalCajas('1');
-    saveSlots(updated);
+    saveSlots(updated, false);
     const inSheetNum = ((activeSlotId - 1) % 5) + 1;
     showToast(`Hoja ${activeSheetNum} — Espacio #${inSheetNum} limpiado.`);
   };
 
   const handleClearCurrentSheet = () => {
+    pushHistory(slots);
     const startIdx = (currentSheet - 1) * 5;
     const endIdx = currentSheet * 5;
     const updated = slots.map((s, idx) => {
@@ -477,14 +551,14 @@ export function useRotulosState() {
           observacion: '',
           totalRotulos: 1,
           totalCajas: '1',
-          numeroRotulo: s.id,
+          numeroRotulo: 1, // Corregido: era s.id
           siglas: '',
           groupId: undefined
         };
       }
       return s;
     });
-    saveSlots(updated);
+    saveSlots(updated, false);
     playSound('click');
     showToast(`🧹 Hoja #${currentSheet} reiniciada (5 espacios limpios).`);
   };
@@ -496,8 +570,9 @@ export function useRotulosState() {
         return;
       }
     }
+    pushHistory(slots);
     setSlots(DEFAULT_SLOTS);
-    saveSlots(DEFAULT_SLOTS);
+    saveSlots(DEFAULT_SLOTS, false);
     setCurrentSheet(1);
     setActiveSlotId(1);
     setTotalRotulos('1');
@@ -526,6 +601,7 @@ export function useRotulosState() {
       }
     }
 
+    pushHistory(slots);
     let workingSlots = [...slots];
     let createdNewSheet = false;
 
@@ -550,7 +626,7 @@ export function useRotulosState() {
           observacion: '',
           totalRotulos: sourceSlot.totalRotulos || 1,
           totalCajas: sourceSlot.totalCajas || '1',
-          numeroRotulo: id,
+          numeroRotulo: 1, // Corregido: era id
           siglas: ''
         };
       });
@@ -562,6 +638,11 @@ export function useRotulosState() {
     const targetSlotId = workingSlots[targetIndex].id;
     const targetSheet = Math.ceil(targetSlotId / 5);
 
+    // Corregido: número de rótulo es 1 (o independiente), no el ID físico targetSlotId
+    const safeNumRotulo = 1;
+    const safeTotalRotulos = sourceSlot.totalRotulos || 1;
+    const safeTotalCajas = sourceSlot.totalCajas || '1';
+
     workingSlots[targetIndex] = {
       ...workingSlots[targetIndex],
       nombre: sourceSlot.nombre,
@@ -571,13 +652,14 @@ export function useRotulosState() {
       agenciaOtra: sourceSlot.agenciaOtra,
       destino: sourceSlot.destino,
       remitente: sourceSlot.remitente,
-      observacion: generarTextoBulto(targetSlotId, sourceSlot.totalRotulos || 1, sourceSlot.totalCajas || '1'),
-      totalRotulos: sourceSlot.totalRotulos,
-      totalCajas: sourceSlot.totalCajas,
+      observacion: generarTextoBulto(safeNumRotulo, safeTotalRotulos, safeTotalCajas),
+      totalRotulos: safeTotalRotulos,
+      totalCajas: safeTotalCajas,
+      numeroRotulo: safeNumRotulo,
       siglas: sourceSlot.siglas
     };
 
-    saveSlots(workingSlots);
+    saveSlots(workingSlots, false);
     setCurrentSheet(targetSheet);
     setActiveSlotId(targetSlotId);
     playSound('paste');
@@ -652,50 +734,87 @@ export function useRotulosState() {
         imageBase64: aiImagePreview || undefined
       });
 
-      const updates: Partial<RotuloSlotData> = {};
-      if (extracted.nombre) updates.nombre = extracted.nombre;
-      if (extracted.dni) updates.dni = String(extracted.dni).replace(/\D/g, '').slice(0, 11);
-      if (extracted.celular) updates.celular = String(extracted.celular).replace(/\D/g, '').slice(0, 9);
-      if (extracted.destino) updates.destino = extracted.destino;
-      if (extracted.remitente) updates.remitente = extracted.remitente;
-      if (extracted.siglas) updates.siglas = extracted.siglas;
+      pushHistory(slots);
+      const orders = extracted.items && extracted.items.length > 0 ? extracted.items : [extracted];
 
-      let cjsNum = totalCajas;
-      if (extracted.totalCajas) {
-        cjsNum = String(extracted.totalCajas).replace(/[^0-9]/g, '');
-        if (cjsNum) {
-          setTotalCajas(cjsNum);
-          updates.totalCajas = cjsNum;
+      let workingSlots = [...slots];
+      let currentTargetId = activeSlotId;
+
+      for (let oIdx = 0; oIdx < orders.length; oIdx++) {
+        const order = orders[oIdx];
+        const isTargetActive = oIdx === 0;
+
+        let slotIdx = workingSlots.findIndex((s) => s.id === currentTargetId);
+        if (
+          slotIdx === -1 ||
+          (!isTargetActive && (workingSlots[slotIdx].nombre?.trim() || workingSlots[slotIdx].destino?.trim()))
+        ) {
+          const nextFreeIdx = workingSlots.findIndex(
+            (s, idx) => idx > slotIdx && !s.nombre?.trim() && !s.destino?.trim()
+          );
+          if (nextFreeIdx !== -1) {
+            slotIdx = nextFreeIdx;
+          } else if (workingSlots.length < MAX_SHEETS * 5) {
+            const startId = workingSlots.length + 1;
+            const addedSlots: RotuloSlotData[] = Array.from({ length: 5 }, (_, idx) => ({
+              id: startId + idx,
+              nombre: '',
+              dni: '',
+              celular: '',
+              agencia: 'SHALOM',
+              destino: '',
+              remitente: 'AMEX COURIER PERÚ',
+              observacion: '',
+              totalRotulos: 1,
+              totalCajas: '1',
+              numeroRotulo: 1,
+              siglas: ''
+            }));
+            slotIdx = workingSlots.length;
+            workingSlots = [...workingSlots, ...addedSlots];
+          }
+        }
+
+        if (slotIdx !== -1) {
+          const targetSlot = workingSlots[slotIdx];
+          const cjsNum = order.totalCajas ? String(order.totalCajas).replace(/[^0-9]/g, '') || '1' : '1';
+          const rotCount = 1;
+          const numRot = 1;
+
+          workingSlots[slotIdx] = {
+            ...targetSlot,
+            nombre: order.nombre || '',
+            dni: order.dni ? String(order.dni).replace(/\D/g, '').slice(0, 11) : '',
+            celular: order.celular ? String(order.celular).replace(/\D/g, '').slice(0, 9) : '',
+            agencia: order.agencia || 'SHALOM',
+            agenciaOtra: order.agenciaOtra || '',
+            destino: order.destino || '',
+            remitente: order.remitente || 'AMEX COURIER PERÚ',
+            siglas: order.siglas || '',
+            totalCajas: cjsNum,
+            totalRotulos: rotCount,
+            numeroRotulo: numRot,
+            observacion: generarTextoBulto(numRot, rotCount, cjsNum)
+          };
+
+          if (isTargetActive) {
+            setTotalCajas(cjsNum);
+            setTotalRotulos('1');
+          }
+
+          currentTargetId = targetSlot.id + 1;
         }
       }
 
-      const targetSlot = slots.find((st) => st.id === activeSlotId);
-      const targetGroupId = targetSlot?.groupId;
-
-      const updated = slots.map((s) => {
-        if (s.id === activeSlotId) {
-          const slotTotalCajas = updates.totalCajas || s.totalCajas || cjsNum;
-          return {
-            ...s,
-            ...updates,
-            observacion: generarTextoBulto(s.numeroRotulo || 1, Number(totalRotulos) || 1, slotTotalCajas)
-          };
-        }
-        if (targetGroupId && s.groupId === targetGroupId) {
-          const slotTotalCajas = updates.totalCajas || s.totalCajas || cjsNum;
-          return {
-            ...s,
-            ...updates,
-            observacion: generarTextoBulto(s.numeroRotulo || 1, s.totalRotulos || (Number(totalRotulos) || 1), slotTotalCajas)
-          };
-        }
-        return s;
-      });
-      saveSlots(updated);
-
+      saveSlots(workingSlots, false);
       playSound('complete');
-      const inSheetNum = ((activeSlotId - 1) % 5) + 1;
-      showToast(`🤖 ¡AMEXito rellenó Hoja ${activeSheetNum} — Espacio #${inSheetNum}!`);
+
+      if (orders.length > 1) {
+        showToast(`🤖 ¡AMEXito extrajo ${orders.length} pedidos y los colocó en espacios libres!`);
+      } else {
+        const inSheetNum = ((activeSlotId - 1) % 5) + 1;
+        showToast(`🤖 ¡AMEXito rellenó Hoja ${activeSheetNum} — Espacio #${inSheetNum}!`);
+      }
       setIsAiCardExpanded(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al conectar con AMEXito IA.';
@@ -754,6 +873,9 @@ export function useRotulosState() {
     totalCajas,
     isExportingPdf,
     feedbackToast,
+    // Deshacer
+    canUndo,
+    handleUndo,
     // AI
     aiInputText,
     setAiInputText,

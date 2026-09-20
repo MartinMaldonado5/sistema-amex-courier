@@ -12,12 +12,17 @@ import {
   type AgencyOption,
   type RotuloSlotData
 } from '@/features/rotulos';
+import { Cliente } from '@/types';
 
 // Re-exportar tipos y utilidades para compatibilidad retroactiva
 export { generarTextoBulto, MAX_SHEETS, AVAILABLE_AGENCIES };
 export type { AgencyOption, RotuloSlotData };
 
-export default function RotulosA4Tab() {
+interface RotulosA4TabProps {
+  clientes?: Cliente[];
+}
+
+export default function RotulosA4Tab({ clientes = [] }: RotulosA4TabProps) {
   const state = useRotulosState();
 
   return (
@@ -58,6 +63,9 @@ export default function RotulosA4Tab() {
           handleSmartCopyToNextFreeSlot={state.handleSmartCopyToNextFreeSlot}
           handleClearActiveSlot={state.handleClearActiveSlot}
           playSound={state.playSound}
+          clientes={clientes}
+          canUndo={state.canUndo}
+          handleUndo={state.handleUndo}
           isAiCardExpanded={state.isAiCardExpanded}
           setIsAiCardExpanded={state.setIsAiCardExpanded}
           aiInputText={state.aiInputText}
