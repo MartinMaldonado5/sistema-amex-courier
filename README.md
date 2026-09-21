@@ -40,14 +40,20 @@ PROYECTO-AMEXcourrier/
 
 ---
 
-## 🗄️ Esquema de Base de Datos en Supabase PostgreSQL
+## 🗄️ Esquema de Base de Datos en Supabase PostgreSQL (12 Tablas Activas)
 
-- `usuarios`: Cuentas de usuario, contraseñas y matriz de permisos por roles.
-- `clientes`: Directorio de casilleros `AMEX-PER-XXXX`, Ubigeo SUNAT y DNI.
-- `embarques_master`: Manifiestos de sacas Tib Courier y Guías Máster AMEX (`AMX0000001269`).
-- `paquetes`: Inventario de recibos de bodega (*WR#*), tracking USA, peso y URLs de facturas PDF en R2.
-- `ordenes_liquidacion`: Liquidaciones aduaneras en Soles/Dólares y vouchers de pago Yape/BCP.
+- `almacenes_sedes`: Sedes y almacenes operativos de AMEX Courier.
+- `paquetes`: Inventario de recibos de bodega (*WR#*), tracking USA, peso, cliente asociado y estado.
 - `historial_trazabilidad`: Registro cronológico de eventos y trazabilidad por paquete.
+- `movimientos_kardex`: Auditoría de movimientos físicos de almacén e inventario.
+- `escaneos_log`: Bitácora histórica de escaneos de código de barras.
+- `estanterias_posiciones`: Posicionamiento físico en almacén (estantes, niveles, capacidades).
+- `entregas_ordenes`: Órdenes de entrega y despacho con fotos de evidencia en R2 y firma.
+- `clientes`: Directorio centralizado de clientes con DNI/RUC, nombres, apellidos, teléfono y dirección.
+- `boletas_shalom`: Comprobantes y tickets Shalom procesados con IA y PDFs en Cloudflare R2.
+- `cobros_vouchers`: Comprobantes de pago (Yape/Plin/Transferencias) vinculados a clientes y WRs.
+- `conductores`: Flota y conductores asignados para rutas de entrega.
+- `configuracion_sistema`: Parámetros y variables de entorno del sistema operativo.
 
 ---
 

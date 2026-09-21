@@ -23,10 +23,10 @@ export async function GET(req: NextRequest) {
 
     // Filtro por texto general (fuzzy / ilike en columnas clave)
     if (q) {
-      // Búsqueda en número de orden, código, guía, destinatario, DNI, remitente, destino o descripción
+      // Búsqueda en número de orden, código, destinatario, DNI, remitente, destino o descripción
       const escapedQ = q.replace(/[%_]/g, '\\$&');
       query = query.or(
-        `nro_orden.ilike.%${escapedQ}%,codigo.ilike.%${escapedQ}%,numero_guia.ilike.%${escapedQ}%,codigo_seguimiento.ilike.%${escapedQ}%,destinatario_nombre.ilike.%${escapedQ}%,destinatario_dni.ilike.%${escapedQ}%,destinatario_telefono.ilike.%${escapedQ}%,remitente_nombre.ilike.%${escapedQ}%,remitente_dni.ilike.%${escapedQ}%,destino.ilike.%${escapedQ}%,descripcion.ilike.%${escapedQ}%`
+        `nro_orden.ilike.%${escapedQ}%,codigo.ilike.%${escapedQ}%,destinatario_nombre.ilike.%${escapedQ}%,destinatario_dni.ilike.%${escapedQ}%,destinatario_telefono.ilike.%${escapedQ}%,remitente_nombre.ilike.%${escapedQ}%,remitente_dni.ilike.%${escapedQ}%,destino.ilike.%${escapedQ}%,descripcion.ilike.%${escapedQ}%`
       );
     }
 
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
 
     // Filtro por modalidad de pago
     if (modalidad && modalidad !== 'TODAS') {
-      query = query.eq('modalidad_pago', modalidad);
+      query = query.ilike('forma_pago', `%${modalidad}%`);
     }
 
     // Paginación
@@ -115,8 +115,8 @@ export async function GET(req: NextRequest) {
       }
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Error al consultar boletas de Shalom';
-    console.error('[GET /api/shalom-boletas exception]:', err);
+    const message = err instanceof Error ? err.message : 'Error interno al obtener boletas';
+    console.error('[GET /api/shalom-boletas]:', err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -124,7 +124,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const contentType = req.headers.get('content-type') || '';
-
     let payload: Record<string, any> = {};
     let fileBuffer: Buffer | null = null;
     let fileName = '';
@@ -133,17 +132,15 @@ export async function POST(req: NextRequest) {
       const formData = await req.formData();
       const file = formData.get('file') as File | null;
 
-      if (file) {
+      if (file && file.size > 0) {
         fileName = file.name;
-        const arrayBuffer = await file.arrayBuffer();
-        fileBuffer = Buffer.from(arrayBuffer);
+        const bytes = await file.arrayBuffer();
+        fileBuffer = Buffer.from(bytes);
       }
 
       payload = {
-        nro_orden: formData.get('nro_orden') as string,
-        codigo: formData.get('codigo') as string,
-        numero_guia: (formData.get('nro_orden') || formData.get('numero_guia')) as string,
-        codigo_seguimiento: (formData.get('codigo') || formData.get('codigo_seguimiento')) as string,
+        nro_orden: (formData.get('nro_orden') || formData.get('numero_guia')) as string,
+        codigo: (formData.get('codigo') || formData.get('codigo_seguimiento')) as string,
         fecha_emision: formData.get('fecha_emision') as string,
         hora_emision: formData.get('hora_emision') as string,
         fecha_traslado: formData.get('fecha_traslado') as string,
@@ -155,11 +152,9 @@ export async function POST(req: NextRequest) {
         destinatario_telefono: formData.get('destinatario_telefono') as string,
         origen: formData.get('origen') as string,
         destino: formData.get('destino') as string,
-        tipo_entrega: formData.get('tipo_entrega') as string,
-        agencia_destino: (formData.get('tipo_entrega') || formData.get('agencia_destino')) as string,
-        forma_pago: formData.get('forma_pago') as string,
-        modalidad_pago: (formData.get('forma_pago') || formData.get('modalidad_pago') || 'PAGO_DESTINO') as string,
-        descripcion: (formData.get('descripcion') || formData.get('contenido_bultos')) as string,
+        tipo_entrega: (formData.get('tipo_entrega') || formData.get('agencia_destino') || 'ENTREGAR EN AGENCIA') as string,
+        forma_pago: (formData.get('forma_pago') || formData.get('modalidad_pago') || 'Pendiente de Pago') as string,
+        descripcion: (formData.get('descripcion') || formData.get('contenido_bultos') || 'BULTO') as string,
         cantidad: parseInt((formData.get('cantidad') as string) || '1', 10),
         unidad_medida: (formData.get('unidad_medida') as string) || 'Volumen',
         peso: parseFloat(((formData.get('peso') || formData.get('peso_total')) as string) || '0'),
@@ -167,7 +162,7 @@ export async function POST(req: NextRequest) {
         monto_total: parseFloat((formData.get('monto_total') as string) || '0'),
         moneda: formData.get('moneda') as string || 'PEN',
         pdf_url: formData.get('pdf_url') as string,
-        storage_path: formData.get('storage_path') as string,
+        r2_key: (formData.get('r2_key') || formData.get('storage_path')) as string,
       };
 
       const rawMetadatos = formData.get('metadatos_ocr') as string;
@@ -202,7 +197,7 @@ export async function POST(req: NextRequest) {
         payload.destinatario_nombre
       );
       payload.pdf_url = r2Result.url;
-      payload.storage_path = r2Result.key;
+      payload.r2_key = r2Result.key;
     }
 
     if (!payload.pdf_url) {
@@ -223,37 +218,28 @@ export async function POST(req: NextRequest) {
     const rowToInsert = {
       nro_orden: nroFinal,
       codigo: codFinal,
-      numero_guia: nroFinal,
-      codigo_seguimiento: codFinal,
       fecha_emision: payload.fecha_emision || new Date().toISOString().split('T')[0],
       hora_emision: payload.hora_emision ? String(payload.hora_emision).trim() : null,
       fecha_traslado: payload.fecha_traslado || null,
       remitente_nombre: String(payload.remitente_nombre || 'AMEX COURIER').trim().toUpperCase(),
       remitente_dni: remDniFinal,
-      remitente_documento: remDniFinal,
       remitente_telefono: payload.remitente_telefono ? String(payload.remitente_telefono).trim() : null,
       destinatario_nombre: String(payload.destinatario_nombre).trim().toUpperCase(),
       destinatario_dni: destDniFinal,
-      destinatario_documento: destDniFinal,
       destinatario_telefono: payload.destinatario_telefono ? String(payload.destinatario_telefono).trim() : null,
       origen: String(payload.origen || 'LIMA').trim().toUpperCase(),
       destino: String(payload.destino).trim().toUpperCase(),
       tipo_entrega: payload.tipo_entrega ? String(payload.tipo_entrega).trim().toUpperCase() : 'ENTREGAR EN AGENCIA',
-      agencia_destino: payload.tipo_entrega ? String(payload.tipo_entrega).trim().toUpperCase() : (payload.agencia_destino || null),
       forma_pago: formaPagoFinal,
-      modalidad_pago: formaPagoFinal.toUpperCase().includes('PENDIENTE') ? 'PAGO_DESTINO' : formaPagoFinal.toUpperCase(),
       descripcion: descFinal,
-      contenido_bultos: descFinal,
       cantidad: parseInt(payload.cantidad, 10) || 1,
       unidad_medida: String(payload.unidad_medida || 'Volumen').trim(),
       peso: pesoFinal,
-      peso_total: pesoFinal,
       observaciones: payload.observaciones ? String(payload.observaciones).trim() : null,
       monto_total: Number(payload.monto_total) || 0,
       moneda: String(payload.moneda || 'PEN').trim().toUpperCase(),
       pdf_url: payload.pdf_url,
-      storage_path: payload.storage_path || '',
-      r2_key: payload.storage_path || payload.r2_key || '',
+      r2_key: payload.r2_key || payload.storage_path || '',
       metadatos_ocr: payload.metadatos_ocr || {}
     };
 

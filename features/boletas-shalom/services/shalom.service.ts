@@ -47,7 +47,7 @@ export const shalomService = {
   },
 
   async saveBoleta(file: File, formData: FormFields): Promise<BoletaShalom> {
-    const ordenOrCodigo = formData.nro_orden.trim() || formData.codigo.trim() || formData.numero_guia?.trim();
+    const ordenOrCodigo = formData.nro_orden.trim() || formData.codigo.trim();
     if (!ordenOrCodigo || !formData.destinatario_nombre.trim() || !formData.destino.trim()) {
       throw new Error('Por favor completa el Nro. de Orden o Código, Destinatario y Ciudad Destino.');
     }
@@ -56,8 +56,6 @@ export const shalomService = {
     formPayload.append('file', file);
     formPayload.append('nro_orden', formData.nro_orden.trim().toUpperCase());
     formPayload.append('codigo', formData.codigo.trim().toUpperCase());
-    formPayload.append('numero_guia', ordenOrCodigo.toUpperCase());
-    formPayload.append('codigo_seguimiento', formData.codigo.trim().toUpperCase());
     formPayload.append('fecha_emision', formData.fecha_emision);
     formPayload.append('hora_emision', formData.hora_emision.trim());
     formPayload.append('fecha_traslado', formData.fecha_traslado);
@@ -70,9 +68,7 @@ export const shalomService = {
     formPayload.append('origen', formData.origen.trim().toUpperCase());
     formPayload.append('destino', formData.destino.trim().toUpperCase());
     formPayload.append('tipo_entrega', formData.tipo_entrega.trim().toUpperCase());
-    formPayload.append('agencia_destino', formData.tipo_entrega.trim().toUpperCase());
     formPayload.append('forma_pago', formData.forma_pago.trim());
-    formPayload.append('modalidad_pago', formData.forma_pago.toUpperCase().includes('PENDIENTE') ? 'PAGO_DESTINO' : formData.forma_pago.toUpperCase());
     formPayload.append('descripcion', formData.descripcion.trim().toUpperCase());
     formPayload.append('cantidad', String(formData.cantidad));
     formPayload.append('unidad_medida', formData.unidad_medida.trim());

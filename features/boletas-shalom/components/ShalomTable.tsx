@@ -101,23 +101,23 @@ export const ShalomTable: React.FC<ShalomTableProps> = ({
             <tbody>
               {boletas.map((b) => {
                 const isSelected = selectedBoleta?.id === b.id;
+                const formaPagoTexto = b.forma_pago || 'Pendiente de Pago';
                 const modClass =
-                  b.modalidad_pago === 'PAGADO' || (b.forma_pago && b.forma_pago.toLowerCase().includes('pagad'))
+                  formaPagoTexto.toLowerCase().includes('pagad')
                     ? 'pagado'
-                    : b.modalidad_pago === 'CREDITO' || (b.forma_pago && b.forma_pago.toLowerCase().includes('credit'))
+                    : formaPagoTexto.toLowerCase().includes('credit')
                     ? 'credito'
                     : 'pago-destino';
 
-                const nroOrden = b.nro_orden || b.numero_guia || '—';
-                const codigoSeg = b.codigo || b.codigo_seguimiento || '';
-                const destDni = b.destinatario_dni || b.destinatario_documento || '';
+                const nroOrden = b.nro_orden || '—';
+                const codigoSeg = b.codigo || '';
+                const destDni = b.destinatario_dni || '';
                 const destTel = b.destinatario_telefono || '';
-                const detalleDesc = b.descripcion || b.contenido_bultos || 'BULTO';
+                const detalleDesc = b.descripcion || 'BULTO';
                 const detalleCant = b.cantidad || 1;
-                const detallePeso = b.peso !== undefined && b.peso !== null ? b.peso : (b.peso_total || 0);
+                const detallePeso = b.peso ?? 0;
                 const detalleUm = b.unidad_medida || 'Volumen';
-                const entrega = b.tipo_entrega || b.agencia_destino || 'ENTREGAR EN AGENCIA';
-                const formaPagoTexto = b.forma_pago || (b.modalidad_pago === 'PAGO_DESTINO' ? 'Pendiente de Pago' : b.modalidad_pago || 'Pendiente');
+                const entrega = b.tipo_entrega || 'ENTREGAR EN AGENCIA';
 
                 return (
                   <tr

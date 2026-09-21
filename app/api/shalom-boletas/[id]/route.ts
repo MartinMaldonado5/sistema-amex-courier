@@ -43,31 +43,23 @@ export async function PATCH(
     const allowedFields = [
       'nro_orden',
       'codigo',
-      'numero_guia',
-      'codigo_seguimiento',
       'fecha_emision',
       'hora_emision',
       'fecha_traslado',
       'remitente_nombre',
       'remitente_dni',
-      'remitente_documento',
       'remitente_telefono',
       'destinatario_nombre',
       'destinatario_dni',
-      'destinatario_documento',
       'destinatario_telefono',
       'origen',
       'destino',
       'tipo_entrega',
-      'agencia_destino',
       'forma_pago',
-      'modalidad_pago',
       'descripcion',
-      'contenido_bultos',
       'cantidad',
       'unidad_medida',
       'peso',
-      'peso_total',
       'observaciones',
       'monto_total',
       'moneda',
@@ -81,10 +73,10 @@ export async function PATCH(
     for (const field of allowedFields) {
       if (field in body) {
         let val = body[field];
-        if (typeof val === 'string' && ['numero_guia', 'codigo_seguimiento', 'destinatario_nombre', 'remitente_nombre', 'origen', 'destino', 'agencia_destino', 'modalidad_pago'].includes(field)) {
+        if (typeof val === 'string' && ['destinatario_nombre', 'remitente_nombre', 'origen', 'destino', 'tipo_entrega'].includes(field)) {
           val = val.trim().toUpperCase();
         }
-        if (field === 'monto_total' || field === 'peso_total') {
+        if (field === 'monto_total' || field === 'peso') {
           val = Number(val) || 0;
         }
         updates[field] = val;

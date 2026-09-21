@@ -108,13 +108,7 @@ export const ShalomUploadModal: React.FC<ShalomUploadModalProps> = ({
         peso: extracted.peso !== undefined ? extracted.peso : prev.peso,
         observaciones: extracted.observaciones || prev.observaciones,
         monto_total: Number(extracted.monto_total) || prev.monto_total,
-        moneda: extracted.moneda || prev.moneda,
-        numero_guia: extracted.nro_orden || extracted.codigo || prev.numero_guia,
-        codigo_seguimiento: extracted.codigo || prev.codigo_seguimiento,
-        agencia_destino: extracted.tipo_entrega || prev.agencia_destino,
-        modalidad_pago: extracted.modalidad_pago || prev.modalidad_pago,
-        contenido_bultos: extracted.descripcion || prev.contenido_bultos,
-        peso_total: extracted.peso !== undefined ? extracted.peso : prev.peso_total
+        moneda: extracted.moneda || prev.moneda
       }));
 
       setAiSuccessMsg('¡Datos extraídos con éxito por AMEXito AI!');

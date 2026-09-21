@@ -34,34 +34,28 @@ export const ShalomEditModal: React.FC<ShalomEditModalProps> = ({
   useEffect(() => {
     if (boleta) {
       setEditFormData({
-        nro_orden: boleta.nro_orden || boleta.numero_guia || '',
-        codigo: boleta.codigo || boleta.codigo_seguimiento || '',
+        nro_orden: boleta.nro_orden || '',
+        codigo: boleta.codigo || '',
         fecha_emision: boleta.fecha_emision,
         hora_emision: boleta.hora_emision || '',
         fecha_traslado: boleta.fecha_traslado || boleta.fecha_emision,
         remitente_nombre: boleta.remitente_nombre || 'QUINTANA CORNEJO BLANCA ESTHER',
-        remitente_dni: boleta.remitente_dni || boleta.remitente_documento || '',
+        remitente_dni: boleta.remitente_dni || '',
         remitente_telefono: boleta.remitente_telefono || '',
         destinatario_nombre: boleta.destinatario_nombre,
-        destinatario_dni: boleta.destinatario_dni || boleta.destinatario_documento || '',
+        destinatario_dni: boleta.destinatario_dni || '',
         destinatario_telefono: boleta.destinatario_telefono || '',
-        origen: boleta.origen,
+        origen: boleta.origen || '',
         destino: boleta.destino,
-        tipo_entrega: boleta.tipo_entrega || boleta.agencia_destino || 'ENTREGAR EN AGENCIA',
-        forma_pago: boleta.forma_pago || (boleta.modalidad_pago === 'PAGO_DESTINO' ? 'Pendiente de Pago' : boleta.modalidad_pago),
-        descripcion: boleta.descripcion || boleta.contenido_bultos || 'BULTO',
+        tipo_entrega: boleta.tipo_entrega || 'ENTREGAR EN AGENCIA',
+        forma_pago: boleta.forma_pago || 'Pendiente de Pago',
+        descripcion: boleta.descripcion || 'BULTO',
         cantidad: boleta.cantidad || 1,
         unidad_medida: boleta.unidad_medida || 'Volumen',
-        peso: boleta.peso !== undefined ? boleta.peso : (boleta.peso_total || 0),
+        peso: boleta.peso ?? 0,
         observaciones: boleta.observaciones || '',
         monto_total: boleta.monto_total,
-        moneda: boleta.moneda || 'PEN',
-        numero_guia: boleta.numero_guia,
-        codigo_seguimiento: boleta.codigo_seguimiento,
-        agencia_destino: boleta.agencia_destino,
-        modalidad_pago: boleta.modalidad_pago,
-        contenido_bultos: boleta.contenido_bultos,
-        peso_total: boleta.peso_total
+        moneda: boleta.moneda || 'PEN'
       });
     }
   }, [boleta]);

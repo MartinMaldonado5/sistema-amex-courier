@@ -7,8 +7,9 @@ export type TipoMonedaPago = 'PEN' | 'USD';
 
 export interface Cliente {
   id: string;
-  codigoCasillero: string;            // Ej: AMEX-PER-1001
+  codigoCasillero: string;            // Generado en frontend / fallback DNI
   nombre: string;
+  apellido?: string;
   documentoIdentidad: string;        // DNI / RUC
   telefono?: string;
   email?: string;
@@ -191,6 +192,7 @@ export interface OrdenEntrega {
   id: string;
   codigo_entrega: string;
   tipo_entrega: string;
+  cliente_id?: string;
   cliente_nombre: string;
   cliente_casillero?: string;
   cliente_documento?: string;
@@ -222,6 +224,7 @@ export interface OrdenEntrega {
 export interface CobroVoucher {
   id: string;
   codigo_cobro: string;
+  cliente_id?: string;
   cliente_nombre: string;
   cliente_casillero?: string;
   cliente_telefono?: string;
@@ -346,81 +349,88 @@ export interface BoletaShalom {
   // Campos del Ticket Shalom
   nro_orden?: string;             // Ej: 95294190
   codigo?: string;                // Ej: 7HH7
-  numero_guia: string;            // Alias / Correlativo principal
-  codigo_seguimiento?: string;    // Tracking web
   fecha_emision: string;          // YYYY-MM-DD
   hora_emision?: string;          // HH:mm:ss
   fecha_traslado?: string;        // YYYY-MM-DD
-  origen: string;                 // Dirección o ciudad origen
+  origen?: string;                // Dirección o ciudad origen
   destino: string;                // Dirección o ciudad destino
-  agencia_destino?: string;       // Sucursal Shalom
   // Datos del Remitente
-  remitente_nombre: string;       // Nombre / Razón Social
-  remitente_dni?: string;          // DNI / RUC Remitente
-  remitente_documento?: string;   // Alias
+  remitente_nombre?: string;      // Nombre / Razón Social
+  remitente_dni?: string;         // DNI / RUC Remitente
   remitente_telefono?: string;    // Celular / Teléfono Remitente
   // Datos del Destinatario
   destinatario_nombre: string;    // Nombre / Razón Social
-  destinatario_dni?: string;       // DNI / RUC Destinatario
-  destinatario_documento?: string;// Alias
+  destinatario_dni?: string;      // DNI / RUC Destinatario
   destinatario_telefono?: string; // Celular / Teléfono Destinatario
   // Entrega y Detalle
   tipo_entrega?: string;          // Ej: ENTREGAR EN AGENCIA o DOMICILIO
   descripcion?: string;           // Ej: BULTO, PAQUETE
-  contenido_bultos?: string;      // Alias
   cantidad?: number;              // Ej: 1
   unidad_medida?: string;         // Ej: Volumen, Peso, Unidad
   peso?: number;                  // Ej: 0.120 kg
-  peso_total?: number;            // Alias
   observaciones?: string;         // Observaciones del ticket
   // Pago
   forma_pago?: string;            // Ej: Pendiente de Pago, Cancelado
-  modalidad_pago: ModalidadPagoShalom;
   monto_total: number;
-  moneda: 'PEN' | 'USD' | string;
-  // Storage
+  moneda?: string;
+  estado_envio?: string;
+  // Storage & Cloudflare R2
   pdf_url: string;
-  storage_path: string;
-  r2_key?: string;
+  r2_key: string;
+  archivo_nombre_original?: string;
+  creado_por?: string;
   metadatos_ocr?: Record<string, any>;
-  creado_en: string;
-  actualizado_en: string;
+  creado_en?: string;
+  actualizado_en?: string;
+  // Campos alias/compatibilidad
+  numero_guia?: string;
+  codigo_seguimiento?: string;
+  modalidad_pago?: ModalidadPagoShalom;
+  agencia_destino?: string;
+  destinatario_documento?: string;
+  remitente_documento?: string;
+  contenido_bultos?: string;
+  peso_total?: number;
+  storage_path?: string;
 }
 
 export interface BoletaShalomInput {
   nro_orden?: string;
   codigo?: string;
-  numero_guia: string;
-  codigo_seguimiento?: string;
   fecha_emision: string;
   hora_emision?: string;
   fecha_traslado?: string;
-  origen: string;
+  origen?: string;
   destino: string;
-  agencia_destino?: string;
-  remitente_nombre: string;
+  remitente_nombre?: string;
   remitente_dni?: string;
-  remitente_documento?: string;
   remitente_telefono?: string;
   destinatario_nombre: string;
   destinatario_dni?: string;
-  destinatario_documento?: string;
   destinatario_telefono?: string;
   tipo_entrega?: string;
   descripcion?: string;
-  contenido_bultos?: string;
   cantidad?: number;
   unidad_medida?: string;
   peso?: number;
-  peso_total?: number;
   observaciones?: string;
   forma_pago?: string;
-  modalidad_pago?: ModalidadPagoShalom;
   monto_total: number;
   moneda?: string;
   pdf_url: string;
-  storage_path: string;
+  r2_key?: string;
+  archivo_nombre_original?: string;
   metadatos_ocr?: Record<string, any>;
+  // Campos alias/compatibilidad
+  numero_guia?: string;
+  codigo_seguimiento?: string;
+  modalidad_pago?: ModalidadPagoShalom;
+  agencia_destino?: string;
+  destinatario_documento?: string;
+  remitente_documento?: string;
+  contenido_bultos?: string;
+  peso_total?: number;
+  storage_path?: string;
 }
 
 export interface FiltrosBoletaShalom {

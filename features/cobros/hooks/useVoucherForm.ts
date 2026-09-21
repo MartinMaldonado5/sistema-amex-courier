@@ -190,7 +190,6 @@ export function useVoucherForm({
       const payload = {
         codigo_cobro: codigoCobro,
         cliente_nombre: formValues.clienteNombre,
-        cliente_casillero: formValues.clienteCasillero,
         cliente_telefono: formValues.clienteTelefono,
         monto: montoNum,
         moneda: formValues.moneda,

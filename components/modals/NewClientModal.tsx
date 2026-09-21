@@ -1,10 +1,11 @@
 'use client';
 
 import React from 'react';
-import { UserPlus, X, User, Phone, MapPin, Building2, Check, Sparkles, CreditCard } from 'lucide-react';
+import { UserPlus, X, User, Phone, MapPin, Check, CreditCard, Mail } from 'lucide-react';
 
 export interface NewClientFormData {
   nombre: string;
+  apellido: string;
   documentoIdentidad: string;
   telefono: string;
   email: string;
@@ -12,8 +13,6 @@ export interface NewClientFormData {
   provincia: string;
   distrito: string;
   direccionEntrega: string;
-  transportistaPreferido: string;
-  agenciaDestino: string;
 }
 
 interface NewClientModalProps {
@@ -26,11 +25,7 @@ interface NewClientModalProps {
 export default function NewClientModal({ form, onChange, onSave, onClose }: NewClientModalProps) {
   const set = (key: keyof NewClientFormData, value: string) => onChange({ ...form, [key]: value });
 
-  const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-  const suggestedCasillero = `AMEX-PER-${randomSuffix}`;
-
   const DEPARTAMENTOS = ['LIMA', 'CALLAO', 'AREQUIPA', 'LA LIBERTAD', 'PIURA', 'CUSCO', 'LAMBAYEQUE', 'JUNIN', 'HUANUCO', 'SAN MARTIN'];
-  const TRANSPORTISTAS = ['CARRO AMEX', 'SHALOM EMPRESARIAL', 'OLVA COURIER', 'MARVISUR', 'RECOJO EN LINCE'];
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)' }}>
@@ -42,13 +37,8 @@ export default function NewClientModal({ form, onChange, onSave, onClose }: NewC
               <UserPlus style={{ width: '20px', height: '20px' }} />
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h2 style={{ fontSize: '15px', fontWeight: 900, margin: 0 }}>Crear Nuevo Casillero AMEX</h2>
-                <span style={{ padding: '2px 8px', borderRadius: '9999px', fontSize: '10px', fontWeight: 900, background: 'rgba(16,185,129,0.2)', color: '#6ee7b7', border: '1px solid rgba(110,231,183,0.3)' }}>
-                  {suggestedCasillero}
-                </span>
-              </div>
-              <p style={{ fontSize: '11.5px', color: '#94a3b8', margin: '2px 0 0 0' }}>Registra cliente para asignación directa de paquetes y despachos</p>
+              <h2 style={{ fontSize: '15px', fontWeight: 900, margin: 0 }}>Registrar Cliente en Directorio</h2>
+              <p style={{ fontSize: '11.5px', color: '#94a3b8', margin: '2px 0 0 0' }}>Registra datos oficiales para asignación en cobros, paquetes y rótulos</p>
             </div>
           </div>
 
@@ -64,20 +54,36 @@ export default function NewClientModal({ form, onChange, onSave, onClose }: NewC
         {/* Body */}
         <form onSubmit={onSave} style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                <User style={{ width: '14px', height: '14px', color: '#2563eb' }} />
-                Nombre Completo del Cliente / Razón Social *
-              </label>
-              <input
-                type="text"
-                required
-                autoFocus
-                value={form.nombre}
-                onChange={e => set('nombre', e.target.value)}
-                placeholder="Ej: María Torres Pérez"
-                style={{ width: '100%', padding: '9px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', fontWeight: 700, color: '#0f172a', outline: 'none' }}
-              />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
+                  <User style={{ width: '14px', height: '14px', color: '#2563eb' }} />
+                  Nombre(s) / Razón Social *
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={form.nombre}
+                  onChange={e => set('nombre', e.target.value)}
+                  placeholder="Ej: María"
+                  style={{ width: '100%', padding: '9px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', fontWeight: 700, color: '#0f172a', outline: 'none' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
+                  <User style={{ width: '14px', height: '14px', color: '#64748b' }} />
+                  Apellido(s)
+                </label>
+                <input
+                  type="text"
+                  value={form.apellido}
+                  onChange={e => set('apellido', e.target.value)}
+                  placeholder="Ej: Torres Pérez"
+                  style={{ width: '100%', padding: '9px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', fontWeight: 700, color: '#0f172a', outline: 'none' }}
+                />
+              </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -129,18 +135,17 @@ export default function NewClientModal({ form, onChange, onSave, onClose }: NewC
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                  Transportista Preferido
+                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
+                  <Mail style={{ width: '14px', height: '14px', color: '#64748b' }} />
+                  Email (Opcional)
                 </label>
-                <select
-                  value={form.transportistaPreferido}
-                  onChange={e => set('transportistaPreferido', e.target.value)}
-                  style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', fontWeight: 700, outline: 'none' }}
-                >
-                  {TRANSPORTISTAS.map(trans => (
-                    <option key={trans} value={trans}>{trans}</option>
-                  ))}
-                </select>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={e => set('email', e.target.value)}
+                  placeholder="ejemplo@correo.com"
+                  style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', outline: 'none' }}
+                />
               </div>
             </div>
 

@@ -82,15 +82,14 @@ const PdfViewerModal = dynamic(() => import('@/components/modals/PdfViewerModal'
 
 const EMPTY_CLIENT_FORM: NewClientFormData = {
   nombre: '',
+  apellido: '',
   documentoIdentidad: '',
   telefono: '',
   email: '',
   departamento: 'LIMA',
   provincia: 'LIMA',
   distrito: 'LINCE',
-  direccionEntrega: '',
-  transportistaPreferido: 'CARRO AMEX',
-  agenciaDestino: 'REPARTO DOMICILIO LINCE'
+  direccionEntrega: ''
 };
 
 const EMPTY_PKG_FORM: NewPkgFormData = {
@@ -286,8 +285,9 @@ export default function DashboardPage() {
       const dbClientes = clientesRes.data || [];
       setClientes(dbClientes.map(c => ({
         id: c.id,
-        codigoCasillero: c.codigo_casillero,
+        codigoCasillero: c.documento_identidad || `CLI-${c.id.slice(0, 6)}`,
         nombre: c.nombre,
+        apellido: c.apellido || '',
         documentoIdentidad: c.documento_identidad,
         telefono: c.telefono || '',
         email: c.email || '',
@@ -295,10 +295,6 @@ export default function DashboardPage() {
         provincia: c.provincia || 'LIMA',
         distrito: c.distrito || 'LINCE',
         direccionEntrega: c.direccion_entrega || '',
-        transportistaPreferido: c.transportista_preferido || 'CARRO AMEX',
-        agenciaDestino: c.agencia_destino || '',
-        dniFrontalUrl: c.dni_frontal_url || '',
-        dniReversoUrl: c.dni_reverso_url || '',
         creadoEn: c.creado_en || ''
       })));
 
@@ -408,11 +404,12 @@ export default function DashboardPage() {
         if (payload.eventType === 'INSERT') {
           const c = payload.new as Record<string, unknown>;
           setClientes(prev => {
-            if (prev.some(x => x.id === c.id || x.codigoCasillero === c.codigo_casillero)) return prev;
+            if (prev.some(x => x.id === c.id)) return prev;
             return [{
               id: String(c.id),
-              codigoCasillero: String(c.codigo_casillero),
+              codigoCasillero: String(c.documento_identidad || `CLI-${String(c.id).slice(0, 6)}`),
               nombre: String(c.nombre),
+              apellido: String(c.apellido || ''),
               documentoIdentidad: String(c.documento_identidad),
               telefono: String(c.telefono || ''),
               email: String(c.email || ''),
@@ -420,29 +417,22 @@ export default function DashboardPage() {
               provincia: String(c.provincia || 'LIMA'),
               distrito: String(c.distrito || 'LINCE'),
               direccionEntrega: String(c.direccion_entrega || ''),
-              transportistaPreferido: String(c.transportista_preferido || 'CARRO AMEX'),
-              agenciaDestino: String(c.agencia_destino || ''),
-              dniFrontalUrl: String(c.dni_frontal_url || ''),
-              dniReversoUrl: String(c.dni_reverso_url || ''),
               creadoEn: String(c.creado_en || '')
             }, ...prev];
           });
         } else if (payload.eventType === 'UPDATE') {
           const c = payload.new as Record<string, unknown>;
-          setClientes(prev => prev.map(item => item.id === c.id || item.codigoCasillero === c.codigo_casillero ? {
+          setClientes(prev => prev.map(item => item.id === c.id ? {
             ...item,
             nombre: String(c.nombre || item.nombre),
+            apellido: String(c.apellido || item.apellido || ''),
             documentoIdentidad: String(c.documento_identidad || item.documentoIdentidad),
             telefono: String(c.telefono || item.telefono),
             email: String(c.email || item.email),
             departamento: String(c.departamento || item.departamento),
             provincia: String(c.provincia || item.provincia),
             distrito: String(c.distrito || item.distrito),
-            direccionEntrega: String(c.direccion_entrega || item.direccionEntrega),
-            transportistaPreferido: String(c.transportista_preferido || item.transportistaPreferido),
-            agenciaDestino: String(c.agencia_destino || item.agenciaDestino),
-            dniFrontalUrl: String(c.dni_frontal_url || item.dniFrontalUrl),
-            dniReversoUrl: String(c.dni_reverso_url || item.dniReversoUrl)
+            direccionEntrega: String(c.direccion_entrega || item.direccionEntrega)
           } : item));
         } else if (payload.eventType === 'DELETE') {
           const oldRecord = payload.old as Record<string, unknown>;
@@ -504,10 +494,9 @@ export default function DashboardPage() {
 
   const handleSaveClient = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newLockerCode = `AMEX-PER-${1000 + clientes.length + 1}`;
     const newClient: Cliente = {
       id: `c-${Date.now()}`,
-      codigoCasillero: newLockerCode,
+      codigoCasillero: newClientForm.documentoIdentidad || `CLI-${Date.now()}`,
       ...newClientForm,
       creadoEn: new Date().toISOString()
     };
@@ -516,17 +505,15 @@ export default function DashboardPage() {
 
     try {
       await supabase.from('clientes').insert({
-        codigo_casillero: newLockerCode,
         nombre: newClientForm.nombre,
+        apellido: newClientForm.apellido || null,
         documento_identidad: newClientForm.documentoIdentidad,
         telefono: newClientForm.telefono,
         email: newClientForm.email,
         departamento: newClientForm.departamento,
         provincia: newClientForm.provincia,
         distrito: newClientForm.distrito,
-        direccion_entrega: newClientForm.direccionEntrega,
-        transportista_preferido: newClientForm.transportistaPreferido,
-        agencia_destino: newClientForm.agenciaDestino
+        direccion_entrega: newClientForm.direccionEntrega
       });
     } catch (err) {
       console.error('Error insert cliente:', err);

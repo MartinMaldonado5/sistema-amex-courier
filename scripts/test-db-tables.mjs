@@ -30,13 +30,16 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const TABLES = [
   'almacenes_sedes',
   'paquetes',
-  'ordenes_picking',
-  'items_picking',
   'historial_trazabilidad',
   'movimientos_kardex',
   'escaneos_log',
   'estanterias_posiciones',
-  'entregas_ordenes'
+  'entregas_ordenes',
+  'clientes',
+  'boletas_shalom',
+  'cobros_vouchers',
+  'conductores',
+  'configuracion_sistema'
 ];
 
 async function checkTables() {
