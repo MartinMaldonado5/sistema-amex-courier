@@ -226,14 +226,6 @@ export default function ShelfMatrixGrid({
                 (p.posicionEstante && p.posicionEstante.startsWith(shelfCode))
             ).length;
 
-            const totalWeightInShelf = paquetes
-              .filter(
-                p =>
-                  p.anaquel === shelfCode ||
-                  (p.posicionEstante && p.posicionEstante.startsWith(shelfCode))
-              )
-              .reduce((sum, p) => sum + (Number(p.pesoKg) || 0), 0);
-
             const isSpecialZone = shelfCode === 'REC' || shelfCode === 'DSP';
             const borderColor =
               shelfCode === 'A1'
@@ -295,7 +287,7 @@ export default function ShelfMatrixGrid({
                           : `Anaquel ${shelfCode}`}
                       </span>
                       <div style={{ fontSize: '11px', color: '#64748b' }}>
-                        {positions.length} niveles configurados • {totalWeightInShelf.toFixed(1)} kg totales
+                        {positions.length} niveles configurados
                       </div>
                     </div>
                   </div>
@@ -342,9 +334,6 @@ export default function ShelfMatrixGrid({
                         p.posicionEstante === posCode ||
                         (p.anaquel === shelfCode && p.piso === posItem.nivelPiso)
                     );
-                    const maxCap = posItem.capacidadMaxPaquetes || 40;
-                    const percent = Math.min(Math.round((pkgsInFloor.length / maxCap) * 100), 100);
-
                     const floorLabel =
                       posItem.nivelPiso === 'P3'
                         ? 'Piso 3 (Superior)'
@@ -353,9 +342,6 @@ export default function ShelfMatrixGrid({
                         : posItem.nivelPiso === 'P1'
                         ? 'Piso 1 (Inferior)'
                         : `Nivel ${posItem.nivelPiso}`;
-
-                    const barColor =
-                      percent > 85 ? '#ef4444' : percent > 60 ? '#f59e0b' : '#10b981';
 
                     return (
                       <div
@@ -414,34 +400,18 @@ export default function ShelfMatrixGrid({
 
                             <span
                               style={{
-                                fontSize: '11px',
+                                fontSize: '11.5px',
                                 fontWeight: 800,
-                                color: barColor
+                                color: pkgsInFloor.length > 0 ? '#1d4ed8' : '#64748b',
+                                background: pkgsInFloor.length > 0 ? '#eff6ff' : '#ffffff',
+                                border: pkgsInFloor.length > 0 ? '1px solid #bfdbfe' : '1px solid #e2e8f0',
+                                padding: '2px 8px',
+                                borderRadius: '6px'
                               }}
                             >
-                              {pkgsInFloor.length} / {maxCap} ({percent}%)
+                              {pkgsInFloor.length} {pkgsInFloor.length === 1 ? 'paquete' : 'paquetes'}
                             </span>
                           </div>
-                        </div>
-
-                        {/* Barra de Ocupación Visual */}
-                        <div
-                          style={{
-                            height: '7px',
-                            background: '#e2e8f0',
-                            borderRadius: '999px',
-                            overflow: 'hidden'
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: `${percent}%`,
-                              height: '100%',
-                              background: barColor,
-                              borderRadius: '999px',
-                              transition: 'width 0.3s ease'
-                            }}
-                          />
                         </div>
 
                         {/* Chips de Paquetes en el Piso */}

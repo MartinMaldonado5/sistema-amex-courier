@@ -55,7 +55,7 @@ export default function GestorAlmacenView({
             <Settings className="w-5 h-5 text-indigo-600" /> Configuración de Anaqueles, Pisos y Parámetros WMS
           </h3>
           <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#64748b' }}>
-            Administra los anaqueles físicos, niveles de piso, límites de peso y zonas de operación en el Almacén Central Lince
+            Administra los anaqueles físicos, niveles de piso, zonas de operación y ocupación en tiempo real
           </p>
         </div>
 
@@ -115,8 +115,7 @@ export default function GestorAlmacenView({
                 <th style={{ padding: '10px 14px' }}>Anaquel</th>
                 <th style={{ padding: '10px 14px' }}>Nivel / Piso</th>
                 <th style={{ padding: '10px 14px' }}>Tipo de Zona</th>
-                <th style={{ padding: '10px 14px' }}>Ocupación / Capacidad</th>
-                <th style={{ padding: '10px 14px' }}>Límite Peso (Kg)</th>
+                <th style={{ padding: '10px 14px' }}>Ocupación</th>
                 <th style={{ padding: '10px 14px' }}>Descripción / Ubicación</th>
                 <th style={{ padding: '10px 14px', textAlign: 'center' }}>Acciones</th>
               </tr>
@@ -124,7 +123,7 @@ export default function GestorAlmacenView({
             <tbody>
               {posicionesList.length === 0 ? (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: '36px', color: '#94a3b8' }}>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '36px', color: '#94a3b8' }}>
                     <Settings style={{ width: '40px', height: '40px', margin: '0 auto 8px auto', color: '#cbd5e1' }} />
                     <div style={{ fontWeight: 800, color: '#64748b' }}>No hay posiciones de estantería configuradas</div>
                     <p style={{ margin: '4px 0 0 0', fontSize: '12px' }}>Haz clic en &quot;+ Crear Anaquel en Lote&quot; para comenzar.</p>
@@ -137,8 +136,6 @@ export default function GestorAlmacenView({
                       p.posicionEstante === pos.codigoPosicion ||
                       (p.anaquel === pos.codigoEstante && p.piso === pos.nivelPiso)
                   ).length;
-                  const maxCap = pos.capacidadMaxPaquetes || 40;
-                  const pct = Math.min(Math.round((countInPos / maxCap) * 100), 100);
 
                   return (
                     <tr key={pos.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
@@ -193,31 +190,23 @@ export default function GestorAlmacenView({
                         </span>
                       </td>
                       <td style={{ padding: '10px 14px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div
-                            style={{
-                              width: '70px',
-                              height: '6px',
-                              background: '#e2e8f0',
-                              borderRadius: '999px',
-                              overflow: 'hidden'
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: `${pct}%`,
-                                height: '100%',
-                                background: pct > 85 ? '#ef4444' : pct > 60 ? '#f59e0b' : '#10b981'
-                              }}
-                            />
-                          </div>
-                          <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#0f172a' }}>
-                            {countInPos} / {maxCap} ({pct}%)
-                          </span>
-                        </div>
-                      </td>
-                      <td style={{ padding: '10px 14px', color: '#64748b', fontWeight: 600 }}>
-                        {pos.pesoMaxKg} Kg
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            fontSize: '12px',
+                            fontWeight: 800,
+                            color: countInPos > 0 ? '#1d4ed8' : '#64748b',
+                            background: countInPos > 0 ? '#eff6ff' : '#f8fafc',
+                            padding: '4px 10px',
+                            borderRadius: '8px',
+                            border: countInPos > 0 ? '1px solid #bfdbfe' : '1px solid #e2e8f0'
+                          }}
+                        >
+                          <Boxes className="w-3.5 h-3.5" style={{ color: countInPos > 0 ? '#2563eb' : '#94a3b8' }} />
+                          {countInPos} {countInPos === 1 ? 'paquete' : 'paquetes'}
+                        </span>
                       </td>
                       <td style={{ padding: '10px 14px', color: '#64748b' }}>
                         {pos.descripcion || 'Sin descripción'}

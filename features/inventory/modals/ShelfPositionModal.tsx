@@ -126,30 +126,6 @@ export default function ShelfPositionModal({
 
             <div className="wms-modal-grid-2">
               <div className="form-group">
-                <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>Capacidad por Piso (Bultos)</label>
-                <input
-                  type="number"
-                  value={batchShelfData.capacidadPorPiso}
-                  onChange={e => setBatchShelfData({ ...batchShelfData, capacidadPorPiso: Number(e.target.value) })}
-                  className="form-control"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>Peso Máx. por Piso (Kg)</label>
-                <input
-                  type="number"
-                  value={batchShelfData.pesoPorPiso}
-                  onChange={e => setBatchShelfData({ ...batchShelfData, pesoPorPiso: Number(e.target.value) })}
-                  className="form-control"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="wms-modal-grid-2">
-              <div className="form-group">
                 <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>Tipo de Zona</label>
                 <select
                   value={batchShelfData.zonaTipo}
@@ -283,30 +259,6 @@ export default function ShelfPositionModal({
                   <option value="DESPACHO">Zona de Despacho</option>
                   <option value="DEVOLUCION">Devoluciones / Rechazos</option>
                 </select>
-              </div>
-            </div>
-
-            <div className="wms-modal-grid-2">
-              <div className="form-group">
-                <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>Capacidad Máx. (Paquetes)</label>
-                <input
-                  type="number"
-                  value={newPositionData.capacidadMaxPaquetes}
-                  onChange={e => setNewPositionData({ ...newPositionData, capacidadMaxPaquetes: Number(e.target.value) })}
-                  className="form-control"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>Peso Máx. (Kg)</label>
-                <input
-                  type="number"
-                  value={newPositionData.pesoMaxKg}
-                  onChange={e => setNewPositionData({ ...newPositionData, pesoMaxKg: Number(e.target.value) })}
-                  className="form-control"
-                  required
-                />
               </div>
             </div>
 

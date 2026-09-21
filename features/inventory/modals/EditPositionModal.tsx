@@ -72,34 +72,6 @@ export default function EditPositionModal({
             </select>
           </div>
 
-          <div className="wms-modal-grid-2">
-            <div className="form-group">
-              <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>Capacidad Máx. (Paquetes)</label>
-              <input
-                type="number"
-                value={editingPosition.capacidadMaxPaquetes}
-                onChange={e =>
-                  setEditingPosition({ ...editingPosition, capacidadMaxPaquetes: Number(e.target.value) })
-                }
-                className="form-control"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>Peso Máx. (Kg)</label>
-              <input
-                type="number"
-                value={editingPosition.pesoMaxKg}
-                onChange={e =>
-                  setEditingPosition({ ...editingPosition, pesoMaxKg: Number(e.target.value) })
-                }
-                className="form-control"
-                required
-              />
-            </div>
-          </div>
-
           <div className="form-group">
             <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>Descripción / Referencia</label>
             <input
