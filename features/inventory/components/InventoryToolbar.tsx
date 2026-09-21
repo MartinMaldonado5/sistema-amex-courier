@@ -89,7 +89,7 @@ export default function InventoryToolbar({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       {/* Breadcrumb & Header Principal */}
       <div className="sap-breadcrumb">
-        <span>Operaciones y Almacenes</span> / <span>Almacén Central Sede Lince (Lima)</span>
+        <span>Operaciones y Almacenes</span> / <span>3. Inventario</span>
       </div>
 
       <div
@@ -105,7 +105,7 @@ export default function InventoryToolbar({
         <div>
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: 0 }}>
             <Warehouse style={{ width: '28px', height: '28px', color: '#2563eb' }} />
-            Almacén Central Sede Lince (Lima)
+            3. Inventario
           </h1>
           <p className="page-subtitle" style={{ margin: '4px 0 0 0' }}>
             Búsquedas en tiempo real, modificaciones de bultos, traslados entre anaqueles/pisos y control de salidas

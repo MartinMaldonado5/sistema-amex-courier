@@ -101,8 +101,8 @@ export default function Sidebar({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', paddingBottom: '60px' }}>
           {navItem('dashboard', 'fa-solid fa-chart-pie', '1. Panel Operativo')}
           {navItem('live-sheets', 'fa-solid fa-table-list', '2. Amex Excel')}
-          {navItem('mm-lince', 'fa-solid fa-store', '3. Almacén Central (Lince)')}
-          {navItem('fico-cobros', 'fa-solid fa-receipt', '4. Cobros & Vouchers')}
+          {navItem('mm-lince', 'fa-solid fa-boxes-stacked', '3. Inventario')}
+          {navItem('fico-cobros', 'fa-solid fa-receipt', '4. Cobros')}
           {navItem('directorio-clientes', 'fa-solid fa-users', '5. Directorio de Clientes')}
           {navItem('mobile-scanner', 'fa-solid fa-barcode', '6. Escáner de Códigos')}
           {navItem('dni-matrix', 'fa-solid fa-id-card', '7. Procesador de DNI')}

@@ -85,7 +85,7 @@ export default function CobrosTab({
     <div style={{ padding: '16px 20px', maxWidth: '100%', width: '100%', margin: 0, display: 'flex', flexDirection: 'column', gap: '16px', minWidth: 0, boxSizing: 'border-box' }}>
       {/* 1. BREADCRUMB */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11.5px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-        <span>Operaciones & Finanzas</span> / <span style={{ color: '#059669', fontWeight: 800 }}>4. Cobros & Vouchers Diarios</span>
+        <span>Operaciones & Finanzas</span> / <span style={{ color: '#059669', fontWeight: 800 }}>4. Cobros</span>
       </div>
 
       {/* 2. PANEL CABECERA OPERATIVA CON INTERCONEXIÓN */}
@@ -114,7 +114,7 @@ export default function CobrosTab({
               <span style={{ display: 'inline-flex', padding: '6px', background: '#ecfdf5', borderRadius: '10px', color: '#059669', border: '1px solid #a7f3d0' }}>
                 <DollarSign style={{ width: '22px', height: '22px' }} />
               </span>
-              4. Cobros & Operaciones Diarias
+              4. Cobros
             </h1>
             <p style={{ fontSize: '12.5px', color: '#64748b', margin: '4px 0 0 0' }}>
               Gestión y liquidación de cobros de flete, entrega en almacén/domicilio y comprobantes bancarios

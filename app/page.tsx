@@ -765,8 +765,8 @@ export default function DashboardPage() {
           onClick={() => setActiveTab('mm-lince')}
           className={`mobile-nav-btn ${activeTab === 'mm-lince' || activeTab === 'mm-inventory' ? 'active' : ''}`}
         >
-          <i className="fa-solid fa-store"></i>
-          <span>Lince</span>
+          <i className="fa-solid fa-boxes-stacked"></i>
+          <span>Inventario</span>
         </button>
 
         <button
