@@ -8,6 +8,7 @@ export interface DniSlotData {
   anverso?: string | null;
   reverso?: string | null;
   label?: string;
+  dni?: string;
   clienteId?: string;
   paqueteId?: string;
   anversoRotation?: number;

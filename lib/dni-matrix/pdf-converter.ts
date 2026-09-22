@@ -1,262 +1,157 @@
-import JSZip from 'jszip';
-import jsPDF from 'jspdf';
-import { saveAs } from 'file-saver';
-import { DniSlotData } from './db';
-import { normalizeImage, DniPrintSize, DNI_SIZE_PRESETS } from './docx-exporter';
+/**
+ * IndexedDB Persistence for DNI Matrix Express
+ * Allows storing hundreds of high-res photos without localStorage limits.
+ */
 
-function uint8ArrayToBase64(bytes: Uint8Array): string {
-  let binary = '';
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
+export interface DniSlotData {
+  id: number;
+  anverso?: string | null;
+  reverso?: string | null;
+  label?: string;
+  dni?: string;
+  clienteId?: string;
+  paqueteId?: string;
+  anversoRotation?: number;
+  reversoRotation?: number;
+  updatedAt?: number;
 }
 
-/**
- * Convierte un único archivo .docx a un documento PDF A4 con medidas exactas
- */
-export async function convertDocxBufferToPdf(
-  arrayBuffer: ArrayBuffer,
-  sizePreset: DniPrintSize = 'large'
-): Promise<Blob> {
-  const zip = await JSZip.loadAsync(arrayBuffer);
-  const config = DNI_SIZE_PRESETS[sizePreset] || DNI_SIZE_PRESETS.large;
+const DB_NAME = 'DniMatrixExpressDB';
+const DB_VERSION = 1;
+const STORE_SLOTS = 'slots';
+const STORE_SETTINGS = 'settings';
 
-  // Las imágenes del documento Word residen en word/media/
-  const mediaKeys = Object.keys(zip.files).filter(
-    (key) => key.startsWith('word/media/') && !zip.files[key].dir
-  );
-  mediaKeys.sort(); // image1.jpeg (Anverso), image2.jpeg (Reverso)
+class DniMatrixDB {
+  private dbInstance: IDBDatabase | null = null;
 
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4' // 210 x 297 mm
-  });
-
-  const x = config.pdfX;
-  const w = config.widthMm;
-  const h = config.heightMm;
-
-  // Anverso (mitad superior)
-  if (mediaKeys.length > 0) {
-    const anversoB64 = await zip.files[mediaKeys[0]].async('base64');
-    doc.addImage(`data:image/jpeg;base64,${anversoB64}`, 'JPEG', x, config.pdfY1, w, h);
-  }
-
-  // Reverso (mitad inferior)
-  if (mediaKeys.length > 1) {
-    const reversoB64 = await zip.files[mediaKeys[1]].async('base64');
-    doc.addImage(`data:image/jpeg;base64,${reversoB64}`, 'JPEG', x, config.pdfY2, w, h);
-  }
-
-  return doc.output('blob');
-}
-
-/**
- * Convierte en lote todos los archivos .docx de una carpeta seleccionada
- * y escribe directamente los archivos .pdf resultantes en Windows,
- * creando automáticamente la carpeta "PDFs/" si se seleccionó esa opción.
- */
-export async function convertDocxFolderToPdf(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  dirHandle: any,
-  sameFolder = false,
-  onProgress?: (current: number, total: number, filename: string) => void,
-  sizePreset: DniPrintSize = 'large'
-): Promise<{ success: boolean; total: number; errors: number; destFolder: string }> {
-  // 1. Escaneo de archivos .docx en la carpeta seleccionada
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const docxEntries: { name: string; handle: any }[] = [];
-  for await (const entry of dirHandle.values()) {
-    if (
-      entry.kind === 'file' &&
-      entry.name.toLowerCase().endsWith('.docx') &&
-      !entry.name.startsWith('~$')
-    ) {
-      docxEntries.push({ name: entry.name, handle: entry });
+  async open(): Promise<IDBDatabase> {
+    if (typeof window === 'undefined') {
+      throw new Error('IndexedDB is only available in the browser.');
     }
-  }
+    if (this.dbInstance) return this.dbInstance;
 
-  if (docxEntries.length === 0) {
-    throw new Error('No se encontraron archivos Word (.docx) válidos en la carpeta seleccionada.');
-  }
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-  // 2. Crear o seleccionar la carpeta de destino
-  let targetDirHandle = dirHandle;
-  let destName = dirHandle.name;
-  if (!sameFolder) {
-    targetDirHandle = await dirHandle.getDirectoryHandle('PDFs', { create: true });
-    destName = `${dirHandle.name}/PDFs`;
-  }
+      request.onupgradeneeded = (e) => {
+        const db = (e.target as IDBOpenDBRequest).result;
+        if (!db.objectStoreNames.contains(STORE_SLOTS)) {
+          db.createObjectStore(STORE_SLOTS, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains(STORE_SETTINGS)) {
+          db.createObjectStore(STORE_SETTINGS, { keyPath: 'key' });
+        }
+      };
 
-  let converted = 0;
-  let errors = 0;
+      request.onsuccess = (e) => {
+        this.dbInstance = (e.target as IDBOpenDBRequest).result;
+        resolve(this.dbInstance);
+      };
 
-  for (let i = 0; i < docxEntries.length; i++) {
-    const { name, handle } = docxEntries[i];
-    onProgress?.(i + 1, docxEntries.length, name);
-
-    try {
-      const file = await handle.getFile();
-      const arrayBuffer = await file.arrayBuffer();
-      const pdfBlob = await convertDocxBufferToPdf(arrayBuffer, sizePreset);
-
-      const baseName = name.replace(/\.docx$/i, '').toUpperCase();
-      const pdfFilename = `${baseName}.pdf`;
-
-      // Escribir el archivo .pdf directamente en el disco duro del usuario
-      const pdfFileHandle = await targetDirHandle.getFileHandle(pdfFilename, { create: true });
-      const writable = await pdfFileHandle.createWritable();
-      await writable.write(pdfBlob);
-      await writable.close();
-      converted++;
-    } catch (e) {
-      console.error(`Error al convertir ${name}:`, e);
-      errors++;
-    }
-  }
-
-  return { success: true, total: converted, errors, destFolder: destName };
-}
-
-/**
- * Genera y descarga un PDF A4 individual para un slot
- */
-export async function createPdfForSlot(
-  slot: DniSlotData,
-  sizePreset: DniPrintSize = 'large'
-): Promise<Blob> {
-  const config = DNI_SIZE_PRESETS[sizePreset] || DNI_SIZE_PRESETS.large;
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4'
-  });
-
-  const x = config.pdfX;
-  const w = config.widthMm;
-  const h = config.heightMm;
-
-  if (slot.anverso) {
-    const anversoImg = await normalizeImage(
-      slot.anverso,
-      slot.anversoRotation || 0,
-      config.widthPx,
-      config.heightPx
-    );
-    const anversoDataUrl = `data:image/jpeg;base64,${uint8ArrayToBase64(anversoImg.buffer)}`;
-    doc.addImage(anversoDataUrl, 'JPEG', x, config.pdfY1, w, h);
-  }
-
-  if (slot.reverso) {
-    const reversoImg = await normalizeImage(
-      slot.reverso,
-      slot.reversoRotation || 0,
-      config.widthPx,
-      config.heightPx
-    );
-    const reversoDataUrl = `data:image/jpeg;base64,${uint8ArrayToBase64(reversoImg.buffer)}`;
-    doc.addImage(reversoDataUrl, 'JPEG', x, config.pdfY2, w, h);
-  }
-
-  return doc.output('blob');
-}
-
-/**
- * Exporta todos los expedientes completos directamente a un archivo ZIP con PDFs
- */
-export async function exportPdfZip(
-  slots: DniSlotData[],
-  onProgress?: (current: number, total: number) => void,
-  sizePreset: DniPrintSize = 'large'
-): Promise<void> {
-  const completeSlots = slots.filter((s) => s.anverso && s.reverso);
-  if (completeSlots.length === 0) {
-    throw new Error('No hay expedientes completos para exportar en PDF.');
-  }
-
-  const zip = new JSZip();
-
-  for (let i = 0; i < completeSlots.length; i++) {
-    const slot = completeSlots[i];
-    onProgress?.(i + 1, completeSlots.length);
-
-    const pdfBlob = await createPdfForSlot(slot, sizePreset);
-    const cleanLabel = (slot.label || '').replace(/[\\/:*?"<>|]/g, '_').trim().toUpperCase();
-    const numStr = String(slot.id).padStart(3, '0');
-    const filename = cleanLabel ? `${cleanLabel}.pdf` : `Expediente_${numStr}.pdf`;
-
-    zip.file(filename, pdfBlob);
-  }
-
-  const zipBlob = await zip.generateAsync({ type: 'blob' });
-  const dateStr = new Date().toISOString().slice(0, 10);
-  saveAs(zipBlob, `Lote_PDFs_${completeSlots.length}_Expedientes_${dateStr}.zip`);
-}
-
-/**
- * GUARDAR DIRECTAMENTE EN UNA CARPETA LOCAL LOS PDFs (SIN COMPRIMIR)
- * Usa la File System Access API nativa del navegador (showDirectoryPicker)
- */
-export async function exportPdfToDirectoryFolder(
-  slots: DniSlotData[],
-  onProgress?: (msg: string, percent?: number) => void,
-  sizePreset: DniPrintSize = 'large'
-): Promise<{ success: boolean; count: number; cancelled?: boolean }> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const w = window as any;
-  if (!w.showDirectoryPicker) {
-    throw new Error('Tu navegador no soporta la selección directa de carpetas. Usa Google Chrome o Microsoft Edge.');
-  }
-
-  const completeSlots = slots.filter((s) => s.anverso && s.reverso);
-  if (completeSlots.length === 0) {
-    throw new Error('No hay expedientes completos para exportar en PDF.');
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let dirHandle: any;
-  try {
-    dirHandle = await w.showDirectoryPicker({
-      id: 'dni_export_pdf_folder',
-      mode: 'readwrite',
-      startIn: 'documents'
+      request.onerror = () => reject(request.error);
     });
-  } catch (err: unknown) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((err as any)?.name === 'AbortError') {
-      return { success: false, count: 0, cancelled: true };
-    }
-    throw err;
   }
 
-  const total = completeSlots.length;
-  const usedNames = new Set<string>();
-
-  for (let i = 0; i < total; i++) {
-    const slot = completeSlots[i];
-    const percent = Math.round(((i + 1) / total) * 100);
-    onProgress?.(`Generando y guardando PDF ${i + 1} de ${total}...`, percent);
-
-    const pdfBlob = await createPdfForSlot(slot, sizePreset);
-    const cleanLabel = (slot.label || '').replace(/[\\/:*?"<>|]/g, '_').trim().toUpperCase();
-    const numStr = String(slot.id).padStart(3, '0');
-
-    let pdfName = cleanLabel ? `${cleanLabel}.pdf` : `Expediente_${numStr}.pdf`;
-    if (usedNames.has(pdfName)) {
-      pdfName = cleanLabel ? `${cleanLabel}_(${numStr}).pdf` : `Expediente_${numStr}.pdf`;
+  async saveSlot(slot: DniSlotData): Promise<boolean> {
+    try {
+      const db = await this.open();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_SLOTS, 'readwrite');
+        const store = tx.objectStore(STORE_SLOTS);
+        const req = store.put({ ...slot, updatedAt: Date.now() });
+        req.onsuccess = () => resolve(true);
+        req.onerror = () => reject(req.error);
+      });
+    } catch (e) {
+      console.error('Error saving slot to IndexedDB:', e);
+      return false;
     }
-    usedNames.add(pdfName);
-
-    const fileHandle = await dirHandle.getFileHandle(pdfName, { create: true });
-    const writable = await fileHandle.createWritable();
-    await writable.write(pdfBlob);
-    await writable.close();
   }
 
-  onProgress?.('¡Todos los archivos PDF han sido guardados con éxito!', 100);
-  return { success: true, count: total };
+  async loadAllSlots(): Promise<DniSlotData[]> {
+    try {
+      const db = await this.open();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_SLOTS, 'readonly');
+        const store = tx.objectStore(STORE_SLOTS);
+        const req = store.getAll();
+        req.onsuccess = () => resolve((req.result as DniSlotData[]) || []);
+        req.onerror = () => reject(req.error);
+      });
+    } catch (e) {
+      console.error('Error loading slots from IndexedDB:', e);
+      return [];
+    }
+  }
+
+  async clearAllSlots(): Promise<boolean> {
+    try {
+      const db = await this.open();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_SLOTS, 'readwrite');
+        const store = tx.objectStore(STORE_SLOTS);
+        const req = store.clear();
+        req.onsuccess = () => resolve(true);
+        req.onerror = () => reject(req.error);
+      });
+    } catch (e) {
+      console.error('Error clearing slots in IndexedDB:', e);
+      return false;
+    }
+  }
+
+  async deleteSlot(id: number): Promise<boolean> {
+    try {
+      const db = await this.open();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_SLOTS, 'readwrite');
+        const store = tx.objectStore(STORE_SLOTS);
+        const req = store.delete(id);
+        req.onsuccess = () => resolve(true);
+        req.onerror = () => reject(req.error);
+      });
+    } catch (e) {
+      console.error('Error deleting slot in IndexedDB:', e);
+      return false;
+    }
+  }
+
+  async saveSetting(key: string, val: unknown): Promise<boolean> {
+    try {
+      const db = await this.open();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_SETTINGS, 'readwrite');
+        const store = tx.objectStore(STORE_SETTINGS);
+        const req = store.put({ key, val });
+        req.onsuccess = () => resolve(true);
+        req.onerror = () => reject(req.error);
+      });
+    } catch (e) {
+      console.error('Error saving setting:', e);
+      return false;
+    }
+  }
+
+  async getSetting<T>(key: string, defaultValue: T): Promise<T> {
+    try {
+      const db = await this.open();
+      return new Promise((resolve) => {
+        const tx = db.transaction(STORE_SETTINGS, 'readonly');
+        const store = tx.objectStore(STORE_SETTINGS);
+        const req = store.get(key);
+        req.onsuccess = () => {
+          if (req.result && req.result.val !== undefined) {
+            resolve(req.result.val as T);
+          } else {
+            resolve(defaultValue);
+          }
+        };
+        req.onerror = () => resolve(defaultValue);
+      });
+    } catch (e) {
+      return defaultValue;
+    }
+  }
 }
 
+export const dniDb = new DniMatrixDB();
