@@ -1,157 +1,211 @@
-/**
- * IndexedDB Persistence for DNI Matrix Express
- * Allows storing hundreds of high-res photos without localStorage limits.
- */
+'use client';
 
-export interface DniSlotData {
-  id: number;
-  anverso?: string | null;
-  reverso?: string | null;
-  label?: string;
-  dni?: string;
-  clienteId?: string;
-  paqueteId?: string;
-  anversoRotation?: number;
-  reversoRotation?: number;
-  updatedAt?: number;
+import React from 'react';
+import './dni-matrix.css';
+import { dniDb } from '@/lib/dni-matrix/db';
+import {
+  DniMatrixTabProps,
+  useDniMatrixState,
+  useDniExport,
+  DniDropzonePanel,
+  DniSlotEditor,
+  DniToolbar,
+  DniSlotsGrid,
+  DniConfigModal,
+  DniPreviewModal,
+  DniPdfConverterModal,
+  DniLinkClientModal,
+  DniDeleteConfirmModal,
+  DniZoomModal
+} from '@/features/dni-matrix';
+
+export default function DniMatrixTab({
+  paquetes = [],
+  clientes = [],
+  onGlobalRefresh,
+  isRefreshing = false
+}: DniMatrixTabProps) {
+  // 1. Hook de Estado del Lote, Matriz, Arrastre/Pegado e IA
+  const state = useDniMatrixState();
+
+  // 2. Hook de Exportación DOCX, ZIP, PDF y Conversión Masiva
+  const exportOps = useDniExport({
+    slotsData: state.slotsData,
+    printSize: state.printSize,
+    showToast: state.showToast,
+    playSound: state.playSound
+  });
+
+  return (
+    <div className="dni-matrix-theme">
+      {/* 1. CONTENEDOR PRINCIPAL: DOS PANELES */}
+      <main className="main-workspace">
+        {/* PANEL IZQUIERDO: ÁREA DE PEGADO Y PREVISUALIZACIÓN DNI */}
+        <DniDropzonePanel
+          activeSlot={state.activeSlot}
+          activeSlotId={state.activeSlotId}
+          focusedSide={state.focusedSide}
+          setFocusedSide={state.setFocusedSide}
+          dragHoverSide={state.dragHoverSide}
+          setDragHoverSide={state.setDragHoverSide}
+          previewZoom={state.previewZoom}
+          setPreviewZoom={state.setPreviewZoom}
+          setZoomImage={state.setZoomImage}
+          rotateSide={state.rotateSide}
+          clearSide={state.clearSide}
+          swapSides={state.swapSides}
+          padNum={state.padNum}
+          extractBase64FromDataTransfer={state.extractBase64FromDataTransfer}
+          processImagePayload={state.processImagePayload}
+        />
+
+        {/* COLUMNA DERECHA: EXPEDIENTE ACTIVO, BARRA DE ACCIONES Y MATRIZ DE CUPOS */}
+        <div className="matrix-column">
+          {/* Indicador de Expediente Activo, Metadatos y Navegación */}
+          <DniSlotEditor
+            activeSlot={state.activeSlot}
+            activeSlotId={state.activeSlotId}
+            totalSlots={state.totalSlots}
+            activeStatus={state.activeStatus}
+            isExtractingName={state.isExtractingName}
+            padNum={state.padNum}
+            updateSlot={state.updateSlot}
+            jumpToNextIncompleteSlot={state.jumpToNextIncompleteSlot}
+            handleExtractNameWithAi={state.handleExtractNameWithAi}
+            setActiveSlotId={state.setActiveSlotId}
+            playSound={state.playSound}
+          />
+
+          {/* Barra de Acciones y Herramientas Globales */}
+          <DniToolbar
+            soundEnabled={state.soundEnabled}
+            setSoundEnabled={state.setSoundEnabled}
+            onSaveSetting={(key, val) => dniDb.saveSetting(key, val)}
+            showToast={state.showToast}
+            isExporting={exportOps.isExporting}
+            exportStatusMessage={exportOps.exportStatusMessage}
+            showExportMenu={exportOps.showExportMenu}
+            openUpwards={exportOps.openUpwards}
+            exportMenuRef={exportOps.exportMenuRef}
+            toggleExportMenu={exportOps.toggleExportMenu}
+            setShowExportMenu={exportOps.setShowExportMenu}
+            stats={state.stats}
+            handleExportFolder={exportOps.handleExportFolder}
+            handleExportMaster={exportOps.handleExportMaster}
+            handleExportZip={exportOps.handleExportZip}
+            handleExportPdfFolder={exportOps.handleExportPdfFolder}
+            handleExportPdfZip={exportOps.handleExportPdfZip}
+            handleExportExcel={exportOps.handleExportExcel}
+            setShowPdfModal={state.setShowPdfModal}
+            setShowPreviewModal={state.setShowPreviewModal}
+            setShowConfigModal={state.setShowConfigModal}
+            onGlobalRefresh={onGlobalRefresh}
+            isRefreshing={isRefreshing}
+          />
+
+          {/* PANEL DERECHO: MATRIZ DE CUPOS */}
+          <DniSlotsGrid
+            totalSlots={state.totalSlots}
+            activeSlotId={state.activeSlotId}
+            currentFilter={state.currentFilter}
+            setCurrentFilter={state.setCurrentFilter}
+            stats={state.stats}
+            progressPercent={state.progressPercent}
+            filteredSlotIds={state.filteredSlotIds}
+            slotsData={state.slotsData}
+            quickJumpVal={state.quickJumpVal}
+            setQuickJumpVal={state.setQuickJumpVal}
+            padNum={state.padNum}
+            getSlotStatus={state.getSlotStatus}
+            setActiveSlotId={state.setActiveSlotId}
+            setFocusedSide={state.setFocusedSide}
+            playSound={state.playSound}
+          />
+        </div>
+      </main>
+
+      {/* MODAL: AJUSTES Y CONFIGURACIÓN */}
+      <DniConfigModal
+        isOpen={state.showConfigModal}
+        onClose={() => state.setShowConfigModal(false)}
+        totalSlots={state.totalSlots}
+        setTotalSlots={state.setTotalSlots}
+        printSize={state.printSize}
+        setPrintSize={state.setPrintSize}
+        onOpenDeleteConfirm={() => state.setShowDeleteConfirmModal(true)}
+        showToast={state.showToast}
+      />
+
+      {/* MODAL: VISTA PREVIA HOJA A4 REAL */}
+      <DniPreviewModal
+        isOpen={state.showPreviewModal}
+        onClose={() => state.setShowPreviewModal(false)}
+        activeSlot={state.activeSlot}
+        activeSlotId={state.activeSlotId}
+        printSize={state.printSize}
+        padNum={state.padNum}
+      />
+
+      {/* MODAL: CONVERSOR DOCX A PDF */}
+      <DniPdfConverterModal
+        isOpen={state.showPdfModal}
+        onClose={() => state.setShowPdfModal(false)}
+        pdfFolderPath={exportOps.pdfFolderPath}
+        onPickPdfFolder={exportOps.handlePickPdfFolder}
+        pdfScanCount={exportOps.pdfScanCount}
+        pdfDestOption={exportOps.pdfDestOption}
+        setPdfDestOption={exportOps.setPdfDestOption}
+        pdfConverting={exportOps.pdfConverting}
+        pdfProgressMsg={exportOps.pdfProgressMsg}
+        pdfProgressPercent={exportOps.pdfProgressPercent}
+        pdfSuccessDone={exportOps.pdfSuccessDone}
+        pdfConvertedInfo={exportOps.pdfConvertedInfo}
+        pdfDirHandle={exportOps.pdfDirHandle}
+        onStartPdfConversion={exportOps.handleStartPdfConversion}
+      />
+
+      {/* MODAL: VINCULAR CON CLIENTE O GUÍA AMEX */}
+      <DniLinkClientModal
+        isOpen={state.showAmexLinkModal}
+        onClose={() => state.setShowAmexLinkModal(false)}
+        activeSlotId={state.activeSlotId}
+        activeSlot={state.activeSlot}
+        clientes={clientes}
+        paquetes={paquetes}
+        updateSlot={state.updateSlot}
+        showToast={state.showToast}
+        padNum={state.padNum}
+      />
+
+      {/* MODAL: ZOOM / AMPLIAR DNI */}
+      <DniZoomModal
+        zoomImage={state.zoomImage}
+        onClose={() => state.setZoomImage(null)}
+      />
+
+      {/* MODAL: CONFIRMACIÓN ELEGANTE DE BORRADO DE LOTE */}
+      <DniDeleteConfirmModal
+        isOpen={state.showDeleteConfirmModal}
+        onClose={() => state.setShowDeleteConfirmModal(false)}
+        totalSlots={state.totalSlots}
+        padNum={state.padNum}
+        onCleared={() => {
+          state.setSlotsData({});
+          state.setActiveSlotId(1);
+          state.setShowDeleteConfirmModal(false);
+          state.setShowConfigModal(false);
+        }}
+        showToast={state.showToast}
+      />
+
+      {/* TOAST CONTAINER FLOTANTE */}
+      <div className="toast-container">
+        {state.toasts.map((t) => (
+          <div key={t.id} className={`toast ${t.type}`}>
+            <span>{t.text}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
-
-const DB_NAME = 'DniMatrixExpressDB';
-const DB_VERSION = 1;
-const STORE_SLOTS = 'slots';
-const STORE_SETTINGS = 'settings';
-
-class DniMatrixDB {
-  private dbInstance: IDBDatabase | null = null;
-
-  async open(): Promise<IDBDatabase> {
-    if (typeof window === 'undefined') {
-      throw new Error('IndexedDB is only available in the browser.');
-    }
-    if (this.dbInstance) return this.dbInstance;
-
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-      request.onupgradeneeded = (e) => {
-        const db = (e.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(STORE_SLOTS)) {
-          db.createObjectStore(STORE_SLOTS, { keyPath: 'id' });
-        }
-        if (!db.objectStoreNames.contains(STORE_SETTINGS)) {
-          db.createObjectStore(STORE_SETTINGS, { keyPath: 'key' });
-        }
-      };
-
-      request.onsuccess = (e) => {
-        this.dbInstance = (e.target as IDBOpenDBRequest).result;
-        resolve(this.dbInstance);
-      };
-
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  async saveSlot(slot: DniSlotData): Promise<boolean> {
-    try {
-      const db = await this.open();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_SLOTS, 'readwrite');
-        const store = tx.objectStore(STORE_SLOTS);
-        const req = store.put({ ...slot, updatedAt: Date.now() });
-        req.onsuccess = () => resolve(true);
-        req.onerror = () => reject(req.error);
-      });
-    } catch (e) {
-      console.error('Error saving slot to IndexedDB:', e);
-      return false;
-    }
-  }
-
-  async loadAllSlots(): Promise<DniSlotData[]> {
-    try {
-      const db = await this.open();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_SLOTS, 'readonly');
-        const store = tx.objectStore(STORE_SLOTS);
-        const req = store.getAll();
-        req.onsuccess = () => resolve((req.result as DniSlotData[]) || []);
-        req.onerror = () => reject(req.error);
-      });
-    } catch (e) {
-      console.error('Error loading slots from IndexedDB:', e);
-      return [];
-    }
-  }
-
-  async clearAllSlots(): Promise<boolean> {
-    try {
-      const db = await this.open();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_SLOTS, 'readwrite');
-        const store = tx.objectStore(STORE_SLOTS);
-        const req = store.clear();
-        req.onsuccess = () => resolve(true);
-        req.onerror = () => reject(req.error);
-      });
-    } catch (e) {
-      console.error('Error clearing slots in IndexedDB:', e);
-      return false;
-    }
-  }
-
-  async deleteSlot(id: number): Promise<boolean> {
-    try {
-      const db = await this.open();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_SLOTS, 'readwrite');
-        const store = tx.objectStore(STORE_SLOTS);
-        const req = store.delete(id);
-        req.onsuccess = () => resolve(true);
-        req.onerror = () => reject(req.error);
-      });
-    } catch (e) {
-      console.error('Error deleting slot in IndexedDB:', e);
-      return false;
-    }
-  }
-
-  async saveSetting(key: string, val: unknown): Promise<boolean> {
-    try {
-      const db = await this.open();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_SETTINGS, 'readwrite');
-        const store = tx.objectStore(STORE_SETTINGS);
-        const req = store.put({ key, val });
-        req.onsuccess = () => resolve(true);
-        req.onerror = () => reject(req.error);
-      });
-    } catch (e) {
-      console.error('Error saving setting:', e);
-      return false;
-    }
-  }
-
-  async getSetting<T>(key: string, defaultValue: T): Promise<T> {
-    try {
-      const db = await this.open();
-      return new Promise((resolve) => {
-        const tx = db.transaction(STORE_SETTINGS, 'readonly');
-        const store = tx.objectStore(STORE_SETTINGS);
-        const req = store.get(key);
-        req.onsuccess = () => {
-          if (req.result && req.result.val !== undefined) {
-            resolve(req.result.val as T);
-          } else {
-            resolve(defaultValue);
-          }
-        };
-        req.onerror = () => resolve(defaultValue);
-      });
-    } catch (e) {
-      return defaultValue;
-    }
-  }
-}
-
-export const dniDb = new DniMatrixDB();

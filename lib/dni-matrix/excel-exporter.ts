@@ -1,157 +1,60 @@
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import { DniSlotData } from './db';
+
 /**
- * IndexedDB Persistence for DNI Matrix Express
- * Allows storing hundreds of high-res photos without localStorage limits.
+ * Exporta los datos de los expedientes a un archivo Microsoft Excel (.xlsx)
+ * con exactamente 2 columnas:
+ * 1. Nombres y Apellidos
+ * 2. DNI
  */
+export function exportDniDataToExcel(
+  slots: DniSlotData[],
+  onSuccess?: (msg: string) => void
+): void {
+  // Filtrar todos los cupos que contengan nombre o DNI registrado
+  const populatedSlots = slots
+    .filter((s) => (s.label && s.label.trim()) || (s.dni && s.dni.trim()))
+    .sort((a, b) => a.id - b.id);
 
-export interface DniSlotData {
-  id: number;
-  anverso?: string | null;
-  reverso?: string | null;
-  label?: string;
-  dni?: string;
-  clienteId?: string;
-  paqueteId?: string;
-  anversoRotation?: number;
-  reversoRotation?: number;
-  updatedAt?: number;
+  if (populatedSlots.length === 0) {
+    const hasAnyImage = slots.some((s) => s.anverso || s.reverso);
+    if (hasAnyImage) {
+      throw new Error(
+        'Hay imágenes cargadas pero no tienen Nombres ni DNI registrados. Usa "Extraer Nombres y DNI con AMEXito" o escríbelos a mano antes de exportar.'
+      );
+    }
+    throw new Error('No hay expedientes con nombres o DNI registrados para exportar.');
+  }
+
+  // Estructurar exactamente las 2 columnas solicitadas
+  const data = populatedSlots.map((s) => ({
+    'Nombres y Apellidos': (s.label || '').trim().toUpperCase(),
+    'DNI': (s.dni || '').trim()
+  }));
+
+  // Crear la hoja de cálculo a partir del arreglo de objetos
+  const worksheet = XLSX.utils.json_to_sheet(data);
+
+  // Configurar anchos óptimos de columna
+  worksheet['!cols'] = [
+    { wch: 42 }, // Columna 1: Nombres y Apellidos (ancho amplio)
+    { wch: 22 }  // Columna 2: DNI
+  ];
+
+  // Crear el libro de trabajo y añadir la hoja
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'DNI y Datos');
+
+  // Escribir el buffer binario en formato XLSX
+  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'
+  });
+
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const filename = `DNI_Reporte_${populatedSlots.length}_Registros_${dateStr}.xlsx`;
+
+  saveAs(blob, filename);
+  onSuccess?.(`¡Excel descargado con éxito (${populatedSlots.length} registros en 2 columnas)!`);
 }
-
-const DB_NAME = 'DniMatrixExpressDB';
-const DB_VERSION = 1;
-const STORE_SLOTS = 'slots';
-const STORE_SETTINGS = 'settings';
-
-class DniMatrixDB {
-  private dbInstance: IDBDatabase | null = null;
-
-  async open(): Promise<IDBDatabase> {
-    if (typeof window === 'undefined') {
-      throw new Error('IndexedDB is only available in the browser.');
-    }
-    if (this.dbInstance) return this.dbInstance;
-
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-      request.onupgradeneeded = (e) => {
-        const db = (e.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(STORE_SLOTS)) {
-          db.createObjectStore(STORE_SLOTS, { keyPath: 'id' });
-        }
-        if (!db.objectStoreNames.contains(STORE_SETTINGS)) {
-          db.createObjectStore(STORE_SETTINGS, { keyPath: 'key' });
-        }
-      };
-
-      request.onsuccess = (e) => {
-        this.dbInstance = (e.target as IDBOpenDBRequest).result;
-        resolve(this.dbInstance);
-      };
-
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  async saveSlot(slot: DniSlotData): Promise<boolean> {
-    try {
-      const db = await this.open();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_SLOTS, 'readwrite');
-        const store = tx.objectStore(STORE_SLOTS);
-        const req = store.put({ ...slot, updatedAt: Date.now() });
-        req.onsuccess = () => resolve(true);
-        req.onerror = () => reject(req.error);
-      });
-    } catch (e) {
-      console.error('Error saving slot to IndexedDB:', e);
-      return false;
-    }
-  }
-
-  async loadAllSlots(): Promise<DniSlotData[]> {
-    try {
-      const db = await this.open();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_SLOTS, 'readonly');
-        const store = tx.objectStore(STORE_SLOTS);
-        const req = store.getAll();
-        req.onsuccess = () => resolve((req.result as DniSlotData[]) || []);
-        req.onerror = () => reject(req.error);
-      });
-    } catch (e) {
-      console.error('Error loading slots from IndexedDB:', e);
-      return [];
-    }
-  }
-
-  async clearAllSlots(): Promise<boolean> {
-    try {
-      const db = await this.open();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_SLOTS, 'readwrite');
-        const store = tx.objectStore(STORE_SLOTS);
-        const req = store.clear();
-        req.onsuccess = () => resolve(true);
-        req.onerror = () => reject(req.error);
-      });
-    } catch (e) {
-      console.error('Error clearing slots in IndexedDB:', e);
-      return false;
-    }
-  }
-
-  async deleteSlot(id: number): Promise<boolean> {
-    try {
-      const db = await this.open();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_SLOTS, 'readwrite');
-        const store = tx.objectStore(STORE_SLOTS);
-        const req = store.delete(id);
-        req.onsuccess = () => resolve(true);
-        req.onerror = () => reject(req.error);
-      });
-    } catch (e) {
-      console.error('Error deleting slot in IndexedDB:', e);
-      return false;
-    }
-  }
-
-  async saveSetting(key: string, val: unknown): Promise<boolean> {
-    try {
-      const db = await this.open();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_SETTINGS, 'readwrite');
-        const store = tx.objectStore(STORE_SETTINGS);
-        const req = store.put({ key, val });
-        req.onsuccess = () => resolve(true);
-        req.onerror = () => reject(req.error);
-      });
-    } catch (e) {
-      console.error('Error saving setting:', e);
-      return false;
-    }
-  }
-
-  async getSetting<T>(key: string, defaultValue: T): Promise<T> {
-    try {
-      const db = await this.open();
-      return new Promise((resolve) => {
-        const tx = db.transaction(STORE_SETTINGS, 'readonly');
-        const store = tx.objectStore(STORE_SETTINGS);
-        const req = store.get(key);
-        req.onsuccess = () => {
-          if (req.result && req.result.val !== undefined) {
-            resolve(req.result.val as T);
-          } else {
-            resolve(defaultValue);
-          }
-        };
-        req.onerror = () => resolve(defaultValue);
-      });
-    } catch (e) {
-      return defaultValue;
-    }
-  }
-}
-
-export const dniDb = new DniMatrixDB();
