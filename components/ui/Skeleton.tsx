@@ -766,6 +766,38 @@ export function ShalomTableSkeleton({ rows = 6 }: { rows?: number }) {
 }
 
 /**
+ * Skeleton para el módulo Formato de Entrega (Acta de Entrega)
+ */
+export function FormatoEntregaSkeleton() {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '480px 1fr', gap: '24px', padding: '16px 20px', width: '100%', boxSizing: 'border-box' }}>
+      {/* Panel Izquierdo */}
+      <div style={{ background: '#0f172a', border: '1.5px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <Skeleton width="180px" height="24px" borderRadius="6px" theme="dark" />
+        <Skeleton width="100%" height="38px" borderRadius="8px" theme="dark" />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <Skeleton height="38px" borderRadius="6px" theme="dark" />
+          <Skeleton height="38px" borderRadius="6px" theme="dark" />
+        </div>
+        <Skeleton height="70px" borderRadius="8px" theme="dark" />
+        <Skeleton height="120px" borderRadius="8px" theme="dark" />
+      </div>
+
+      {/* Hoja Derecha */}
+      <div style={{ background: '#1e293b', borderRadius: '10px', padding: '40px', minHeight: '600px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Skeleton width="140px" height="40px" borderRadius="6px" theme="dark" />
+          <Skeleton width="220px" height="28px" borderRadius="6px" theme="dark" />
+        </div>
+        <Skeleton width="100%" height="90px" borderRadius="6px" theme="dark" />
+        <Skeleton width="100%" height="200px" borderRadius="6px" theme="dark" />
+        <Skeleton width="100%" height="120px" borderRadius="6px" theme="dark" />
+      </div>
+    </div>
+  );
+}
+
+/**
  * Enrutador inteligente de Skeletons: renderiza el skeleton exacto según el tab activo
  */
 export function PageSkeleton({ activeTab, tab }: { activeTab?: string; tab?: string }) {
@@ -789,7 +821,10 @@ export function PageSkeleton({ activeTab, tab }: { activeTab?: string; tab?: str
       return <RotulosA4Skeleton />;
     case 'boletas-shalom':
       return <BoletasShalomSkeleton />;
+    case 'formato-entrega':
+      return <FormatoEntregaSkeleton />;
     default:
       return <DashboardSkeleton />;
   }
 }
+

@@ -27,7 +27,8 @@ import {
   LiveSheetsSkeleton,
   DniMatrixSkeleton,
   RotulosA4Skeleton,
-  BoletasShalomSkeleton
+  BoletasShalomSkeleton,
+  FormatoEntregaSkeleton
 } from '@/components/ui/Skeleton';
 
 const DashboardTab = dynamic(() => import('@/components/tabs/DashboardTab'), {
@@ -73,6 +74,11 @@ const RotulosA4Tab = dynamic(() => import('@/components/tabs/RotulosA4Tab'), {
 const BoletasShalomTab = dynamic(() => import('@/components/tabs/BoletasShalomTab'), {
   ssr: false,
   loading: () => <BoletasShalomSkeleton />
+});
+
+const FormatoEntregaTab = dynamic(() => import('@/components/tabs/FormatoEntregaTab'), {
+  ssr: false,
+  loading: () => <FormatoEntregaSkeleton />
 });
 
 const NewClientModal = dynamic(() => import('@/components/modals/NewClientModal'), { ssr: false });
@@ -122,7 +128,8 @@ const VALID_TABS = [
   'mobile-scanner',
   'dni-matrix',
   'rotulos-a4',
-  'boletas-shalom'
+  'boletas-shalom',
+  'formato-entrega'
 ];
 
 export default function DashboardPage() {
@@ -734,6 +741,13 @@ export default function DashboardPage() {
 
               {activeTab === 'boletas-shalom' && (
                 <BoletasShalomTab />
+              )}
+
+              {activeTab === 'formato-entrega' && (
+                <FormatoEntregaTab
+                  clientes={clientes}
+                  paquetes={paquetes}
+                />
               )}
             </>
           )}

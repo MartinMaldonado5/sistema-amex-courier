@@ -1,0 +1,798 @@
+/* ==========================================================================
+   MÓDULO: FORMATO DE ENTREGA / ACTA DE ENTREGA DE PAQUETES - AMEX COURIER
+   ========================================================================== */
+
+.formato-entrega-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 16px 20px 40px;
+  box-sizing: border-box;
+}
+
+/* Grid Principal: Panel de Control (izq) + Vista A4 (der) */
+.formato-entrega-grid {
+  display: grid;
+  grid-template-columns: 480px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 1200px) {
+  .formato-entrega-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   PANEL DE CONTROL
+   ========================================================================== */
+
+.acta-control-panel {
+  background: #0f172a;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.acta-panel-header {
+  padding: 18px 20px;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.acta-panel-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 0 0 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.acta-panel-subtitle {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.acta-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.acta-btn-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  border: none;
+}
+
+.acta-btn-action.is-print {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+}
+
+.acta-btn-action.is-print:hover {
+  background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+  transform: translateY(-1px);
+}
+
+.acta-btn-action.is-pdf {
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.35);
+}
+
+.acta-btn-action.is-pdf:hover {
+  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+  transform: translateY(-1px);
+}
+
+.acta-btn-action.is-docx {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+}
+
+.acta-btn-action.is-docx:hover {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  transform: translateY(-1px);
+}
+
+.acta-btn-action.is-history {
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  position: relative;
+}
+
+.acta-btn-action.is-history:hover {
+  background: #334155;
+}
+
+.acta-badge-counter {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #f59e0b;
+  color: #0f172a;
+  font-size: 0.65rem;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 999px;
+}
+
+.acta-btn-action.is-secondary {
+  background: #1e293b;
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.acta-btn-action.is-secondary:hover {
+  color: #f8fafc;
+  background: #334155;
+}
+
+/* Cuerpo del Panel */
+.acta-panel-body {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: calc(100vh - 210px);
+  overflow-y: auto;
+}
+
+.acta-card-section {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.acta-card-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.acta-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.acta-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.acta-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.acta-input,
+.acta-select,
+.acta-textarea {
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #f8fafc;
+  font-size: 0.88rem;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.15s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.acta-input:focus,
+.acta-select:focus,
+.acta-textarea:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+.acta-textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.acta-btn-secondary {
+  background: #334155;
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.acta-btn-secondary:hover:not(:disabled) {
+  background: #475569;
+  color: #ffffff;
+}
+
+.acta-btn-secondary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.acta-link-btn {
+  background: none;
+  border: none;
+  color: #38bdf8;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.acta-link-btn:hover {
+  text-decoration: underline;
+  color: #7dd3fc;
+}
+
+/* Autocomplete Menu */
+.acta-autocomplete-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #0b1329;
+  border: 1.5px solid #38bdf8;
+  border-radius: 8px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.8);
+  z-index: 100;
+  max-height: 240px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+.acta-autocomplete-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  background: #1e293b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.acta-autocomplete-item {
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.acta-autocomplete-item:hover {
+  background: rgba(56, 189, 248, 0.15);
+}
+
+/* Chips de Paquetes */
+.acta-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 140px;
+  overflow-y: auto;
+  padding: 4px;
+  background: #0f172a;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.acta-pkg-chip {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #38bdf8;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.acta-pkg-chip code {
+  font-family: 'Consolas', 'Courier New', monospace;
+}
+
+.acta-chip-del {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.acta-chip-del:hover {
+  color: #f87171;
+}
+
+.acta-btn-clear-chips {
+  background: none;
+  border: none;
+  color: #f87171;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.acta-btn-clear-chips:hover {
+  text-decoration: underline;
+}
+
+.acta-counter-pill {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+/* ==========================================================================
+   VISTA PREVIA DEL DOCUMENTO A4 (HOJA IMPRIMIBLE)
+   ========================================================================== */
+
+.acta-document-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 10px 0;
+  overflow-x: auto;
+}
+
+.acta-a4-sheet {
+  width: 100%;
+  max-width: 820px;
+  min-height: 1120px;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 60px 72px;
+  box-sizing: border-box;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.45);
+  border-radius: 4px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Encabezado */
+.acta-header-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 30px;
+}
+
+.acta-logo-wrap {
+  flex-shrink: 0;
+}
+
+.acta-logo-img {
+  max-height: 56px;
+  width: auto;
+  object-fit: contain;
+}
+
+.acta-logo-img.is-badge {
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.acta-title-wrap {
+  flex: 1;
+}
+
+.acta-main-title {
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+/* 1. Tabla Superior de Datos */
+.acta-meta-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 28px;
+  border: 1px solid #e2e8f0;
+}
+
+.acta-meta-table tr {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.acta-meta-table tr:last-child {
+  border-bottom: none;
+}
+
+.acta-meta-label {
+  width: 145px;
+  padding: 12px 16px;
+  background-color: #f1f5f9;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.acta-meta-value {
+  padding: 12px 18px;
+  font-size: 0.95rem;
+  color: #0f172a;
+  vertical-align: middle;
+}
+
+.acta-meta-value.font-bold-name {
+  font-weight: 700;
+}
+
+/* 2. Recuadro Central de Paquetes */
+.acta-packages-box {
+  border: 2px solid #0f172a;
+  min-height: 240px;
+  display: flex;
+  margin-bottom: 26px;
+  box-sizing: border-box;
+}
+
+.acta-packages-col-left {
+  flex: 1;
+  padding: 22px 28px;
+}
+
+/* Códigos de paquetes en UNA SOLA COLUMNA vertical idéntica al original */
+.acta-codes-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.acta-pkg-code {
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: 0.4px;
+}
+
+.acta-empty-placeholder {
+  color: #94a3b8;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.acta-packages-col-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.acta-packages-count-badge {
+  font-size: 1.3rem;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-transform: uppercase;
+  color: #0f172a;
+  letter-spacing: 0.5px;
+}
+
+/* 3. Cláusula de Cargo */
+.acta-cargo-clause {
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: #0f172a;
+  margin-bottom: 28px;
+  padding-left: 10px;
+}
+
+.acta-cargo-tag {
+  font-weight: 800;
+  margin-right: 4px;
+}
+
+.acta-cargo-underlined {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.acta-cargo-underlined-indented {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  padding-left: 68px;
+  margin-top: 3px;
+}
+
+/* 4. Tabla Recibido Por con Renglones Amplios para Escritura Manual */
+.acta-recibido-section {
+  margin-bottom: 35px;
+  border: 1px solid #e2e8f0;
+}
+
+.acta-recibido-header {
+  background-color: #f1f5f9;
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: #1e293b;
+  padding: 10px 18px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.acta-recibido-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.acta-recibido-table tr {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.acta-recibido-table tr:last-child {
+  border-bottom: none;
+}
+
+.acta-field-label {
+  width: 120px;
+  padding: 15px 18px;
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.acta-field-fill {
+  padding: 15px 18px;
+  font-size: 0.94rem;
+  color: #0f172a;
+  vertical-align: middle;
+}
+
+/* 5. Firma con Espacio Amplio para Rúbrica y Sello */
+.acta-signature-section {
+  margin-top: 55px;
+  margin-bottom: 25px;
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.acta-sig-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.acta-sig-line {
+  width: 380px;
+  border-bottom: 1.5px solid #0f172a;
+  height: 1px;
+}
+
+/* ==========================================================================
+   MODAL DE HISTORIAL
+   ========================================================================== */
+
+.acta-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.acta-modal-content {
+  background: #0f172a;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 520px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+
+.acta-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: #1e293b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.acta-modal-body {
+  padding: 14px 18px;
+  overflow-y: auto;
+}
+
+.acta-historial-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.acta-historial-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.acta-historial-row:hover {
+  background: #334155;
+  border-color: #38bdf8;
+}
+
+.acta-btn-xs-load {
+  background: #0284c7;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+.acta-btn-xs-del {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.acta-btn-xs-del:hover {
+  color: #f87171;
+}
+
+/* ==========================================================================
+   REGLAS DE IMPRESIÓN (@media print)
+   Impresión perfecta en A4 ignorando toda la interfaz web
+   ========================================================================== */
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 18mm 20mm 15mm 20mm;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  #acta-print-area,
+  #acta-print-area * {
+    visibility: visible;
+  }
+
+  #acta-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .acta-a4-sheet {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Logo en negro puro para impresoras láser monocromáticas (Brother, etc.) */
+  .acta-logo-img.is-clean {
+    filter: brightness(0) contrast(200%) !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .acta-packages-box {
+    border: 2px solid #000000 !important;
+    min-height: 240px !important;
+    margin-bottom: 26px !important;
+  }
+
+  .acta-meta-label,
+  .acta-recibido-header {
+    background-color: #f1f5f9 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .acta-meta-label,
+  .acta-meta-value {
+    padding: 12px 18px !important;
+  }
+
+  .acta-field-label,
+  .acta-field-fill {
+    padding: 15px 18px !important;
+  }
+
+  .acta-signature-section {
+    margin-top: 55px !important;
+  }
+
+  .acta-sig-line {
+    width: 380px !important;
+    border-bottom: 1.5px solid #000000 !important;
+  }
+
+  /* Ocultar elementos no imprimibles */
+  .acta-control-panel,
+  .sap-sidebar,
+  .sap-header,
+  .mobile-bottom-nav,
+  .sidebar-backdrop {
+    display: none !important;
+  }
+}

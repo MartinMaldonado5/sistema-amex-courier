@@ -108,6 +108,7 @@ export default function Sidebar({
           {navItem('dni-matrix', 'fa-solid fa-id-card', '7. Procesador de DNI')}
           {navItem('rotulos-a4', 'fa-solid fa-tags', '8. Rótulos Agencias')}
           {navItem('boletas-shalom', 'fa-solid fa-receipt', '9. Boletas Shalom')}
+          {navItem('formato-entrega', 'fa-solid fa-file-signature', '10. Formato de Entrega')}
         </div>
       </div>
     </nav>

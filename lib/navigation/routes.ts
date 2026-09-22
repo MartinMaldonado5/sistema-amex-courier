@@ -9,7 +9,8 @@ export const TAB_TO_PATH: Record<string, string> = {
   'mobile-scanner': '/escaner',
   'dni-matrix': '/matriz-dni',
   'rotulos-a4': '/rotulos',
-  'boletas-shalom': '/boletas-shalom'
+  'boletas-shalom': '/boletas-shalom',
+  'formato-entrega': '/formato-entrega'
 };
 
 export const PATH_TO_TAB: Record<string, string> = {
@@ -25,6 +26,9 @@ export const PATH_TO_TAB: Record<string, string> = {
   '/matriz-dni': 'dni-matrix',
   '/rotulos': 'rotulos-a4',
   '/boletas-shalom': 'boletas-shalom',
+  '/formato-entrega': 'formato-entrega',
+  '/acta-entrega': 'formato-entrega',
+  '/entrega': 'formato-entrega',
   // Aliases retrocompatibles
   '/live-sheets': 'live-sheets',
   '/sheets': 'live-sheets',
