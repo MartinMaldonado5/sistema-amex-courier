@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
     const result = await extractDniNameFromImage(imageBase64);
 
     if (!result.nombre_completo && !result.dni) {
+      console.warn('[API DNI Extraction Warning]: No se detectaron nombres ni DNI en la imagen.');
       return NextResponse.json(
         {
           success: false,
@@ -24,6 +25,11 @@ export async function POST(req: NextRequest) {
         { status: 422 }
       );
     }
+
+    console.log('[API DNI Extraction Success]:', {
+      nombre: result.nombre_completo,
+      dni: result.dni
+    });
 
     return NextResponse.json({
       success: true,
@@ -34,7 +40,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Error al procesar el documento con IA';
-    console.error('[API Gemini DNI Extraction Error]:', err);
+    console.error('[API DNI Extraction Error]:', err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

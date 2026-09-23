@@ -187,8 +187,8 @@ export function useDniMatrixState() {
       playSound('click');
       showToast('🤖 AMEXito está leyendo el DNI...', 'info');
 
-      // Optimización de latencia: Reducir Base64 de ~8MB a ~150KB antes del envío
-      const optimizedImage = await compressImageForAi(slot.anverso, 1200, 0.82);
+      // Optimización de nitidez y rotación: Enviar imagen orientada y nítida para lectura OCR
+      const optimizedImage = await compressImageForAi(slot.anverso, 1400, 0.88, slot.anversoRotation || 0);
 
       const res = await fetch('/api/ai/extract-dni-name', {
         method: 'POST',

@@ -239,20 +239,25 @@ En el Perú existen 4 tipos de documentos. Aplica las siguientes reglas según e
 2. DNI CLÁSICO AZUL (DNI 1.0) o AMARILLO (MENORES):
    - El número de 8 dígitos está en la esquina superior derecha en color negro o rojo (ej: "45879632" o "45879632-1"). Extrae los 8 dígitos principales antes del guión.
 
-3. CARNET DE EXTRANJERÍA (CE):
-   - Emitido por Migraciones Perú. Consta de 9 dígitos numéricos (ej: "008619120").
+4. ZONA DE LECTURA MECÁNICA MRZ (Líneas inferiores con signos <<< en DNI electrónico):
+   - La línea con "I<PER..." contiene el DNI de 8 dígitos tras PER (ej: "I<PER73674972<5..." -> DNI: "73674972").
+   - La línea inferior contiene "APELLIDOS<<NOMBRES<<" (ej: "CABALLERO<<ALEXANDER<ASMIR<<" -> Apellidos: CABALLERO, Nombres: ALEXANDER ASMIR).
+   - Siempre examina la zona MRZ para extraer o verificar el DNI y los nombres con máxima precisión.
+
+5. ORIENTACIÓN Y REFLEJOS:
+   - Lee el documento sin importar si está orientado horizontalmente o con inclinación.
 
 FORMATO DE SALIDA JSON ESTRICTO:
 {
-  "dni": "SOLO DIGITOS DEL DNI (8 digitos para DNI peruano, ej: 76219579; 9 digitos para CE)",
+  "dni": "SOLO DIGITOS DEL DNI (8 dígitos para DNI peruano, ej: 73674972; 9 dígitos para CE)",
   "nombres": "NOMBRES DE LA PERSONA",
   "apellidos": "APELLIDOS DE LA PERSONA",
   "nombre_completo": "[NOMBRES] [APELLIDOS] EN MAYÚSCULAS"
 }
 
 Reglas estrictas:
-1. El campo "dni" DEBE ser los 8 dígitos reales del DNI (ej: "76219579"). Si viste 6 dígitos como "873517", DESCÁRTALO y busca el CUI de 8 dígitos en la esquina superior derecha o al lado de la foto.
-2. "nombre_completo": siempre primero nombres de pila y luego apellidos (ej: "KARELIN KARINA SOLIS PAUCAR").
+1. El campo "dni" DEBE ser los 8 dígitos reales del DNI (ej: "73674972"). Si viste 6 dígitos como "873517", DESCÁRTALO y busca el CUI de 8 dígitos en la esquina superior derecha o en la línea MRZ "I<PER...".
+2. "nombre_completo": siempre primero nombres de pila y luego apellidos (ej: "ALEXANDER ASMIR CABALLERO CACERES").
 3. Todo el texto de nombres debe estar 100% en MAYÚSCULAS y limpio de símbolos extraños o puntuaciones innecesarias.
 4. Si la imagen no es un documento o resulta totalmente ilegible, devuelve en formato JSON: {"dni": "", "nombre_completo": ""}.`;
 
@@ -263,7 +268,7 @@ Reglas estrictas:
     const response = await client.chat.completions.create({
       model: DEFAULT_OPENAI_MODEL,
       response_format: { type: 'json_object' },
-      ...getOpenAiModelOptions(300),
+      ...getOpenAiModelOptions(600),
       messages: [
         {
           role: 'user',
