@@ -1,5 +1,5 @@
 import { RotuloSlotData, generateRotulosA4Pdf } from '@/lib/rotulos/rotulos-pdf';
-import { DEFAULT_SLOTS, MAX_SHEETS, generarTextoBulto } from '../types';
+import { DEFAULT_SLOTS, DEFAULT_REMITENTE, MAX_SHEETS, generarTextoBulto } from '../types';
 import { compressImageForAi } from '@/lib/utils/imageCompressor';
 
 const STORAGE_KEY = 'amex_rotulos_a4_slots_v2';
@@ -35,6 +35,7 @@ export const RotulosService = {
             return {
               ...s,
               agencia: cleanAgencia,
+              remitente: DEFAULT_REMITENTE,
               numeroRotulo: 1,
               totalRotulos: 1,
               observacion: s.totalCajas ? generarTextoBulto(1, 1, s.totalCajas) : s.observacion
@@ -42,7 +43,8 @@ export const RotulosService = {
           }
           return {
             ...s,
-            agencia: cleanAgencia
+            agencia: cleanAgencia,
+            remitente: DEFAULT_REMITENTE
           };
         });
       }
@@ -58,7 +60,11 @@ export const RotulosService = {
   saveSlotsToStorage(slots: RotuloSlotData[]): void {
     if (typeof window === 'undefined') return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(slots));
+      const sanitizedSlots = slots.map((s) => ({
+        ...s,
+        remitente: DEFAULT_REMITENTE
+      }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizedSlots));
     } catch (e) {
       console.warn('Error saving rotulos slots to storage:', e);
     }

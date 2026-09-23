@@ -59,7 +59,7 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
           <>
             <div className="strip-header">
               <div className="strip-header-left">
-                <span className="strip-remitente">{(slot.remitente || 'AMEX COURIER PERÚ').toUpperCase()}</span>
+                <span className="strip-remitente">AMEX COURIER PERÚ</span>
                 {isEditingThisSlot && (
                   <span className="strip-active-tag">
                     <i className="fa-solid fa-pen-nib"></i> EDITANDO ESPACIO #{slotInSheet}

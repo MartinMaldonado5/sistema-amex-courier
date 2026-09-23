@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { RotuloSlotData } from '@/lib/rotulos/rotulos-pdf';
-import { DEFAULT_SLOTS, MAX_SHEETS, generarTextoBulto } from '../types';
+import { DEFAULT_SLOTS, DEFAULT_REMITENTE, MAX_SHEETS, generarTextoBulto } from '../types';
 import { RotulosService } from '../services/rotulos.service';
 
 export function useRotulosState() {
@@ -179,32 +179,34 @@ export function useRotulosState() {
   const currentSheetSlots = slots.slice((currentSheet - 1) * 5, currentSheet * 5);
 
   const updateActiveSlot = (fields: Partial<RotuloSlotData>) => {
+    // El remitente queda fijo e inmodificable como AMEX COURIER PERÚ
+    const { remitente: _ignored, ...cleanFields } = fields;
     const targetSlot = slots.find((s) => s.id === activeSlotId);
     const targetGroupId = targetSlot?.groupId;
 
     const updated = slots.map((s) => {
       if (s.id === activeSlotId) {
-        const slotTotRots = fields.totalRotulos !== undefined ? fields.totalRotulos : (s.totalRotulos || 1);
-        const slotTotCjs = fields.totalCajas !== undefined ? fields.totalCajas : (s.totalCajas || '1');
+        const slotTotRots = cleanFields.totalRotulos !== undefined ? cleanFields.totalRotulos : (s.totalRotulos || 1);
+        const slotTotCjs = cleanFields.totalCajas !== undefined ? cleanFields.totalCajas : (s.totalCajas || '1');
         const numRot = s.numeroRotulo || 1;
-        const autoObs = (fields.totalCajas !== undefined || fields.totalRotulos !== undefined)
+        const autoObs = (cleanFields.totalCajas !== undefined || cleanFields.totalRotulos !== undefined)
           ? generarTextoBulto(numRot, slotTotRots, slotTotCjs)
-          : (fields.observacion !== undefined ? fields.observacion : s.observacion);
+          : (cleanFields.observacion !== undefined ? cleanFields.observacion : s.observacion);
 
-        return { ...s, ...fields, observacion: autoObs };
+        return { ...s, ...cleanFields, remitente: DEFAULT_REMITENTE, observacion: autoObs };
       }
       if (targetGroupId && s.groupId === targetGroupId) {
-        const syncedFields = { ...fields };
+        const syncedFields = { ...cleanFields };
         delete syncedFields.id;
         delete syncedFields.numeroRotulo;
 
-        if (fields.totalCajas !== undefined || fields.totalRotulos !== undefined) {
+        if (cleanFields.totalCajas !== undefined || cleanFields.totalRotulos !== undefined) {
           const slotNumRot = s.numeroRotulo || 1;
-          const slotTotRots = fields.totalRotulos !== undefined ? fields.totalRotulos : (s.totalRotulos || 1);
-          const slotTotCjs = fields.totalCajas !== undefined ? fields.totalCajas : (s.totalCajas || '1');
+          const slotTotRots = cleanFields.totalRotulos !== undefined ? cleanFields.totalRotulos : (s.totalRotulos || 1);
+          const slotTotCjs = cleanFields.totalCajas !== undefined ? cleanFields.totalCajas : (s.totalCajas || '1');
           syncedFields.observacion = generarTextoBulto(slotNumRot, slotTotRots, slotTotCjs);
         }
-        return { ...s, ...syncedFields };
+        return { ...s, ...syncedFields, remitente: DEFAULT_REMITENTE };
       }
       return s;
     });
@@ -318,7 +320,7 @@ export function useRotulosState() {
           agencia: currentSlot.agencia || '',
           agenciaOtra: currentSlot.agenciaOtra,
           destino: '',
-          remitente: currentSlot.remitente || 'AMEX COURIER PERÚ',
+          remitente: DEFAULT_REMITENTE,
           observacion: '',
           totalRotulos: 1,
           totalCajas: '1',
@@ -353,7 +355,7 @@ export function useRotulosState() {
         agencia: currentSlot.agencia,
         agenciaOtra: currentSlot.agenciaOtra,
         destino: currentSlot.destino,
-        remitente: currentSlot.remitente,
+        remitente: DEFAULT_REMITENTE,
         totalCajas: effectiveTotalCajas,
         siglas: currentSlot.siglas,
         groupId: groupId,
@@ -447,7 +449,7 @@ export function useRotulosState() {
         agencia: activeSlot.agencia || '',
         agenciaOtra: activeSlot.agenciaOtra,
         destino: '',
-        remitente: activeSlot.remitente || 'AMEX COURIER PERÚ',
+        remitente: DEFAULT_REMITENTE,
         observacion: '',
         totalRotulos: 1,
         totalCajas: '1',
@@ -516,7 +518,7 @@ export function useRotulosState() {
           celular: '',
           agencia: 'SHALOM' as const,
           destino: '',
-          remitente: 'AMEX COURIER PERÚ',
+          remitente: DEFAULT_REMITENTE,
           observacion: '',
           totalRotulos: 1,
           totalCajas: '1',
@@ -547,7 +549,7 @@ export function useRotulosState() {
           celular: '',
           agencia: 'SHALOM' as const,
           destino: '',
-          remitente: 'AMEX COURIER PERÚ',
+          remitente: DEFAULT_REMITENTE,
           observacion: '',
           totalRotulos: 1,
           totalCajas: '1',
@@ -622,7 +624,7 @@ export function useRotulosState() {
           agencia: sourceSlot.agencia || '',
           agenciaOtra: sourceSlot.agenciaOtra,
           destino: '',
-          remitente: sourceSlot.remitente || 'AMEX COURIER PERÚ',
+          remitente: DEFAULT_REMITENTE,
           observacion: '',
           totalRotulos: sourceSlot.totalRotulos || 1,
           totalCajas: sourceSlot.totalCajas || '1',
@@ -651,7 +653,7 @@ export function useRotulosState() {
       agencia: sourceSlot.agencia,
       agenciaOtra: sourceSlot.agenciaOtra,
       destino: sourceSlot.destino,
-      remitente: sourceSlot.remitente,
+      remitente: DEFAULT_REMITENTE,
       observacion: generarTextoBulto(safeNumRotulo, safeTotalRotulos, safeTotalCajas),
       totalRotulos: safeTotalRotulos,
       totalCajas: safeTotalCajas,
@@ -763,7 +765,7 @@ export function useRotulosState() {
               celular: '',
               agencia: 'SHALOM',
               destino: '',
-              remitente: 'AMEX COURIER PERÚ',
+              remitente: DEFAULT_REMITENTE,
               observacion: '',
               totalRotulos: 1,
               totalCajas: '1',
@@ -789,7 +791,7 @@ export function useRotulosState() {
             agencia: order.agencia || 'SHALOM',
             agenciaOtra: order.agenciaOtra || '',
             destino: order.destino || '',
-            remitente: order.remitente || 'AMEX COURIER PERÚ',
+            remitente: DEFAULT_REMITENTE,
             siglas: order.siglas || '',
             totalCajas: cjsNum,
             totalRotulos: rotCount,

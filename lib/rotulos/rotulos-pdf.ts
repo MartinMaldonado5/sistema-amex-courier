@@ -84,7 +84,7 @@ export async function generateRotulosA4Pdf(
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(8.5);
         doc.setTextColor(71, 85, 105); // Slate-600
-        const remitenteText = sanitizePdfText(slot.remitente?.trim() || 'AMEX COURIER PERÚ').toUpperCase();
+        const remitenteText = 'AMEX COURIER PERÚ';
         doc.text(remitenteText, 12, yStart + 7.5);
 
         const bNum = slot.numeroRotulo || 1;

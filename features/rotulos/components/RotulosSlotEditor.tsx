@@ -336,6 +336,23 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
 
       {/* Formulario de Entrada */}
       <div className="rotulo-form">
+        {/* Remitente Oficial Fijo (No Modificable) */}
+        <div className="rotulo-field-group">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+            <label className="rotulo-label" style={{ marginBottom: 0 }}>Remitente Oficial:</label>
+            <span style={{ fontSize: '0.70rem', fontWeight: 700, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <i className="fa-solid fa-lock"></i> Fijo por defecto (No modificable)
+            </span>
+          </div>
+          <div className="rotulo-fixed-remitente-box">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <i className="fa-solid fa-building-shield" style={{ color: '#38bdf8', fontSize: '0.95rem' }}></i>
+              <span className="rotulo-fixed-remitente-name">AMEX COURIER PERÚ</span>
+            </div>
+            <span className="rotulo-fixed-remitente-badge">PREDETERMINADO</span>
+          </div>
+        </div>
+
         {/* Destinatario con Autocompletado desde Directorio de Clientes */}
         <div className="rotulo-field-group" ref={clientDropdownRef} style={{ position: 'relative' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

@@ -48,6 +48,8 @@ export const AVAILABLE_AGENCIES: AgencyOption[] = [
   }
 ];
 
+export const DEFAULT_REMITENTE = 'AMEX COURIER PERÚ';
+
 export const DEFAULT_SLOTS: RotuloSlotData[] = [
   {
     id: 1,
@@ -56,7 +58,7 @@ export const DEFAULT_SLOTS: RotuloSlotData[] = [
     celular: '',
     agencia: '',
     destino: '',
-    remitente: 'AMEX COURIER PERÚ',
+    remitente: DEFAULT_REMITENTE,
     observacion: '',
     totalRotulos: 1,
     totalCajas: '1',
@@ -70,7 +72,7 @@ export const DEFAULT_SLOTS: RotuloSlotData[] = [
     celular: '',
     agencia: '',
     destino: '',
-    remitente: 'AMEX COURIER PERÚ',
+    remitente: DEFAULT_REMITENTE,
     observacion: '',
     totalRotulos: 1,
     totalCajas: '1',
@@ -84,7 +86,7 @@ export const DEFAULT_SLOTS: RotuloSlotData[] = [
     celular: '',
     agencia: '',
     destino: '',
-    remitente: 'AMEX COURIER PERÚ',
+    remitente: DEFAULT_REMITENTE,
     observacion: '',
     totalRotulos: 1,
     totalCajas: '1',
@@ -98,7 +100,7 @@ export const DEFAULT_SLOTS: RotuloSlotData[] = [
     celular: '',
     agencia: '',
     destino: '',
-    remitente: 'AMEX COURIER PERÚ',
+    remitente: DEFAULT_REMITENTE,
     observacion: '',
     totalRotulos: 1,
     totalCajas: '1',
@@ -112,7 +114,7 @@ export const DEFAULT_SLOTS: RotuloSlotData[] = [
     celular: '',
     agencia: '',
     destino: '',
-    remitente: 'AMEX COURIER PERÚ',
+    remitente: DEFAULT_REMITENTE,
     observacion: '',
     totalRotulos: 1,
     totalCajas: '1',

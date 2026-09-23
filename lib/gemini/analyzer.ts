@@ -340,7 +340,7 @@ Estructura de salida requerida en JSON:
       "dni": "Número de identificación del destinatario: DNI (8 dígitos), Carnet de Extranjería / CE (ej: '008619120'), o RUC (11 dígitos). Solo dígitos alfanuméricos limpios sin guiones",
       "celular": "Número telefónico o de celular del destinatario (ej: '934548741', '981081414'. Solo los 9 dígitos sin espacios ni guiones)",
       "destino": "Destino completo, departamento/ciudad, agencia de entrega y/o dirección de destino (ej: 'ANCASH - CASMA - CASMA SHALOM AV. MIGUEL GRAU', 'TACNA - AV. VIGIL - SHALOM', 'CHANCAY', 'CHIMBOTE (AV. JOSÉ GÁLVEZ 767)'). En MAYÚSCULAS",
-      "remitente": "Si se especifica un remitente distinto, colocarlo; en caso contrario poner 'AMEX COURIER PERÚ'"
+      "remitente": "Siempre 'AMEX COURIER PERÚ' (fijo e inalterable)"
     }
   ]
 }
@@ -448,7 +448,7 @@ Reglas estrictas:
         dni: (p.dni || '').trim().toUpperCase(),
         celular: (p.celular || '').trim(),
         destino: (p.destino || '').trim().toUpperCase(),
-        remitente: (p.remitente || 'AMEX COURIER PERÚ').trim().toUpperCase()
+        remitente: 'AMEX COURIER PERÚ'
       };
     };
 
