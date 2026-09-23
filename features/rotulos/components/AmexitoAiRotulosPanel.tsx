@@ -161,7 +161,7 @@ export const AmexitoAiRotulosPanel: React.FC<AmexitoAiRotulosPanelProps> = ({
 
               <button
                 type="button"
-                className="ai-submit-btn"
+                className={`ai-submit-btn ${isAiProcessing ? 'processing' : ''}`}
                 onClick={handleProcessWithAmexito}
                 disabled={isAiProcessing || (!aiInputText.trim() && !aiImagePreview)}
                 title="Interpretar con AMEXito IA y rellenar automáticamente los campos"

@@ -971,9 +971,34 @@
   transform: translateY(-1px);
 }
 
-.shalom-btn-ai-extract:disabled {
+.shalom-btn-ai-extract:disabled:not(.loading) {
   opacity: 0.65;
   cursor: not-allowed;
+}
+
+.shalom-btn-ai-extract.loading,
+.shalom-btn-ai-extract:disabled:has(.fa-spin) {
+  opacity: 1 !important;
+  cursor: wait !important;
+  background: linear-gradient(90deg, #4f46e5 0%, #0284c7 50%, #7c3aed 100%) !important;
+  background-size: 200% 100% !important;
+  animation: amexito-pulse-shimmer 1.4s ease-in-out infinite !important;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.45) !important;
+}
+
+@keyframes amexito-pulse-shimmer {
+  0% {
+    background-position: 100% 0;
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.3);
+  }
+  50% {
+    background-position: 0% 0;
+    box-shadow: 0 0 22px rgba(56, 189, 248, 0.5);
+  }
+  100% {
+    background-position: -100% 0;
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.3);
+  }
 }
 
 .shalom-ai-hint {

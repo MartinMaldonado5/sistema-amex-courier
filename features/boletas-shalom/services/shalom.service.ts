@@ -1,5 +1,6 @@
 import { BoletaShalom, ModalidadPagoShalom } from '@/types';
 import { FormFields, StatsState } from '../types';
+import { compressFileForAi } from '@/lib/utils/imageCompressor';
 
 export interface FetchBoletasResponse {
   boletas: BoletaShalom[];
@@ -28,14 +29,13 @@ export const shalomService = {
   },
 
   async extractWithAi(file: File) {
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const base64 = buffer.toString('base64');
+    // Comprime imágenes a máx 1200px / JPEG y preserva PDFs tal cual
+    const { mimeType, base64 } = await compressFileForAi(file, 1200, 0.82);
 
     const res = await fetch('/api/ai/analyze-shalom-boleta', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pdfBase64: base64 })
+      body: JSON.stringify({ pdfBase64: `data:${mimeType};base64,${base64}` })
     });
 
     const json = await res.json();

@@ -1,5 +1,6 @@
 import { RotuloSlotData, generateRotulosA4Pdf } from '@/lib/rotulos/rotulos-pdf';
 import { DEFAULT_SLOTS, MAX_SHEETS, generarTextoBulto } from '../types';
+import { compressImageForAi } from '@/lib/utils/imageCompressor';
 
 const STORAGE_KEY = 'amex_rotulos_a4_slots_v2';
 const LEGACY_STORAGE_KEY = 'amex_rotulos_a4_slots';
@@ -79,12 +80,17 @@ export const RotulosService = {
    * Consulta al endpoint de AMEXito IA para extraer datos de WhatsApp o imagen
    */
   async parseWithAi(params: { text?: string; imageBase64?: string }): Promise<Partial<RotuloSlotData> & { items?: Array<Partial<RotuloSlotData>> }> {
+    let imageBase64 = params.imageBase64 || undefined;
+    if (imageBase64) {
+      imageBase64 = await compressImageForAi(imageBase64, 1200, 0.82);
+    }
+
     const res = await fetch('/api/ai/parse-rotulo', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         text: params.text?.trim() || undefined,
-        imageBase64: params.imageBase64 || undefined
+        imageBase64
       })
     });
 

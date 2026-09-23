@@ -4,8 +4,26 @@ function getApiKey(): string {
   return process.env.GEMINI_API_KEY || '';
 }
 
-// Modelo oficial por defecto del sistema
-export const DEFAULT_GEMINI_MODEL = 'gemini-3.5-flash-lite';
+// Modelo oficial ultrarrápido por defecto del sistema
+export const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
+
+/**
+ * Singleton del Cliente GenAI:
+ * Mantiene el pool de conexiones TLS y sockets HTTP/2 persistentes con Google,
+ * ahorrando ~200-300ms de handshake en cada llamada.
+ */
+let aiClientInstance: GoogleGenAI | null = null;
+
+export function getGeminiClient(): GoogleGenAI {
+  if (!aiClientInstance) {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY no está configurada en las variables de entorno.');
+    }
+    aiClientInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiClientInstance;
+}
 
 /**
  * Separa el MIME type y el string Base64 puro de un Data URL
@@ -22,15 +40,28 @@ export function parseBase64Data(dataUrl: string): { mimeType: string; base64: st
 }
 
 /**
+ * Parseo directo y optimizado de JSON devuelto por Gemini en modo application/json
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parseAiJsonResponse<T = any>(rawText?: string): T {
+  if (!rawText) return {} as T;
+  const trimmed = rawText.trim();
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      // Seguir al fallback de limpieza
+    }
+  }
+  const cleanJson = trimmed.replace(/```json/gi, '').replace(/```/g, '').trim();
+  return JSON.parse(cleanJson || '{}');
+}
+
+/**
  * Analiza facturas de compra/invoices para el módulo de inventario
  */
 export async function analyzeInvoiceDocument(fileBase64: string, mimeType: string) {
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY no está configurada.');
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = getGeminiClient();
 
   const prompt = `Analiza esta factura de compra/invoice de paquete importado. 
 Extrae la siguiente información en formato JSON estricto:
@@ -41,7 +72,7 @@ Extrae la siguiente información en formato JSON estricto:
   "peso_kg": 0.0,
   "valor_usd": 0.00
 }
-Si algún valor no es visible, retorna cadena vacía o 0. Solo devuelve el objeto JSON sin formato markdown extra.`;
+Si algún valor no es visible, retorna cadena vacía o 0.`;
 
   const response = await ai.models.generateContent({
     model: DEFAULT_GEMINI_MODEL,
@@ -53,12 +84,14 @@ Si algún valor no es visible, retorna cadena vacía o 0. Solo devuelve el objet
           { text: prompt }
         ]
       }
-    ]
+    ],
+    config: {
+      responseMimeType: 'application/json',
+      temperature: 0.1
+    }
   });
 
-  const text = response.text || '{}';
-  const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-  return JSON.parse(cleanJson);
+  return parseAiJsonResponse(response.text);
 }
 
 /**
@@ -70,39 +103,47 @@ export async function extractDniNameFromImage(imageInput: string): Promise<{
   nombres?: string;
   apellidos?: string;
 }> {
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY no está configurada en las variables de entorno.');
-  }
-
   const { mimeType, base64 } = parseBase64Data(imageInput);
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = getGeminiClient();
 
-  const prompt = `Analiza detenidamente la imagen del ANVERSO (frente) de este Documento Nacional de Identidad (DNI) o cédula de identidad.
-Tu tarea es leer y extraer con la máxima fidelidad:
-1. El número del DNI (típicamente 8 dígitos numéricos en Perú, ubicado en la parte superior derecha, junto al escudo o en el cuerpo del documento).
-2. Los nombres de pila y apellidos de la persona registrada en el documento.
+  const prompt = `Analiza con máxima precisión la imagen de este Documento de Identidad del Perú (DNI 1.0 clásico azul/amarillo, DNIe 2.0/3.0 electrónico blanco, o Carnet de Extranjería CE).
 
-Examina los campos:
-- Documento / N° DNI (número de 8 dígitos)
-- Primer Apellido (Apellido Paterno)
-- Segundo Apellido (Apellido Materno)
-- Pre Nombres / Nombres (1, 2, 3 o más nombres)
-O la zona inferior MRZ si está disponible.
+Tu objetivo es leer y extraer con la máxima fidelidad:
+1. El número del documento de identidad ("dni")
+2. Los nombres y apellidos de la persona ("nombres", "apellidos", "nombre_completo")
 
-Devuelve EXCLUSIVAMENTE un objeto JSON estricto sin comillas invertidas ni explicaciones adicionales:
+============================================================
+REGLAS CRÍTICAS PARA IDENTIFICAR EL NÚMERO DE DNI (8 DÍGITOS OBLIGATORIO):
+============================================================
+En el Perú existen 4 tipos de documentos. Aplica las siguientes reglas según el tipo de documento detectado:
+
+1. DNI ELECTRÓNICO (DNIe 2.0 y 3.0 - Tarjeta blanca/celeste con chip):
+   - El número de DNI se encuentra en la ESQUINA SUPERIOR DERECHA, rotulado con la etiqueta "CUI" (Código Único de Identificación).
+     Ejemplo: "CUI 76219579-3".
+     El número de DNI son ÚNICAMENTE los 8 dígitos antes del guión: "76219579". El último número tras el guión (ej: -3) es el dígito verificador y NO forma parte del DNI.
+   - También está impreso en vertical al lado izquierdo o sobre la fotografía en miniatura: "76219579".
+   - ⚠️ ¡ADVERTENCIA ESTRICTA Y PROHIBICIÓN!: En el centro de la tarjeta, debajo de los prenombres o al lado de "Sexo F/M", aparece un número de 6 DÍGITOS (ej: "873517"). ¡ESE NÚMERO DE 6 DÍGITOS NO ES EL DNI! Es un código de ubigeo o lote de emisión de la tarjeta. NUNCA extraigas un número de 6 dígitos. Un DNI peruano tiene SIEMPRE EXACTAMENTE 8 DÍGITOS.
+   - Tampoco confundas el "N° de Tarjeta" de 10 dígitos (ej: 0203284723) con el DNI.
+
+2. DNI CLÁSICO AZUL (DNI 1.0) o AMARILLO (MENORES):
+   - El número de 8 dígitos está en la esquina superior derecha en color negro o rojo (ej: "45879632" o "45879632-1"). Extrae los 8 dígitos principales antes del guión.
+
+3. CARNET DE EXTRANJERÍA (CE):
+   - Emitido por Migraciones Perú. Consta de 9 dígitos numéricos (ej: "008619120").
+
+FORMATO DE SALIDA JSON ESTRICTO:
 {
-  "dni": "NUMERO DE DNI SOLO DIGITOS (ej: 45879632)",
+  "dni": "SOLO DIGITOS DEL DNI (8 digitos para DNI peruano, ej: 76219579; 9 digitos para CE)",
   "nombres": "NOMBRES DE LA PERSONA",
   "apellidos": "APELLIDOS DE LA PERSONA",
-  "nombre_completo": "NOMBRES Y APELLIDOS EN ORDEN: [NOMBRES] [APELLIDOS] EN MAYÚSCULAS"
+  "nombre_completo": "[NOMBRES] [APELLIDOS] EN MAYÚSCULAS"
 }
 
 Reglas estrictas:
-1. El campo "dni" DEBE contener únicamente los dígitos del DNI (ej: "45879632"), sin letras, espacios, puntos ni guiones. Si no es visible o legible, devuelve "".
-2. El campo "nombre_completo" DEBE estructurarse siempre primero con los nombres de pila y luego los apellidos. Ejemplo: "LEONARDO AILTON ROJAS YUPANQUI".
+1. El campo "dni" DEBE ser los 8 dígitos reales del DNI (ej: "76219579"). Si viste 6 dígitos como "873517", DESCÁRTALO y busca el CUI de 8 dígitos en la esquina superior derecha o al lado de la foto.
+2. "nombre_completo": siempre primero nombres de pila y luego apellidos (ej: "KARELIN KARINA SOLIS PAUCAR").
 3. Todo el texto de nombres debe estar 100% en MAYÚSCULAS y limpio de símbolos extraños o puntuaciones innecesarias.
-4. Si la imagen no es un DNI o resulta totalmente ilegible, devuelve {"dni": "", "nombre_completo": ""}.`;
+4. Si la imagen no es un documento o resulta totalmente ilegible, devuelve {"dni": "", "nombre_completo": ""}.`;
 
   const response = await ai.models.generateContent({
     model: DEFAULT_GEMINI_MODEL,
@@ -114,16 +155,29 @@ Reglas estrictas:
           { text: prompt }
         ]
       }
-    ]
+    ],
+    config: {
+      responseMimeType: 'application/json',
+      temperature: 0.1
+    }
   });
 
-  const text = response.text || '{}';
-  const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-
   try {
-    const parsed = JSON.parse(cleanJson);
+    const parsed = parseAiJsonResponse(response.text);
     const nombreCompleto = (parsed.nombre_completo || '').trim().toUpperCase();
-    const rawDni = (parsed.dni || '').toString().replace(/[^0-9A-Za-z]/g, '').trim();
+    let rawDni = (parsed.dni || '').toString().replace(/[^0-9A-Za-z]/g, '').trim();
+
+    // Si viene con guión o dígito verificador pegado (9 dígitos de DNI estándar que no empieza en 00):
+    if (rawDni.length === 9 && !rawDni.startsWith('00')) {
+      rawDni = rawDni.slice(0, 8);
+    }
+
+    // Regla de salvaguarda: Un DNI peruano NUNCA tiene 6 dígitos (código de ubigeo o lote)
+    if (rawDni.length === 6) {
+      console.warn(`[DNI Parser] Se descartó código interno de 6 dígitos (${rawDni}), no corresponde a un DNI.`);
+      rawDni = '';
+    }
+
     return {
       nombre_completo: nombreCompleto,
       dni: rawDni,
@@ -131,7 +185,7 @@ Reglas estrictas:
       apellidos: (parsed.apellidos || '').trim().toUpperCase()
     };
   } catch (err) {
-    console.error('Error al parsear respuesta JSON de Gemini:', cleanJson, err);
+    console.error('Error al parsear respuesta JSON de Gemini:', response.text, err);
     throw new Error('No se pudo procesar la respuesta de la Inteligencia Artificial.');
   }
 }
@@ -157,19 +211,14 @@ export async function parseRotuloWithAi(input: {
   text?: string;
   imageBase64?: string;
 }): Promise<ExtractedRotuloData> {
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY no está configurada en las variables de entorno.');
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = getGeminiClient();
 
   const prompt = `Eres AMEXito IA, el asistente inteligente de AMEX Courier Perú especializado en logística y rotulación de agencias.
 Tu objetivo es analizar el texto y/o la imagen de un mensaje de WhatsApp u orden de envío, y extraer de forma estructurada los datos del o los destinatarios para generar rótulos de agencia de transporte (Shalom, Olva, Cruz del Sur u otra).
 
 IMPORTANTE: Si el contenido contiene MÁS DE UN PEDIDO O DESTINATARIO (ej: 2, 3, 4 o 5 personas distintas en un mismo mensaje de WhatsApp), extrae CADA UNO en una lista de pedidos.
 
-Estructura de salida requerida en JSON estricto:
+Estructura de salida requerida en JSON:
 {
   "pedidos": [
     {
@@ -187,7 +236,7 @@ Estructura de salida requerida en JSON estricto:
 }
 
 Reglas estrictas:
-1. Devuelve EXCLUSIVAMENTE el objeto JSON válido con la propiedad "pedidos" conteniendo de 1 a N pedidos detectados.
+1. Devuelve un objeto JSON con la propiedad "pedidos" conteniendo de 1 a N pedidos detectados.
 2. Limpia los números de teléfono y documentos de espacios o guiones.
 3. Si algún campo no se encuentra en el texto o imagen, devuelve cadena vacía "".
 4. No inventes información; solo extrae lo que esté presente o se deduzca claramente del contexto.`;
@@ -213,18 +262,21 @@ Reglas estrictas:
         role: 'user',
         parts
       }
-    ]
+    ],
+    config: {
+      responseMimeType: 'application/json',
+      temperature: 0.1
+    }
   });
 
-  const text = response.text || '{}';
-  const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-
   try {
-    const parsed = JSON.parse(cleanJson);
+    const parsed = parseAiJsonResponse(response.text);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rawList: any[] = Array.isArray(parsed.pedidos)
       ? parsed.pedidos
       : (Array.isArray(parsed) ? parsed : [parsed]);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const normalizeOrder = (p: any): ExtractedRotuloData => {
       let agencia: 'SHALOM' | 'CRUZ DEL SUR' | 'OLVA' | 'OTRA' = 'SHALOM';
       const rawAgencia = String(p.agencia || '').toUpperCase();
@@ -259,7 +311,7 @@ Reglas estrictas:
       items: items.length > 0 ? items : [firstItem]
     };
   } catch (err) {
-    console.error('Error al parsear respuesta JSON de Gemini para rótulo:', cleanJson, err);
+    console.error('Error al parsear respuesta JSON de Gemini para rótulo:', response.text, err);
     throw new Error('No se pudo procesar la respuesta de la Inteligencia Artificial.');
   }
 }
@@ -300,16 +352,11 @@ export interface ShalomBoletaExtractedData {
 
 /**
  * Analiza un documento PDF o imagen de ticket / boleta de SHALOM (ej: DATOS TICKET SHALOM)
- * Utiliza Gemini 3.5 Flash Lite para extracción estructurada de alta precisión
+ * Utiliza Gemini con Singleton y responseMimeType: 'application/json' para máxima velocidad
  */
 export async function analyzeShalomBoletaPdf(pdfBase64: string): Promise<ShalomBoletaExtractedData> {
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY no está configurada.');
-  }
-
   const { mimeType, base64 } = parseBase64Data(pdfBase64);
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = getGeminiClient();
 
   const prompt = `Analiza detalladamente este comprobante impreso correspondiente a un TICKET / BOLETA DE SHALOM (DATOS TICKET SHALOM / SHALOM EMPRESARIAL S.A.C).
 
@@ -342,7 +389,7 @@ Examina minuciosamente todas las secciones del ticket:
 9. "Observaciones:" (textos informativos, seguros, garantías, etc.)
 10. "TOTAL: S/." (Importe total en soles, ej: 33.00)
 
-Devuelve EXCLUSIVAMENTE un objeto JSON estricto sin markdown:
+Devuelve un objeto JSON estructurado con estos campos:
 {
   "nro_orden": "95294190",
   "codigo": "7HH7",
@@ -371,8 +418,7 @@ Devuelve EXCLUSIVAMENTE un objeto JSON estricto sin markdown:
 Reglas estrictas:
 - Todo en mayúsculas salvo fechas u horas.
 - Fechas siempre en formato ISO YYYY-MM-DD.
-- Si algún dato no aparece o no es legible, asigna "" (cadena vacía) o 0 (cero) en campos numéricos.
-- No agregues explicaciones ni comillas invertidas markdown.`;
+- Si algún dato no aparece o no es legible, asigna "" (cadena vacía) o 0 (cero) en campos numéricos.`;
 
   const response = await ai.models.generateContent({
     model: DEFAULT_GEMINI_MODEL,
@@ -384,14 +430,15 @@ Reglas estrictas:
           { text: prompt }
         ]
       }
-    ]
+    ],
+    config: {
+      responseMimeType: 'application/json',
+      temperature: 0.1
+    }
   });
 
-  const text = response.text || '{}';
-  const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-
   try {
-    const parsed = JSON.parse(cleanJson);
+    const parsed = parseAiJsonResponse(response.text);
     const nroOrden = (parsed.nro_orden || parsed.numero_guia || '').trim().toUpperCase();
     const codigo = (parsed.codigo || parsed.codigo_seguimiento || '').trim().toUpperCase();
     const fechaEmision = (parsed.fecha_emision || '').trim();
@@ -448,7 +495,7 @@ Reglas estrictas:
       agencia_destino: tipoEntrega
     };
   } catch (err) {
-    console.error('Error al parsear respuesta JSON de Gemini para ticket Shalom:', cleanJson, err);
+    console.error('Error al parsear respuesta JSON de Gemini para ticket Shalom:', response.text, err);
     throw new Error('No se pudo estructurar la información del comprobante de Shalom.');
   }
 }

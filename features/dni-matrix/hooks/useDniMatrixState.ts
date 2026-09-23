@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { dniDb, DniSlotData } from '@/lib/dni-matrix/db';
 import { DniPrintSize } from '@/lib/dni-matrix/docx-exporter';
 import { ToastMessage, DniFilterType, ZoomImageState, DniStats } from '../types';
+import { compressImageForAi } from '@/lib/utils/imageCompressor';
 
 export function useDniMatrixState() {
   const [totalSlots, setTotalSlots] = useState<number>(100);
@@ -186,10 +187,13 @@ export function useDniMatrixState() {
       playSound('click');
       showToast('🤖 AMEXito está leyendo el DNI...', 'info');
 
+      // Optimización de latencia: Reducir Base64 de ~8MB a ~150KB antes del envío
+      const optimizedImage = await compressImageForAi(slot.anverso, 1200, 0.82);
+
       const res = await fetch('/api/ai/extract-dni-name', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: slot.anverso })
+        body: JSON.stringify({ imageBase64: optimizedImage })
       });
 
       const data = await res.json();

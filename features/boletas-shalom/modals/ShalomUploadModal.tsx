@@ -19,6 +19,7 @@ import {
 import { ModalidadPagoShalom } from '@/types';
 import { FormFields, UploadStage, DEFAULT_FORM } from '../types';
 import { shalomService } from '../services/shalom.service';
+import { soundEffects } from '@/lib/audio/soundEffects';
 
 interface ShalomUploadModalProps {
   isOpen: boolean;
@@ -112,9 +113,11 @@ export const ShalomUploadModal: React.FC<ShalomUploadModalProps> = ({
       }));
 
       setAiSuccessMsg('¡Datos extraídos con éxito por AMEXito AI!');
+      soundEffects.playSuccess();
       setTimeout(() => setAiSuccessMsg(null), 4000);
     } catch (err: unknown) {
       console.warn('Error al procesar con IA:', err);
+      soundEffects.playNotFound();
       setUploadError(
         err instanceof Error ? err.message : 'No se pudo extraer la información con IA.'
       );
@@ -256,7 +259,7 @@ export const ShalomUploadModal: React.FC<ShalomUploadModalProps> = ({
                 <div className="shalom-ai-toolbar">
                   <button
                     type="button"
-                    className="shalom-btn-ai-extract"
+                    className={`shalom-btn-ai-extract ${isExtractingAi ? 'loading' : ''}`}
                     onClick={handleExtractWithAi}
                     disabled={isExtractingAi || !currentFile}
                     title="Extraer campos automáticamente con Inteligencia Artificial"

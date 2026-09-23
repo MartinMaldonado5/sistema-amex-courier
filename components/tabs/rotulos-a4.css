@@ -1311,11 +1311,37 @@
   transform: translateY(0);
 }
 
-.ai-submit-btn:disabled {
+.ai-submit-btn:disabled:not(.processing) {
   opacity: 0.45;
   cursor: not-allowed;
   filter: grayscale(0.5);
   box-shadow: none;
+}
+
+.ai-submit-btn.processing {
+  opacity: 1 !important;
+  cursor: wait !important;
+  filter: none !important;
+  background: linear-gradient(90deg, #0284c7 0%, #7c3aed 50%, #06b6d4 100%) !important;
+  background-size: 200% 100% !important;
+  animation: amexito-pulse-shimmer 1.4s ease-in-out infinite !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.45) !important;
+}
+
+@keyframes amexito-pulse-shimmer {
+  0% {
+    background-position: 100% 0;
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.3);
+  }
+  50% {
+    background-position: 0% 0;
+    box-shadow: 0 0 22px rgba(56, 189, 248, 0.5);
+  }
+  100% {
+    background-position: -100% 0;
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.3);
+  }
 }
 
 /* Formulario de Digitación */
