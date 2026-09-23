@@ -108,8 +108,34 @@ async function testCloudflareR2() {
   }
 }
 
+import OpenAI from 'openai';
+
+async function testOpenAi() {
+  console.log('\n▶ [3/4] Probando OpenAI (GPT-6 Luna)...');
+  const apiKey = process.env.OPENAI_API_KEY;
+  const model = process.env.OPENAI_MODEL || 'gpt-6-luna';
+
+  if (!apiKey) {
+    console.log('⚠️ OpenAI: Variable OPENAI_API_KEY no configurada o vacía.');
+    return false;
+  }
+
+  try {
+    const client = new OpenAI({ apiKey });
+    const response = await client.chat.completions.create({
+      model,
+      messages: [{ role: 'user', content: 'Di "OK" si estás funcionando.' }]
+    });
+    console.log(`✅ OpenAI (${model}) respondió: ${response.choices[0]?.message?.content?.trim()}`);
+    return true;
+  } catch (err) {
+    console.log(`❌ Error al conectar con OpenAI (${model}):`, err.message);
+    return false;
+  }
+}
+
 async function testGemini() {
-  console.log('\n▶ [3/3] Probando Google Gemini AI...');
+  console.log('\n▶ [4/4] Probando Google Gemini AI (Fallback)...');
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
@@ -138,13 +164,15 @@ async function testGemini() {
 async function runAll() {
   const supabaseOk = await testSupabase();
   const r2Ok = await testCloudflareR2();
+  const openaiOk = await testOpenAi();
   const geminiOk = await testGemini();
 
   console.log('\n==================================================');
   console.log('📊 RESUMEN DE DIAGNÓSTICO:');
   console.log(`- Supabase DB:     ${supabaseOk ? '✅ OPERATIVO' : '❌ ERROR / REVISAR'}`);
   console.log(`- Cloudflare R2:   ${r2Ok ? '✅ OPERATIVO' : '❌ ERROR / REVISAR'}`);
-  console.log(`- Google Gemini:   ${geminiOk ? '✅ OPERATIVO' : '⚠️ PENDIENTE API KEY'}`);
+  console.log(`- OpenAI (GPT-6):  ${openaiOk ? '✅ OPERATIVO (ACTIVO)' : '❌ ERROR'}`);
+  console.log(`- Google Gemini:   ${geminiOk ? '✅ OPERATIVO (FALLBACK)' : '⚠️ PENDIENTE API KEY'}`);
   console.log('==================================================\n');
 }
 

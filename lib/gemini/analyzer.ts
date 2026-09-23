@@ -1,28 +1,58 @@
+import OpenAI, { toFile } from 'openai';
 import { GoogleGenAI } from '@google/genai';
 
-function getApiKey(): string {
+function getOpenAiKey(): string {
+  return process.env.OPENAI_API_KEY || '';
+}
+
+function getGeminiKey(): string {
   return process.env.GEMINI_API_KEY || '';
 }
 
-// Modelo oficial ultrarrápido por defecto del sistema
+// Modelos por defecto
+export const DEFAULT_OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-6-luna';
 export const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
 
 /**
- * Singleton del Cliente GenAI:
- * Mantiene el pool de conexiones TLS y sockets HTTP/2 persistentes con Google,
- * ahorrando ~200-300ms de handshake en cada llamada.
+ * Singleton del Cliente OpenAI (GPT-6 Luna):
+ * Mantiene conexiones TLS/HTTP persistentes y reutiliza el cliente.
  */
-let aiClientInstance: GoogleGenAI | null = null;
+let openAiClientInstance: OpenAI | null = null;
+
+export function getOpenAiClient(): OpenAI {
+  if (!openAiClientInstance) {
+    const apiKey = getOpenAiKey();
+    if (!apiKey) {
+      throw new Error('OPENAI_API_KEY no está configurada en las variables de entorno.');
+    }
+    openAiClientInstance = new OpenAI({ apiKey });
+  }
+  return openAiClientInstance;
+}
+
+/**
+ * Singleton del Cliente GenAI (Google Gemini Fallback)
+ */
+let geminiClientInstance: GoogleGenAI | null = null;
 
 export function getGeminiClient(): GoogleGenAI {
-  if (!aiClientInstance) {
-    const apiKey = getApiKey();
+  if (!geminiClientInstance) {
+    const apiKey = getGeminiKey();
     if (!apiKey) {
       throw new Error('GEMINI_API_KEY no está configurada en las variables de entorno.');
     }
-    aiClientInstance = new GoogleGenAI({ apiKey });
+    geminiClientInstance = new GoogleGenAI({ apiKey });
   }
-  return aiClientInstance;
+  return geminiClientInstance;
+}
+
+/**
+ * Determina el proveedor activo de IA (OpenAI GPT-6 Luna preferido)
+ */
+export function getActiveAiProvider(): 'openai' | 'gemini' {
+  if (getOpenAiKey()) return 'openai';
+  if (getGeminiKey()) return 'gemini';
+  return 'openai';
 }
 
 /**
@@ -40,10 +70,10 @@ export function parseBase64Data(dataUrl: string): { mimeType: string; base64: st
 }
 
 /**
- * Parseo directo y optimizado de JSON devuelto por Gemini en modo application/json
+ * Parseo directo y optimizado de JSON devuelto por los modelos de IA
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function parseAiJsonResponse<T = any>(rawText?: string): T {
+function parseAiJsonResponse<T = any>(rawText?: string | null): T {
   if (!rawText) return {} as T;
   const trimmed = rawText.trim();
   if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
@@ -61,7 +91,7 @@ function parseAiJsonResponse<T = any>(rawText?: string): T {
  * Analiza facturas de compra/invoices para el módulo de inventario
  */
 export async function analyzeInvoiceDocument(fileBase64: string, mimeType: string) {
-  const ai = getGeminiClient();
+  const provider = getActiveAiProvider();
 
   const prompt = `Analiza esta factura de compra/invoice de paquete importado. 
 Extrae la siguiente información en formato JSON estricto:
@@ -72,8 +102,61 @@ Extrae la siguiente información en formato JSON estricto:
   "peso_kg": 0.0,
   "valor_usd": 0.00
 }
-Si algún valor no es visible, retorna cadena vacía o 0.`;
+Si algún valor no es visible, retorna cadena vacía o 0.
+Devuelve exclusivamente un objeto JSON válido con los campos solicitados.`;
 
+  if (provider === 'openai') {
+    const client = getOpenAiClient();
+    const isPdf = (mimeType || '').toLowerCase().includes('pdf');
+
+    if (isPdf) {
+      const buffer = Buffer.from(fileBase64, 'base64');
+      const file = await toFile(buffer, 'invoice.pdf', { type: 'application/pdf' });
+      const uploaded = await client.files.create({ file, purpose: 'user_data' });
+
+      try {
+        const response = await client.chat.completions.create({
+          model: DEFAULT_OPENAI_MODEL,
+          response_format: { type: 'json_object' },
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: prompt },
+                { type: 'file', file: { file_id: uploaded.id } }
+              ]
+            }
+          ]
+        });
+        return parseAiJsonResponse(response.choices[0]?.message?.content);
+      } finally {
+        await client.files.delete(uploaded.id).catch(() => {});
+      }
+    } else {
+      const response = await client.chat.completions.create({
+        model: DEFAULT_OPENAI_MODEL,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:${mimeType || 'image/jpeg'};base64,${fileBase64}`
+                }
+              }
+            ]
+          }
+        ]
+      });
+      return parseAiJsonResponse(response.choices[0]?.message?.content);
+    }
+  }
+
+  // Fallback Gemini
+  const ai = getGeminiClient();
   const response = await ai.models.generateContent({
     model: DEFAULT_GEMINI_MODEL,
     contents: [
@@ -104,7 +187,7 @@ export async function extractDniNameFromImage(imageInput: string): Promise<{
   apellidos?: string;
 }> {
   const { mimeType, base64 } = parseBase64Data(imageInput);
-  const ai = getGeminiClient();
+  const provider = getActiveAiProvider();
 
   const prompt = `Analiza con máxima precisión la imagen de este Documento de Identidad del Perú (DNI 1.0 clásico azul/amarillo, DNIe 2.0/3.0 electrónico blanco, o Carnet de Extranjería CE).
 
@@ -143,27 +226,54 @@ Reglas estrictas:
 1. El campo "dni" DEBE ser los 8 dígitos reales del DNI (ej: "76219579"). Si viste 6 dígitos como "873517", DESCÁRTALO y busca el CUI de 8 dígitos en la esquina superior derecha o al lado de la foto.
 2. "nombre_completo": siempre primero nombres de pila y luego apellidos (ej: "KARELIN KARINA SOLIS PAUCAR").
 3. Todo el texto de nombres debe estar 100% en MAYÚSCULAS y limpio de símbolos extraños o puntuaciones innecesarias.
-4. Si la imagen no es un documento o resulta totalmente ilegible, devuelve {"dni": "", "nombre_completo": ""}.`;
+4. Si la imagen no es un documento o resulta totalmente ilegible, devuelve en formato JSON: {"dni": "", "nombre_completo": ""}.`;
 
-  const response = await ai.models.generateContent({
-    model: DEFAULT_GEMINI_MODEL,
-    contents: [
-      {
-        role: 'user',
-        parts: [
-          { inlineData: { mimeType, data: base64 } },
-          { text: prompt }
-        ]
+  let responseRaw = '';
+
+  if (provider === 'openai') {
+    const client = getOpenAiClient();
+    const response = await client.chat.completions.create({
+      model: DEFAULT_OPENAI_MODEL,
+      response_format: { type: 'json_object' },
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:${mimeType};base64,${base64}`
+              }
+            }
+          ]
+        }
+      ]
+    });
+    responseRaw = response.choices[0]?.message?.content || '{}';
+  } else {
+    const ai = getGeminiClient();
+    const response = await ai.models.generateContent({
+      model: DEFAULT_GEMINI_MODEL,
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { inlineData: { mimeType, data: base64 } },
+            { text: prompt }
+          ]
+        }
+      ],
+      config: {
+        responseMimeType: 'application/json',
+        temperature: 0.1
       }
-    ],
-    config: {
-      responseMimeType: 'application/json',
-      temperature: 0.1
-    }
-  });
+    });
+    responseRaw = response.text || '{}';
+  }
 
   try {
-    const parsed = parseAiJsonResponse(response.text);
+    const parsed = parseAiJsonResponse(responseRaw);
     const nombreCompleto = (parsed.nombre_completo || '').trim().toUpperCase();
     let rawDni = (parsed.dni || '').toString().replace(/[^0-9A-Za-z]/g, '').trim();
 
@@ -185,7 +295,7 @@ Reglas estrictas:
       apellidos: (parsed.apellidos || '').trim().toUpperCase()
     };
   } catch (err) {
-    console.error('Error al parsear respuesta JSON de Gemini:', response.text, err);
+    console.error('Error al parsear respuesta JSON de IA para DNI:', responseRaw, err);
     throw new Error('No se pudo procesar la respuesta de la Inteligencia Artificial.');
   }
 }
@@ -211,7 +321,7 @@ export async function parseRotuloWithAi(input: {
   text?: string;
   imageBase64?: string;
 }): Promise<ExtractedRotuloData> {
-  const ai = getGeminiClient();
+  const provider = getActiveAiProvider();
 
   const prompt = `Eres AMEXito IA, el asistente inteligente de AMEX Courier Perú especializado en logística y rotulación de agencias.
 Tu objetivo es analizar el texto y/o la imagen de un mensaje de WhatsApp u orden de envío, y extraer de forma estructurada los datos del o los destinatarios para generar rótulos de agencia de transporte (Shalom, Olva, Cruz del Sur u otra).
@@ -241,36 +351,75 @@ Reglas estrictas:
 3. Si algún campo no se encuentra en el texto o imagen, devuelve cadena vacía "".
 4. No inventes información; solo extrae lo que esté presente o se deduzca claramente del contexto.`;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const parts: any[] = [];
+  let responseRaw = '';
 
-  if (input.imageBase64) {
-    const { mimeType, base64 } = parseBase64Data(input.imageBase64);
-    parts.push({ inlineData: { mimeType, data: base64 } });
-  }
+  if (provider === 'openai') {
+    const client = getOpenAiClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const contentParts: any[] = [];
 
-  if (input.text && input.text.trim()) {
-    parts.push({ text: `Texto del pedido a interpretar:\n${input.text.trim()}` });
-  }
-
-  parts.push({ text: prompt });
-
-  const response = await ai.models.generateContent({
-    model: DEFAULT_GEMINI_MODEL,
-    contents: [
-      {
-        role: 'user',
-        parts
-      }
-    ],
-    config: {
-      responseMimeType: 'application/json',
-      temperature: 0.1
+    if (input.imageBase64) {
+      const { mimeType, base64 } = parseBase64Data(input.imageBase64);
+      contentParts.push({
+        type: 'image_url',
+        image_url: { url: `data:${mimeType};base64,${base64}` }
+      });
     }
-  });
+
+    if (input.text && input.text.trim()) {
+      contentParts.push({
+        type: 'text',
+        text: `Texto del pedido a interpretar:\n${input.text.trim()}`
+      });
+    }
+
+    contentParts.push({ type: 'text', text: prompt });
+
+    const response = await client.chat.completions.create({
+      model: DEFAULT_OPENAI_MODEL,
+      response_format: { type: 'json_object' },
+      messages: [
+        {
+          role: 'user',
+          content: contentParts
+        }
+      ]
+    });
+    responseRaw = response.choices[0]?.message?.content || '{}';
+  } else {
+    const ai = getGeminiClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const parts: any[] = [];
+
+    if (input.imageBase64) {
+      const { mimeType, base64 } = parseBase64Data(input.imageBase64);
+      parts.push({ inlineData: { mimeType, data: base64 } });
+    }
+
+    if (input.text && input.text.trim()) {
+      parts.push({ text: `Texto del pedido a interpretar:\n${input.text.trim()}` });
+    }
+
+    parts.push({ text: prompt });
+
+    const response = await ai.models.generateContent({
+      model: DEFAULT_GEMINI_MODEL,
+      contents: [
+        {
+          role: 'user',
+          parts
+        }
+      ],
+      config: {
+        responseMimeType: 'application/json',
+        temperature: 0.1
+      }
+    });
+    responseRaw = response.text || '{}';
+  }
 
   try {
-    const parsed = parseAiJsonResponse(response.text);
+    const parsed = parseAiJsonResponse(responseRaw);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rawList: any[] = Array.isArray(parsed.pedidos)
       ? parsed.pedidos
@@ -311,7 +460,7 @@ Reglas estrictas:
       items: items.length > 0 ? items : [firstItem]
     };
   } catch (err) {
-    console.error('Error al parsear respuesta JSON de Gemini para rótulo:', response.text, err);
+    console.error('Error al parsear respuesta JSON de IA para rótulo:', responseRaw, err);
     throw new Error('No se pudo procesar la respuesta de la Inteligencia Artificial.');
   }
 }
@@ -352,11 +501,11 @@ export interface ShalomBoletaExtractedData {
 
 /**
  * Analiza un documento PDF o imagen de ticket / boleta de SHALOM (ej: DATOS TICKET SHALOM)
- * Utiliza Gemini con Singleton y responseMimeType: 'application/json' para máxima velocidad
+ * Utiliza GPT-6 Luna con JSON estricto para máxima velocidad y precisión
  */
 export async function analyzeShalomBoletaPdf(pdfBase64: string): Promise<ShalomBoletaExtractedData> {
   const { mimeType, base64 } = parseBase64Data(pdfBase64);
-  const ai = getGeminiClient();
+  const provider = getActiveAiProvider();
 
   const prompt = `Analiza detalladamente este comprobante impreso correspondiente a un TICKET / BOLETA DE SHALOM (DATOS TICKET SHALOM / SHALOM EMPRESARIAL S.A.C).
 
@@ -418,27 +567,82 @@ Devuelve un objeto JSON estructurado con estos campos:
 Reglas estrictas:
 - Todo en mayúsculas salvo fechas u horas.
 - Fechas siempre en formato ISO YYYY-MM-DD.
-- Si algún dato no aparece o no es legible, asigna "" (cadena vacía) o 0 (cero) en campos numéricos.`;
+- Si algún dato no aparece o no es legible, asigna "" (cadena vacía) o 0 (cero) en campos numéricos.
+- Devuelve exclusivamente el objeto JSON válido.`;
 
-  const response = await ai.models.generateContent({
-    model: DEFAULT_GEMINI_MODEL,
-    contents: [
-      {
-        role: 'user',
-        parts: [
-          { inlineData: { mimeType: mimeType || 'application/pdf', data: base64 } },
-          { text: prompt }
-        ]
+  let responseRaw = '';
+
+  if (provider === 'openai') {
+    const client = getOpenAiClient();
+    const isPdf = (mimeType || '').toLowerCase().includes('pdf');
+
+    if (isPdf) {
+      const buffer = Buffer.from(base64, 'base64');
+      const file = await toFile(buffer, 'ticket.pdf', { type: 'application/pdf' });
+      const uploaded = await client.files.create({ file, purpose: 'user_data' });
+
+      try {
+        const response = await client.chat.completions.create({
+          model: DEFAULT_OPENAI_MODEL,
+          response_format: { type: 'json_object' },
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: prompt },
+                { type: 'file', file: { file_id: uploaded.id } }
+              ]
+            }
+          ]
+        });
+        responseRaw = response.choices[0]?.message?.content || '{}';
+      } finally {
+        await client.files.delete(uploaded.id).catch(() => {});
       }
-    ],
-    config: {
-      responseMimeType: 'application/json',
-      temperature: 0.1
+    } else {
+      const response = await client.chat.completions.create({
+        model: DEFAULT_OPENAI_MODEL,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:${mimeType || 'image/jpeg'};base64,${base64}`
+                }
+              }
+            ]
+          }
+        ]
+      });
+      responseRaw = response.choices[0]?.message?.content || '{}';
     }
-  });
+  } else {
+    const ai = getGeminiClient();
+    const response = await ai.models.generateContent({
+      model: DEFAULT_GEMINI_MODEL,
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { inlineData: { mimeType: mimeType || 'application/pdf', data: base64 } },
+            { text: prompt }
+          ]
+        }
+      ],
+      config: {
+        responseMimeType: 'application/json',
+        temperature: 0.1
+      }
+    });
+    responseRaw = response.text || '{}';
+  }
 
   try {
-    const parsed = parseAiJsonResponse(response.text);
+    const parsed = parseAiJsonResponse(responseRaw);
     const nroOrden = (parsed.nro_orden || parsed.numero_guia || '').trim().toUpperCase();
     const codigo = (parsed.codigo || parsed.codigo_seguimiento || '').trim().toUpperCase();
     const fechaEmision = (parsed.fecha_emision || '').trim();
@@ -495,7 +699,7 @@ Reglas estrictas:
       agencia_destino: tipoEntrega
     };
   } catch (err) {
-    console.error('Error al parsear respuesta JSON de Gemini para ticket Shalom:', response.text, err);
+    console.error('Error al parsear respuesta JSON de IA para ticket Shalom:', responseRaw, err);
     throw new Error('No se pudo estructurar la información del comprobante de Shalom.');
   }
 }
