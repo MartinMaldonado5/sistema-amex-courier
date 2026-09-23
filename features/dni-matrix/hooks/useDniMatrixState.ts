@@ -226,13 +226,25 @@ export function useDniMatrixState() {
     const slot = getSlot(activeSlotId);
     if (!slot[side]) return;
     playSound('click');
-    showToast(`Rotando ${side}...`);
 
     const rotKey = side === 'anverso' ? 'anversoRotation' : 'reversoRotation';
     const currentRot = slot[rotKey] || 0;
-    const newRot = (currentRot + degrees + 360) % 360;
+    const rawRot = (currentRot + degrees) % 360;
+    const newRot = Math.round(((rawRot + 360) % 360) * 10) / 10;
 
+    showToast(`Rotación ${side === 'anverso' ? 'Anverso' : 'Reverso'}: ${newRot}°`);
     await updateSlot({ ...slot, [rotKey]: newRot });
+  };
+
+  const setSideRotation = async (side: 'anverso' | 'reverso', targetRotation: number) => {
+    const slot = getSlot(activeSlotId);
+    if (!slot[side]) return;
+
+    const rotKey = side === 'anverso' ? 'anversoRotation' : 'reversoRotation';
+    const rawRot = targetRotation % 360;
+    const normalizedRot = Math.round(((rawRot + 360) % 360) * 10) / 10;
+
+    await updateSlot({ ...slot, [rotKey]: normalizedRot });
   };
 
   const clearSide = async (side: 'anverso' | 'reverso') => {
@@ -589,6 +601,7 @@ export function useDniMatrixState() {
     jumpToNextIncompleteSlot,
     handleExtractNameWithAi,
     rotateSide,
+    setSideRotation,
     clearSide,
     swapSides,
     processImagePayload,

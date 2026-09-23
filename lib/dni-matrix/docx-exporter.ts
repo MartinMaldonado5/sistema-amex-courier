@@ -104,11 +104,18 @@ export async function normalizeImage(
     img.crossOrigin = 'anonymous';
 
     img.onload = () => {
-      const isRotated = rotation === 90 || rotation === 270;
-      const naturalW = isRotated ? (img.naturalHeight || img.height) : (img.naturalWidth || img.width);
-      const naturalH = isRotated ? (img.naturalWidth || img.width) : (img.naturalHeight || img.height);
+      // Normalizar ángulo en rango [0, 360)
+      const normalizedAngle = ((rotation % 360) + 360) % 360;
+      const rad = (normalizedAngle * Math.PI) / 180;
 
-      const ratio = naturalW / naturalH;
+      const origW = img.naturalWidth || img.width;
+      const origH = img.naturalHeight || img.height;
+
+      // Cálculo matemático exacto del bounding box rotado
+      const boundW = Math.max(1, Math.round(Math.abs(origW * Math.cos(rad)) + Math.abs(origH * Math.sin(rad))));
+      const boundH = Math.max(1, Math.round(Math.abs(origW * Math.sin(rad)) + Math.abs(origH * Math.cos(rad))));
+
+      const ratio = boundW / boundH;
       let finalW = targetWidthPx;
       let finalH = Math.round(finalW / ratio);
 
@@ -118,27 +125,27 @@ export async function normalizeImage(
       }
 
       const canvas = document.createElement('canvas');
-      canvas.width = naturalW;
-      canvas.height = naturalH;
+      canvas.width = boundW;
+      canvas.height = boundH;
       const ctx = canvas.getContext('2d');
       if (!ctx) {
         reject(new Error('Canvas context could not be created'));
         return;
       }
 
-      // Fondo blanco sólido
+      // Configuración de renderizado de alta nitidez
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // Fondo blanco sólido impecable
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Aplicar rotación
-      if (rotation !== 0) {
+      // Centrar y aplicar la rotación libre 360°
+      if (normalizedAngle !== 0) {
         ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate((rotation * Math.PI) / 180);
-        if (isRotated) {
-          ctx.drawImage(img, -canvas.height / 2, -canvas.width / 2);
-        } else {
-          ctx.drawImage(img, -canvas.width / 2, -canvas.height / 2);
-        }
+        ctx.rotate(rad);
+        ctx.drawImage(img, -origW / 2, -origH / 2);
       } else {
         ctx.drawImage(img, 0, 0);
       }

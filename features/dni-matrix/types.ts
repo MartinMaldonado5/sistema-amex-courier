@@ -19,6 +19,7 @@ export interface ZoomImageState {
   url: string;
   title: string;
   rotation: number;
+  side?: 'anverso' | 'reverso';
 }
 
 export interface DniStats {

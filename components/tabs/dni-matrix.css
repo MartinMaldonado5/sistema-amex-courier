@@ -611,6 +611,367 @@ kbd {
   color: #fff;
 }
 
+/* Botón 360° en cabecera de casilla */
+.action-btn.btn-rotate-360 {
+  width: auto;
+  min-width: 44px;
+  padding: 0 6px;
+  gap: 3px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  border-color: rgba(56, 189, 248, 0.3);
+  background: rgba(56, 189, 248, 0.08);
+  color: #7dd3fc;
+}
+
+.action-btn.btn-rotate-360:hover,
+.action-btn.btn-rotate-360.active {
+  background: rgba(56, 189, 248, 0.25);
+  border-color: #38bdf8;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+}
+
+.action-btn.btn-rotate-360.rotated {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.16);
+  color: #38bdf8;
+}
+
+.btn-label-360 {
+  font-size: 0.72rem;
+  letter-spacing: -0.2px;
+}
+
+.rotation-pill-badge {
+  font-size: 0.65rem;
+  background: #0284c7;
+  color: #ffffff;
+  padding: 1px 4px;
+  border-radius: 3px;
+  line-height: 1;
+}
+
+/* Panel Desplegable de Rotación y Nivelación 360° */
+.rotate-360-panel {
+  background: rgba(8, 12, 20, 0.96);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 15;
+  animation: slideDownFade 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rotate-360-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.rotate-360-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.current-angle-badge {
+  background: rgba(56, 189, 248, 0.16);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.rotate-360-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rotate-tool-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #cbd5e1;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.rotate-tool-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.rotate-tool-btn.flip {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.14);
+  color: #c7d2fe;
+}
+.rotate-tool-btn.flip:hover {
+  background: rgba(99, 102, 241, 0.3);
+  color: #fff;
+}
+
+.rotate-tool-btn.reset:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.rotate-tool-btn.active {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.rotate-tool-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+.rotate-tool-close:hover {
+  color: #fff;
+}
+
+/* Fila del Slider y Ajuste Fino */
+.rotate-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fine-step-btn {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #cbd5e1;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  width: 34px;
+  height: 26px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+.fine-step-btn:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  color: #fff;
+}
+
+.slider-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rotate-range-slider {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  background: #1e293b;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.rotate-range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #38bdf8;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+  border: 2px solid #ffffff;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.rotate-range-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.9);
+}
+
+.slider-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.62rem;
+  color: #64748b;
+  font-family: var(--font-mono);
+  padding: 0 2px;
+}
+
+.slider-ticks .tick-center {
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.angle-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+  padding: 0 6px;
+  height: 26px;
+  width: 66px;
+}
+
+.angle-direct-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-align: right;
+  outline: none;
+}
+
+.deg-symbol {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-left: 2px;
+  font-weight: 700;
+}
+
+/* Barra de Ángulos Rápidos */
+.quick-angles-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.68rem;
+  flex-wrap: wrap;
+}
+
+.quick-angles-title {
+  color: #64748b;
+  font-weight: 600;
+  margin-right: 2px;
+}
+
+.quick-angle-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  border-radius: 3px;
+  padding: 2px 7px;
+  font-size: 0.68rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.quick-angle-btn:hover {
+  background: rgba(56, 189, 248, 0.15);
+  color: #fff;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+/* Guías de Alineación Horizontal sobre la Foto */
+.alignment-guide-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.guide-line {
+  position: absolute;
+}
+
+.guide-horizontal-center {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: rgba(56, 189, 248, 0.55);
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.4);
+}
+
+.guide-horizontal-top {
+  left: 0;
+  right: 0;
+  top: 25%;
+  height: 1px;
+  border-top: 1px dashed rgba(56, 189, 248, 0.35);
+}
+
+.guide-horizontal-bottom {
+  left: 0;
+  right: 0;
+  top: 75%;
+  height: 1px;
+  border-top: 1px dashed rgba(56, 189, 248, 0.35);
+}
+
+.guide-vertical-center {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  border-left: 1px dashed rgba(56, 189, 248, 0.25);
+}
+
+.guide-hint {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  color: #7dd3fc;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.dropzone-preview img.slider-dragging {
+  transition: none !important;
+}
+
 /* Controles de Zoom en cabecera de la casilla */
 .zoom-pill-group {
   display: inline-flex;

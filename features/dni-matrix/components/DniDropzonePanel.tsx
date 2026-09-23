@@ -12,11 +12,17 @@ interface DniDropzonePanelProps {
   setPreviewZoom: React.Dispatch<React.SetStateAction<number>>;
   setZoomImage: (zoom: ZoomImageState | null) => void;
   rotateSide: (side: 'anverso' | 'reverso', deg: number) => void;
+  setSideRotation?: (side: 'anverso' | 'reverso', deg: number) => void;
   clearSide: (side: 'anverso' | 'reverso') => void;
   swapSides: () => void;
   padNum: (num: number) => string;
   extractBase64FromDataTransfer: (dt: DataTransfer) => Promise<string | null>;
   processImagePayload: (b64: string, side?: 'anverso' | 'reverso' | null) => Promise<void>;
+}
+
+function toDisplayAngle(deg: number): number {
+  const norm = ((Math.round(deg * 10) / 10) % 360 + 360) % 360;
+  return norm > 180 ? Math.round((norm - 360) * 10) / 10 : norm;
 }
 
 export function DniDropzonePanel({
@@ -30,12 +36,167 @@ export function DniDropzonePanel({
   setPreviewZoom,
   setZoomImage,
   rotateSide,
+  setSideRotation,
   clearSide,
   swapSides,
   padNum,
   extractBase64FromDataTransfer,
   processImagePayload
 }: DniDropzonePanelProps) {
+  const [activeRotateSide, setActiveRotateSide] = React.useState<'anverso' | 'reverso' | null>(null);
+  const [showAlignmentGuide, setShowAlignmentGuide] = React.useState<boolean>(true);
+  const [isDraggingSlider, setIsDraggingSlider] = React.useState<boolean>(false);
+
+  const handleSetRotation = (side: 'anverso' | 'reverso', targetDeg: number) => {
+    const normalized = ((targetDeg % 360) + 360) % 360;
+    if (setSideRotation) {
+      setSideRotation(side, normalized);
+    } else {
+      const current = (side === 'anverso' ? activeSlot.anversoRotation : activeSlot.reversoRotation) || 0;
+      rotateSide(side, normalized - current);
+    }
+  };
+
+  const renderRotate360Panel = (side: 'anverso' | 'reverso') => {
+    const isAnverso = side === 'anverso';
+    const currentRot = (isAnverso ? activeSlot.anversoRotation : activeSlot.reversoRotation) || 0;
+    const displayDeg = toDisplayAngle(currentRot);
+
+    return (
+      <div className="rotate-360-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="rotate-360-header">
+          <div className="rotate-360-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+            </svg>
+            <span>Nivelación y Rotación 360°</span>
+            <span className="current-angle-badge">{displayDeg}°</span>
+          </div>
+          <div className="rotate-360-actions">
+            <button
+              type="button"
+              className="rotate-tool-btn flip"
+              title="Voltear 180° (de cabeza)"
+              onClick={() => rotateSide(side, 180)}
+            >
+              🔄 180° Voltear
+            </button>
+            <button
+              type="button"
+              className="rotate-tool-btn reset"
+              title="Restablecer a 0°"
+              onClick={() => handleSetRotation(side, 0)}
+              disabled={currentRot === 0}
+            >
+              0° Reset
+            </button>
+            <button
+              type="button"
+              className={`rotate-tool-btn ${showAlignmentGuide ? 'active' : ''}`}
+              title="Mostrar / Ocultar guías de nivelación horizontal"
+              onClick={() => setShowAlignmentGuide((g) => !g)}
+            >
+              📏 {showAlignmentGuide ? 'Ocultar Guía' : 'Ver Guía'}
+            </button>
+            <button
+              type="button"
+              className="rotate-tool-close"
+              title="Cerrar panel de rotación"
+              onClick={() => setActiveRotateSide(null)}
+            >
+              &times;
+            </button>
+          </div>
+        </div>
+
+        <div className="rotate-slider-row">
+          <button
+            type="button"
+            className="fine-step-btn"
+            title="Girar 5° a la izquierda"
+            onClick={() => rotateSide(side, -5)}
+          >
+            −5°
+          </button>
+          <button
+            type="button"
+            className="fine-step-btn"
+            title="Girar 1° a la izquierda"
+            onClick={() => rotateSide(side, -1)}
+          >
+            −1°
+          </button>
+
+          <div className="slider-container">
+            <input
+              type="range"
+              min="-180"
+              max="180"
+              step="0.5"
+              value={displayDeg}
+              onMouseDown={() => setIsDraggingSlider(true)}
+              onMouseUp={() => setIsDraggingSlider(false)}
+              onTouchStart={() => setIsDraggingSlider(true)}
+              onTouchEnd={() => setIsDraggingSlider(false)}
+              onChange={(e) => {
+                const val = parseFloat(e.target.value);
+                handleSetRotation(side, val);
+              }}
+              className="rotate-range-slider"
+            />
+            <div className="slider-ticks">
+              <span>−180°</span>
+              <span>−90°</span>
+              <span className="tick-center">0° (Nivel)</span>
+              <span>+90°</span>
+              <span>+180°</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="fine-step-btn"
+            title="Girar 1° a la derecha"
+            onClick={() => rotateSide(side, 1)}
+          >
+            +1°
+          </button>
+          <button
+            type="button"
+            className="fine-step-btn"
+            title="Girar 5° a la derecha"
+            onClick={() => rotateSide(side, 5)}
+          >
+            +5°
+          </button>
+
+          <div className="angle-input-wrapper" title="Ingresar ángulo exacto (-180° a +180°)">
+            <input
+              type="number"
+              min="-180"
+              max="180"
+              step="0.5"
+              value={displayDeg}
+              onChange={(e) => {
+                const val = parseFloat(e.target.value) || 0;
+                handleSetRotation(side, val);
+              }}
+              className="angle-direct-input"
+            />
+            <span className="deg-symbol">°</span>
+          </div>
+        </div>
+
+        <div className="quick-angles-bar">
+          <span className="quick-angles-title">Ángulos Rápidos:</span>
+          <button type="button" className="quick-angle-btn" onClick={() => handleSetRotation(side, 0)}>0° Normal</button>
+          <button type="button" className="quick-angle-btn" onClick={() => handleSetRotation(side, 90)}>90° Vertical</button>
+          <button type="button" className="quick-angle-btn" onClick={() => handleSetRotation(side, 180)}>180° Invertido</button>
+          <button type="button" className="quick-angle-btn" onClick={() => handleSetRotation(side, 270)}>270° Vertical</button>
+        </div>
+      </div>
+    );
+  };
   return (
     <section className="active-panel">
       <div className="sheet-simulation-wrapper">
@@ -163,6 +324,20 @@ export function DniDropzonePanel({
                 </button>
                 <button
                   type="button"
+                  className={`action-btn btn-rotate-360 ${activeRotateSide === 'anverso' ? 'active' : ''} ${(activeSlot.anversoRotation || 0) !== 0 ? 'rotated' : ''}`}
+                  title="Rotar 360° a gusto (ajuste fino de inclinación y volteo)"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveRotateSide((prev) => (prev === 'anverso' ? null : 'anverso'));
+                  }}
+                >
+                  <span className="btn-label-360">360°</span>
+                  {(activeSlot.anversoRotation || 0) !== 0 && (
+                    <span className="rotation-pill-badge">{Math.round(toDisplayAngle(activeSlot.anversoRotation || 0))}°</span>
+                  )}
+                </button>
+                <button
+                  type="button"
                   className="action-btn danger"
                   title="Eliminar anverso"
                   onClick={(e) => {
@@ -175,6 +350,9 @@ export function DniDropzonePanel({
               </div>
             </div>
 
+            {/* PANEL DE ROTACIÓN Y NIVELACIÓN 360° */}
+            {activeRotateSide === 'anverso' && activeSlot.anverso && renderRotate360Panel('anverso')}
+
             {activeSlot.anverso ? (
               <div
                 className="dropzone-preview"
@@ -184,7 +362,8 @@ export function DniDropzonePanel({
                   setZoomImage({
                     url: activeSlot.anverso!,
                     title: `Anverso • Cupo #${padNum(activeSlotId)}${activeSlot.label ? ` (${activeSlot.label})` : ''}`,
-                    rotation: activeSlot.anversoRotation || 0
+                    rotation: activeSlot.anversoRotation || 0,
+                    side: 'anverso'
                   });
                 }}
                 onWheel={(e) => {
@@ -198,10 +377,22 @@ export function DniDropzonePanel({
                   }
                 }}
               >
+                {/* Guías de alineación horizontal */}
+                {activeRotateSide === 'anverso' && showAlignmentGuide && (
+                  <div className="alignment-guide-overlay">
+                    <div className="guide-line guide-horizontal-center"></div>
+                    <div className="guide-line guide-horizontal-top"></div>
+                    <div className="guide-line guide-horizontal-bottom"></div>
+                    <div className="guide-line guide-vertical-center"></div>
+                    <span className="guide-hint">Nivela el DNI alineando sus bordes con las líneas</span>
+                  </div>
+                )}
+
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={activeSlot.anverso}
                   alt="Anverso"
+                  className={isDraggingSlider ? 'slider-dragging' : ''}
                   style={{
                     transform: `rotate(${activeSlot.anversoRotation || 0}deg) scale(${previewZoom})`
                   }}
@@ -353,6 +544,20 @@ export function DniDropzonePanel({
                 </button>
                 <button
                   type="button"
+                  className={`action-btn btn-rotate-360 ${activeRotateSide === 'reverso' ? 'active' : ''} ${(activeSlot.reversoRotation || 0) !== 0 ? 'rotated' : ''}`}
+                  title="Rotar 360° a gusto (ajuste fino de inclinación y volteo)"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveRotateSide((prev) => (prev === 'reverso' ? null : 'reverso'));
+                  }}
+                >
+                  <span className="btn-label-360">360°</span>
+                  {(activeSlot.reversoRotation || 0) !== 0 && (
+                    <span className="rotation-pill-badge">{Math.round(toDisplayAngle(activeSlot.reversoRotation || 0))}°</span>
+                  )}
+                </button>
+                <button
+                  type="button"
                   className="action-btn danger"
                   title="Eliminar reverso"
                   onClick={(e) => {
@@ -365,6 +570,9 @@ export function DniDropzonePanel({
               </div>
             </div>
 
+            {/* PANEL DE ROTACIÓN Y NIVELACIÓN 360° */}
+            {activeRotateSide === 'reverso' && activeSlot.reverso && renderRotate360Panel('reverso')}
+
             {activeSlot.reverso ? (
               <div
                 className="dropzone-preview"
@@ -374,7 +582,8 @@ export function DniDropzonePanel({
                   setZoomImage({
                     url: activeSlot.reverso!,
                     title: `Reverso • Cupo #${padNum(activeSlotId)}${activeSlot.label ? ` (${activeSlot.label})` : ''}`,
-                    rotation: activeSlot.reversoRotation || 0
+                    rotation: activeSlot.reversoRotation || 0,
+                    side: 'reverso'
                   });
                 }}
                 onWheel={(e) => {
@@ -388,10 +597,22 @@ export function DniDropzonePanel({
                   }
                 }}
               >
+                {/* Guías de alineación horizontal */}
+                {activeRotateSide === 'reverso' && showAlignmentGuide && (
+                  <div className="alignment-guide-overlay">
+                    <div className="guide-line guide-horizontal-center"></div>
+                    <div className="guide-line guide-horizontal-top"></div>
+                    <div className="guide-line guide-horizontal-bottom"></div>
+                    <div className="guide-line guide-vertical-center"></div>
+                    <span className="guide-hint">Nivela el DNI alineando sus bordes con las líneas</span>
+                  </div>
+                )}
+
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={activeSlot.reverso}
                   alt="Reverso"
+                  className={isDraggingSlider ? 'slider-dragging' : ''}
                   style={{
                     transform: `rotate(${activeSlot.reversoRotation || 0}deg) scale(${previewZoom})`
                   }}

@@ -42,13 +42,43 @@ export async function convertDocxBufferToPdf(
   // Anverso (mitad superior)
   if (mediaKeys.length > 0) {
     const anversoB64 = await zip.files[mediaKeys[0]].async('base64');
-    doc.addImage(`data:image/jpeg;base64,${anversoB64}`, 'JPEG', x, config.pdfY1, w, h);
+    const anversoUrl = `data:image/jpeg;base64,${anversoB64}`;
+    try {
+      const props = doc.getImageProperties(anversoUrl);
+      const imgRatio = props.width / props.height;
+      let drawW = w;
+      let drawH = drawW / imgRatio;
+      if (drawH > h) {
+        drawH = h;
+        drawW = drawH * imgRatio;
+      }
+      const drawX = x + (w - drawW) / 2;
+      const drawY = config.pdfY1 + (h - drawH) / 2;
+      doc.addImage(anversoUrl, 'JPEG', drawX, drawY, drawW, drawH);
+    } catch {
+      doc.addImage(anversoUrl, 'JPEG', x, config.pdfY1, w, h);
+    }
   }
 
   // Reverso (mitad inferior)
   if (mediaKeys.length > 1) {
     const reversoB64 = await zip.files[mediaKeys[1]].async('base64');
-    doc.addImage(`data:image/jpeg;base64,${reversoB64}`, 'JPEG', x, config.pdfY2, w, h);
+    const reversoUrl = `data:image/jpeg;base64,${reversoB64}`;
+    try {
+      const props = doc.getImageProperties(reversoUrl);
+      const imgRatio = props.width / props.height;
+      let drawW = w;
+      let drawH = drawW / imgRatio;
+      if (drawH > h) {
+        drawH = h;
+        drawW = drawH * imgRatio;
+      }
+      const drawX = x + (w - drawW) / 2;
+      const drawY = config.pdfY2 + (h - drawH) / 2;
+      doc.addImage(reversoUrl, 'JPEG', drawX, drawY, drawW, drawH);
+    } catch {
+      doc.addImage(reversoUrl, 'JPEG', x, config.pdfY2, w, h);
+    }
   }
 
   return doc.output('blob');
@@ -147,7 +177,16 @@ export async function createPdfForSlot(
       config.heightPx
     );
     const anversoDataUrl = `data:image/jpeg;base64,${uint8ArrayToBase64(anversoImg.buffer)}`;
-    doc.addImage(anversoDataUrl, 'JPEG', x, config.pdfY1, w, h);
+    const imgRatio = anversoImg.width / anversoImg.height;
+    let drawW = w;
+    let drawH = drawW / imgRatio;
+    if (drawH > h) {
+      drawH = h;
+      drawW = drawH * imgRatio;
+    }
+    const drawX = x + (w - drawW) / 2;
+    const drawY = config.pdfY1 + (h - drawH) / 2;
+    doc.addImage(anversoDataUrl, 'JPEG', drawX, drawY, drawW, drawH);
   }
 
   if (slot.reverso) {
@@ -158,7 +197,16 @@ export async function createPdfForSlot(
       config.heightPx
     );
     const reversoDataUrl = `data:image/jpeg;base64,${uint8ArrayToBase64(reversoImg.buffer)}`;
-    doc.addImage(reversoDataUrl, 'JPEG', x, config.pdfY2, w, h);
+    const imgRatio = reversoImg.width / reversoImg.height;
+    let drawW = w;
+    let drawH = drawW / imgRatio;
+    if (drawH > h) {
+      drawH = h;
+      drawW = drawH * imgRatio;
+    }
+    const drawX = x + (w - drawW) / 2;
+    const drawY = config.pdfY2 + (h - drawH) / 2;
+    doc.addImage(reversoDataUrl, 'JPEG', drawX, drawY, drawW, drawH);
   }
 
   return doc.output('blob');

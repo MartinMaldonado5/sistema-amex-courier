@@ -52,6 +52,7 @@ export default function DniMatrixTab({
           setPreviewZoom={state.setPreviewZoom}
           setZoomImage={state.setZoomImage}
           rotateSide={state.rotateSide}
+          setSideRotation={state.setSideRotation}
           clearSide={state.clearSide}
           swapSides={state.swapSides}
           padNum={state.padNum}
@@ -181,6 +182,22 @@ export default function DniMatrixTab({
       <DniZoomModal
         zoomImage={state.zoomImage}
         onClose={() => state.setZoomImage(null)}
+        onRotate={(deg) => {
+          if (state.zoomImage?.side) {
+            state.rotateSide(state.zoomImage.side, deg);
+            state.setZoomImage((prev) =>
+              prev ? { ...prev, rotation: (((prev.rotation + deg) % 360) + 360) % 360 } : null
+            );
+          }
+        }}
+        onSetRotation={(deg) => {
+          if (state.zoomImage?.side) {
+            state.setSideRotation(state.zoomImage.side, deg);
+            state.setZoomImage((prev) =>
+              prev ? { ...prev, rotation: ((deg % 360) + 360) % 360 } : null
+            );
+          }
+        }}
       />
 
       {/* MODAL: CONFIRMACIÓN ELEGANTE DE BORRADO DE LOTE */}
