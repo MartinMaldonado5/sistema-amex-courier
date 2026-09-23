@@ -61,7 +61,7 @@ export function getActiveAiProvider(): 'openai' | 'gemini' {
  * aplica reasoning_effort: 'low' y max_completion_tokens para reducir la latencia
  * a más de la mitad y evitar tokens de pensamiento innecesarios en tareas de extracción.
  */
-export function getOpenAiModelOptions(maxTokens = 600) {
+export function getOpenAiModelOptions(maxTokens = 1000) {
   const modelName = DEFAULT_OPENAI_MODEL.toLowerCase();
   const isReasoningModel =
     modelName.includes('luna') ||
@@ -144,7 +144,7 @@ Devuelve exclusivamente un objeto JSON válido con los campos solicitados.`;
         const response = await client.chat.completions.create({
           model: DEFAULT_OPENAI_MODEL,
           response_format: { type: 'json_object' },
-          ...getOpenAiModelOptions(500),
+          ...getOpenAiModelOptions(1000),
           messages: [
             {
               role: 'user',
@@ -163,7 +163,7 @@ Devuelve exclusivamente un objeto JSON válido con los campos solicitados.`;
       const response = await client.chat.completions.create({
         model: DEFAULT_OPENAI_MODEL,
         response_format: { type: 'json_object' },
-        ...getOpenAiModelOptions(500),
+        ...getOpenAiModelOptions(1000),
         messages: [
           {
             role: 'user',
@@ -268,7 +268,7 @@ Reglas estrictas:
     const response = await client.chat.completions.create({
       model: DEFAULT_OPENAI_MODEL,
       response_format: { type: 'json_object' },
-      ...getOpenAiModelOptions(600),
+      ...getOpenAiModelOptions(1000),
       messages: [
         {
           role: 'user',
@@ -412,7 +412,7 @@ Reglas estrictas:
     const response = await client.chat.completions.create({
       model: DEFAULT_OPENAI_MODEL,
       response_format: { type: 'json_object' },
-      ...getOpenAiModelOptions(800),
+      ...getOpenAiModelOptions(1000),
       messages: [
         {
           role: 'user',
@@ -620,7 +620,7 @@ Reglas estrictas:
         const response = await client.chat.completions.create({
           model: DEFAULT_OPENAI_MODEL,
           response_format: { type: 'json_object' },
-          ...getOpenAiModelOptions(900),
+          ...getOpenAiModelOptions(1000),
           messages: [
             {
               role: 'user',
@@ -639,7 +639,7 @@ Reglas estrictas:
       const response = await client.chat.completions.create({
         model: DEFAULT_OPENAI_MODEL,
         response_format: { type: 'json_object' },
-        ...getOpenAiModelOptions(900),
+        ...getOpenAiModelOptions(1000),
         messages: [
           {
             role: 'user',
