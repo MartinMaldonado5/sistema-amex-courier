@@ -28,7 +28,8 @@ import {
   DniMatrixSkeleton,
   RotulosA4Skeleton,
   BoletasShalomSkeleton,
-  FormatoEntregaSkeleton
+  FormatoEntregaSkeleton,
+  InvoicesSkeleton
 } from '@/components/ui/Skeleton';
 
 const DashboardTab = dynamic(() => import('@/components/tabs/DashboardTab'), {
@@ -81,6 +82,11 @@ const FormatoEntregaTab = dynamic(() => import('@/components/tabs/FormatoEntrega
   loading: () => <FormatoEntregaSkeleton />
 });
 
+const InvoicesTab = dynamic(() => import('@/components/tabs/InvoicesTab'), {
+  ssr: false,
+  loading: () => <InvoicesSkeleton />
+});
+
 const NewClientModal = dynamic(() => import('@/components/modals/NewClientModal'), { ssr: false });
 const NewPackageModal = dynamic(() => import('@/components/modals/NewPackageModal'), { ssr: false });
 const ThermalLabelModal = dynamic(() => import('@/components/modals/ThermalLabelModal'), { ssr: false });
@@ -129,7 +135,9 @@ const VALID_TABS = [
   'dni-matrix',
   'rotulos-a4',
   'boletas-shalom',
-  'formato-entrega'
+  'formato-entrega',
+  'invoices-usa',
+  'invoices'
 ];
 
 export default function DashboardPage() {
@@ -748,6 +756,10 @@ export default function DashboardPage() {
                   clientes={clientes}
                   paquetes={paquetes}
                 />
+              )}
+
+              {(activeTab === 'invoices-usa' || activeTab === 'invoices') && (
+                <InvoicesTab clientes={clientes} />
               )}
             </>
           )}

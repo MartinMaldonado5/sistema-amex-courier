@@ -10,7 +10,8 @@ export const TAB_TO_PATH: Record<string, string> = {
   'dni-matrix': '/matriz-dni',
   'rotulos-a4': '/rotulos',
   'boletas-shalom': '/boletas-shalom',
-  'formato-entrega': '/formato-entrega'
+  'formato-entrega': '/formato-entrega',
+  'invoices-usa': '/invoices-usa'
 };
 
 export const PATH_TO_TAB: Record<string, string> = {
@@ -29,6 +30,11 @@ export const PATH_TO_TAB: Record<string, string> = {
   '/formato-entrega': 'formato-entrega',
   '/acta-entrega': 'formato-entrega',
   '/entrega': 'formato-entrega',
+  '/invoices-usa': 'invoices-usa',
+  '/invoices': 'invoices-usa',
+  '/invoice': 'invoices-usa',
+  '/facturas-usa': 'invoices-usa',
+  '/facturas': 'invoices-usa',
   // Aliases retrocompatibles
   '/live-sheets': 'live-sheets',
   '/sheets': 'live-sheets',

@@ -1,0 +1,403 @@
+/* ==========================================================================
+   MÓDULO: FACTURAS / INVOICES USA - ACCESSORIES SALES (Word zxzxzxzx.docx)
+   ========================================================================== */
+
+.invoice-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: 16px 20px 40px;
+  box-sizing: border-box;
+}
+
+/* Grid Principal: Panel de Control (izq) + Vista A4 (der) */
+.invoice-grid {
+  display: grid;
+  grid-template-columns: 500px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 1280px) {
+  .invoice-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   PANEL DE CONTROL
+   ========================================================================== */
+
+.invoice-control-panel {
+  background: #0f172a;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.invoice-panel-header {
+  padding: 18px 20px;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.invoice-panel-body {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+}
+
+.invoice-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.invoice-form-section .section-title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+/* ==========================================================================
+   VISTA PREVIA DE HOJA A4 / LETTER (IDÉNTICO A WORD zxzxzxzx.docx)
+   ========================================================================== */
+
+.invoice-preview-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.invoice-preview-toolbar {
+  width: 100%;
+  max-width: 820px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+.invoice-preview-badge {
+  font-weight: 700;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.invoice-preview-info {
+  font-weight: 600;
+  color: #38bdf8;
+  font-family: monospace;
+}
+
+/* Hoja A4 / Letter simulada */
+.invoice-paper {
+  width: 100%;
+  max-width: 820px;
+  min-height: 1060px;
+  background: #ffffff;
+  color: #212121;
+  font-family: Tahoma, Arial, sans-serif;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  padding: 45px 50px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Título Principal "Invoice" */
+.invoice-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #2E5B97; /* Azul exacto de zxzxzxzx.docx */
+  margin-bottom: 18px;
+  letter-spacing: -0.3px;
+}
+
+/* Encabezado Superior (2 Columnas) */
+.invoice-top-grid {
+  display: grid;
+  grid-template-columns: 55% 45%;
+  gap: 16px;
+  margin-bottom: 24px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+/* Columna Izquierda: Empresa */
+.invoice-company-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: #535353;
+}
+
+.company-name {
+  font-family: Arial, sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #535353;
+  letter-spacing: 0.2px;
+}
+
+.company-address {
+  font-size: 12px;
+  color: #535353;
+}
+
+.company-phone {
+  font-size: 13px;
+  color: #535353;
+}
+
+/* Columna Derecha: Metadatos */
+.invoice-meta-box {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: right;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.meta-label {
+  font-weight: 700;
+  color: #3C3B3B;
+}
+
+.meta-value {
+  color: #3C3B3B;
+  min-width: 95px;
+  text-align: right;
+}
+
+.amount-row {
+  margin: 2px 0;
+}
+
+.amount-highlight {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #212121;
+}
+
+/* Sección de Destinatarios (Bill To / Ship To) */
+.invoice-recipients-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 22px;
+  padding-bottom: 4px;
+}
+
+.recipient-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.recipient-header {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #3C3B3B;
+}
+
+.recipient-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #212121;
+  text-transform: uppercase;
+  word-break: break-word;
+}
+
+/* Tabla de Ítems */
+.invoice-table-wrapper {
+  width: 100%;
+  margin-top: 4px;
+  flex: 1;
+}
+
+.invoice-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+/* Encabezado Azul */
+.invoice-items-table thead tr th {
+  background-color: #2E5B97; /* Exacto zxzxzxzx.docx */
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 12px;
+  border: none;
+  text-align: left;
+}
+
+.col-item-name {
+  width: 52%;
+}
+
+.col-qty {
+  width: 12%;
+  text-align: center !important;
+}
+
+.col-price {
+  width: 18%;
+  text-align: right !important;
+}
+
+.col-total {
+  width: 18%;
+  text-align: right !important;
+}
+
+/* Cuerpo Alto de la Tabla */
+.table-tall-body-row td {
+  border: 1px solid #999999;
+  border-top: none;
+  vertical-align: top;
+  padding: 10px 12px;
+  min-height: 480px;
+  height: 480px;
+  font-size: 13px;
+  color: #212121;
+}
+
+.column-inner-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.item-name-line {
+  line-height: 1.4;
+  word-break: break-word;
+  text-transform: uppercase;
+}
+
+.qty-line {
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.price-line {
+  line-height: 1.4;
+  font-family: Arial, sans-serif;
+}
+
+.total-line {
+  line-height: 1.4;
+  font-family: Arial, sans-serif;
+}
+
+.empty-items-notice {
+  color: #94a3b8;
+  font-style: italic;
+  padding: 20px 0;
+}
+
+/* ==========================================================================
+   ESTILOS DE IMPRESIÓN (@media print)
+   ========================================================================== */
+
+@media print {
+  /* Ocultar elementos de navegación y paneles del sistema */
+  .no-print,
+  .sap-sidebar,
+  .sap-topbar,
+  .mobile-bottom-nav,
+  .sidebar-backdrop,
+  .invoice-control-panel,
+  .invoice-preview-toolbar {
+    display: none !important;
+  }
+
+  body, html {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #000000 !important;
+  }
+
+  .sap-app-layout,
+  .sap-content-area,
+  .invoice-wrapper,
+  .invoice-grid,
+  .invoice-preview-container {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  .invoice-paper {
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    min-height: auto !important;
+    padding: 25mm 20mm !important;
+    box-sizing: border-box !important;
+    page-break-inside: avoid;
+  }
+
+  .invoice-title {
+    color: #2E5B97 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .invoice-items-table thead tr th {
+    background-color: #2E5B97 !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .table-tall-body-row td {
+    border-color: #999999 !important;
+    height: 480px !important;
+  }
+}

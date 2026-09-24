@@ -109,6 +109,7 @@ export default function Sidebar({
           {navItem('rotulos-a4', 'fa-solid fa-tags', '8. Rótulos Agencias')}
           {navItem('boletas-shalom', 'fa-solid fa-receipt', '9. Boletas Shalom')}
           {navItem('formato-entrega', 'fa-solid fa-file-signature', '10. Formato de Entrega')}
+          {navItem('invoices-usa', 'fa-solid fa-file-invoice-dollar', '11. Facturas / Invoices USA')}
         </div>
       </div>
     </nav>
