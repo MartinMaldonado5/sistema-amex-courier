@@ -81,6 +81,19 @@
   margin-bottom: 6px;
 }
 
+.invoice-form-section .invoice-amount-prefix {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  z-index: 1;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.invoice-form-section .invoice-amount-input {
+  padding-left: 2.5rem !important;
+}
+
 /* ==========================================================================
    VISTA PREVIA DE HOJA A4 / LETTER (IDÉNTICO A WORD zxzxzxzx.docx)
    ========================================================================== */
@@ -272,8 +285,13 @@
   text-align: left;
 }
 
+.col-item-number {
+  width: 7%;
+  text-align: center !important;
+}
+
 .col-item-name {
-  width: 52%;
+  width: 45%;
 }
 
 .col-qty {
@@ -313,6 +331,12 @@
   line-height: 1.4;
   word-break: break-word;
   text-transform: uppercase;
+}
+
+.item-number-line {
+  line-height: 1.4;
+  color: #475569;
+  font-variant-numeric: tabular-nums;
 }
 
 .qty-line {

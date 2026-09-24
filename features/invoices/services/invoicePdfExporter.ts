@@ -140,13 +140,15 @@ export async function generateInvoicePdf(data: InvoiceData, filename?: string): 
   currentY += 8;
 
   // 4. Tabla de Ítems
-  // Anchos de columnas en mm: Item Name (52%), Qty (12%), Unit Price (18%), Total (18%)
-  const wItem = contentWidth * 0.52;
+  // Anchos de columnas en mm: Item # (7%), Item Name (45%), Qty (12%), Unit Price (18%), Total (18%)
+  const wItemNumber = contentWidth * 0.07;
+  const wItem = contentWidth * 0.45;
   const wQty = contentWidth * 0.12;
   const wPrice = contentWidth * 0.18;
   const wTotal = contentWidth * 0.18;
 
-  const xItem = marginX;
+  const xItemNumber = marginX;
+  const xItem = xItemNumber + wItemNumber;
   const xQty = xItem + wItem;
   const xPrice = xQty + wQty;
   const xTotal = xPrice + wPrice;
@@ -159,6 +161,7 @@ export async function generateInvoicePdf(data: InvoiceData, filename?: string): 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(255, 255, 255);
+  doc.text('Item #', xItemNumber + (wItemNumber / 2), currentY + 5.2, { align: 'center' });
   doc.text('Item Name', xItem + 3, currentY + 5.2);
   doc.text('Quantity', xQty + (wQty / 2), currentY + 5.2, { align: 'center' });
   doc.text('Unit Price', xPrice + wPrice - 3, currentY + 5.2, { align: 'right' });
@@ -175,7 +178,8 @@ export async function generateInvoicePdf(data: InvoiceData, filename?: string): 
   doc.setFontSize(8.5);
   doc.setTextColor(33, 33, 33);
 
-  (data.items || []).forEach(item => {
+  (data.items || []).forEach((item, index) => {
+    doc.text(String(index + 1), xItemNumber + (wItemNumber / 2), bodyContentY, { align: 'center' });
     doc.text(sanitizeText(item.name || ''), xItem + 3, bodyContentY);
     doc.text(String(item.quantity || ''), xQty + (wQty / 2), bodyContentY, { align: 'center' });
     const pStr = item.unitPrice ? `$${Number(item.unitPrice).toFixed(2)}` : '';
@@ -197,6 +201,7 @@ export async function generateInvoicePdf(data: InvoiceData, filename?: string): 
   doc.line(marginX, bodyStartY + actualBodyHeight, marginX + contentWidth, bodyStartY + actualBodyHeight); // Borde inferior
 
   // Líneas verticales internas de columnas
+  doc.line(xItem, bodyStartY, xItem, bodyStartY + actualBodyHeight);
   doc.line(xQty, bodyStartY, xQty, bodyStartY + actualBodyHeight);
   doc.line(xPrice, bodyStartY, xPrice, bodyStartY + actualBodyHeight);
   doc.line(xTotal, bodyStartY, xTotal, bodyStartY + actualBodyHeight);

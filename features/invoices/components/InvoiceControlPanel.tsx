@@ -30,6 +30,7 @@ interface InvoiceControlPanelProps {
   onUpdateInvoiceAmount: (amount: string | number) => void;
   onProcessPasteText: (text: string) => void;
   onClearItems: () => void;
+  onClearRecipients: () => void;
   onResetToDefault: () => void;
   onSaveToHistorial: () => void;
   onRestoreFromHistorial: (item: InvoiceData) => void;
@@ -65,6 +66,7 @@ export function InvoiceControlPanel({
   onUpdateInvoiceAmount,
   onProcessPasteText,
   onClearItems,
+  onClearRecipients,
   onResetToDefault,
   onSaveToHistorial,
   onRestoreFromHistorial,
@@ -262,9 +264,26 @@ export function InvoiceControlPanel({
 
         {/* SECCIÓN 3: BILL TO & SHIP TO */}
         <div className="invoice-form-section">
-          <div className="section-title">
-            <i className="fa-solid fa-user-tag text-blue-400"></i>
-            <span>3. Destinatarios: Bill To & Ship To (Editables)</span>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <div className="section-title mb-0">
+              <i className="fa-solid fa-user-tag text-blue-400"></i>
+              <span>3. Destinatarios: Bill To & Ship To (Editables)</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                onClearRecipients();
+                setClientSearchBill('');
+                setClientSearchShip('');
+                setShowClientDropdownBill(false);
+                setShowClientDropdownShip(false);
+              }}
+              className="shrink-0 px-2.5 py-1 text-[11px] font-bold rounded bg-rose-950/70 hover:bg-rose-900/90 text-rose-300 hover:text-white border border-rose-800/70 flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+              title="Vaciar Bill To y Ship To"
+            >
+              <i className="fa-solid fa-trash-can text-rose-400"></i>
+              <span>Borrar Todo</span>
+            </button>
           </div>
 
           <div className="space-y-4">
@@ -539,13 +558,13 @@ export function InvoiceControlPanel({
 
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
+              <span className="invoice-amount-prefix text-slate-400 font-bold">$</span>
               <input
                 type="text"
                 value={String(data.invoiceAmount || '').replace('$', '')}
                 onChange={e => onUpdateInvoiceAmount(e.target.value)}
                 placeholder="0.00"
-                className="w-full pl-8 pr-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-base text-emerald-400 font-mono font-black focus:outline-none focus:border-emerald-500"
+                className="invoice-amount-input w-full pr-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-base text-emerald-400 font-mono font-black focus:outline-none focus:border-emerald-500"
               />
             </div>
 

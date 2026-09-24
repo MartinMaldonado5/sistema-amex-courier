@@ -40,6 +40,7 @@ export default function InvoicesTab({ clientes = [] }: InvoicesTabProps) {
     updateInvoiceAmount,
     handleProcessPasteText,
     handleClearItems,
+    handleClearRecipients,
     handleResetToDefault,
     handleSaveToHistorial,
     handleRestoreFromHistorial,
@@ -105,6 +106,7 @@ export default function InvoicesTab({ clientes = [] }: InvoicesTabProps) {
           onUpdateInvoiceAmount={updateInvoiceAmount}
           onProcessPasteText={handleProcessPasteText}
           onClearItems={handleClearItems}
+          onClearRecipients={handleClearRecipients}
           onResetToDefault={handleResetToDefault}
           onSaveToHistorial={handleSaveToHistorial}
           onRestoreFromHistorial={handleRestoreFromHistorial}

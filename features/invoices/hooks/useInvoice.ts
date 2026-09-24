@@ -259,6 +259,15 @@ export function useInvoice() {
     showToast('Ítems eliminados');
   };
 
+  const handleClearRecipients = () => {
+    setInvoiceData(prev => ({
+      ...prev,
+      billToName: '',
+      shipToName: ''
+    }));
+    showToast('Destinatarios eliminados');
+  };
+
   // Restaurar ejemplo inicial
   const handleResetToDefault = () => {
     if (confirm('¿Restaurar valores de la factura al ejemplo original del Word?')) {
@@ -361,6 +370,7 @@ export function useInvoice() {
     updateInvoiceAmount,
     handleProcessPasteText,
     handleClearItems,
+    handleClearRecipients,
     handleResetToDefault,
     handleSaveToHistorial,
     handleRestoreFromHistorial,

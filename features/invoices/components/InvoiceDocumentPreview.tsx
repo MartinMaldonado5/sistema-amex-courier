@@ -84,6 +84,7 @@ export function InvoiceDocumentPreview({ data }: InvoiceDocumentPreviewProps) {
           <table className="invoice-items-table">
             <thead>
               <tr>
+                <th className="col-item-number">Item #</th>
                 <th className="col-item-name">Item Name</th>
                 <th className="col-qty">Quantity</th>
                 <th className="col-price">Unit Price</th>
@@ -93,7 +94,17 @@ export function InvoiceDocumentPreview({ data }: InvoiceDocumentPreviewProps) {
             <tbody>
               {/* Cuerpo de la tabla que contiene las listas y llena el espacio visual */}
               <tr className="table-tall-body-row">
-                {/* Columna 1: Nombres de ítems */}
+              {/* Columna 1: Numeración de ítems */}
+                <td className="cell-item-number-column">
+                  <div className="column-inner-list text-center">
+                    {(data.items || []).map((item, idx) => (
+                      <div key={item.id || idx} className="item-number-line">
+                        {idx + 1}
+                      </div>
+                    ))}
+                  </div>
+                </td>
+                {/* Columna 2: Nombres de ítems */}
                 <td className="cell-items-column">
                   <div className="column-inner-list">
                     {(data.items || []).map((item, idx) => (
