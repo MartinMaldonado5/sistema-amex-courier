@@ -611,9 +611,9 @@ export async function generateInvoiceDocx(data: InvoiceData, filename?: string):
   });
 
   const blob = await Packer.toBlob(doc);
-  const safeNumber = (data.invoiceNumber || 'USA').replace(/[^a-zA-Z0-9_-]/g, '_');
-  const safeBillTo = (data.billToName || 'Cliente').replace(/[^a-zA-Z0-9_-]/g, '_');
-  const finalFilename = filename || `Invoice_${safeNumber}_${safeBillTo}.docx`;
+  const cleanBillTo = (data.billToName || 'INVOICE').trim();
+  const safeBillTo = cleanBillTo.replace(/[/\\?%*:|"<>]/g, '').trim() || 'INVOICE';
+  const finalFilename = filename || `${safeBillTo}.docx`;
 
   saveAs(blob, finalFilename);
 }

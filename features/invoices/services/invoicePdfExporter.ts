@@ -201,10 +201,10 @@ export async function generateInvoicePdf(data: InvoiceData, filename?: string): 
   doc.line(xPrice, bodyStartY, xPrice, bodyStartY + actualBodyHeight);
   doc.line(xTotal, bodyStartY, xTotal, bodyStartY + actualBodyHeight);
 
-  // Guardar archivo
-  const safeNumber = (data.invoiceNumber || 'USA').replace(/[^a-zA-Z0-9_-]/g, '_');
-  const safeBillTo = (data.billToName || 'Cliente').replace(/[^a-zA-Z0-9_-]/g, '_');
-  const finalFilename = filename || `Invoice_${safeNumber}_${safeBillTo}.pdf`;
+  // Guardar archivo solo con el nombre de Bill To
+  const cleanBillTo = (data.billToName || 'INVOICE').trim();
+  const safeBillTo = cleanBillTo.replace(/[/\\?%*:|"<>]/g, '').trim() || 'INVOICE';
+  const finalFilename = filename || `${safeBillTo}.pdf`;
 
   doc.save(finalFilename);
 }
