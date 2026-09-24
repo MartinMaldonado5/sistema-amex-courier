@@ -249,16 +249,14 @@ export function useInvoice() {
     }
   };
 
-  // Limpiar todos los ítems
+  // Limpiar todos los ítems directamente sin confirmación
   const handleClearItems = () => {
-    if (confirm('¿Deseas vaciar la lista de ítems de la factura?')) {
-      setInvoiceData(prev => ({
-        ...prev,
-        items: [],
-        invoiceAmount: '0.00'
-      }));
-      showToast('Ítems limpiados');
-    }
+    setInvoiceData(prev => ({
+      ...prev,
+      items: [],
+      invoiceAmount: '0.00'
+    }));
+    showToast('Ítems eliminados');
   };
 
   // Restaurar ejemplo inicial
