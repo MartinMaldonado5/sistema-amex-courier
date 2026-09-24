@@ -390,6 +390,16 @@ export function InvoiceControlPanel({
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
+                onClick={onClearItems}
+                className="px-2.5 py-1 text-[11px] font-bold rounded bg-rose-950/70 hover:bg-rose-900/90 text-rose-300 hover:text-white border border-rose-800/70 flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                title="Borrar o vaciar todos los ítems copiados/agregados a la tabla"
+              >
+                <i className="fa-solid fa-trash-can text-rose-400"></i>
+                <span>Borrar Todo</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setIsPasteModalOpen(true)}
                 className="px-2.5 py-1 text-[11px] font-bold rounded bg-slate-800 hover:bg-slate-700 text-sky-400 border border-sky-800/60 flex items-center gap-1 transition-colors"
                 title="Pegar lista desde Excel o portapapeles"
@@ -493,13 +503,15 @@ export function InvoiceControlPanel({
 
             {/* Barra inferior de la tabla de ítems */}
             <div className="px-3 py-2 bg-slate-800/80 border-t border-slate-700 flex items-center justify-between text-xs">
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={onClearItems}
-                  className="text-[11px] text-slate-400 hover:text-rose-400 transition-colors"
+                  className="text-[11px] font-semibold text-rose-400/90 hover:text-rose-300 transition-colors flex items-center gap-1 bg-rose-950/40 hover:bg-rose-900/50 px-2 py-0.5 rounded border border-rose-800/40"
+                  title="Borrar todos los ítems de la tabla"
                 >
-                  Vaciar ítems
+                  <i className="fa-solid fa-trash-can text-[10px]"></i>
+                  <span>Borrar todo</span>
                 </button>
                 <span className="text-slate-600">|</span>
                 <button
@@ -607,21 +619,34 @@ export function InvoiceControlPanel({
               className="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white font-mono focus:outline-none focus:border-blue-500"
             />
 
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex items-center justify-between pt-2">
               <button
                 type="button"
-                onClick={() => setIsPasteModalOpen(false)}
-                className="px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800 rounded-lg"
+                onClick={() => setPasteRawText('')}
+                disabled={!pasteRawText}
+                className="px-3 py-1.5 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 rounded-lg border border-rose-900/50 disabled:opacity-40 transition-colors flex items-center gap-1.5"
+                title="Limpiar el contenido del cuadro de texto"
               >
-                Cancelar
+                <i className="fa-solid fa-eraser text-[11px]"></i>
+                <span>Limpiar texto</span>
               </button>
-              <button
-                type="button"
-                onClick={() => onProcessPasteText(pasteRawText)}
-                className="px-4 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-lg shadow"
-              >
-                Procesar e Insertar Ítems
-              </button>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPasteModalOpen(false)}
+                  className="px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800 rounded-lg"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onProcessPasteText(pasteRawText)}
+                  className="px-4 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-lg shadow"
+                >
+                  Procesar e Insertar Ítems
+                </button>
+              </div>
             </div>
           </div>
         </div>
