@@ -1,6 +1,5 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { createClient } from '@supabase/supabase-js';
-import { GoogleGenAI } from '@google/genai';
 import fs from 'fs';
 
 // Cargar .env.local manualmente sin dependencias extra
@@ -111,7 +110,7 @@ async function testCloudflareR2() {
 import OpenAI from 'openai';
 
 async function testOpenAi() {
-  console.log('\n▶ [3/4] Probando OpenAI (GPT-6 Luna)...');
+  console.log('\n▶ [3/3] Probando OpenAI (GPT-6 Luna)...');
   const apiKey = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_MODEL || 'gpt-6-luna';
 
@@ -134,45 +133,16 @@ async function testOpenAi() {
   }
 }
 
-async function testGemini() {
-  console.log('\n▶ [4/4] Probando Google Gemini AI (Fallback)...');
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!apiKey) {
-    console.log('⚠️ Google Gemini AI: Variable GEMINI_API_KEY no configurada o vacía.');
-    return false;
-  }
-
-  const models = ['gemini-3.5-flash-lite', 'gemini-3.6-flash'];
-  for (const model of models) {
-    try {
-      const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent({
-        model,
-        contents: 'Di "OK" si estás funcionando.',
-      });
-      console.log(`✅ Google Gemini (${model}) respondió: ${response.text?.trim()}`);
-      return true;
-    } catch (err) {
-      console.log(`ℹ️ Intento con ${model}:`, err.message);
-    }
-  }
-  console.log(`❌ Error al conectar con Google Gemini en todos los modelos disponibles.`);
-  return false;
-}
-
 async function runAll() {
   const supabaseOk = await testSupabase();
   const r2Ok = await testCloudflareR2();
   const openaiOk = await testOpenAi();
-  const geminiOk = await testGemini();
 
   console.log('\n==================================================');
   console.log('📊 RESUMEN DE DIAGNÓSTICO:');
   console.log(`- Supabase DB:     ${supabaseOk ? '✅ OPERATIVO' : '❌ ERROR / REVISAR'}`);
   console.log(`- Cloudflare R2:   ${r2Ok ? '✅ OPERATIVO' : '❌ ERROR / REVISAR'}`);
-  console.log(`- OpenAI (GPT-6):  ${openaiOk ? '✅ OPERATIVO (ACTIVO)' : '❌ ERROR'}`);
-  console.log(`- Google Gemini:   ${geminiOk ? '✅ OPERATIVO (FALLBACK)' : '⚠️ PENDIENTE API KEY'}`);
+  console.log(`- OpenAI GPT-6:    ${openaiOk ? '✅ OPERATIVO' : '❌ ERROR'}`);
   console.log('==================================================\n');
 }
 

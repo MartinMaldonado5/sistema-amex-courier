@@ -1,6 +1,6 @@
 /**
  * Utilidad de compresión inteligente de imágenes en el cliente (Frontend)
- * para optimización de latencia en peticiones a Gemini / AMEXito IA.
+ * para optimización de latencia en peticiones a OpenAI / AMEXito IA.
  * 
  * Reduce imágenes de 5-12 MB (cámara de celular / capturas 4K) a ~120-180 KB
  * manteniendo nitidez tipográfica óptima para OCR de DNIs, rótulos y boletas.

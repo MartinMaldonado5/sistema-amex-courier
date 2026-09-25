@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { parseRotuloWithAi } from '@/lib/gemini/analyzer';
+import { parseRotuloWithAi } from '@/lib/openai/analyzer';
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Error al interpretar el rótulo con AMEXito IA';
-    console.error('[API Gemini Parse Rotulo Error]:', err);
+    console.error('[API OpenAI Parse Rotulo Error]:', err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

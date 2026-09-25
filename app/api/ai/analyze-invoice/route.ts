@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { analyzeInvoiceDocument } from '@/lib/gemini/analyzer';
+import { analyzeInvoiceDocument } from '@/lib/openai/analyzer';
 import { getSessionUser } from '@/lib/auth/session';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await getSessionUser();
+    await getSessionUser();
 
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Error analizando factura con IA';
-    console.error('[Gemini AI Route Error]', err);
+    console.error('[OpenAI Invoice Route Error]', err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

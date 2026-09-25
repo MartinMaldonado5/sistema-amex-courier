@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { analyzeShalomBoletaPdf } from '@/lib/gemini/analyzer';
+import { analyzeShalomBoletaPdf } from '@/lib/openai/analyzer';
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Error al analizar la boleta con IA';
-    console.error('[API Gemini Shalom Boleta OCR Error]:', err);
+    console.error('[API OpenAI Shalom Boleta OCR Error]:', err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

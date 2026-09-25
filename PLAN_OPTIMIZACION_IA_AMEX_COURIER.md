@@ -10,7 +10,7 @@
 | Etapa | Estado Actual | Meta con Optimización | Reducción de Latencia |
 | :--- | :--- | :--- | :--- |
 | **Transferencia de Imagen (Red)** | 2.5s – 5.0s *(Base64 5-12MB)* | **0.1s – 0.2s** *(Canvas JPEG 150KB)* | **~95% más rápido** |
-| **Inferencia de Gemini** | 3.0s – 5.0s *(Prompt libre / alias)* | **1.2s – 1.8s** *(Flash-Lite + JSON Schema)* | **~60% más rápido** |
+| **Inferencia OpenAI GPT-6 Luna** | 3.0s – 5.0s *(Prompt libre / alias)* | **1.2s – 1.8s** *(JSON estricto)* | **~60% más rápido** |
 | **Conexiones y Handshake** | Instanciación por petición | **Pool HTTP/2 persistente (Singleton)** | **~200ms ahorrados** |
 | **Tiempo Total de Respuesta** | **~6.0s – 12.0s** | **⚡ < 2.2 segundos** | **~75% de mejora global** |
 
@@ -33,41 +33,40 @@
 
 ### Fase 2: Instancia Singleton y Configuración de Modelo Oficial en Backend
 **Archivo a intervenir:**
-* `lib/gemini/analyzer.ts`
+* `lib/openai/analyzer.ts`
 
 **Acciones:**
-1. **Singleton del Cliente GenAI:**
-   Instanciar `GoogleGenAI` una sola vez a nivel de módulo para mantener el pool de sockets y conexiones TLS abiertas con los servidores de Google:
+1. **Singleton del Cliente OpenAI:**
+   Instanciar el cliente `OpenAI` una sola vez a nivel de módulo para mantener el pool de conexiones TLS persistentes:
    ```typescript
-   let aiClientInstance: GoogleGenAI | null = null;
-   export function getGeminiClient(): GoogleGenAI {
-     if (!aiClientInstance) {
-       const apiKey = getApiKey();
-       aiClientInstance = new GoogleGenAI({ apiKey });
-     }
-     return aiClientInstance;
+    let openAiClientInstance: OpenAI | null = null;
+    export function getOpenAiClient(): OpenAI {
+      if (!openAiClientInstance) {
+        openAiClientInstance = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      }
+      return openAiClientInstance;
    }
    ```
-2. **Normalización del Modelo:**
-   Asegurar el identificador oficial de modelo de alta velocidad:
+2. **Modelo único:**
+   Configurar GPT-6 Luna como modelo usado por todos los analizadores mediante `OPENAI_MODEL`.
    ```typescript
-   export const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash'; // o 'gemini-2.0-flash-lite'
+    export const DEFAULT_OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-6-luna';
    ```
 
 ---
 
-### Fase 3: Modo Estricto JSON Nativo (`responseMimeType: 'application/json'`)
+### Fase 3: Modo JSON Estricto de OpenAI
 **Archivo a intervenir:**
-* `lib/gemini/analyzer.ts`
+* `lib/openai/analyzer.ts`
 
 **Acciones:**
-1. Configurar `responseMimeType: 'application/json'` y `temperature: 0.1` en todas las llamadas:
+1. Configurar `response_format: { type: 'json_object' }` en todas las llamadas:
    * `extractDniNameFromImage`
    * `parseRotuloWithAi`
    * `analyzeShalomBoletaPdf`
    * `analyzeInvoiceDocument`
-2. **Beneficio:** Evita que el modelo genere bloques markdown adicionales (```json ... ```) o introducciones de texto, forzando la generación de tokens de salida mínimos y directos.
-3. Eliminar los reemplazos regex de limpieza de markdown y parsear directamente `JSON.parse(response.text)`.
+2. **Beneficio:** Evita que el modelo genere bloques markdown adicionales (```json ... ```) o introducciones de texto, forzando una respuesta JSON estructurada.
+3. Parsear el contenido devuelto por `response.choices[0]?.message?.content`.
 
 ---
 
@@ -95,6 +94,6 @@
 
 - [x] Crear `lib/utils/imageCompressor.ts`
 - [x] Integrar compresión en `useDniMatrixState` y `rotulos.service`
-- [x] Actualizar `lib/gemini/analyzer.ts` con Singleton y `responseMimeType: 'application/json'`
-- [x] Validar compatibilidad de modelos en `.env.local` (`GEMINI_API_KEY`)
+- [x] Actualizar `lib/openai/analyzer.ts` para usar OpenAI GPT-6 Luna y respuestas JSON
+- [x] Configurar `OPENAI_API_KEY` y `OPENAI_MODEL` en `.env.local`
 - [x] Pruebas de rendimiento y latencia final en `http://localhost:3000`

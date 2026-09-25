@@ -1327,7 +1327,7 @@ kbd {
   box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
 }
 
-/* Botón Inteligente Gemini 3.5 Flash Lite para auto-extracción de DNI */
+/* Botón de IA para auto-extracción de DNI */
 .btn-ai-extract {
   display: flex;
   align-items: center;

@@ -19,19 +19,17 @@ if (fs.existsSync(envLocalPath)) {
 }
 
 import {
-  getActiveAiProvider,
   DEFAULT_OPENAI_MODEL,
   parseRotuloWithAi,
   extractDniNameFromImage,
   analyzeShalomBoletaPdf,
   analyzeInvoiceDocument
-} from '../lib/gemini/analyzer';
+} from '../lib/openai/analyzer';
 
 async function main() {
   console.log('==================================================');
   console.log('🤖 TEST DE INTEGRACIÓN REAL CON GPT-6 LUNA');
-  console.log(`- Proveedor Activo: ${getActiveAiProvider()}`);
-  console.log(`- Modelo Configurado: ${DEFAULT_OPENAI_MODEL}`);
+  console.log(`- Modelo IA: ${DEFAULT_OPENAI_MODEL}`);
   console.log(`- API Key Presente: ${Boolean(process.env.OPENAI_API_KEY)}`);
   console.log('==================================================\n');
 
@@ -55,7 +53,7 @@ Siglas: CP88`
   console.log(`   - Cajas:        ${rotuloResult.totalCajas}`);
   console.log(`   - Siglas:       ${rotuloResult.siglas}\n`);
 
-  // Test 2: Auto-extracción DNI con fallback seguro
+  // Test 2: Auto-extracción de DNI
   console.log('▶ [2/4] Probando extractDniNameFromImage (Imagen simulada)...');
   const dummyPng = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
   const dniResult = await extractDniNameFromImage(dummyPng);

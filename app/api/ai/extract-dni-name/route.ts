@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { extractDniNameFromImage } from '@/lib/gemini/analyzer';
+import { extractDniNameFromImage } from '@/lib/openai/analyzer';
 
 export async function POST(req: NextRequest) {
   try {
