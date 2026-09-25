@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AMEX_INFO_IMAGES, AmexInfoImage } from '@/features/info-amex/data/infoImages';
 import { copyImageToClipboard, copyTextToClipboard, downloadImage } from '@/features/info-amex/utils/clipboard';
 import '@/features/info-amex/components/infoAmex.css';
@@ -10,6 +10,34 @@ export default function InfoAmexTab() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedImageIds, setSelectedImageIds] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
+
+  // Caché síncrono de objetos File listos para transferir instantáneamente en dragstart
+  const [cachedFiles, setCachedFiles] = useState<Record<string, File>>({});
+
+  // Precargar los archivos binarios apenas monta el componente
+  useEffect(() => {
+    let isMounted = true;
+    const preload = async () => {
+      const filesMap: Record<string, File> = {};
+      for (const item of AMEX_INFO_IMAGES) {
+        try {
+          const res = await fetch(item.imageUrl);
+          const blob = await res.blob();
+          const file = new File([blob], item.filename, { type: 'image/jpeg' });
+          filesMap[item.id] = file;
+        } catch (err) {
+          console.error('Error precargando imagen:', item.id, err);
+        }
+      }
+      if (isMounted) {
+        setCachedFiles(filesMap);
+      }
+    };
+    preload();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const showToast = (text: string, type: 'success' | 'info' | 'error' = 'success') => {
     setToastMessage({ text, type });
@@ -53,46 +81,42 @@ export default function InfoAmexTab() {
     }
   };
 
-  // Helper para arrastrar una sola imagen
-  const handleDragStartSingle = async (e: React.DragEvent<HTMLElement>, item: AmexInfoImage) => {
+  // Dragstart SÍNCRONO para una sola imagen
+  const handleDragStartSingle = (e: React.DragEvent<HTMLElement>, item: AmexInfoImage) => {
     try {
+      e.dataTransfer.effectAllowed = 'copyMove';
+      const file = cachedFiles[item.id];
+      if (file && e.dataTransfer.items && e.dataTransfer.items.add) {
+        e.dataTransfer.items.add(file);
+      }
       const fullUrl = window.location.origin + item.imageUrl;
       e.dataTransfer.setData('text/uri-list', fullUrl);
       e.dataTransfer.setData('text/plain', fullUrl);
-
-      const res = await fetch(item.imageUrl);
-      const blob = await res.blob();
-      const file = new File([blob], item.filename, { type: 'image/jpeg' });
-      if (e.dataTransfer.items && e.dataTransfer.items.add) {
-        e.dataTransfer.items.add(file);
-      }
-    } catch {
-      // Fallback nativo de URL
+    } catch (err) {
+      console.error('Error en dragstart individual:', err);
     }
   };
 
-  // Helper para arrastrar MÚLTIPLES imágenes a la vez hacia WhatsApp
-  const handleDragStartMultiple = async (e: React.DragEvent<HTMLElement>, selectedItems: AmexInfoImage[]) => {
+  // Dragstart SÍNCRONO para MÚLTIPLES imágenes a la vez hacia WhatsApp
+  const handleDragStartMultiple = (e: React.DragEvent<HTMLElement>, selectedItems: AmexInfoImage[]) => {
     try {
+      e.dataTransfer.effectAllowed = 'copyMove';
+
+      // Agregar cada archivo binario pre-cargado de forma instantánea al DataTransfer
+      if (e.dataTransfer.items && e.dataTransfer.items.add) {
+        selectedItems.forEach((item) => {
+          const file = cachedFiles[item.id];
+          if (file) {
+            e.dataTransfer.items.add(file);
+          }
+        });
+      }
+
       const urls = selectedItems.map((item) => window.location.origin + item.imageUrl).join('\n');
       e.dataTransfer.setData('text/uri-list', urls);
       e.dataTransfer.setData('text/plain', urls);
-
-      // Cargar en paralelo todos los blobs para añadirlos como archivos múltiples al DataTransfer
-      const filePromises = selectedItems.map(async (item) => {
-        const res = await fetch(item.imageUrl);
-        const blob = await res.blob();
-        return new File([blob], item.filename, { type: 'image/jpeg' });
-      });
-
-      const files = await Promise.all(filePromises);
-      if (e.dataTransfer.items && e.dataTransfer.items.add) {
-        files.forEach((f) => {
-          e.dataTransfer.items.add(f);
-        });
-      }
     } catch (err) {
-      console.error('Error al empaquetar archivos múltiples:', err);
+      console.error('Error al empaquetar lote de archivos en dragstart:', err);
     }
   };
 
@@ -363,7 +387,7 @@ export default function InfoAmexTab() {
                   : `${selectedImagesList.length} Imágenes Seleccionadas`}
               </div>
               <div style={{ color: '#94a3b8', fontSize: '12px' }}>
-                Arrastra la cápsula verde directamente hacia el chat de WhatsApp Web.
+                Haz clic sostenido en el botón verde y arrástralo directamente hacia el chat de WhatsApp.
               </div>
             </div>
           </div>
@@ -374,7 +398,7 @@ export default function InfoAmexTab() {
               className="info-multi-drag-zone"
               draggable={true}
               onDragStart={(e) => handleDragStartMultiple(e, selectedImagesList)}
-              title="Haz clic sostenido aquí y suéltalo en WhatsApp para enviar todas las seleccionadas a la vez"
+              title="Haz clic sostenido aquí y arrástralo hacia WhatsApp para enviar todas las imágenes a la vez"
             >
               <i className="fa-solid fa-hand-holding-hand" style={{ fontSize: '16px' }} />
               <span>ARRASTRAR LOTE ({selectedImagesList.length}) A WHATSAPP</span>
