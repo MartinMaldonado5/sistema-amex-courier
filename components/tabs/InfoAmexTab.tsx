@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AMEX_INFO_IMAGES, AmexInfoImage } from '@/features/info-amex/data/infoImages';
 import { copyImageToClipboard, copyTextToClipboard, downloadImage } from '@/features/info-amex/utils/clipboard';
 import '@/features/info-amex/components/infoAmex.css';
@@ -8,41 +8,13 @@ import '@/features/info-amex/components/infoAmex.css';
 export default function InfoAmexTab() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedImageIds, setSelectedImageIds] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
-
-  // Caché de blobs y archivos listos
-  const [cachedFiles, setCachedFiles] = useState<Record<string, { file: File; blob: Blob; url: string }>>({});
-
-  useEffect(() => {
-    let isMounted = true;
-    const preload = async () => {
-      const filesMap: Record<string, { file: File; blob: Blob; url: string }> = {};
-      for (const item of AMEX_INFO_IMAGES) {
-        try {
-          const res = await fetch(item.imageUrl);
-          const blob = await res.blob();
-          const file = new File([blob], item.filename, { type: 'image/jpeg' });
-          filesMap[item.id] = { file, blob, url: item.imageUrl };
-        } catch (err) {
-          console.error('Error precargando:', item.id, err);
-        }
-      }
-      if (isMounted) {
-        setCachedFiles(filesMap);
-      }
-    };
-    preload();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const showToast = (text: string, type: 'success' | 'info' | 'error' = 'success') => {
     setToastMessage({ text, type });
     setTimeout(() => {
       setToastMessage((prev) => (prev?.text === text ? null : prev));
-    }, 3200);
+    }, 3000);
   };
 
   const handleCopyImage = async (item: AmexInfoImage) => {
@@ -64,78 +36,6 @@ export default function InfoAmexTab() {
     }
   };
 
-  const handleToggleSelect = (id: string) => {
-    setSelectedImageIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
-
-  const handleSelectAll = (filteredItems: AmexInfoImage[]) => {
-    if (selectedImageIds.length === filteredItems.length) {
-      setSelectedImageIds([]);
-    } else {
-      setSelectedImageIds(filteredItems.map((img) => img.id));
-    }
-  };
-
-  // Dragstart para una sola imagen
-  const handleDragStartSingle = (e: React.DragEvent<HTMLElement>, item: AmexInfoImage) => {
-    try {
-      e.dataTransfer.effectAllowed = 'copyMove';
-      const cached = cachedFiles[item.id];
-      if (cached && e.dataTransfer.items && e.dataTransfer.items.add) {
-        e.dataTransfer.items.add(cached.file);
-      }
-      const fullUrl = window.location.origin + item.imageUrl;
-      e.dataTransfer.setData('text/uri-list', fullUrl);
-      e.dataTransfer.setData('text/plain', fullUrl);
-    } catch (err) {
-      console.error('Error drag single:', err);
-    }
-  };
-
-  // Dragstart para múltiples imágenes en el botón verde
-  const handleDragStartMultiple = (e: React.DragEvent<HTMLElement>, selectedItems: AmexInfoImage[]) => {
-    try {
-      e.dataTransfer.effectAllowed = 'copyMove';
-      if (e.dataTransfer.items && e.dataTransfer.items.add) {
-        selectedItems.forEach((item) => {
-          const cached = cachedFiles[item.id];
-          if (cached) {
-            e.dataTransfer.items.add(cached.file);
-          }
-        });
-      }
-      const urls = selectedItems.map((item) => window.location.origin + item.imageUrl).join('\n');
-      e.dataTransfer.setData('text/uri-list', urls);
-      e.dataTransfer.setData('text/plain', urls);
-    } catch (err) {
-      console.error('Error drag multiple:', err);
-    }
-  };
-
-  const handleCopyCombinedTexts = async (selectedItems: AmexInfoImage[]) => {
-    const combined = selectedItems
-      .map((item, idx) => `──────────────\n📌 *(${idx + 1}) ${item.title}*\n${item.suggestedWhatsappText}`)
-      .join('\n\n');
-
-    const ok = await copyTextToClipboard(combined);
-    if (ok) {
-      showToast(`¡Textos de las ${selectedItems.length} imágenes copiados al portapapeles!`);
-    } else {
-      showToast(`No se pudo copiar el texto.`, 'error');
-    }
-  };
-
-  const handleDownloadAllSelected = (selectedItems: AmexInfoImage[]) => {
-    selectedItems.forEach((item, index) => {
-      setTimeout(() => {
-        downloadImage(item.imageUrl, item.filename);
-      }, index * 200);
-    });
-    showToast(`Descargando ${selectedItems.length} imágenes...`);
-  };
-
   const filteredImages = AMEX_INFO_IMAGES.filter((img) => {
     const matchesCategory = selectedCategory === 'all' || img.category === selectedCategory;
     const query = searchQuery.toLowerCase().trim();
@@ -146,8 +46,6 @@ export default function InfoAmexTab() {
       img.quickSummary.some((s) => s.toLowerCase().includes(query));
     return matchesCategory && matchesQuery;
   });
-
-  const selectedImagesList = AMEX_INFO_IMAGES.filter((img) => selectedImageIds.includes(img.id));
 
   return (
     <div className="info-amex-container">
@@ -218,7 +116,7 @@ export default function InfoAmexTab() {
               Imágenes e Información Corporativa AMEX
             </h1>
             <p style={{ color: '#94a3b8', fontSize: '13.5px', margin: '6px 0 0 0', lineHeight: 1.4 }}>
-              💡 <strong>2 Formas de enviar a WhatsApp:</strong> Haz clic en <strong>"Copiar Imagen"</strong> para pegarla con <kbd style={{ background: '#334155', padding: '2px 6px', borderRadius: '4px', color: '#fff' }}>Ctrl + V</kbd> (100% garantizado), o haz <strong>clic sostenido en la imagen</strong> y arrástrala hacia WhatsApp.
+              Haz clic en <strong>"Copiar Imagen"</strong> para pegarla en WhatsApp con <kbd style={{ background: '#334155', padding: '2px 6px', borderRadius: '4px', color: '#fff' }}>Ctrl + V</kbd>, o arrastra la foto directamente al chat.
             </p>
           </div>
 
@@ -236,7 +134,7 @@ export default function InfoAmexTab() {
             <i className="fa-brands fa-whatsapp" style={{ color: '#22c55e', fontSize: '26px' }} />
             <div>
               <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>WhatsApp Web</div>
-              <div style={{ fontSize: '13px', color: '#ffffff', fontWeight: 800 }}>Envío Rápido</div>
+              <div style={{ fontSize: '13px', color: '#ffffff', fontWeight: 800 }}>Envío Directo</div>
             </div>
           </div>
         </div>
@@ -325,236 +223,88 @@ export default function InfoAmexTab() {
             <i className="fa-solid fa-location-dot" />
             Sede Lince
           </button>
-
-          <button
-            onClick={() => handleSelectAll(filteredImages)}
-            style={{
-              marginLeft: 'auto',
-              background: 'rgba(51, 65, 85, 0.7)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              color: '#ffffff',
-              padding: '8px 14px',
-              borderRadius: '8px',
-              fontSize: '12.5px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-          >
-            <i className={`fa-solid ${selectedImageIds.length === filteredImages.length && filteredImages.length > 0 ? 'fa-square-check' : 'fa-check-double'}`} />
-            {selectedImageIds.length === filteredImages.length && filteredImages.length > 0
-              ? 'Deseleccionar Todas'
-              : 'Seleccionar Todas'}
-          </button>
         </div>
       </div>
 
-      {/* BARRA DE ACCIÓN PARA SELECCIÓN MÚLTIPLE */}
-      {selectedImagesList.length > 0 && (
-        <div className="info-multi-bar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span
-              style={{
-                background: '#22c55e',
-                color: '#ffffff',
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 900,
-                fontSize: '13px'
-              }}
-            >
-              {selectedImagesList.length}
-            </span>
-            <div>
-              <div style={{ color: '#ffffff', fontSize: '14px', fontWeight: 800 }}>
-                {selectedImagesList.length === 1
-                  ? '1 Imagen Seleccionada'
-                  : `${selectedImagesList.length} Imágenes Seleccionadas`}
-              </div>
-              <div style={{ color: '#94a3b8', fontSize: '12px' }}>
-                Arrastra el botón verde hacia WhatsApp o descárgalas en conjunto.
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            {/* CÁPSULA ARRASTRABLE DEL LOTE */}
-            <div
-              className="info-multi-drag-zone"
-              draggable={true}
-              onDragStart={(e) => handleDragStartMultiple(e, selectedImagesList)}
-              title="Haz clic sostenido aquí y arrástralo hacia WhatsApp para enviar todas las imágenes a la vez"
-            >
-              <i className="fa-solid fa-hand-holding-hand" style={{ fontSize: '16px' }} />
-              <span>ARRASTRAR LOTE ({selectedImagesList.length}) A WHATSAPP</span>
-            </div>
-
-            {/* Copiar textos combinados */}
-            <button
-              type="button"
-              onClick={() => handleCopyCombinedTexts(selectedImagesList)}
-              style={{
-                background: 'rgba(30, 41, 59, 0.9)',
-                border: '1px solid rgba(59, 130, 246, 0.4)',
-                color: '#60a5fa',
-                padding: '9px 14px',
-                borderRadius: '8px',
-                fontSize: '12.5px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              <i className="fa-brands fa-whatsapp" /> Copiar Textos
-            </button>
-
-            {/* Descargar seleccionadas */}
-            <button
-              type="button"
-              onClick={() => handleDownloadAllSelected(selectedImagesList)}
-              style={{
-                background: 'rgba(51, 65, 85, 0.8)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: '#cbd5e1',
-                padding: '9px 14px',
-                borderRadius: '8px',
-                fontSize: '12.5px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              <i className="fa-solid fa-download" /> Descargar ({selectedImagesList.length})
-            </button>
-
-            {/* Desmarcar */}
-            <button
-              type="button"
-              onClick={() => setSelectedImageIds([])}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#94a3b8',
-                fontSize: '12.5px',
-                cursor: 'pointer',
-                padding: '8px'
-              }}
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Grid de Imágenes Fijas */}
       <div className="info-amex-grid">
-        {filteredImages.map((item) => {
-          const isSelected = selectedImageIds.includes(item.id);
-          return (
-            <div key={item.id} className={`info-card ${isSelected ? 'selected' : ''}`}>
-              {/* Casilla de Selección Múltiple */}
-              <label
-                className="info-card-checkbox-label"
-                onClick={(e) => e.stopPropagation()}
-                title="Marca para incluir en el envío múltiple"
-              >
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => handleToggleSelect(item.id)}
-                  className="info-card-checkbox"
-                />
-                <span style={{ fontSize: '11px', fontWeight: 800, color: isSelected ? '#4ade80' : '#cbd5e1' }}>
-                  {isSelected ? 'SELECCIONADA' : 'SELECCIONAR'}
-                </span>
-              </label>
+        {filteredImages.map((item) => (
+          <div key={item.id} className="info-card">
+            {/* Categoría */}
+            <span className="info-card-badge" style={{ backgroundColor: item.badgeColor }}>
+              {item.categoryLabel}
+            </span>
 
-              {/* Categoría */}
-              <span className="info-card-badge" style={{ backgroundColor: item.badgeColor }}>
-                {item.categoryLabel}
-              </span>
+            {/* Hint de Arrastrar */}
+            <div className="info-card-drag-hint">
+              <i className="fa-solid fa-hand" /> Arrastra a WhatsApp
+            </div>
 
-              {/* Contenedor Fijo de la Imagen */}
-              <div
-                className="info-card-media"
+            {/* Contenedor Fijo de la Imagen */}
+            <div className="info-card-media">
+              <img
+                src={item.imageUrl}
+                alt={item.title}
+                loading="eager"
                 draggable={true}
-                onDragStart={(e) => handleDragStartSingle(e, item)}
-              >
-                <img
-                  src={item.imageUrl}
-                  alt={item.title}
-                  loading="eager"
-                  draggable={true}
-                  onDragStart={(e) => handleDragStartSingle(e, item)}
-                  className="info-card-img"
-                  title="Arrastra esta imagen directamente hacia WhatsApp"
-                />
-                <div className="info-card-drag-bottom-banner">
-                  <i className="fa-solid fa-arrow-up-right-from-square" /> Arrastra esta imagen hacia WhatsApp
-                </div>
-              </div>
-
-              {/* Contenido Fijo */}
-              <div className="info-card-content">
-                <h3 className="info-card-title">{item.title}</h3>
-                <p className="info-card-desc">{item.description}</p>
-
-                {/* Puntos Clave */}
-                <div className="info-card-points">
-                  {item.quickSummary.map((point, pIdx) => (
-                    <div key={pIdx} className="info-card-point-item">
-                      <i className="fa-solid fa-check" />
-                      <span>{point}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Acciones Rápidas */}
-                <div className="info-card-actions">
-                  <button
-                    type="button"
-                    className="info-action-btn info-action-btn-copy-img"
-                    onClick={() => handleCopyImage(item)}
-                    title="Copia la imagen real al portapapeles. Luego presiona Ctrl + V en WhatsApp"
-                  >
-                    <i className="fa-regular fa-copy" />
-                    Copiar Imagen
-                  </button>
-
-                  <button
-                    type="button"
-                    className="info-action-btn info-action-btn-copy-text"
-                    onClick={() => handleCopyText(item)}
-                    title="Copia el mensaje de WhatsApp con formato listo para enviar"
-                  >
-                    <i className="fa-brands fa-whatsapp" />
-                    Copiar Texto
-                  </button>
-
-                  <button
-                    type="button"
-                    className="info-action-btn info-action-btn-download"
-                    onClick={() => downloadImage(item.imageUrl, item.filename)}
-                    title="Descargar imagen en tamaño original"
-                  >
-                    <i className="fa-solid fa-download" />
-                    Descargar Imagen
-                  </button>
-                </div>
+                className="info-card-img"
+                title="Arrastra esta imagen directamente hacia WhatsApp"
+              />
+              <div className="info-card-drag-bottom-banner">
+                <i className="fa-solid fa-arrow-up-right-from-square" /> Arrastra esta imagen hacia WhatsApp
               </div>
             </div>
-          );
-        })}
+
+            {/* Contenido Fijo */}
+            <div className="info-card-content">
+              <h3 className="info-card-title">{item.title}</h3>
+              <p className="info-card-desc">{item.description}</p>
+
+              {/* Puntos Clave */}
+              <div className="info-card-points">
+                {item.quickSummary.map((point, pIdx) => (
+                  <div key={pIdx} className="info-card-point-item">
+                    <i className="fa-solid fa-check" />
+                    <span>{point}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Acciones Rápidas */}
+              <div className="info-card-actions">
+                <button
+                  type="button"
+                  className="info-action-btn info-action-btn-copy-img"
+                  onClick={() => handleCopyImage(item)}
+                  title="Copia la imagen real al portapapeles. Luego presiona Ctrl + V en WhatsApp"
+                >
+                  <i className="fa-regular fa-copy" />
+                  Copiar Imagen
+                </button>
+
+                <button
+                  type="button"
+                  className="info-action-btn info-action-btn-copy-text"
+                  onClick={() => handleCopyText(item)}
+                  title="Copia el mensaje de WhatsApp con formato listo para enviar"
+                >
+                  <i className="fa-brands fa-whatsapp" />
+                  Copiar Texto
+                </button>
+
+                <button
+                  type="button"
+                  className="info-action-btn info-action-btn-download"
+                  onClick={() => downloadImage(item.imageUrl, item.filename)}
+                  title="Descargar imagen en tamaño original"
+                >
+                  <i className="fa-solid fa-download" />
+                  Descargar Imagen
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {filteredImages.length === 0 && (

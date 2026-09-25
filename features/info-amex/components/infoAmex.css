@@ -3,7 +3,7 @@
   flex-direction: column;
   gap: 20px;
   width: 100%;
-  padding-bottom: 70px;
+  padding-bottom: 60px;
 }
 
 .info-amex-header {
@@ -63,59 +63,6 @@
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
 }
 
-/* Barra flotante de selección múltiple */
-.info-multi-bar {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  border: 1.5px solid #22c55e;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(34, 197, 94, 0.2);
-  border-radius: 12px;
-  padding: 14px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  animation: slideDown 0.2s ease-out;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.info-multi-drag-zone {
-  background: linear-gradient(135deg, #15803d 0%, #166534 100%);
-  border: 2px dashed #4ade80;
-  color: #ffffff;
-  padding: 10px 20px;
-  border-radius: 10px;
-  font-size: 13.5px;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: grab;
-  user-select: none;
-  box-shadow: 0 4px 15px rgba(22, 101, 52, 0.4);
-  transition: transform 0.15s ease, background 0.15s ease;
-}
-
-.info-multi-drag-zone:hover {
-  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-  transform: scale(1.02);
-}
-
-.info-multi-drag-zone:active {
-  cursor: grabbing;
-  transform: scale(0.98);
-}
-
 .info-amex-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
@@ -145,41 +92,6 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
 }
 
-.info-card.selected {
-  border-color: #22c55e;
-  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.4), 0 12px 28px rgba(0, 0, 0, 0.4);
-}
-
-/* Casilla de selección múltiple en cada tarjeta */
-.info-card-checkbox-label {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(15, 23, 42, 0.9);
-  padding: 5px 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  cursor: pointer;
-  user-select: none;
-  transition: all 0.15s ease;
-}
-
-.info-card.selected .info-card-checkbox-label {
-  background: rgba(22, 101, 52, 0.95);
-  border-color: #4ade80;
-}
-
-.info-card-checkbox {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: #22c55e;
-}
-
 /* Área visual de la imagen fija */
 .info-card-media {
   position: relative;
@@ -188,7 +100,7 @@
   align-items: center;
   justify-content: center;
   height: 340px;
-  padding: 44px 12px 28px 12px;
+  padding: 12px;
   cursor: grab;
   user-select: none;
 }
@@ -215,14 +127,32 @@
 .info-card-badge {
   position: absolute;
   top: 12px;
-  right: 12px;
-  padding: 4px 10px;
+  left: 12px;
+  padding: 5px 11px;
   border-radius: 6px;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   color: #ffffff;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.info-card-drag-hint {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   z-index: 2;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
