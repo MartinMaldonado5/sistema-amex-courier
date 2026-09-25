@@ -11,22 +11,21 @@ export default function InfoAmexTab() {
   const [selectedImageIds, setSelectedImageIds] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
 
-  // Caché síncrono de objetos File listos para transferir instantáneamente en dragstart
-  const [cachedFiles, setCachedFiles] = useState<Record<string, File>>({});
+  // Caché de blobs y archivos listos
+  const [cachedFiles, setCachedFiles] = useState<Record<string, { file: File; blob: Blob; url: string }>>({});
 
-  // Precargar los archivos binarios apenas monta el componente
   useEffect(() => {
     let isMounted = true;
     const preload = async () => {
-      const filesMap: Record<string, File> = {};
+      const filesMap: Record<string, { file: File; blob: Blob; url: string }> = {};
       for (const item of AMEX_INFO_IMAGES) {
         try {
           const res = await fetch(item.imageUrl);
           const blob = await res.blob();
           const file = new File([blob], item.filename, { type: 'image/jpeg' });
-          filesMap[item.id] = file;
+          filesMap[item.id] = { file, blob, url: item.imageUrl };
         } catch (err) {
-          console.error('Error precargando imagen:', item.id, err);
+          console.error('Error precargando:', item.id, err);
         }
       }
       if (isMounted) {
@@ -43,16 +42,16 @@ export default function InfoAmexTab() {
     setToastMessage({ text, type });
     setTimeout(() => {
       setToastMessage((prev) => (prev?.text === text ? null : prev));
-    }, 3000);
+    }, 3200);
   };
 
   const handleCopyImage = async (item: AmexInfoImage) => {
     showToast('Copiando imagen al portapapeles...', 'info');
     const ok = await copyImageToClipboard(item.imageUrl);
     if (ok) {
-      showToast(`¡Imagen copiada! Ve a WhatsApp y presiona Ctrl + V para enviarla.`);
+      showToast(`¡Imagen copiada! Ve a WhatsApp y presiona Ctrl + V.`);
     } else {
-      showToast(`Enlace copiado. También puedes arrastrar la imagen directamente hacia WhatsApp.`, 'info');
+      showToast(`Enlace copiado. Puedes arrastrar la imagen directamente hacia WhatsApp.`, 'info');
     }
   };
 
@@ -61,18 +60,16 @@ export default function InfoAmexTab() {
     if (ok) {
       showToast(`¡Texto para WhatsApp copiado al portapapeles!`);
     } else {
-      showToast(`No se pudo copiar el texto automáticamente.`, 'error');
+      showToast(`No se pudo copiar el texto.`, 'error');
     }
   };
 
-  // Toggle de selección individual de imagen
   const handleToggleSelect = (id: string) => {
     setSelectedImageIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
 
-  // Seleccionar todas o deseleccionar todas
   const handleSelectAll = (filteredItems: AmexInfoImage[]) => {
     if (selectedImageIds.length === filteredItems.length) {
       setSelectedImageIds([]);
@@ -81,46 +78,42 @@ export default function InfoAmexTab() {
     }
   };
 
-  // Dragstart SÍNCRONO para una sola imagen
+  // Dragstart para una sola imagen
   const handleDragStartSingle = (e: React.DragEvent<HTMLElement>, item: AmexInfoImage) => {
     try {
       e.dataTransfer.effectAllowed = 'copyMove';
-      const file = cachedFiles[item.id];
-      if (file && e.dataTransfer.items && e.dataTransfer.items.add) {
-        e.dataTransfer.items.add(file);
+      const cached = cachedFiles[item.id];
+      if (cached && e.dataTransfer.items && e.dataTransfer.items.add) {
+        e.dataTransfer.items.add(cached.file);
       }
       const fullUrl = window.location.origin + item.imageUrl;
       e.dataTransfer.setData('text/uri-list', fullUrl);
       e.dataTransfer.setData('text/plain', fullUrl);
     } catch (err) {
-      console.error('Error en dragstart individual:', err);
+      console.error('Error drag single:', err);
     }
   };
 
-  // Dragstart SÍNCRONO para MÚLTIPLES imágenes a la vez hacia WhatsApp
+  // Dragstart para múltiples imágenes en el botón verde
   const handleDragStartMultiple = (e: React.DragEvent<HTMLElement>, selectedItems: AmexInfoImage[]) => {
     try {
       e.dataTransfer.effectAllowed = 'copyMove';
-
-      // Agregar cada archivo binario pre-cargado de forma instantánea al DataTransfer
       if (e.dataTransfer.items && e.dataTransfer.items.add) {
         selectedItems.forEach((item) => {
-          const file = cachedFiles[item.id];
-          if (file) {
-            e.dataTransfer.items.add(file);
+          const cached = cachedFiles[item.id];
+          if (cached) {
+            e.dataTransfer.items.add(cached.file);
           }
         });
       }
-
       const urls = selectedItems.map((item) => window.location.origin + item.imageUrl).join('\n');
       e.dataTransfer.setData('text/uri-list', urls);
       e.dataTransfer.setData('text/plain', urls);
     } catch (err) {
-      console.error('Error al empaquetar lote de archivos en dragstart:', err);
+      console.error('Error drag multiple:', err);
     }
   };
 
-  // Copiar todos los textos de los elementos seleccionados
   const handleCopyCombinedTexts = async (selectedItems: AmexInfoImage[]) => {
     const combined = selectedItems
       .map((item, idx) => `──────────────\n📌 *(${idx + 1}) ${item.title}*\n${item.suggestedWhatsappText}`)
@@ -134,14 +127,13 @@ export default function InfoAmexTab() {
     }
   };
 
-  // Descargar todas las seleccionadas
   const handleDownloadAllSelected = (selectedItems: AmexInfoImage[]) => {
     selectedItems.forEach((item, index) => {
       setTimeout(() => {
         downloadImage(item.imageUrl, item.filename);
-      }, index * 250);
+      }, index * 200);
     });
-    showToast(`Iniciando descarga de ${selectedItems.length} imágenes...`);
+    showToast(`Descargando ${selectedItems.length} imágenes...`);
   };
 
   const filteredImages = AMEX_INFO_IMAGES.filter((img) => {
@@ -226,7 +218,7 @@ export default function InfoAmexTab() {
               Imágenes e Información Corporativa AMEX
             </h1>
             <p style={{ color: '#94a3b8', fontSize: '13.5px', margin: '6px 0 0 0', lineHeight: 1.4 }}>
-              Arrastra una imagen individual o <strong>selecciona varias imágenes</strong> con la casilla de verificación para arrastrarlas juntas a WhatsApp en un solo movimiento.
+              💡 <strong>2 Formas de enviar a WhatsApp:</strong> Haz clic en <strong>"Copiar Imagen"</strong> para pegarla con <kbd style={{ background: '#334155', padding: '2px 6px', borderRadius: '4px', color: '#fff' }}>Ctrl + V</kbd> (100% garantizado), o haz <strong>clic sostenido en la imagen</strong> y arrástrala hacia WhatsApp.
             </p>
           </div>
 
@@ -244,7 +236,7 @@ export default function InfoAmexTab() {
             <i className="fa-brands fa-whatsapp" style={{ color: '#22c55e', fontSize: '26px' }} />
             <div>
               <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>WhatsApp Web</div>
-              <div style={{ fontSize: '13px', color: '#ffffff', fontWeight: 800 }}>Envío Individual o Múltiple</div>
+              <div style={{ fontSize: '13px', color: '#ffffff', fontWeight: 800 }}>Envío Rápido</div>
             </div>
           </div>
         </div>
@@ -334,7 +326,6 @@ export default function InfoAmexTab() {
             Sede Lince
           </button>
 
-          {/* Botón para seleccionar todo el grupo */}
           <button
             onClick={() => handleSelectAll(filteredImages)}
             style={{
@@ -387,7 +378,7 @@ export default function InfoAmexTab() {
                   : `${selectedImagesList.length} Imágenes Seleccionadas`}
               </div>
               <div style={{ color: '#94a3b8', fontSize: '12px' }}>
-                Haz clic sostenido en el botón verde y arrástralo directamente hacia el chat de WhatsApp.
+                Arrastra el botón verde hacia WhatsApp o descárgalas en conjunto.
               </div>
             </div>
           </div>
@@ -494,7 +485,11 @@ export default function InfoAmexTab() {
               </span>
 
               {/* Contenedor Fijo de la Imagen */}
-              <div className="info-card-media">
+              <div
+                className="info-card-media"
+                draggable={true}
+                onDragStart={(e) => handleDragStartSingle(e, item)}
+              >
                 <img
                   src={item.imageUrl}
                   alt={item.title}
@@ -502,10 +497,10 @@ export default function InfoAmexTab() {
                   draggable={true}
                   onDragStart={(e) => handleDragStartSingle(e, item)}
                   className="info-card-img"
-                  title="Arrastra esta imagen individual hacia WhatsApp Web o márcala para envío múltiple"
+                  title="Arrastra esta imagen directamente hacia WhatsApp"
                 />
                 <div className="info-card-drag-bottom-banner">
-                  <i className="fa-solid fa-arrow-up-right-from-square" /> Arrastra a WhatsApp
+                  <i className="fa-solid fa-arrow-up-right-from-square" /> Arrastra esta imagen hacia WhatsApp
                 </div>
               </div>
 
