@@ -11,7 +11,8 @@ export const TAB_TO_PATH: Record<string, string> = {
   'rotulos-a4': '/rotulos',
   'boletas-shalom': '/boletas-shalom',
   'formato-entrega': '/formato-entrega',
-  'invoices-usa': '/invoices-usa'
+  'invoices-usa': '/invoices-usa',
+  'info-amex': '/info-amex'
 };
 
 export const PATH_TO_TAB: Record<string, string> = {
@@ -35,6 +36,10 @@ export const PATH_TO_TAB: Record<string, string> = {
   '/invoice': 'invoices-usa',
   '/facturas-usa': 'invoices-usa',
   '/facturas': 'invoices-usa',
+  '/info-amex': 'info-amex',
+  '/imagenes': 'info-amex',
+  '/info': 'info-amex',
+  '/info-imagenes': 'info-amex',
   // Aliases retrocompatibles
   '/live-sheets': 'live-sheets',
   '/sheets': 'live-sheets',

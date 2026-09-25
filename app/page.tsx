@@ -87,6 +87,11 @@ const InvoicesTab = dynamic(() => import('@/components/tabs/InvoicesTab'), {
   loading: () => <InvoicesSkeleton />
 });
 
+const InfoAmexTab = dynamic(() => import('@/components/tabs/InfoAmexTab'), {
+  ssr: false,
+  loading: () => <DashboardSkeleton />
+});
+
 const NewClientModal = dynamic(() => import('@/components/modals/NewClientModal'), { ssr: false });
 const NewPackageModal = dynamic(() => import('@/components/modals/NewPackageModal'), { ssr: false });
 const ThermalLabelModal = dynamic(() => import('@/components/modals/ThermalLabelModal'), { ssr: false });
@@ -137,7 +142,8 @@ const VALID_TABS = [
   'boletas-shalom',
   'formato-entrega',
   'invoices-usa',
-  'invoices'
+  'invoices',
+  'info-amex'
 ];
 
 export default function DashboardPage() {
@@ -760,6 +766,10 @@ export default function DashboardPage() {
 
               {(activeTab === 'invoices-usa' || activeTab === 'invoices') && (
                 <InvoicesTab clientes={clientes} />
+              )}
+
+              {activeTab === 'info-amex' && (
+                <InfoAmexTab />
               )}
             </>
           )}
