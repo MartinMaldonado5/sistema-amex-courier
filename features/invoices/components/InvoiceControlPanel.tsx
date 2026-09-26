@@ -295,15 +295,20 @@ export function InvoiceControlPanel({
                 <label className="text-xs font-bold text-slate-300">
                   Bill To (Nombre completo) <span className="text-rose-400">*</span>
                 </label>
-                <span className="text-[11px] text-slate-400">Facturación</span>
+                <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                  <i className="fa-solid fa-arrows-rotate text-sky-500"></i>
+                  <span className="text-slate-400">Sincronizado con Ship To</span>
+                </span>
               </div>
               <div className="relative">
                 <input
                   type="text"
                   value={data.billToName || ''}
                   onChange={e => {
-                    onUpdateBillTo(e.target.value);
-                    setClientSearchBill(e.target.value);
+                    const val = e.target.value;
+                    onUpdateBillTo(val);
+                    onUpdateShipTo(val);
+                    setClientSearchBill(val);
                     setShowClientDropdownBill(true);
                   }}
                   onFocus={() => setShowClientDropdownBill(true)}
@@ -323,7 +328,7 @@ export function InvoiceControlPanel({
                         <div
                           key={c.id}
                           onClick={() => {
-                            onSelectCliente(c, 'billTo');
+                            onSelectCliente(c, 'both');
                             setShowClientDropdownBill(false);
                             setClientSearchBill('');
                           }}
@@ -339,21 +344,16 @@ export function InvoiceControlPanel({
               </div>
             </div>
 
-            {/* Ship To con botón de copiar */}
+            {/* Ship To — sincronizado */}
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-bold text-slate-300">
                   Ship To (Nombre completo) <span className="text-rose-400">*</span>
                 </label>
-                <button
-                  type="button"
-                  onClick={onCopyBillToToShipTo}
-                  className="text-[11px] font-bold text-sky-400 hover:text-sky-300 flex items-center gap-1 bg-sky-950/60 px-2 py-0.5 rounded border border-sky-800/60 transition-colors"
-                  title="Copiar el mismo nombre de Bill To"
-                >
-                  <i className="fa-solid fa-clone text-[10px]"></i>
-                  <span>Copiar de Bill To</span>
-                </button>
+                <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                  <i className="fa-solid fa-arrows-rotate text-sky-500"></i>
+                  <span className="text-slate-400">Sincronizado con Bill To</span>
+                </span>
               </div>
 
               <div className="relative">
@@ -361,8 +361,10 @@ export function InvoiceControlPanel({
                   type="text"
                   value={data.shipToName || ''}
                   onChange={e => {
-                    onUpdateShipTo(e.target.value);
-                    setClientSearchShip(e.target.value);
+                    const val = e.target.value;
+                    onUpdateShipTo(val);
+                    onUpdateBillTo(val);
+                    setClientSearchShip(val);
                     setShowClientDropdownShip(true);
                   }}
                   onFocus={() => setShowClientDropdownShip(true)}
@@ -382,7 +384,7 @@ export function InvoiceControlPanel({
                         <div
                           key={c.id}
                           onClick={() => {
-                            onSelectCliente(c, 'shipTo');
+                            onSelectCliente(c, 'both');
                             setShowClientDropdownShip(false);
                             setClientSearchShip('');
                           }}
