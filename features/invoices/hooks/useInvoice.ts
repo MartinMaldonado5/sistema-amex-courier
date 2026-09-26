@@ -246,6 +246,29 @@ export function useInvoice() {
       showToast(`${newItems.length} ítems agregados con éxito.`);
       setPasteRawText('');
       setIsPasteModalOpen(false);
+      return true;
+    }
+    return false;
+  };
+
+  // Pegado directo con 1 solo clic desde el portapapeles del sistema
+  const handleDirectPasteFromClipboard = async () => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.readText) {
+        const text = await navigator.clipboard.readText();
+        if (text && text.trim()) {
+          const success = handleProcessPasteText(text);
+          if (success) return;
+        } else {
+          showToast('El portapapeles está vacío. Copia celdas de Excel primero.');
+          return;
+        }
+      }
+      // Si el portapapeles no tiene formato reconocible o falla el acceso directo, abrir modal como alternativa
+      setIsPasteModalOpen(true);
+    } catch {
+      // Si el navegador deniega permisos de lectura directa, abrir el modal de respaldo
+      setIsPasteModalOpen(true);
     }
   };
 
@@ -369,6 +392,7 @@ export function useInvoice() {
     updateItem,
     updateInvoiceAmount,
     handleProcessPasteText,
+    handleDirectPasteFromClipboard,
     handleClearItems,
     handleClearRecipients,
     handleResetToDefault,

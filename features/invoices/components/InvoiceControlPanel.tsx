@@ -29,6 +29,7 @@ interface InvoiceControlPanelProps {
   onUpdateItem: (id: string, field: 'name' | 'quantity' | 'unitPrice' | 'total', value: string | number) => void;
   onUpdateInvoiceAmount: (amount: string | number) => void;
   onProcessPasteText: (text: string) => void;
+  onDirectPasteFromClipboard: () => void;
   onClearItems: () => void;
   onClearRecipients: () => void;
   onResetToDefault: () => void;
@@ -65,6 +66,7 @@ export function InvoiceControlPanel({
   onUpdateItem,
   onUpdateInvoiceAmount,
   onProcessPasteText,
+  onDirectPasteFromClipboard,
   onClearItems,
   onClearRecipients,
   onResetToDefault,
@@ -419,11 +421,11 @@ export function InvoiceControlPanel({
 
               <button
                 type="button"
-                onClick={() => setIsPasteModalOpen(true)}
-                className="px-2.5 py-1 text-[11px] font-bold rounded bg-slate-800 hover:bg-slate-700 text-sky-400 border border-sky-800/60 flex items-center gap-1 transition-colors"
-                title="Pegar lista desde Excel o portapapeles"
+                onClick={onDirectPasteFromClipboard}
+                className="px-2.5 py-1 text-[11px] font-bold rounded bg-sky-700 hover:bg-sky-600 text-white border border-sky-500/60 flex items-center gap-1 transition-colors active:scale-95"
+                title="Pega directamente lo copiado del Excel. Si el navegador pide permiso, haz clic en Permitir."
               >
-                <i className="fa-solid fa-paste"></i>
+                <i className="fa-solid fa-clipboard-check"></i>
                 <span>Pegar Excel</span>
               </button>
 

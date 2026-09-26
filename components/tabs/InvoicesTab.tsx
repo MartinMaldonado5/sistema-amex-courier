@@ -39,6 +39,7 @@ export default function InvoicesTab({ clientes = [] }: InvoicesTabProps) {
     updateItem,
     updateInvoiceAmount,
     handleProcessPasteText,
+    handleDirectPasteFromClipboard,
     handleClearItems,
     handleClearRecipients,
     handleResetToDefault,
@@ -105,6 +106,7 @@ export default function InvoicesTab({ clientes = [] }: InvoicesTabProps) {
           onUpdateItem={updateItem}
           onUpdateInvoiceAmount={updateInvoiceAmount}
           onProcessPasteText={handleProcessPasteText}
+          onDirectPasteFromClipboard={handleDirectPasteFromClipboard}
           onClearItems={handleClearItems}
           onClearRecipients={handleClearRecipients}
           onResetToDefault={handleResetToDefault}
