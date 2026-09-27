@@ -388,13 +388,17 @@ internal static class Program
             if (name.Length > 0 && !columns.ContainsKey(name))
             {
                 columns.Add(name, column);
-                // Alias comunes para compatibilidad con las exportaciones del ERP
+                // Alias comunes para compatibilidad con las exportaciones del ERP y reportes TIB
                 if (name == "TRACKINGUSA" && !columns.ContainsKey("TRACKING"))
                     columns.Add("TRACKING", column);
                 if (name == "WR" && !columns.ContainsKey("GUIAWR"))
                     columns.Add("GUIAWR", column);
                 if (name == "GUIAWR" && !columns.ContainsKey("WR"))
                     columns.Add("WR", column);
+                if (name == "CLIENTE" && !columns.ContainsKey("CONSIGNATARIO"))
+                    columns.Add("CONSIGNATARIO", column);
+                if (name == "CONSIGNATARIO" && !columns.ContainsKey("CLIENTE"))
+                    columns.Add("CLIENTE", column);
             }
         }
         return required.All(columns.ContainsKey) ? new HeaderInfo(RowNumber(row), columns) : null;

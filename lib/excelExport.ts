@@ -50,10 +50,10 @@ export function exportToExcel(
 export function exportPaquetesToExcel(paquetes: Paquete[], filenamePrefix = 'Inventario_AMEX_Lince') {
   const formattedData = paquetes.map((p, idx) => ({
     'N°': idx + 1,
-    'Guía WR': p.numeroReciboBodega,
-    'Consignatario': p.nombreConsignatario || 'No asignado',
+    'WR': p.numeroReciboBodega,
+    'Cliente': p.nombreConsignatario || 'No asignado',
     'DNI / Documento': p.dniConsignatario || '',
-    'Tracking USA': p.trackingUsa || '',
+    'Tracking': p.trackingUsa || '',
     'Descripción del Paquete': p.descripcion || '',
     'Tipo Empaque': p.tipoEmpaque || '',
     'Peso (Kg)': p.pesoKg ? Number(p.pesoKg) : '',
