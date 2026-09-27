@@ -10,13 +10,17 @@ RUN dotnet restore ./processor/AmexInventoryProcessor/AmexInventoryProcessor.csp
 COPY Automatizador_Inventario_AMEX_WhatsApp/processor/AmexInventoryProcessor/ ./processor/AmexInventoryProcessor/
 RUN dotnet publish ./processor/AmexInventoryProcessor/AmexInventoryProcessor.csproj \
     -c Release -r linux-x64 --self-contained true \
-    -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+    -p:PublishSingleFile=false \
     -o /out/processor
 
 # ---- Etapa 2: runtime Node + binario C# ----
 FROM node:20-bookworm-slim
 ENV NODE_ENV=production
 ENV NODE_OPTIONS=--max-old-space-size=256
+# Limitar memoria del runtime .NET para sobrevivir en 512 MB (plan Free)
+ENV DOTNET_gcServer=0
+ENV DOTNET_GCHeapHardLimit=C800000
+ENV DOTNET_EnableDiagnostics=0
 WORKDIR /app
 COPY --from=dotnet-build /out/processor /app/processor
 RUN chmod +x /app/processor/AmexInventoryProcessor
