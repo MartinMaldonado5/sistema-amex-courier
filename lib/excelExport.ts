@@ -51,17 +51,10 @@ export function exportPaquetesToExcel(paquetes: Paquete[], filenamePrefix = 'Inv
   const formattedData = paquetes.map((p, idx) => ({
     'N°': idx + 1,
     'WR': p.numeroReciboBodega,
-    'Cliente': p.nombreConsignatario || '',
     'Tracking': p.trackingUsa || '',
-    'Descripción del Paquete': p.descripcion || '',
+    'Cliente': p.nombreConsignatario || '',
     'Tipo Empaque': p.tipoEmpaque || '',
     'Peso (Kg)': p.pesoKg ? Number(p.pesoKg) : '',
-    'Almacén Actual': p.ubicacionActual === 'Entregado'
-      ? 'Entregado'
-      : 'Almacén Central Lince',
-    'Anaquel': p.anaquel || '',
-    'Piso': p.piso || '',
-    'Posición WMS': p.posicionEstante || (p.anaquel && p.piso ? `${p.anaquel}-${p.piso}` : 'REC'),
     'Estado Entrega': p.estadoEntrega === 'EnAlmacen'
       ? 'En Almacén'
       : p.estadoEntrega === 'EnRutaCarroAmex'
@@ -71,6 +64,11 @@ export function exportPaquetesToExcel(paquetes: Paquete[], filenamePrefix = 'Inv
       : p.estadoEntrega === 'Entregado'
       ? 'Entregado'
       : p.estadoEntrega,
+    'Posición WMS': p.posicionEstante || (p.anaquel && p.piso ? `${p.anaquel}-${p.piso}` : 'REC'),
+    'Almacén Actual': p.ubicacionActual === 'Entregado'
+      ? 'Entregado'
+      : 'Almacén Central Lince',
+    'Descripción del Paquete': p.descripcion || '',
     'Fecha de Registro': p.creadoEn ? new Date(p.creadoEn).toLocaleString('es-PE') : ''
   }));
 
