@@ -10,6 +10,7 @@ export const CobrosService = {
     const { data, error } = await supabase
       .from('cobros_vouchers')
       .select('*')
+      .is('eliminado_en', null)
       .order('creado_en', { ascending: false });
 
     if (error) {
@@ -17,6 +18,38 @@ export const CobrosService = {
       throw error;
     }
     return (data as CobroVoucher[]) || [];
+  },
+
+  /**
+   * Eliminación lógica (Soft Delete) de un comprobante de cobro con registro de auditoría
+   */
+  async softDeleteVoucher(id: string, motivo: string = 'Eliminación manual desde Módulo Cobros'): Promise<void> {
+    const { data: authData } = await supabase.auth.getUser();
+    const userId = authData?.user?.id || null;
+    const now = new Date().toISOString();
+
+    const { error } = await supabase
+      .from('cobros_vouchers')
+      .update({
+        eliminado_en: now,
+        eliminado_por: userId,
+        motivo_eliminacion: motivo
+      })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    await supabase.from('auditoria_sistema').insert({
+      usuario_id: userId,
+      usuario_nombre: authData?.user?.user_metadata?.nombre_completo || 'Operador Logístico AMEX',
+      usuario_email: authData?.user?.email || 'operaciones@amexcourier.pe',
+      modulo: 'COBROS',
+      accion: 'ELIMINAR_SOFT',
+      registro_id: id,
+      detalles: `Eliminación lógica de comprobante. Motivo: ${motivo}`,
+      valores_anteriores: { id, eliminado: false },
+      valores_nuevos: { id, eliminado_en: now, motivo_eliminacion: motivo }
+    });
   },
 
   /**

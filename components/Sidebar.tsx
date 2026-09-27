@@ -112,6 +112,7 @@ export default function Sidebar({
           {navItem('invoices-usa', 'fa-solid fa-file-invoice-dollar', '11. Facturas / Invoices USA')}
           {navItem('info-amex', 'fa-solid fa-photo-film', '12. Info Imágenes AMEX')}
           {navItem('completar-inventario', 'fa-solid fa-cloud-arrow-up', '13. Completar Inventario')}
+          {navItem('auditoria', 'fa-solid fa-shield-halved', '14. Auditoría & Gobernanza')}
         </div>
       </div>
     </nav>

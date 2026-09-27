@@ -97,6 +97,11 @@ const InventarioJobsTab = dynamic(() => import('@/components/tabs/InventarioJobs
   loading: () => <DashboardSkeleton />
 });
 
+const AuditoriaTab = dynamic(() => import('@/components/tabs/AuditoriaTab'), {
+  ssr: false,
+  loading: () => <DashboardSkeleton />
+});
+
 const NewClientModal = dynamic(() => import('@/components/modals/NewClientModal'), { ssr: false });
 const NewPackageModal = dynamic(() => import('@/components/modals/NewPackageModal'), { ssr: false });
 const ThermalLabelModal = dynamic(() => import('@/components/modals/ThermalLabelModal'), { ssr: false });
@@ -148,7 +153,8 @@ const VALID_TABS = [
   'invoices-usa',
   'invoices',
   'info-amex',
-  'completar-inventario'
+  'completar-inventario',
+  'auditoria'
 ];
 
 export default function DashboardPage() {
@@ -256,14 +262,27 @@ export default function DashboardPage() {
     setPaquetes(prev => prev.filter(p => p.id !== id));
   }, []);
 
-  // Estado de usuario activo directo
+  // Estado de usuario activo directo sincronizado con Supabase Auth
   const [currentUser, setCurrentUser] = useState<{ nombre: string; rol: string } | null>({
     nombre: 'Operador Logístico AMEX',
-    rol: 'admin'
+    rol: 'Administrador'
   });
 
-  const handleLogout = () => {
-    setCurrentUser({ nombre: 'Operador Logístico AMEX', rol: 'admin' });
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) {
+        const metadata = data.user.user_metadata || {};
+        setCurrentUser({
+          nombre: (metadata.nombre_completo as string) || (metadata.nombre as string) || data.user.email?.split('@')[0] || 'Operador AMEX',
+          rol: (metadata.rol as string) || 'Administrador'
+        });
+      }
+    });
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = '/login';
   };
 
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -303,9 +322,9 @@ export default function DashboardPage() {
       setIsGlobalRefreshing(true);
       const [clientesRes, paquetesRes, entregasRes, cobrosRes] = await Promise.all([
         supabase.from('clientes').select('*').order('creado_en', { ascending: false }),
-        supabase.from('paquetes').select('*').order('creado_en', { ascending: false }),
+        supabase.from('paquetes').select('*').is('eliminado_en', null).order('creado_en', { ascending: false }),
         supabase.from('entregas_ordenes').select('*').order('creado_en', { ascending: false }),
-        supabase.from('cobros_vouchers').select('*').order('creado_en', { ascending: false })
+        supabase.from('cobros_vouchers').select('*').is('eliminado_en', null).order('creado_en', { ascending: false })
       ]);
 
       const dbClientes = clientesRes.data || [];
@@ -769,6 +788,10 @@ export default function DashboardPage() {
 
               {activeTab === 'completar-inventario' && (
                 <InventarioJobsTab />
+              )}
+
+              {activeTab === 'auditoria' && (
+                <AuditoriaTab />
               )}
             </>
           )}

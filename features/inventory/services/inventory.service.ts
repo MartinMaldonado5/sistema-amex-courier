@@ -158,9 +158,32 @@ export const inventoryService = {
       .eq('id', updated.id);
   },
 
-  // Eliminar paquete individual
-  async deletePackage(id: string): Promise<void> {
-    await supabase.from('paquetes').delete().eq('id', id);
+  // Eliminar paquete individual con Soft Delete y Auditoría
+  async deletePackage(id: string, motivo: string = 'Eliminación manual desde Almacén Lince'): Promise<void> {
+    const { data: authData } = await supabase.auth.getUser();
+    const userId = authData?.user?.id || null;
+    const now = new Date().toISOString();
+
+    await supabase
+      .from('paquetes')
+      .update({
+        eliminado_en: now,
+        eliminado_por: userId,
+        motivo_eliminacion: motivo
+      })
+      .eq('id', id);
+
+    await supabase.from('auditoria_sistema').insert({
+      usuario_id: userId,
+      usuario_nombre: authData?.user?.user_metadata?.nombre_completo || 'Operador Logístico AMEX',
+      usuario_email: authData?.user?.email || 'operaciones@amexcourier.pe',
+      modulo: 'INVENTARIO',
+      accion: 'ELIMINAR_SOFT',
+      registro_id: id,
+      detalles: `Eliminación lógica de paquete individual. Motivo: ${motivo}`,
+      valores_anteriores: { id, eliminado: false },
+      valores_nuevos: { id, eliminado_en: now, motivo_eliminacion: motivo }
+    });
   },
 
   // Cambio rápido de estado individual
@@ -216,9 +239,35 @@ export const inventoryService = {
     return updatedList;
   },
 
-  // Eliminación masiva en lote
-  async batchDelete(selectedIds: string[]): Promise<void> {
-    await supabase.from('paquetes').delete().in('id', selectedIds);
+  // Eliminación masiva en lote con Soft Delete y Auditoría
+  async batchDelete(selectedIds: string[], motivo: string = 'Eliminado desde vista Inventario'): Promise<void> {
+    const { data: authData } = await supabase.auth.getUser();
+    const userId = authData?.user?.id || null;
+    const now = new Date().toISOString();
+
+    await supabase
+      .from('paquetes')
+      .update({
+        eliminado_en: now,
+        eliminado_por: userId,
+        motivo_eliminacion: motivo
+      })
+      .in('id', selectedIds);
+
+    // Registro inmutable de auditoría
+    for (const id of selectedIds) {
+      await supabase.from('auditoria_sistema').insert({
+        usuario_id: userId,
+        usuario_nombre: authData?.user?.user_metadata?.nombre_completo || 'Operador Logístico AMEX',
+        usuario_email: authData?.user?.email || 'operaciones@amexcourier.pe',
+        modulo: 'INVENTARIO',
+        accion: 'ELIMINAR_SOFT',
+        registro_id: id,
+        detalles: `Eliminación lógica de paquete. Motivo: ${motivo}`,
+        valores_anteriores: { id, eliminado: false },
+        valores_nuevos: { id, eliminado_en: now, motivo_eliminacion: motivo }
+      });
+    }
   },
 
   // Crear posición individual

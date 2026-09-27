@@ -13,10 +13,12 @@ export const TAB_TO_PATH: Record<string, string> = {
   'formato-entrega': '/formato-entrega',
   'invoices-usa': '/invoices-usa',
   'info-amex': '/info-amex',
-  'completar-inventario': '/completar-inventario'
+  'completar-inventario': '/completar-inventario',
+  'auditoria': '/auditoria'
 };
 
 export const PATH_TO_TAB: Record<string, string> = {
+  '/auditoria': 'auditoria',
   '/dashboard': 'dashboard',
   '/amex-excel': 'live-sheets',
   '/inventario': 'mm-lince',
