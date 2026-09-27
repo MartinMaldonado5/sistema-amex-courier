@@ -215,21 +215,27 @@ function runProcessor(args, onProgress) {
     });
     child.on('error', (error) => {
       clearTimeout(timeout);
-      reject(new Error(`No se pudo iniciar el procesador C#: ${error.message}`));
+      reject(new Error(
+        `No se pudo iniciar el procesador (spawn error: ${error.message}; code=${error.code || 'n/a'}). ` +
+        `stderr: ${(stderrTail.trim() || '(vacío)').slice(0, 500)}`
+      ));
     });
-    child.on('close', (code) => {
+    child.on('close', (code, signal) => {
       clearTimeout(timeout);
       if (timedOut) {
         reject(new Error('El procesamiento excedió el tiempo máximo y se detuvo.'));
         return;
       }
       if (code !== 0) {
-        let message = stderrTail.trim() || stdout.trim() || `El procesador terminó con código ${code}.`;
+        let message = stderrTail.trim() || stdout.trim() || `El procesador terminó con código ${code} y señal ${signal || 'n/a'}.`;
         try {
           const details = JSON.parse(message.split(/\r?\n/).at(-1));
           if (details.error) message = details.error;
         } catch { /* usa el mensaje tal cual */ }
-        reject(new Error(message.split('\n')[0]));
+        reject(new Error(
+          `${message.split('\n')[0]} [exit=${code} signal=${signal || 'n/a'}] ` +
+          `stdout: ${(stdout.trim() || '(vacío)').slice(-300)}`
+        ));
         return;
       }
       try {
@@ -329,8 +335,8 @@ async function processJob(job) {
     await updateJob(jobId, {
       estado: 'error',
       etapa: 'error',
-      mensaje: String(err.message).slice(0, 500),
-      error: String(err.stack || err.message).slice(0, 2000),
+      mensaje: String(err.message).slice(0, 900),
+      error: String(err.stack || err.message).slice(0, 4000),
       terminado_en: new Date().toISOString(),
     });
   } finally {
@@ -370,7 +376,25 @@ const server = http.createServer((req, res) => {
 
 // ------------------------------------------------------------------ main
 
+// Preflight: el binario sin argumentos debe responder uso + exit 2.
+// Solo diagnostica (no bloquea el arranque) para depurar el contenedor.
+function preflight() {
+  try {
+    const child = spawn(PROCESSOR, [], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+    let err = '';
+    child.stderr.setEncoding('utf8');
+    child.stderr.on('data', (c) => { err += c; });
+    child.on('error', (e) => console.error(`[worker] preflight spawn error: ${e.message} (code=${e.code || 'n/a'})`));
+    child.on('close', (code, signal) => {
+      console.log(`[worker] preflight: exit=${code} signal=${signal || 'n/a'} out=${err.trim().slice(0, 200) || '(vacío)'}`);
+    });
+  } catch (e) {
+    console.error(`[worker] preflight exception: ${e.message}`);
+  }
+}
+
 assertConfig();
+preflight();
 fsp.mkdir(WORK_DIR, { recursive: true })
   .then(() => {
     server.listen(PORT, HOST, () => {
