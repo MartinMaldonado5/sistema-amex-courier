@@ -1,0 +1,68 @@
+# Ejecuta el binario DENTRO de la imagen del worker (igual que Render),
+# con y sin límites de 512 MB / 0.5 CPU. Reporta el resultado como
+# comentario del commit para diagnóstico remoto.
+name: worker-container-test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/worker-container-test.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: pip install openpyxl
+      - name: Generar xlsx de prueba
+        run: |
+          mkdir -p /tmp/t
+          python3 - <<'EOF'
+          import openpyxl
+          inv = [['Guía WR','Consignatario','Tracking','Tipo Empaque','Peso Kg','Estado Entrega'],
+                 ['WR-001','','','','',''],['WR-002','','','','',''],['WR-999',' intacto','X','CAJA',1,'PENDIENTE']]
+          ent = [['WR','Tracking','Cliente','Tipo Paquete','Peso','Estado','Modificado'],
+                 ['WR-001','000123','JUAN PEREZ','CAJA',2.5,'ENTREGADO','2026-09-20'],
+                 ['WR-002','TRK-002','MARIA LOPEZ','SOBRE',0.5,'ENTREGADO','2026-09-21']]
+          env = [['WR','Tracking','Cliente','Tipo Paquete','Peso','Estado','Modificado'],
+                 ['WR-003','TRK-003','CARLOS RUIZ','SACA',5,'ENVIADO','2026-09-22']]
+          for name, rows in [('inv.xlsx',inv),('ent.xlsx',ent),('env.xlsx',env)]:
+              wb = openpyxl.Workbook(); ws = wb.active
+              for r in rows: ws.append(r)
+              wb.save(f'/tmp/t/{name}')
+          print('archivos OK')
+          EOF
+      - name: Test 1 sin límites
+        run: |
+          echo '--- TEST1 sin límites ---' > /tmp/diag.log
+          time docker run --rm -v /tmp/t:/t \
+            --entrypoint /app/processor/AmexInventoryProcessor \
+            ghcr.io/martinmaldonado5/amex-inventory-worker:latest \
+            /t/inv.xlsx /t/ent.xlsx /t/env.xlsx /t/env.xlsx /t/out1.xlsx /t/un1.csv \
+            >> /tmp/diag.log 2>&1 || echo "exit=$?" >> /tmp/diag.log
+          echo '--- OUT1 ---' >> /tmp/diag.log
+          python3 -c "import openpyxl; [print(r) for r in openpyxl.load_workbook('/tmp/t/out1.xlsx').active.iter_rows(values_only=True)]" >> /tmp/diag.log 2>&1 || echo 'sin out1' >> /tmp/diag.log
+      - name: Test 2 con límites Render Free (512 MB / 0.5 CPU)
+        run: |
+          echo '--- TEST2 512m 0.5cpu ---' >> /tmp/diag.log
+          time docker run --rm -v /tmp/t:/t --memory=512m --cpus=0.5 \
+            --entrypoint /app/processor/AmexInventoryProcessor \
+            ghcr.io/martinmaldonado5/amex-inventory-worker:latest \
+            /t/inv.xlsx /t/ent.xlsx /t/env.xlsx /t/env.xlsx /t/out2.xlsx /t/un2.csv \
+            >> /tmp/diag.log 2>&1 || echo "exit=$?" >> /tmp/diag.log
+          echo '--- OUT2 ---' >> /tmp/diag.log
+          python3 -c "import openpyxl; [print(r) for r in openpyxl.load_workbook('/tmp/t/out2.xlsx').active.iter_rows(values_only=True)]" >> /tmp/diag.log 2>&1 || echo 'sin out2' >> /tmp/diag.log
+      - name: Publicar diagnóstico como comentario del commit
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let diag = fs.readFileSync('/tmp/diag.log', 'utf8');
+            diag = diag.slice(-6000);
+            await github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body: 'DIAG-CONTAINER-TEST (autogenerado):\n```\n' + diag + '\n```',
+            });
