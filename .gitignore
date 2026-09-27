@@ -1,6 +1,6 @@
 # dependencies
-/node_modules
-/.pnp
+node_modules/
+.pnp
 .pnp.*
 
 # next.js
@@ -56,3 +56,4 @@ certificates/
 
 # Automatizador Inventario AMEX (worker Render): resultados efímeros
 Automatizador_Inventario_AMEX_WhatsApp/runs/
+Automatizador_Inventario_AMEX_WhatsApp/worker/run-worker-local.bat

@@ -386,7 +386,16 @@ internal static class Program
             int column = ColumnNumber((string?)cell.Attribute("r") ?? string.Empty);
             string name = NormalizeHeader(ReadCell(cell, sharedStrings)?.Text ?? string.Empty);
             if (name.Length > 0 && !columns.ContainsKey(name))
+            {
                 columns.Add(name, column);
+                // Alias comunes para compatibilidad con las exportaciones del ERP
+                if (name == "TRACKINGUSA" && !columns.ContainsKey("TRACKING"))
+                    columns.Add("TRACKING", column);
+                if (name == "WR" && !columns.ContainsKey("GUIAWR"))
+                    columns.Add("GUIAWR", column);
+                if (name == "GUIAWR" && !columns.ContainsKey("WR"))
+                    columns.Add("WR", column);
+            }
         }
         return required.All(columns.ContainsKey) ? new HeaderInfo(RowNumber(row), columns) : null;
     }

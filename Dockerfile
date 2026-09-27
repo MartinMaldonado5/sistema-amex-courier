@@ -3,7 +3,7 @@
 # El contexto de build es el repo clonado (solo archivos de git).
 
 # ---- Etapa 1: compilar el procesador C# para linux-x64 ----
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS dotnet-build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS dotnet-build
 WORKDIR /src
 COPY Automatizador_Inventario_AMEX_WhatsApp/processor/AmexInventoryProcessor/AmexInventoryProcessor.csproj ./processor/AmexInventoryProcessor/
 RUN dotnet restore ./processor/AmexInventoryProcessor/AmexInventoryProcessor.csproj -r linux-x64
