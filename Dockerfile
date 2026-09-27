@@ -17,13 +17,11 @@ RUN dotnet publish ./processor/AmexInventoryProcessor/AmexInventoryProcessor.csp
 FROM node:20-bookworm-slim
 ENV NODE_ENV=production
 ENV NODE_OPTIONS=--max-old-space-size=256
-# Limitar memoria del runtime .NET para sobrevivir en 512 MB (plan Free)
-ENV DOTNET_gcServer=0
-ENV DOTNET_GCHeapHardLimit=C800000
-ENV DOTNET_EnableDiagnostics=0
-# La imagen slim no trae libicu: modo invariante (el procesador ya usa
-# CultureInfo.InvariantCulture explícito en todo parseo/formateo)
-ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+# ICU real: los encabezados AMEX llevan acentos ("Guía WR") y .NET los
+# necesita para normalizar. Sin esto el procesador aborta (SIGABRT).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libicu72 \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=dotnet-build /out/processor /app/processor
 RUN chmod +x /app/processor/AmexInventoryProcessor
