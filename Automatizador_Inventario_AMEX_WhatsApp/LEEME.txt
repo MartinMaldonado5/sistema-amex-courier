@@ -1,0 +1,40 @@
+AUTOMATIZADOR DE INVENTARIO AMEX
+
+INICIAR EN WINDOWS
+1. Asegúrate de tener Node.js 18 o superior.
+   El paquete incluye el procesador C#; no necesitas instalar .NET ni Microsoft Excel.
+2. Haz doble clic en "Iniciar automatizador.bat".
+3. Se abrirá el navegador en http://127.0.0.1:8765 (localhost de este equipo).
+4. Selecciona el inventario, activa las fuentes TIB que quieres cruzar
+   (ENTREGADO, ENVIADO, RECIBIDO: una, varias o todas) y adjunta solo
+   los archivos de las fuentes activadas. Hay botones rápidos como
+   "Solo enviado" o "Enviado + Recibido".
+5. Pulsa "Completar inventario" y descarga el Excel generado.
+6. Deja abierta la ventana negra mientras usas la aplicación. Ciérrala para detener el servidor local.
+7. Si hay guías sin coincidencia, puedes descargar el detalle completo en CSV.
+8. Usa "Administrar archivos guardados" al pie de la página para ver el espacio usado y eliminar ejecuciones anteriores. Se borran las copias y resultados, no los Excel originales.
+
+INICIAR DESDE UNA TERMINAL
+Abre una terminal en esta carpeta y ejecuta:
+    npm start
+No hace falta ejecutar npm install: el proyecto no usa paquetes externos.
+Puedes comprobar que el servidor local está activo en:
+    http://127.0.0.1:8765/api/health
+
+QUÉ COMPLETA
+Cruza Guía WR con WR y copia Cliente a Consignatario, Tracking, Tipo Paquete,
+Peso y Estado. Si hay WR duplicados, elige el registro con Modificado más reciente.
+Las guías sin coincidencia conservan sus valores en el inventario.
+Tracking se guarda como texto para conservar ceros iniciales; Peso se guarda
+como número cuando corresponde.
+
+PRIVACIDAD Y ARCHIVOS
+La aplicación escucha solo en este equipo (127.0.0.1); los libros no se envían a
+un sitio externo. Cada resultado queda en la subcarpeta "runs". El inventario
+original que seleccionas no se sobrescribe. Las ejecuciones se eliminan
+automáticamente después de 30 días o puedes borrarlas desde la página.
+
+REQUISITOS
+- Windows con Node.js 18 o superior; el procesador C# está incluido.
+- Archivos .xlsx con los encabezados usados en los reportes TIB y el inventario AMEX.
+- Límite total de carga: 100 MB por ejecución.

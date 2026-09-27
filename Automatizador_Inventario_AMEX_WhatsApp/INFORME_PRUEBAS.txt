@@ -1,0 +1,113 @@
+INFORME DE PRUEBAS Y MEJORAS - AUTOMATIZADOR DE INVENTARIO AMEX
+=============================================================
+Fecha: 26/09/2026. Equipo de pruebas: Windows x64, Node.js 24.18.0,
+PowerShell 7 y 5.1, Python 3.12 (openpyxl/pandas), .NET SDK 10.0.401.
+Los archivos .xlsx de prueba NO se incluyen en el paquete para compartir.
+
+1. ARCHIVOS DE PRUEBA USADOS (solo conteos, sin datos personales)
+---------------------------------------------------------------
+- ENTREGADO TIB.xlsx .... 16,61 MiB .... 240.313 filas (hoja "Warehouses")
+- ENVIADO TIB.xlsx ....... 13,54 MiB .... 189.304 filas (hoja "Warehouses")
+- RECIBIDO TIB.xlsx ......  0,24 MiB ...... 3.513 filas (hoja "Warehouses")
+- TOTAL TIB: 433.127 filas de datos.
+- Inventario_AMEX_Lince_2026-09-25.xlsx .... 0,02 MiB .... 151 guias
+  (hoja "Inventario"). Los originales nunca se modificaron.
+
+2. PRUEBA 1 - MOTOR ORIGINAL (PowerShell + Excel COM)
+----------------------------------------------------
+- Ejecucion 1 via pagina web: 124,03 s -> 151 guias, 149 coincidencias,
+  2 sin coincidencia, 433.127 filas TIB, 0 duplicados.
+- Ejecucion 2 via pagina web: 140,79 s -> mismos conteos.
+- Conclusion: correcto pero lento (~2-2,5 min) y exige tener instalado
+  Microsoft Excel de escritorio. El script escribe el inventario celda por
+  celda, lo que lo frena con volumenes grandes.
+
+3. PRUEBA 2 - ALTERNATIVA PYTHON + OPENPYXL (prototipo temporal)
+---------------------------------------------------------------
+- Lectura en modo read-only + mismo cruce: 173,12 s (unos 40 s MAS LENTO
+  que Excel COM en estos archivos).
+- Conteos iguales (149/2), PERO los tipos de celda difieren: openpyxl deja
+  como texto valores que Excel convierte a numero (Tracking y Peso).
+- Conclusion: DESCARTADO como reemplazo. Mas lento y no reproduce la
+  conversion de tipos de Excel sin trabajo adicional.
+
+4. PRUEBA 3 - PROTOTIPO C# + OPEN XML SDK (lectura/escritura por filas)
+-----------------------------------------------------------------------
+- Se descargo el SDK .NET 10.0.401 (portable, solo para compilar) y el
+  paquete oficial DocumentFormat.OpenXml 3.3.0 desde NuGet.
+- El prototipo lee cada hoja TIB como flujo XML fila por fila (sin cargar
+  la hoja completa en memoria), arma un indice por WR y parchea una copia
+  del inventario fila por fila.
+- Resultado con archivos reales: 17-21 s -> 151 guias, 149 coincidencias,
+  2 sin coincidencia, 433.127 filas, 0 duplicados. Memoria maxima ~330 MiB.
+- Archivo ZIP integro, misma hoja y dimensiones, ninguna celda fuera de las
+  5 columnas objetivo fue alterada, validacion Open XML sin errores nuevos.
+- Conclusion: ~6 VECES MAS RAPIDO que Excel COM. Candidato elegido para
+  integrar. (Compilacion: 0 errores, 0 advertencias.)
+
+5. REGLA DE TIPO PARA TRACKING (decision tomada: SIEMPRE TEXTO)
+--------------------------------------------------------------
+- El Tracking identifica un envio, no es una cantidad. Excel COM convierte
+  automaticamente textos con apariencia numerica a numero: en una prueba,
+  el tracking "000123" termino como 123 (se pierden los ceros iniciales)
+  y valores con guion pueden interpretarse como fecha.
+- El motor C# ahora guarda TODO Tracking como texto: conserva "000123" y
+  los caracteres exactos. Si el TIB ya trae 123 como numero, se escribe
+  como texto "123" (los ceros perdidos en el origen no se pueden recuperar).
+- Peso se guarda como numero cuando el valor de origen lo permite.
+
+6. INTEGRACION DEL MOTOR C# A LA APLICACION
+-------------------------------------------
+- processor/AmexInventoryProcessor/ : proyecto C# de produccion (6 argumentos:
+  inventario, 3 TIB, Excel de salida, CSV de sin-coincidencia; responde un
+  solo JSON por stdout). Incluye validacion de contenedor .xlsx (max 20.000
+  componentes y 1 GiB descomprimido), copia atomica del inventario y
+  escritura de CSV con proteccion anti-inyeccion de formulas.
+- Se publico como ejecutable autocontenido win-x64
+  (AmexInventoryProcessor.exe, ~80 MB): el usuario final NO instala .NET.
+- server.js: invoca al .exe, nuevo endpoint /api/unmatched/<id> (CSV),
+  respuesta con unmatchedCount + unmatchedSample (500) + duplicateWRs (200),
+  limpieza automatica de ejecuciones de mas de 30 dias (RUN_RETENTION_DAYS),
+  /api/health ahora reporta "processor":"openxml".
+- public/: la pagina muestra muestra + conteo total y enlace de descarga
+  del CSV completo; nota de que Tracking se guarda como texto.
+- Iniciar automatizador.bat, LEEME.txt e INSTRUCCIONES_PARA_WHATSAPP.txt:
+  ya NO piden Excel ni .NET, solo Node.js 18+; el .bat verifica el .exe.
+- process_excel.ps1 quedo como legado sin uso (se puede borrar).
+
+7. PRUEBAS POST-INTEGRACION (todo OK)
+-------------------------------------
+a) Ejecutable publicado directo: 17,41 s -> 149/151, CSV con cabecera + 2.
+   149/149 Tracking como texto (32 con apariencia numerica), 149/149 Pesos
+   numericos, 0 diferencias fuera de columnas objetivo.
+b) Fixture sintetico (duplicado WR-DUP con distinto Modificado, tracking
+   "000123", peso texto "3.50", 1 guia sin coincidencia): 6/6 checks OK
+   (gana el registro mas reciente, cero inicial conservado, peso a numero,
+   fila sin coincidencia intacta, CSV correcto).
+c) Flujo web completo reiniciando el servidor: 17,75 s totales (carga +
+   proceso), JSON con downloadUrl y unmatchedReportUrl; ambas descargas
+   verificadas (xlsx 21.957 bytes, CSV con las 2 guias).
+d) Sintaxis: node --check server.js y public/app.js OK; pagina / y /app.js
+   responden HTTP 200 con el nuevo enlace de CSV.
+
+8. COMPARACION FINAL
+-------------------
+Motor ......................... Tiempo (433 mil filas) .. Requisitos
+Excel COM (original) .......... 124-141 s ............... Excel escritorio
+Python openpyxl (prototipo) ... ~173 s .................. Python (descartado)
+C# Open XML (integrado) ....... ~18 s ................... Ninguno (exe incluido)
+
+9. PARA USAR EN OTRA COMPUTADORA (ver LEEME.txt)
+------------------------------------------------
+- Requisitos minimos: Windows 10/11 de 64 bits + Node.js 18 o superior.
+  NO necesita Microsoft Excel, NO necesita .NET, NO necesita internet
+  (todo el proceso es local en http://127.0.0.1:8765).
+- Pasos: 1) Extraer todo el ZIP en una carpeta. 2) Doble clic en
+  "Iniciar automatizador.bat". 3) Cargar inventario + 3 TIB (.xlsx).
+  4) "Completar inventario" y descargar el Excel (y el CSV si hay guias
+  sin coincidencia). 5) Cerrar la ventana negra al terminar.
+- Verificacion rapida: abrir http://127.0.0.1:8765/api/health debe mostrar
+  "status":"ok" y "processor":"openxml".
+- Limites: 100 MB por carga, 20 min por proceso, 1 GiB descomprimido por
+  libro, encabezados en las primeras 25 filas, 1 trabajo a la vez.
+- Los resultados quedan en runs/ y se borran solos a los 30 dias.

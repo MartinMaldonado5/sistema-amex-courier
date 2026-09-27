@@ -51,3 +51,8 @@ certificates/
 *.xlsx
 *.xls
 *.tsbuildinfo
+# Plantilla interna del automatizador (sí se versiona)
+!Automatizador_Inventario_AMEX_WhatsApp/assets/FUENTE_VACIA.xlsx
+
+# Automatizador Inventario AMEX (worker Render): resultados efímeros
+Automatizador_Inventario_AMEX_WhatsApp/runs/

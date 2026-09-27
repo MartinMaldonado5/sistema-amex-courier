@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10251e">
+  <title>Automatizador de Inventario AMEX</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Automatizador AMEX, inicio">
+        <span class="brand-mark" aria-hidden="true">A</span>
+        <span>AMEX <span class="brand-light">OPERACIONES</span></span>
+      </a>
+      <div class="local-badge"><span class="online-dot"></span> Procesamiento local</div>
+    </header>
+
+    <main>
+      <section class="intro">
+        <div class="eyebrow"><span class="eyebrow-line"></span> HERRAMIENTA DE INVENTARIO</div>
+        <h1>Completa tu inventario<br><span>en unos pasos.</span></h1>
+        <p class="intro-copy">Carga el Excel de inventario y elige qué reportes TIB quieres cruzar. Buscaremos cada guía WR solo en las fuentes activadas y completaremos los datos relacionados.</p>
+      </section>
+
+      <section class="workspace" aria-labelledby="upload-heading">
+        <div class="workspace-heading">
+          <div>
+            <div class="step-label">PASO 1 <span>DE 2</span></div>
+            <h2 id="upload-heading">Selecciona tus archivos</h2>
+          </div>
+          <div class="file-count" id="file-count">Selecciona tus archivos</div>
+        </div>
+
+        <form id="upload-form">
+          <fieldset class="source-picker" id="source-picker">
+            <legend>¿Qué archivos TIB quieres cruzar?</legend>
+            <p class="source-hint">Activa al menos una fuente. Solo se buscarán coincidencias en las fuentes activadas.</p>
+            <div class="source-options">
+              <label class="source-option" for="use-delivered">
+                <input id="use-delivered" type="checkbox" checked>
+                <span>ENTREGADO</span>
+              </label>
+              <label class="source-option" for="use-sent">
+                <input id="use-sent" type="checkbox" checked>
+                <span>ENVIADO</span>
+              </label>
+              <label class="source-option" for="use-received">
+                <input id="use-received" type="checkbox" checked>
+                <span>RECIBIDO</span>
+              </label>
+            </div>
+            <div class="source-presets" role="group" aria-label="Combinaciones rápidas">
+              <button type="button" data-preset="all">Todos</button>
+              <button type="button" data-preset="sent-received">Enviado + Recibido</button>
+              <button type="button" data-preset="delivered">Solo entregado</button>
+              <button type="button" data-preset="sent">Solo enviado</button>
+              <button type="button" data-preset="received">Solo recibido</button>
+            </div>
+          </fieldset>
+          <div class="file-grid">
+            <label class="file-card required" for="inventory">
+              <span class="file-icon inventory-icon" aria-hidden="true">XLS</span>
+              <span class="file-copy"><strong>Inventario AMEX</strong><small>El archivo que deseas completar</small><span class="selected-name" id="name-inventory">Selecciona un archivo .xlsx</span></span>
+              <span class="file-action">Examinar</span>
+              <input id="inventory" name="inventory" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+            </label>
+            <label class="file-card" data-source-card="delivered" for="delivered">
+              <span class="file-icon" aria-hidden="true">TIB</span>
+              <span class="file-copy"><strong>ENTREGADO TIB</strong><small>Datos con estado entregado</small><span class="selected-name" id="name-delivered">Selecciona un archivo .xlsx</span></span>
+              <span class="file-action">Examinar</span>
+              <input id="delivered" name="delivered" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+            </label>
+            <label class="file-card" data-source-card="sent" for="sent">
+              <span class="file-icon" aria-hidden="true">TIB</span>
+              <span class="file-copy"><strong>ENVIADO TIB</strong><small>Datos con estado enviado</small><span class="selected-name" id="name-sent">Selecciona un archivo .xlsx</span></span>
+              <span class="file-action">Examinar</span>
+              <input id="sent" name="sent" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+            </label>
+            <label class="file-card" data-source-card="received" for="received">
+              <span class="file-icon" aria-hidden="true">TIB</span>
+              <span class="file-copy"><strong>RECIBIDO TIB</strong><small>Datos con estado recibido</small><span class="selected-name" id="name-received">Selecciona un archivo .xlsx</span></span>
+              <span class="file-action">Examinar</span>
+              <input id="received" name="received" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+            </label>
+          </div>
+
+          <div class="mapping-note">
+            <span class="note-icon" aria-hidden="true">i</span>
+            <p>El cruce se realiza por <strong>Guía WR</strong> solo en las fuentes TIB activadas. Se completan consignatario, tracking, tipo de paquete, peso y estado. Los tracking se guardan como texto para conservar ceros iniciales.</p>
+          </div>
+
+          <div class="form-footer">
+            <span class="privacy-note"><span aria-hidden="true">▣</span> Los archivos se procesan en este equipo.</span>
+            <button class="primary-button" id="process-button" type="submit" disabled>
+              <span>Completar inventario</span><span class="button-arrow" aria-hidden="true">→</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="results hidden" id="results" aria-live="polite">
+        <div class="results-heading">
+          <div>
+            <div class="step-label">PASO 2 <span>DE 2</span></div>
+            <h2>Resultado del cruce</h2>
+          </div>
+          <span class="success-pill" id="result-status"><span class="success-dot"></span> Listo</span>
+        </div>
+        <div class="stats-grid">
+          <article class="stat-card stat-highlight"><span>Coincidencias</span><strong id="stat-matched">0</strong><small id="stat-total">de 0 guías</small></article>
+          <article class="stat-card"><span>Sin coincidencia</span><strong id="stat-unmatched">0</strong><small>revisar guías</small></article>
+          <article class="stat-card"><span>Registros TIB revisados</span><strong id="stat-source">0</strong><small id="stat-source-hint">en las fuentes activadas</small></article>
+          <article class="stat-card"><span>WR duplicados</span><strong id="stat-duplicates">0</strong><small>filas repetidas en las fuentes</small></article>
+        </div>
+        <div class="result-actions">
+          <div><strong>Tu archivo está listo</strong><span>Se generó una copia del inventario original.</span><span id="result-sources"></span><span id="result-duration"></span></div>
+          <a class="download-button" id="download-link" href="#"><span aria-hidden="true">↓</span> Descargar Excel</a>
+        </div>
+        <details class="result-details">
+          <summary>Archivos, hojas y encabezados reconocidos</summary>
+          <ul id="input-validation-list" class="validation-list"></ul>
+        </details>
+        <details class="result-details">
+          <summary>Rendimiento y memoria</summary>
+          <div class="diagnostics-grid">
+            <div><span>Tiempo del procesador</span><strong id="diag-processing-time">—</strong></div>
+            <div><span>CPU utilizada</span><strong id="diag-cpu-time">—</strong></div>
+            <div><span>Pico de memoria RAM</span><strong id="diag-memory">—</strong></div>
+          </div>
+          <ul id="stage-timings" class="stage-timings"></ul>
+        </details>
+        <div class="review-panel hidden" id="unmatched-panel">
+          <h3>Guías sin coincidencia <span id="unmatched-count"></span></h3>
+          <p>Estas filas quedaron sin cambios porque sus WR no aparecen en los archivos TIB seleccionados.</p>
+          <a class="detail-download hidden" id="unmatched-download" href="#">Descargar detalle completo en CSV</a>
+          <ul id="unmatched-list"></ul>
+        </div>
+        <div class="review-panel duplicate-panel hidden" id="duplicate-panel">
+          <h3>WR repetidos en las fuentes</h3>
+          <p>Para cada repetición se utilizó el registro con la fecha <strong>Modificado</strong> más reciente.</p>
+          <ul id="duplicate-list"></ul>
+        </div>
+      </section>
+
+      <div class="error-box hidden" id="error-box" role="alert"></div>
+      <div class="processing hidden" id="processing" role="status">
+        <span class="spinner" aria-hidden="true"></span>
+        <span>
+          <strong>Procesando archivos...</strong>
+          <small id="processing-stage" aria-live="polite">Recibiendo los archivos seleccionados.</small>
+          <small class="processing-timer" id="processing-timer" aria-live="off">Tiempo transcurrido: 00:00</small>
+          <ol class="processing-steps" id="processing-steps" aria-label="Etapas del procesamiento">
+            <li data-processing-stage="receiving"><span>1</span>Recibiendo archivos</li>
+            <li data-processing-stage="validating"><span>2</span>Validando archivos Excel</li>
+            <li data-processing-stage="reading-delivered"><span>3</span>Leyendo ENTREGADO TIB</li>
+            <li data-processing-stage="reading-sent"><span>4</span>Leyendo ENVIADO TIB</li>
+            <li data-processing-stage="reading-received"><span>5</span>Leyendo RECIBIDO TIB</li>
+            <li data-processing-stage="validating-inventory"><span>6</span>Validando inventario</li>
+            <li data-processing-stage="matching"><span>7</span>Cruzando guías WR</li>
+            <li data-processing-stage="verifying"><span>8</span>Verificando y guardando Excel</li>
+          </ol>
+          <ul class="processing-validations hidden" id="processing-validations" aria-label="Archivos validados"></ul>
+        </span>
+      </div>
+    </main>
+
+    <section class="storage-panel hidden" id="storage-panel" aria-labelledby="storage-heading">
+      <div class="storage-heading">
+        <div><h2 id="storage-heading">Almacenamiento local</h2><p>Son copias subidas y resultados. Los archivos originales no se eliminan.</p></div>
+        <div class="storage-total"><strong id="storage-total">—</strong><span id="storage-run-count">0 ejecuciones</span></div>
+      </div>
+      <p class="storage-message" id="storage-message" role="status"></p>
+      <ul class="storage-run-list" id="storage-run-list"></ul>
+      <p class="storage-empty hidden" id="storage-empty">No hay ejecuciones guardadas.</p>
+    </section>
+    <footer class="footer">
+      <span>Automatizador de Inventario AMEX</span>
+      <button class="storage-toggle" id="storage-toggle" type="button" aria-expanded="false" aria-controls="storage-panel">Administrar archivos guardados</button>
+      <span>Solo disponible en este equipo</span>
+    </footer>
+  </div>
+  <script src="/app.js" defer></script>
+</body>
+</html>

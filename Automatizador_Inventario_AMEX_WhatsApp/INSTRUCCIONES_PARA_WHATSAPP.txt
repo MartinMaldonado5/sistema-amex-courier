@@ -1,0 +1,63 @@
+AUTOMATIZADOR DE INVENTARIO AMEX
+Guía rápida para compartir e instalar
+
+¿QUÉ HACE?
+Abre una página web local en tu computadora. Cargas el Excel de inventario y
+eliges qué reportes TIB quieres cruzar (ENTREGADO, ENVIADO y RECIBIDO: uno,
+varios o todos). El programa cruza las filas por el número WR solo en las
+fuentes activadas y crea una copia del inventario con estos datos:
+
+- Cliente TIB -> Consignatario
+- Tracking -> Tracking
+- Tipo Paquete -> Tipo Empaque
+- Peso -> Peso (Kg)
+- Estado TIB -> Estado Entrega
+
+Las guías sin coincidencia quedan sin cambios y se muestran en el resumen; el
+detalle completo puede descargarse en CSV. Tracking se guarda como texto para
+conservar ceros iniciales.
+Si el mismo WR aparece más de una vez, se usa el registro con la fecha
+Modificado más reciente. El inventario original no se sobrescribe.
+
+REQUISITOS
+- Windows 10 u 11.
+- Node.js versión 18 o superior.
+- El procesador C# viene incluido en el paquete; no requiere instalar .NET ni Excel.
+- Los archivos Excel deben estar en formato .xlsx y tener sus encabezados.
+  El inventario siempre es obligatorio; de los TIB solo adjuntas los de las
+  fuentes que actives.
+
+INSTALACIÓN Y USO
+1. Descarga el ZIP y extrae su contenido a una carpeta de tu computadora.
+2. Si Windows pregunta, confirma que quieres extraer todos los archivos.
+3. Abre la carpeta extraída.
+4. Haz doble clic en "Iniciar automatizador.bat".
+5. Se abrirá el navegador en http://127.0.0.1:8765.
+6. Selecciona el inventario AMEX, activa las fuentes TIB que quieres cruzar
+   y adjunta solo los archivos de esas fuentes.
+7. Pulsa "Completar inventario" y luego "Descargar Excel".
+   Si hay guías sin coincidencia, también puedes descargar el detalle CSV.
+8. La ventana negra debe permanecer abierta mientras usas la página. Ciérrala
+   cuando termines para detener el servidor local.
+9. Al pie de la página, "Administrar archivos guardados" muestra el espacio
+   usado y permite eliminar ejecuciones anteriores. Se borran las copias y los
+   resultados guardados, no los Excel originales.
+
+INICIO DESDE TERMINAL (OPCIONAL)
+Abre una terminal dentro de la carpeta extraída y ejecuta:
+    npm start
+No hace falta ejecutar npm install.
+
+PRIVACIDAD
+La página funciona solo en esta computadora (127.0.0.1). Los archivos no se
+cargan a Internet. El ZIP para compartir contiene el programa, no contiene los
+Excel de inventario/TIB ni resultados de trabajos anteriores.
+Las ejecuciones locales se eliminan automáticamente después de 30 días; también
+puedes eliminarlas individualmente desde la página.
+
+RESULTADOS Y AYUDA
+El Excel generado se descarga desde el navegador como Inventario_COMPLETADO.xlsx.
+Si no abre la página, revisa que la ventana del automatizador siga abierta y
+que el puerto 8765 no esté siendo utilizado por otro programa.
+Si aparece un aviso de Windows, permite ejecutar el archivo local si confías
+en el programa y en la persona que te lo compartió.
