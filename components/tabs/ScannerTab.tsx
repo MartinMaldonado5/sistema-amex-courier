@@ -249,7 +249,7 @@ export default function ScannerTab({
             tracking_usa: '',
             tipo_empaque: '',
             dni_consignatario: '',
-            nombre_consignatario: log.nombreConsignatario || 'Cliente AMEX',
+            nombre_consignatario: log.nombreConsignatario || '',
             descripcion: 'Mercadería ingresada por Escáner',
             peso_kg: null,
             valor_declarado_usd: 50.0,

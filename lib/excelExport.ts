@@ -51,7 +51,7 @@ export function exportPaquetesToExcel(paquetes: Paquete[], filenamePrefix = 'Inv
   const formattedData = paquetes.map((p, idx) => ({
     'N°': idx + 1,
     'WR': p.numeroReciboBodega,
-    'Cliente': p.nombreConsignatario || 'No asignado',
+    'Cliente': p.nombreConsignatario || '',
     'DNI / Documento': p.dniConsignatario || '',
     'Tracking': p.trackingUsa || '',
     'Descripción del Paquete': p.descripcion || '',
