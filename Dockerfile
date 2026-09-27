@@ -21,6 +21,9 @@ ENV NODE_OPTIONS=--max-old-space-size=256
 ENV DOTNET_gcServer=0
 ENV DOTNET_GCHeapHardLimit=C800000
 ENV DOTNET_EnableDiagnostics=0
+# La imagen slim no trae libicu: modo invariante (el procesador ya usa
+# CultureInfo.InvariantCulture explícito en todo parseo/formateo)
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
 WORKDIR /app
 COPY --from=dotnet-build /out/processor /app/processor
 RUN chmod +x /app/processor/AmexInventoryProcessor
