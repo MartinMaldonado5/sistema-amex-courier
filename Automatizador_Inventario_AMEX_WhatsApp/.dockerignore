@@ -1,0 +1,8 @@
+runs/
+**/node_modules
+**/bin
+**/obj
+**/publish
+*.log
+.git
+.gitignore

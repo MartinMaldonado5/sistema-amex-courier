@@ -1,0 +1,31 @@
+# Blueprint del Worker de Inventario AMEX (Render).
+# Despliegue: Dashboard → New → Blueprint → repo sistema-amex-courier.
+# Los secretos (sync: false) se completan en el Dashboard, nunca aquí.
+services:
+  - type: worker
+    name: amex-inventory-worker
+    runtime: docker
+    repo: https://github.com/MartinMaldonado5/sistema-amex-courier.git
+    branch: main
+    dockerfilePath: ./Automatizador_Inventario_AMEX_WhatsApp/Dockerfile
+    dockerContext: ./Automatizador_Inventario_AMEX_WhatsApp
+    plan: free
+    region: oregon
+    autoDeploy: true
+    envVars:
+      - key: SUPABASE_URL
+        value: https://tliubfyepimzlimxrquz.supabase.co
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: CLOUDFLARE_R2_ACCOUNT_ID
+        sync: false
+      - key: CLOUDFLARE_R2_ACCESS_KEY_ID
+        sync: false
+      - key: CLOUDFLARE_R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: CLOUDFLARE_R2_BUCKET_NAME
+        value: amex-courier-cloud
+      - key: CLOUDFLARE_R2_ROOT_FOLDER
+        value: FOLDER AMEX
+      - key: POLL_INTERVAL_MS
+        value: '5000'
