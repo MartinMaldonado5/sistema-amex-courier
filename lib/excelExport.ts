@@ -53,8 +53,8 @@ export function exportPaquetesToExcel(paquetes: Paquete[], filenamePrefix = 'Inv
     'WR': p.numeroReciboBodega,
     'Tracking': p.trackingUsa || '',
     'Cliente': p.nombreConsignatario || '',
-    'Tipo Empaque': p.tipoEmpaque || '',
-    'Peso (Kg)': p.pesoKg ? Number(p.pesoKg) : '',
+    'Tipo Paquete': p.tipoEmpaque || '',
+    'Peso (Kg)': p.pesoKg && Number(p.pesoKg) > 0 ? Number(p.pesoKg) : '',
     'Estado Entrega': p.estadoEntrega === 'EnAlmacen'
       ? 'En Almacén'
       : p.estadoEntrega === 'EnRutaCarroAmex'
