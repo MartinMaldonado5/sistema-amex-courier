@@ -7,8 +7,8 @@ services:
     runtime: docker
     repo: https://github.com/MartinMaldonado5/sistema-amex-courier.git
     branch: main
-    dockerfilePath: ./Automatizador_Inventario_AMEX_WhatsApp/Dockerfile
-    dockerContext: ./Automatizador_Inventario_AMEX_WhatsApp
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     plan: free
     region: oregon
     autoDeploy: true

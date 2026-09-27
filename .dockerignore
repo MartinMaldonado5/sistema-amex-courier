@@ -1,0 +1,10 @@
+# Contexto de build = repo clonado (solo archivos de git).
+.git/
+node_modules/
+.next/
+out/
+Automatizador_Inventario_AMEX_WhatsApp/runs/
+**/bin
+**/obj
+**/publish
+*.log
