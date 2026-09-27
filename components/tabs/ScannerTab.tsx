@@ -260,7 +260,6 @@ export default function ScannerTab({
             anaquel: ana,
             piso: pis,
             posicion_estante: loc,
-            metodo_entrega: 'CarroAmexDomicilio',
             estado_entrega: 'EnAlmacen'
           });
         }

@@ -64,7 +64,6 @@ export function exportPaquetesToExcel(paquetes: Paquete[], filenamePrefix = 'Inv
     'Anaquel': p.anaquel || '',
     'Piso': p.piso || '',
     'Posición WMS': p.posicionEstante || (p.anaquel && p.piso ? `${p.anaquel}-${p.piso}` : 'REC'),
-    'Método Entrega': p.metodoEntrega,
     'Estado Entrega': p.estadoEntrega === 'EnAlmacen'
       ? 'En Almacén'
       : p.estadoEntrega === 'EnRutaCarroAmex'
