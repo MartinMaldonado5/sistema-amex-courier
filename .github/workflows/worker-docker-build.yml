@@ -1,0 +1,26 @@
+# Valida que el Dockerfile del worker compile (sin publicar imagen).
+# Se ejecuta manual o al cambiar archivos del worker/automatizador.
+name: worker-docker-build
+
+on:
+  push:
+    paths:
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'Automatizador_Inventario_AMEX_WhatsApp/processor/**'
+      - 'Automatizador_Inventario_AMEX_WhatsApp/worker/**'
+      - 'Automatizador_Inventario_AMEX_WhatsApp/assets/**'
+      - '.github/workflows/worker-docker-build.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: amex-inventory-worker:test
