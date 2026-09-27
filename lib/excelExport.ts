@@ -55,8 +55,8 @@ export function exportPaquetesToExcel(paquetes: Paquete[], filenamePrefix = 'Inv
     'DNI / Documento': p.dniConsignatario || '',
     'Tracking USA': p.trackingUsa || '',
     'Descripción del Paquete': p.descripcion || '',
-    'Tipo Empaque': p.tipoEmpaque || 'CAJA',
-    'Peso (Kg)': Number(p.pesoKg || 0),
+    'Tipo Empaque': p.tipoEmpaque || '',
+    'Peso (Kg)': p.pesoKg ? Number(p.pesoKg) : '',
     'Almacén Actual': p.ubicacionActual === 'Entregado'
       ? 'Entregado'
       : 'Almacén Central Lince',

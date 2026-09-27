@@ -246,12 +246,12 @@ export default function ScannerTab({
           const newWr = upper.startsWith('WR') ? upper : `WR${upper.slice(-6)}`;
           await supabase.from('paquetes').insert({
             numero_recibo_bodega: newWr,
-            tracking_usa: upper,
-            tipo_empaque: 'CAJA',
+            tracking_usa: '',
+            tipo_empaque: '',
             dni_consignatario: '',
             nombre_consignatario: log.nombreConsignatario || 'Cliente AMEX',
             descripcion: 'Mercadería ingresada por Escáner',
-            peso_kg: 1.0,
+            peso_kg: null,
             valor_declarado_usd: 50.0,
             ubicacion_actual: 'AmexLince',
             anaquel: ana,
