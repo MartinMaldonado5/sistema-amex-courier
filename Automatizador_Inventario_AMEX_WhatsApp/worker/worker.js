@@ -51,6 +51,12 @@ const HOST = process.env.HOST || '0.0.0.0';
 const PORT = Number(process.env.PORT || 10000);
 
 const SOURCE_KEYS = ['delivered', 'sent', 'received'];
+// Las columnas en inventario_jobs están en español (las claves R2 del job).
+const SOURCE_COLUMN = {
+  delivered: 'entregado_key',
+  sent: 'enviado_key',
+  received: 'recibido_key',
+};
 const SOURCE_FILE_NAMES = {
   delivered: 'ENTREGADO TIB.xlsx',
   sent: 'ENVIADO TIB.xlsx',
@@ -287,7 +293,7 @@ async function processJob(job) {
     const emptyTemplate = await fsp.readFile(EMPTY_TEMPLATE);
     for (const key of SOURCE_KEYS) {
       const dest = path.join(jobDir, SOURCE_FILE_NAMES[key]);
-      const r2Key = job[`${key}_key`];
+      const r2Key = job[SOURCE_COLUMN[key]];
       if (fuentes.includes(key) && r2Key) {
         await downloadFromR2(r2Key, dest);
       } else {
