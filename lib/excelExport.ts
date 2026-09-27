@@ -52,7 +52,6 @@ export function exportPaquetesToExcel(paquetes: Paquete[], filenamePrefix = 'Inv
     'N°': idx + 1,
     'WR': p.numeroReciboBodega,
     'Cliente': p.nombreConsignatario || '',
-    'DNI / Documento': p.dniConsignatario || '',
     'Tracking': p.trackingUsa || '',
     'Descripción del Paquete': p.descripcion || '',
     'Tipo Empaque': p.tipoEmpaque || '',
