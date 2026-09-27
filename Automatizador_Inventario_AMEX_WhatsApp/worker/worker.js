@@ -332,6 +332,7 @@ async function processJob(job) {
     console.log(`[worker] Job ${jobId} OK: ${result.matched}/${result.totalInventory} en ${result.processingSeconds}s`);
   } catch (err) {
     console.error(`[worker] Job ${jobId} ERROR: ${err.message}`);
+    telemetry.lastError = { jobId, message: String(err.message).slice(0, 900), at: new Date().toISOString() };
     await updateJob(jobId, {
       estado: 'error',
       etapa: 'error',
@@ -362,12 +363,35 @@ async function loop() {
 
 // ---------------------------------------------------------------- health
 
+const telemetry = { preflight: null, lastError: null };
+
+function readCgroup() {
+  const info = {};
+  const readNum = (p) => {
+    try {
+      const v = fs.readFileSync(p, 'utf8').trim();
+      return v === 'max' ? -1 : Number(v);
+    } catch { return null; }
+  };
+  // cgroup v2
+  info.limit = readNum('/sys/fs/cgroup/memory.max');
+  info.usage = readNum('/sys/fs/cgroup/memory.current');
+  // cgroup v1
+  if (info.limit == null) info.limit = readNum('/sys/fs/cgroup/memory/memory.limit_in_bytes');
+  if (info.usage == null) info.usage = readNum('/sys/fs/cgroup/memory/memory.usage_in_bytes');
+  return info;
+}
+
 const server = http.createServer((req, res) => {
+  const mem = process.memoryUsage();
   const body = Buffer.from(JSON.stringify({
     status: 'ok',
     mode: 'worker',
     node: process.versions.node,
     processor: fs.existsSync(PROCESSOR) ? 'openxml' : 'missing',
+    nodeRssMB: Math.round(mem.rss / 1024 / 1024),
+    cgroup: readCgroup(),
+    telemetry,
     time: new Date().toISOString(),
   }));
   res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': body.length });
@@ -384,8 +408,12 @@ function preflight() {
     let err = '';
     child.stderr.setEncoding('utf8');
     child.stderr.on('data', (c) => { err += c; });
-    child.on('error', (e) => console.error(`[worker] preflight spawn error: ${e.message} (code=${e.code || 'n/a'})`));
+    child.on('error', (e) => {
+      telemetry.preflight = { exit: null, signal: null, spawnError: `${e.message} (code=${e.code || 'n/a'})`, out: '' };
+      console.error(`[worker] preflight spawn error: ${e.message} (code=${e.code || 'n/a'})`);
+    });
     child.on('close', (code, signal) => {
+      telemetry.preflight = { exit: code, signal: signal || null, spawnError: null, out: err.trim().slice(0, 200) || '(vacío)' };
       console.log(`[worker] preflight: exit=${code} signal=${signal || 'n/a'} out=${err.trim().slice(0, 200) || '(vacío)'}`);
     });
   } catch (e) {
