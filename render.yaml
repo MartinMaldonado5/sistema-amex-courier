@@ -1,17 +1,18 @@
-# Blueprint del Worker de Inventario AMEX (Render).
-# Despliegue: Dashboard → New → Blueprint → repo sistema-amex-courier.
+# Worker de Inventario AMEX (Render) — servicio image-backed.
+# La imagen se precompila en GitHub Actions (.github/workflows/worker-docker-build.yml)
+# y se publica en GHCR, porque el plan Free de Render no compila el Dockerfile .NET.
 # Los secretos (sync: false) se completan en el Dashboard, nunca aquí.
+# Servicio actual: amex-inventory-worker-img (https://amex-inventory-worker-img.onrender.com)
 services:
-  - type: worker
-    name: amex-inventory-worker
-    runtime: docker
-    repo: https://github.com/MartinMaldonado5/sistema-amex-courier.git
-    branch: main
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
+  - type: web
+    name: amex-inventory-worker-img
+    runtime: image
+    image:
+      url: ghcr.io/martinmaldonado5/amex-inventory-worker:latest
     plan: free
     region: oregon
-    autoDeploy: true
+    healthCheckPath: /
+    autoDeploy: false
     envVars:
       - key: SUPABASE_URL
         value: https://tliubfyepimzlimxrquz.supabase.co
