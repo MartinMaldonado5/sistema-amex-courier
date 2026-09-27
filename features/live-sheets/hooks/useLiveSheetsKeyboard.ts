@@ -953,7 +953,7 @@ export function useLiveSheetsKeyboard({
             : undefined;
 
           const finalConsignatario = valA && valA !== '[NOMBRE]' ? valA : dbMatch?.nombreConsignatario || valA || '';
-          const finalCasillero = valC || dbMatch?.codigoCasillero || '';
+            const finalCasillero = valC || '';
           const matchResultD = valD.trim() ? resolveScannedCodeMatch(valD.trim()) : null;
           const upperE = valE.toUpperCase();
           const finalEstado: TipoEstadoItemCotejo =

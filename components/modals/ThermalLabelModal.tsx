@@ -19,7 +19,7 @@ export default function ThermalLabelModal({ pkg, onClose }: ThermalLabelModalPro
           <div className="shipping-label-card">
             <div className="label-header">
               <span style={{ fontWeight: 800, fontSize: '18px' }}>AMEX COURIER PERÚ</span>
-              <span style={{ background: '#000', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontWeight: 800 }}>{pkg.codigoCasillero}</span>
+              <span style={{ background: '#000', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontWeight: 800 }}>{pkg.trackingUsa || pkg.numeroReciboBodega}</span>
             </div>
             <div className="label-agency-box">
               {pkg.metodoEntrega === 'CarroAmexDomicilio' ? 'REPARTO DOMICILIO LINCE' : 'AGENCIA SHALOM / OLVA'}

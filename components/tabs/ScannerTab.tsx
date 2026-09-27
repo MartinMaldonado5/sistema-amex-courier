@@ -95,8 +95,7 @@ export default function ScannerTab({
         log.code,
         log.format,
         log.location,
-        log.nombreConsignatario,
-        log.codigoCasillero
+        log.nombreConsignatario
       ]);
 
       const matchesStatus =
@@ -221,8 +220,7 @@ export default function ScannerTab({
         const existingPkg = paquetes.find(
           p =>
             p.numeroReciboBodega.toUpperCase() === upper ||
-            p.trackingUsa.toUpperCase() === upper ||
-            p.codigoCasillero.toUpperCase() === upper
+            p.trackingUsa.toUpperCase() === upper
         );
 
         if (existingPkg) {
@@ -247,7 +245,6 @@ export default function ScannerTab({
           // Insertar nuevo paquete si no existía
           const newWr = upper.startsWith('WR') ? upper : `WR${upper.slice(-6)}`;
           await supabase.from('paquetes').insert({
-            codigo_casillero: log.codigoCasillero || 'AMEX-PER-1001',
             numero_recibo_bodega: newWr,
             tracking_usa: upper,
             tipo_empaque: 'CAJA',
@@ -323,15 +320,13 @@ export default function ScannerTab({
     const foundPkg = paquetes.find(p =>
       p.numeroReciboBodega.toUpperCase() === q ||
       p.trackingUsa.toUpperCase() === q ||
-      p.codigoCasillero.toUpperCase() === q ||
       p.dniConsignatario?.toUpperCase() === q ||
       p.nombreConsignatario?.toUpperCase().includes(q)
     );
 
     const foundCli = clientes.find(c =>
-      c.codigoCasillero.toUpperCase() === q ||
       c.documentoIdentidad === q ||
-      (foundPkg && c.codigoCasillero.toUpperCase() === foundPkg.codigoCasillero.toUpperCase())
+      (foundPkg && c.nombre.toUpperCase() === (foundPkg.nombreConsignatario || '').toUpperCase())
     );
 
     return {
@@ -389,7 +384,7 @@ export default function ScannerTab({
               <Search style={{ position: 'absolute', left: '10px', top: '10px', width: '16px', height: '16px', color: '#94a3b8' }} />
               <input
                 type="text"
-                placeholder="Ingresa o pega Guía WR#, Tracking USA, Casillero o DNI..."
+                placeholder="Ingresa o pega Guía WR#, Tracking USA o DNI..."
                 value={liveSearchQuery}
                 onChange={e => setLiveSearchQuery(e.target.value)}
                 style={{
@@ -438,10 +433,6 @@ export default function ScannerTab({
                       <div>
                         <span style={{ color: '#64748b' }}>Consignatario:</span>{' '}
                         <strong>{lookupMatch.pkg.nombreConsignatario || 'Cliente'}</strong>
-                      </div>
-                      <div>
-                        <span style={{ color: '#64748b' }}>Casillero:</span>{' '}
-                        <strong style={{ color: '#2563eb' }}>{lookupMatch.pkg.codigoCasillero}</strong>
                       </div>
                     </div>
                   </div>
@@ -701,7 +692,7 @@ export default function ScannerTab({
                             </div>
                             {log.nombreConsignatario && (
                               <div style={{ fontSize: '10.5px', color: '#64748b' }}>
-                                {log.nombreConsignatario} {log.codigoCasillero ? `(${log.codigoCasillero})` : ''}
+                                {log.nombreConsignatario}
                               </div>
                             )}
                           </td>

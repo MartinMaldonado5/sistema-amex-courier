@@ -172,12 +172,12 @@ export function useDashboardMetrics({
 
   // Clientes con paquetes activos
   const clientesConPaquetes = useMemo(() => {
-    const casillerosActivos = new Set(
+    const clientesActivos = new Set(
       paquetes
         .filter(p => p.estadoEntrega !== 'Entregado' && p.estadoEntrega !== 'EntregadoDomicilio' && p.estadoEntrega !== 'RecogidoAlmacen')
-        .map(p => p.codigoCasillero)
+        .map(p => (p.nombreConsignatario || p.dniConsignatario || p.numeroReciboBodega).toUpperCase())
     );
-    return casillerosActivos.size;
+    return clientesActivos.size;
   }, [paquetes]);
 
   // KPIs Maestros
@@ -539,11 +539,10 @@ export function useDashboardMetrics({
         const q = searchQuery.toLowerCase().trim();
         const matchWr = (p.numeroReciboBodega || '').toLowerCase().includes(q);
         const matchTracking = (p.trackingUsa || '').toLowerCase().includes(q);
-        const matchCasillero = (p.codigoCasillero || '').toLowerCase().includes(q);
         const matchName = (p.nombreConsignatario || '').toLowerCase().includes(q);
         const matchPos = (p.posicionEstante || '').toLowerCase().includes(q);
         const matchDesc = (p.descripcion || '').toLowerCase().includes(q);
-        return matchWr || matchTracking || matchCasillero || matchName || matchPos || matchDesc;
+        return matchWr || matchTracking || matchName || matchPos || matchDesc;
       }
 
       return true;

@@ -115,7 +115,6 @@ const EMPTY_CLIENT_FORM: NewClientFormData = {
 };
 
 const EMPTY_PKG_FORM: NewPkgFormData = {
-  codigoCasillero: 'AMEX-PER-1001',
   numeroReciboBodega: 'WR000000',
   trackingUsa: '',
   tipoEmpaque: 'CAJA',
@@ -312,7 +311,6 @@ export default function DashboardPage() {
       const dbClientes = clientesRes.data || [];
       setClientes(dbClientes.map(c => ({
         id: c.id,
-        codigoCasillero: c.documento_identidad || `CLI-${c.id.slice(0, 6)}`,
         nombre: c.nombre,
         apellido: c.apellido || '',
         documentoIdentidad: c.documento_identidad,
@@ -331,7 +329,6 @@ export default function DashboardPage() {
         const [ana, pis] = pos.includes('-') ? pos.split('-') : [pos, 'P1'];
         return {
           id: p.id,
-          codigoCasillero: p.codigo_casillero,
           numeroReciboBodega: p.numero_recibo_bodega,
           trackingUsa: p.tracking_usa,
           tipoEmpaque: p.tipo_empaque || 'CAJA',
@@ -381,7 +378,6 @@ export default function DashboardPage() {
             if (prev.some(x => x.id === p.id || x.numeroReciboBodega === p.numero_recibo_bodega)) return prev;
             return [{
               id: String(p.id),
-              codigoCasillero: String(p.codigo_casillero),
               numeroReciboBodega: String(p.numero_recibo_bodega),
               trackingUsa: String(p.tracking_usa || ''),
               tipoEmpaque: String(p.tipo_empaque || 'CAJA'),
@@ -407,7 +403,6 @@ export default function DashboardPage() {
           const [ana, pis] = pos.includes('-') ? pos.split('-') : [pos, 'P1'];
           setPaquetes(prev => prev.map(item => item.id === p.id || item.numeroReciboBodega === p.numero_recibo_bodega ? {
             ...item,
-            codigoCasillero: String(p.codigo_casillero || item.codigoCasillero),
             numeroReciboBodega: String(p.numero_recibo_bodega || item.numeroReciboBodega),
             trackingUsa: String(p.tracking_usa || item.trackingUsa),
             tipoEmpaque: String(p.tipo_empaque || item.tipoEmpaque),
@@ -434,7 +429,6 @@ export default function DashboardPage() {
             if (prev.some(x => x.id === c.id)) return prev;
             return [{
               id: String(c.id),
-              codigoCasillero: String(c.documento_identidad || `CLI-${String(c.id).slice(0, 6)}`),
               nombre: String(c.nombre),
               apellido: String(c.apellido || ''),
               documentoIdentidad: String(c.documento_identidad),
@@ -491,8 +485,7 @@ export default function DashboardPage() {
       prev.map(p => {
         if (
           p.numeroReciboBodega.toUpperCase() === upper ||
-          p.trackingUsa.toUpperCase() === upper ||
-          p.codigoCasillero.toUpperCase() === upper
+          p.trackingUsa.toUpperCase() === upper
         ) {
           return {
             ...p,
@@ -513,7 +506,7 @@ export default function DashboardPage() {
           piso: pis,
           posicion_estante: location
         })
-        .or(`numero_recibo_bodega.eq.${upper},tracking_usa.eq.${upper},codigo_casillero.eq.${upper}`);
+        .or(`numero_recibo_bodega.eq.${upper},tracking_usa.eq.${upper}`);
     } catch (err) {
       console.warn('Error syncing package location to Supabase:', err);
     }
@@ -523,7 +516,6 @@ export default function DashboardPage() {
     e.preventDefault();
     const newClient: Cliente = {
       id: `c-${Date.now()}`,
-      codigoCasillero: newClientForm.documentoIdentidad || `CLI-${Date.now()}`,
       ...newClientForm,
       creadoEn: new Date().toISOString()
     };
@@ -554,7 +546,6 @@ export default function DashboardPage() {
 
     const newPkg: Paquete = {
       id: `p-${Date.now()}`,
-      codigoCasillero: newPkgForm.codigoCasillero,
       numeroReciboBodega: newPkgForm.numeroReciboBodega,
       trackingUsa: newPkgForm.trackingUsa || '940010000000000000',
       tipoEmpaque: newPkgForm.tipoEmpaque,
@@ -578,7 +569,6 @@ export default function DashboardPage() {
 
     try {
       await supabase.from('paquetes').insert({
-        codigo_casillero: newPkgForm.codigoCasillero,
         numero_recibo_bodega: newPkgForm.numeroReciboBodega,
         tracking_usa: newPkgForm.trackingUsa,
         tipo_empaque: newPkgForm.tipoEmpaque,
@@ -636,7 +626,6 @@ export default function DashboardPage() {
       piso: extra?.piso,
       workflow: (extra?.mode as 'slotting' | 'lookup' | 'delivery' | 'general') || 'slotting',
       nombreConsignatario: extra?.pkg?.nombreConsignatario || extra?.cli?.nombre,
-      codigoCasillero: extra?.pkg?.codigoCasillero || extra?.cli?.codigoCasillero,
       synced: false
     };
 

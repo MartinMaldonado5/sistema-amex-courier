@@ -7,7 +7,6 @@ export type TipoMonedaPago = 'PEN' | 'USD';
 
 export interface Cliente {
   id: string;
-  codigoCasillero: string;            // Generado en frontend / fallback DNI
   nombre: string;
   apellido?: string;
   documentoIdentidad: string;        // DNI / RUC
@@ -28,7 +27,6 @@ export interface Paquete {
   id: string;
   clienteId?: string;
   embarqueId?: string;
-  codigoCasillero: string;
   numeroReciboBodega: string;        // Ej: WR000451
   trackingUsa: string;
   tipoEmpaque: string;               // CAJA, SOBRE, SACA
@@ -64,7 +62,6 @@ export interface EmbarqueMaster {
 export interface OrdenLiquidacion {
   id: string;
   paqueteId: string;
-  codigoCasillero: string;
   nombreCliente: string;
   montoFleteUsd: number;
   cargoAdminUsd: number;
@@ -147,7 +144,6 @@ export interface ScannedLog {
   piso?: string;
   workflow?: 'slotting' | 'lookup' | 'delivery' | 'general';
   nombreConsignatario?: string;
-  codigoCasillero?: string;
   synced: boolean;
   syncedAt?: string;
 }
@@ -194,7 +190,6 @@ export interface OrdenEntrega {
   tipo_entrega: string;
   cliente_id?: string;
   cliente_nombre: string;
-  cliente_casillero?: string;
   cliente_documento?: string;
   receptor_nombre?: string;
   receptor_documento?: string;
@@ -226,7 +221,6 @@ export interface CobroVoucher {
   codigo_cobro: string;
   cliente_id?: string;
   cliente_nombre: string;
-  cliente_casillero?: string;
   cliente_telefono?: string;
   monto: number;
   moneda: 'PEN' | 'USD';
@@ -305,7 +299,6 @@ export interface DestinoRuta {
   hojaRutaId: string;
   orden: number;
   clienteNombre: string;
-  clienteCasillero?: string;
   telefono: string;
   direccion: string;
   distrito: string;

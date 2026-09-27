@@ -66,7 +66,6 @@ export function useCobrosData() {
       const matchesSearch = matchesFuzzySearch(searchTerm, [
         c.codigo_cobro,
         c.cliente_nombre,
-        c.cliente_casillero,
         c.cliente_telefono,
         c.numero_operacion,
         c.metodo_pago,

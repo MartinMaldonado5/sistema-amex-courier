@@ -109,7 +109,7 @@ export const inventoryService = {
         kardexInserts.push({
           paquete_id: pkg.id,
           codigo_paquete: pkg.numeroReciboBodega,
-          consignatario: pkg.nombreConsignatario || pkg.codigoCasillero,
+          consignatario: pkg.nombreConsignatario || 'Cliente AMEX',
           origen_descripcion: origenStr,
           destino_descripcion: destinoStr,
           tipo_movimiento: 'REUBICACION',
@@ -139,7 +139,6 @@ export const inventoryService = {
     await supabase
       .from('paquetes')
       .update({
-        codigo_casillero: updated.codigoCasillero,
         numero_recibo_bodega: updated.numeroReciboBodega,
         tracking_usa: updated.trackingUsa,
         tipo_empaque: updated.tipoEmpaque,
@@ -171,7 +170,7 @@ export const inventoryService = {
     await supabase.from('movimientos_kardex').insert({
       paquete_id: pkg.id,
       codigo_paquete: pkg.numeroReciboBodega,
-      consignatario: pkg.nombreConsignatario || pkg.codigoCasillero,
+      consignatario: pkg.nombreConsignatario || 'Cliente AMEX',
       origen_descripcion: `AmexLince (${pkg.posicionEstante || 'REC'})`,
       destino_descripcion: `Estado actualizado a: ${newStatus}`,
       tipo_movimiento: newStatus === 'Entregado' ? 'ENTREGA' : 'ESTADO_CAMBIO',
@@ -200,7 +199,7 @@ export const inventoryService = {
         kardexInserts.push({
           paquete_id: pkg.id,
           codigo_paquete: pkg.numeroReciboBodega,
-          consignatario: pkg.nombreConsignatario || pkg.codigoCasillero,
+          consignatario: pkg.nombreConsignatario || 'Cliente AMEX',
           origen_descripcion: `AmexLince (${pkg.posicionEstante || 'REC'})`,
           destino_descripcion: `Estado en lote: ${targetStatus}`,
           tipo_movimiento: targetStatus === 'Entregado' ? 'ENTREGA' : 'ESTADO_CAMBIO',

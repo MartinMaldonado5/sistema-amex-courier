@@ -171,7 +171,6 @@ export function useInventoryData({
       const matchesSearch = matchesFuzzySearch(searchTerm, [
         p.numeroReciboBodega,
         p.trackingUsa,
-        p.codigoCasillero,
         p.nombreConsignatario,
         p.dniConsignatario,
         p.descripcion,

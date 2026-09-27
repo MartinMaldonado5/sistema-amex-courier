@@ -51,7 +51,6 @@ export function exportPaquetesToExcel(paquetes: Paquete[], filenamePrefix = 'Inv
   const formattedData = paquetes.map((p, idx) => ({
     'N°': idx + 1,
     'Guía WR': p.numeroReciboBodega,
-    'Código Casillero': p.codigoCasillero,
     'Consignatario': p.nombreConsignatario || 'No asignado',
     'DNI / Documento': p.dniConsignatario || '',
     'Tracking USA': p.trackingUsa || '',
@@ -88,7 +87,7 @@ export function exportKardexToExcel(kardexList: MovimientoKardex[], filenamePref
     'N°': idx + 1,
     'Fecha y Hora': new Date(k.creadoEn).toLocaleString('es-PE'),
     'Guía / WR': k.codigoPaquete,
-    'Consignatario / Casillero': k.consignatario || '',
+    'Consignatario': k.consignatario || '',
     'Origen': k.origenDescripcion,
     'Destino': k.destinoDescripcion,
     'Tipo Movimiento': k.tipoMovimiento,
@@ -109,7 +108,6 @@ export function exportScannerLogsToExcel(
     format: string;
     location?: string;
     nombreConsignatario?: string;
-    codigoCasillero?: string;
     time: string;
     synced?: boolean;
   }>,
@@ -121,7 +119,6 @@ export function exportScannerLogsToExcel(
     'Formato': l.format,
     'Ubicación Estante WMS': l.location || 'N/A',
     'Consignatario': l.nombreConsignatario || '',
-    'Código Casillero': l.codigoCasillero || '',
     'Hora Escaneo': l.time,
     'Estado Sincronización': l.synced ? 'Sincronizado Master' : 'Borrador Local (Pendiente)'
   }));
@@ -155,12 +152,11 @@ export function exportPickingOrderToExcel(order: OrdenPicking, items: ItemPickin
 }
 
 /**
- * Exportador profesional de Clientes / Casilleros a Excel (.xlsx)
+ * Exportador profesional de Clientes a Excel (.xlsx)
  */
 export function exportClientesToExcel(clientes: Cliente[]) {
   const formattedData = clientes.map((c, idx) => ({
     'N°': idx + 1,
-    'Código Casillero': c.codigoCasillero,
     'Importador / Cliente': c.nombre,
     'DNI / RUC': c.documentoIdentidad,
     'WhatsApp / Teléfono': c.telefono,
@@ -174,7 +170,7 @@ export function exportClientesToExcel(clientes: Cliente[]) {
   }));
 
   const dateStr = new Date().toISOString().slice(0, 10);
-  exportToExcel(`Directorio_Casilleros_AMEX_${dateStr}`, 'Casilleros', formattedData);
+  exportToExcel(`Directorio_Clientes_AMEX_${dateStr}`, 'Clientes', formattedData);
 }
 
 /**
@@ -189,7 +185,6 @@ export function exportLiquidacionesToExcel(paquetes: Paquete[]) {
 
     return {
       'N°': idx + 1,
-      'Código Casillero': p.codigoCasillero,
       'Cliente Importador': p.nombreConsignatario || 'No asignado',
       'Guía WR #': p.numeroReciboBodega,
       'Peso (Kg)': Number(p.pesoKg || 0),
@@ -216,7 +211,6 @@ export function exportHojaDeRutaToExcel(
   const formattedData = paquetes.map((p, idx) => ({
     'Parada N°': idx + 1,
     'Guía WR': p.numeroReciboBodega,
-    'Casillero': p.codigoCasillero,
     'Cliente / Consignatario': p.nombreConsignatario || p.cliente?.nombre || 'No asignado',
     'DNI / Documento': p.dniConsignatario || p.cliente?.documentoIdentidad || '',
     'Teléfono / WhatsApp': p.cliente?.telefono || '',
@@ -243,7 +237,6 @@ export function exportEntregasToExcel(entregas: any[], filenamePrefix = 'Histori
     'Código Entrega': e.codigo_entrega,
     'Tipo': e.tipo_entrega,
     'Cliente Consignatario': e.cliente_nombre,
-    'Casillero': e.cliente_casillero || '',
     'DNI / Documento': e.cliente_documento || '',
     'Receptor (Quien Recibió)': e.receptor_nombre || e.cliente_nombre,
     'DNI Receptor': e.receptor_documento || '',
@@ -270,7 +263,6 @@ export function exportCobrosToExcel(cobros: any[], filenamePrefix = 'Cobros_Vouc
     'N°': idx + 1,
     'Código Cobro': c.codigo_cobro,
     'Cliente / Consignatario': c.cliente_nombre,
-    'Casillero': c.cliente_casillero || '',
     'Teléfono WhatsApp': c.cliente_telefono || '',
     'Monto': Number(c.monto || 0),
     'Moneda': c.moneda || 'PEN',

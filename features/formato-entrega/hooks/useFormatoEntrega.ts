@@ -86,10 +86,9 @@ export function useFormatoEntrega(paquetesAlmacen: Paquete[] = []) {
 
     // Buscar si el cliente tiene paquetes en almacén
     const clientPkgs = paquetesAlmacen.filter(p => {
-      const casilleroMatch = cliente.codigoCasillero && p.codigoCasillero === cliente.codigoCasillero;
       const dniMatch = cliente.documentoIdentidad && p.dniConsignatario === cliente.documentoIdentidad;
       const nameMatch = p.nombreConsignatario && p.nombreConsignatario.toLowerCase().includes(cliente.nombre.toLowerCase());
-      return casilleroMatch || dniMatch || nameMatch;
+      return dniMatch || nameMatch;
     });
 
     if (clientPkgs.length > 0) {

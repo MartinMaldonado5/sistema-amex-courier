@@ -365,7 +365,7 @@ export function ExecutiveKpiGrid({ kpis, onNavigateTab }: ExecutiveKpiGridProps)
             }}
           >
             <span style={{ color: '#64748b' }}>
-              <strong style={{ color: '#0f172a', fontWeight: 600 }}>{kpis.clientesConPaquetesActivos}</strong> casilleros activos
+              <strong style={{ color: '#0f172a', fontWeight: 600 }}>{kpis.clientesConPaquetesActivos}</strong> clientes activos
             </span>
             <span
               style={{

@@ -257,7 +257,6 @@ export const NewVoucherForm: React.FC<NewVoucherFormProps> = ({
                 setFormValues({
                   ...formValues,
                   clienteNombre: selName,
-                  clienteCasillero: found?.codigoCasillero || formValues.clienteCasillero,
                   clienteTelefono: found?.telefono || formValues.clienteTelefono
                 });
               }}
@@ -267,21 +266,10 @@ export const NewVoucherForm: React.FC<NewVoucherFormProps> = ({
               <option value="">-- Seleccionar cliente del Directorio --</option>
               {clientes.map((c) => (
                 <option key={c.id} value={c.nombre}>
-                  {c.nombre} {c.codigoCasillero ? `(${c.codigoCasillero})` : ''} {c.documentoIdentidad ? `- Doc: ${c.documentoIdentidad}` : ''}
+                  {c.nombre} {c.documentoIdentidad ? `- Doc: ${c.documentoIdentidad}` : ''}
                 </option>
               ))}
             </select>
-          </div>
-
-          <div className="form-group">
-            <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>Código Casillero</label>
-            <input
-              type="text"
-              placeholder="Ej: CAS-4021"
-              value={formValues.clienteCasillero}
-              onChange={(e) => setFormValues({ ...formValues, clienteCasillero: e.target.value })}
-              className="form-control"
-            />
           </div>
 
           <div className="form-group">
@@ -378,7 +366,7 @@ export const NewVoucherForm: React.FC<NewVoucherFormProps> = ({
               <Search className="w-4 h-4 text-slate-400" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
               <input
                 type="text"
-                placeholder="Buscar WR o Casillero..."
+                placeholder="Buscar WR..."
                 value={wrSearchQuery}
                 onChange={(e) => setWrSearchQuery(e.target.value)}
                 className="form-control"
@@ -416,8 +404,7 @@ export const NewVoucherForm: React.FC<NewVoucherFormProps> = ({
                           if (!formValues.clienteNombre && pkg.nombreConsignatario) {
                             setFormValues((prev) => ({
                               ...prev,
-                              clienteNombre: pkg.nombreConsignatario || '',
-                              clienteCasillero: pkg.codigoCasillero || ''
+                              clienteNombre: pkg.nombreConsignatario || ''
                             }));
                           }
                         }

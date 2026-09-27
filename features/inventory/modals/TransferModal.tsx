@@ -48,7 +48,7 @@ export default function TransferModal({
           <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '10px 14px' }}>
             <div style={{ fontSize: '12px', fontWeight: 800, color: '#1e40af' }}>
               {selectedPackageForAction
-                ? `Paquete: ${selectedPackageForAction.numeroReciboBodega} (${selectedPackageForAction.codigoCasillero})`
+                ? `Paquete: ${selectedPackageForAction.numeroReciboBodega}`
                 : `Paquetes seleccionados en lote: ${selectedIds.length} unidades`}
             </div>
           </div>

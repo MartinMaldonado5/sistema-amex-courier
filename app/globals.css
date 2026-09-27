@@ -838,8 +838,6 @@ tr:hover { background: #f8fafc !important; }
 .pkg-submit:hover { box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4); }
 
 /* ─── Utilidades para celdas de tabla ─────────────────────────── */
-.cell-casillero { font-family: 'JetBrains Mono', monospace; font-weight: 800; color: #9333ea; }
-.cell-casillero-blue { font-family: 'JetBrains Mono', monospace; font-weight: 800; color: #2563eb; }
 .cell-mono { font-family: 'JetBrains Mono', monospace; }
 .cell-bold { font-weight: 700; }
 .cell-fw600 { font-weight: 600; }

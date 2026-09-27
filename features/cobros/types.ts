@@ -6,7 +6,6 @@ export interface CobroVoucher {
   id: string;
   codigo_cobro: string;
   cliente_nombre: string;
-  cliente_casillero?: string;
   cliente_telefono?: string;
   monto: number;
   moneda: 'PEN' | 'USD';
@@ -54,7 +53,6 @@ export interface CobrosTabProps {
 
 export interface VoucherFormValues {
   clienteNombre: string;
-  clienteCasillero: string;
   clienteTelefono: string;
   monto: string;
   moneda: 'PEN' | 'USD';

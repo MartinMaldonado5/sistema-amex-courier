@@ -69,7 +69,7 @@ export default function InventoryTable({
                 />
               </th>
               <th style={{ padding: '10px 14px' }}>Guía WR / Tracking</th>
-              <th style={{ padding: '10px 14px' }}>Casillero / Cliente</th>
+              <th style={{ padding: '10px 14px' }}>Cliente</th>
               <th style={{ padding: '10px 14px' }}>Descripción & Tipo</th>
               <th style={{ padding: '10px 14px' }}>Peso Físico (kg)</th>
               <th style={{ padding: '10px 14px' }}>Ubicación Sede</th>
@@ -127,8 +127,7 @@ export default function InventoryTable({
                       </div>
                     </td>
                     <td style={{ padding: '10px 14px' }}>
-                      <div style={{ fontWeight: 800, color: '#2563eb' }}>{pkg.codigoCasillero}</div>
-                      <div style={{ fontSize: '11.5px', color: '#334155' }}>
+                      <div style={{ fontWeight: 800, color: '#2563eb' }}>
                         {pkg.nombreConsignatario || 'Consignatario no asignado'}
                       </div>
                     </td>

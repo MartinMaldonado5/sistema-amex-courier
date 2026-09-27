@@ -421,7 +421,7 @@ export default function ShelfMatrixGrid({
                               <span
                                 key={p.id}
                                 onClick={() => onOpenTransferModal(p)}
-                                title={`Clic para reubicar: ${p.numeroReciboBodega} (${p.nombreConsignatario || p.codigoCasillero})`}
+                                title={`Clic para reubicar: ${p.numeroReciboBodega} (${p.nombreConsignatario || 'Cliente'})`}
                                 style={{
                                   fontSize: '10px',
                                   fontWeight: 800,

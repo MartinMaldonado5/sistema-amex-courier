@@ -53,26 +53,15 @@ export default function EditPackageModal({
             </div>
 
             <div className="form-group">
-              <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>Código Casillero</label>
+              <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>Nombre Consignatario</label>
               <input
                 type="text"
-                value={editFormData.codigoCasillero || ''}
-                onChange={e => setEditFormData({ ...editFormData, codigoCasillero: e.target.value })}
+                value={editFormData.nombreConsignatario || ''}
+                onChange={e => setEditFormData({ ...editFormData, nombreConsignatario: e.target.value })}
                 className="form-control"
                 required
               />
             </div>
-          </div>
-
-          <div className="form-group">
-            <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>Nombre Consignatario</label>
-            <input
-              type="text"
-              value={editFormData.nombreConsignatario || ''}
-              onChange={e => setEditFormData({ ...editFormData, nombreConsignatario: e.target.value })}
-              className="form-control"
-              required
-            />
           </div>
 
           <div className="form-group">

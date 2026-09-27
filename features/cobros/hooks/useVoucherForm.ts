@@ -23,7 +23,6 @@ export function useVoucherForm({
 
   const [formValues, setFormValues] = useState<VoucherFormValues>({
     clienteNombre: '',
-    clienteCasillero: '',
     clienteTelefono: '',
     monto: '',
     moneda: 'PEN',
@@ -95,7 +94,6 @@ export function useVoucherForm({
     return paquetes.filter((p) => {
       const matchWR = matchesFuzzySearch(wrSearchQuery, [
         p.numeroReciboBodega,
-        p.codigoCasillero,
         p.nombreConsignatario,
         p.dniConsignatario,
         p.posicionEstante
@@ -223,7 +221,6 @@ export function useVoucherForm({
       setSelectedWrs([]);
       setFormValues({
         clienteNombre: '',
-        clienteCasillero: '',
         clienteTelefono: '',
         monto: '',
         moneda: 'PEN',

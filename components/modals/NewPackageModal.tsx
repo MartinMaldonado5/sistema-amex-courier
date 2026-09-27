@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 
 export interface NewPkgFormData {
-  codigoCasillero: string;
   numeroReciboBodega: string;
   trackingUsa: string;
   tipoEmpaque: string;
@@ -142,7 +141,7 @@ export default function NewPackageModal({
                   Almacén Central Lince · Ingreso
                 </span>
               </div>
-              <p style={{ fontSize: '11.5px', color: '#94a3b8', margin: '2px 0 0 0' }}>Asigna código WR, casillero, peso y ubicación en almacén</p>
+              <p style={{ fontSize: '11.5px', color: '#94a3b8', margin: '2px 0 0 0' }}>Asigna código WR, peso y ubicación en almacén</p>
             </div>
           </div>
 
@@ -182,7 +181,7 @@ export default function NewPackageModal({
               }}
             >
               <Barcode style={{ width: '14px', height: '14px' }} />
-              <span>1. Datos & Casillero</span>
+              <span>1. Datos del Paquete</span>
             </button>
 
             <button
@@ -311,31 +310,30 @@ export default function NewPackageModal({
                   </div>
                 </div>
 
-                {/* Columna Derecha: Casillero & Consignatario */}
+                {/* Columna Derecha: Cliente & Consignatario */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div>
                     <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                      <span>Casillero AMEX del Cliente *</span>
+                      <span>DNI / RUC del Cliente *</span>
                       <span style={{ fontSize: '10.5px', fontWeight: 500, color: '#64748b' }}>Selecciona o escribe</span>
                     </label>
 
                     <input
                       type="text"
                       required
-                      value={form.codigoCasillero}
+                      value={form.dniConsignatario}
                       onChange={e => {
                         const val = e.target.value;
                         const found = clientes.find(
-                          c => c.codigoCasillero.toUpperCase() === val.toUpperCase()
+                          c => c.documentoIdentidad.toUpperCase() === val.toUpperCase()
                         );
                         onChange({
                           ...form,
-                          codigoCasillero: val.toUpperCase(),
                           nombreConsignatario: found ? found.nombre : form.nombreConsignatario,
-                          dniConsignatario: found ? found.documentoIdentidad : form.dniConsignatario
+                          dniConsignatario: val.toUpperCase()
                         });
                       }}
-                      placeholder="AMEX-PER-1001"
+                      placeholder="DNI / RUC"
                       style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', fontFamily: 'monospace', fontWeight: 800, color: '#2563eb', outline: 'none', textTransform: 'uppercase' }}
                     />
 
@@ -349,14 +347,13 @@ export default function NewPackageModal({
                             onClick={() => {
                               onChange({
                                 ...form,
-                                codigoCasillero: c.codigoCasillero,
                                 nombreConsignatario: c.nombre,
                                 dniConsignatario: c.documentoIdentidad
                               });
                             }}
                             style={{ padding: '2px 6px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '10.5px', fontFamily: 'monospace', fontWeight: 700, color: '#334155', cursor: 'pointer' }}
                           >
-                            {c.codigoCasillero} · {c.nombre.split(' ')[0]}
+                            {c.documentoIdentidad} · {c.nombre.split(' ')[0]}
                           </button>
                         ))}
                       </div>

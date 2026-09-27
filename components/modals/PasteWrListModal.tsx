@@ -94,7 +94,7 @@ export default function PasteWrListModal({
       items.push({
         codigoWr: normalizedCode,
         trackingUsa: safeTib || dbMatch?.trackingUsa || '',
-        casillero: safeTib || dbMatch?.codigoCasillero || '',
+        casillero: safeTib || '',
         consignatario: finalConsignee,
         pesoKg: Number(cols[3] || cols[4]) || dbMatch?.pesoKg || 0,
         posicionEstante: dbMatch?.posicionEstante || 'REC',
@@ -208,7 +208,7 @@ export default function PasteWrListModal({
             />
             <label htmlFor="autoEnrich" style={{ fontWeight: 700, color: '#334155', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Database style={{ width: '14px', height: '14px', color: '#2563eb' }} />
-              Auto-completar datos desde inventario principal (Consignatario, Casillero, Peso y Estante)
+              Auto-completar datos desde inventario principal (Consignatario, Peso y Estante)
             </label>
           </div>
 

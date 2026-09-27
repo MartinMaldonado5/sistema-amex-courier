@@ -371,7 +371,7 @@ export function LivePackagesStream({
                             border: '1px solid #e2e8f0'
                           }}
                         >
-                          {pkg.codigoCasillero}
+                          {pkg.trackingUsa || pkg.numeroReciboBodega}
                         </span>
                         <span
                           style={{

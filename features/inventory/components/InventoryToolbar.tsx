@@ -335,7 +335,7 @@ export default function InventoryToolbar({
               />
               <input
                 type="text"
-                placeholder="Buscar por Guía WR#, Tracking USA, Casillero, Consignatario o Estante..."
+                placeholder="Buscar por Guía WR#, Tracking USA, Consignatario o Estante..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 style={{

@@ -175,12 +175,6 @@ export const CobrosList: React.FC<CobrosListProps> = ({
                   {cobro.cliente_nombre}
                 </div>
 
-                {cobro.cliente_casillero && (
-                  <div style={{ fontSize: '11px', color: '#64748b' }}>
-                    Casillero: <strong>{cobro.cliente_casillero}</strong>
-                  </div>
-                )}
-
                 {cobro.numero_operacion && (
                   <div style={{ fontSize: '11px', color: '#475569' }}>
                     Op: <code style={{ fontWeight: 800, color: '#1e3a8a' }}>{cobro.numero_operacion}</code>

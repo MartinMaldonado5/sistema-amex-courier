@@ -65,8 +65,7 @@ export default function ActaControlPanel({
     return clientes.filter(c => {
       const full = `${c.nombre} ${c.apellido || ''}`.toLowerCase();
       const dni = (c.documentoIdentidad || '').toLowerCase();
-      const casillero = (c.codigoCasillero || '').toLowerCase();
-      return full.includes(q) || dni.includes(q) || casillero.includes(q);
+      return full.includes(q) || dni.includes(q);
     }).slice(0, 8);
   }, [clientes, clientSearch]);
 
@@ -233,7 +232,7 @@ export default function ActaControlPanel({
                       {c.nombre} {c.apellido || ''}
                     </div>
                     <div className="text-xs text-slate-400">
-                      DNI: {c.documentoIdentidad || 'S/D'} • Casillero: {c.codigoCasillero || '—'}
+                      DNI: {c.documentoIdentidad || 'S/D'}
                     </div>
                   </div>
                 ))}

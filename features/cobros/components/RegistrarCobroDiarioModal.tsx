@@ -93,7 +93,6 @@ export const RegistrarCobroDiarioModal: React.FC<RegistrarCobroDiarioModalProps>
           id: c.id,
           nombre: c.nombre.trim(),
           documentoIdentidad: doc,
-          codigoCasillero: c.codigoCasillero || '',
           telefono: c.telefono || '',
           direccionEntrega: c.direccionEntrega || '',
           esEmpresa: isEmpresa
@@ -105,7 +104,6 @@ export const RegistrarCobroDiarioModal: React.FC<RegistrarCobroDiarioModalProps>
       id: `cli_${idx}`,
       nombre: name.trim(),
       documentoIdentidad: '',
-      codigoCasillero: '',
       telefono: '',
       direccionEntrega: '',
       esEmpresa: /(CORP|SAC|SRL|EMPRESA)/i.test(name)
@@ -148,15 +146,14 @@ export const RegistrarCobroDiarioModal: React.FC<RegistrarCobroDiarioModalProps>
   const clientesFiltrados = useMemo(() => {
     const q = clienteSearch.trim().toUpperCase();
     if (!q) return directoryClients.slice(0, 16);
-    return directoryClients
-      .filter((c) => {
-        return (
-          c.nombre.toUpperCase().includes(q) ||
-          (c.documentoIdentidad && c.documentoIdentidad.toUpperCase().includes(q)) ||
-          (c.codigoCasillero && c.codigoCasillero.toUpperCase().includes(q)) ||
-          (c.telefono && c.telefono.includes(q))
-        );
-      })
+      return directoryClients
+        .filter((c) => {
+          return (
+            c.nombre.toUpperCase().includes(q) ||
+            (c.documentoIdentidad && c.documentoIdentidad.toUpperCase().includes(q)) ||
+            (c.telefono && c.telefono.includes(q))
+          );
+        })
       .slice(0, 20);
   }, [directoryClients, clienteSearch]);
 
@@ -359,7 +356,7 @@ export const RegistrarCobroDiarioModal: React.FC<RegistrarCobroDiarioModalProps>
               <Search style={{ width: '15px', height: '15px', position: 'absolute', left: '12px', top: '10px', color: '#94a3b8' }} />
               <input
                 type="text"
-                placeholder="Buscar por Nombre, DNI, RUC o Casillero (ej: JUAN, 48392011, AMEX-PER-1002)..."
+                placeholder="Buscar por Nombre, DNI o RUC (ej: JUAN, 48392011)..."
                 value={clienteSearch}
                 onChange={(e) => setClienteSearch(e.target.value)}
                 style={{
@@ -449,11 +446,6 @@ export const RegistrarCobroDiarioModal: React.FC<RegistrarCobroDiarioModalProps>
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10.5px', color: '#64748b' }}>
-                          {cli.codigoCasillero && (
-                            <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#059669' }}>
-                              {cli.codigoCasillero}
-                            </span>
-                          )}
                           {cli.documentoIdentidad && (
                             <span>&bull; Doc: {cli.documentoIdentidad}</span>
                           )}
@@ -653,9 +645,6 @@ export const RegistrarCobroDiarioModal: React.FC<RegistrarCobroDiarioModalProps>
 
                 {/* METADATOS DEL EXPEDIENTE DEL CLIENTE */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '11px', color: '#475569', paddingTop: '4px', borderTop: '1px dashed #bfdbfe' }}>
-                  {selectedClientObj.codigoCasillero && (
-                    <span><strong>Casillero:</strong> <code style={{ color: '#059669', fontWeight: 800 }}>{selectedClientObj.codigoCasillero}</code></span>
-                  )}
                   {selectedClientObj.documentoIdentidad && (
                     <span><strong>Doc:</strong> {selectedClientObj.documentoIdentidad}</span>
                   )}

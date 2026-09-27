@@ -214,16 +214,14 @@ export default function MobileScannerModal({
     const foundPkg = currentPackages.find(p =>
       p.numeroReciboBodega.toUpperCase() === upper ||
       p.trackingUsa.toUpperCase() === upper ||
-      p.codigoCasillero.toUpperCase() === upper ||
       p.dniConsignatario?.toUpperCase() === upper ||
       (upper.length >= 4 && p.numeroReciboBodega.toUpperCase().includes(upper)) ||
       (upper.length >= 6 && p.trackingUsa.toUpperCase().includes(upper))
     );
 
     const foundCli = currentClients.find(c =>
-      c.codigoCasillero.toUpperCase() === upper ||
       c.documentoIdentidad === upper ||
-      (foundPkg && c.codigoCasillero.toUpperCase() === foundPkg.codigoCasillero.toUpperCase())
+      (foundPkg && c.nombre.toUpperCase() === (foundPkg.nombreConsignatario || '').toUpperCase())
     );
 
     setLookupResult({
@@ -279,14 +277,12 @@ export default function MobileScannerModal({
 
     const foundPkg = currentPackages.find(p =>
       p.numeroReciboBodega.toUpperCase() === upper ||
-      p.trackingUsa.toUpperCase() === upper ||
-      p.codigoCasillero.toUpperCase() === upper
+      p.trackingUsa.toUpperCase() === upper
     );
 
     const foundCli = currentClients.find(c =>
-      c.codigoCasillero.toUpperCase() === upper ||
       c.documentoIdentidad === upper ||
-      (foundPkg && c.codigoCasillero.toUpperCase() === foundPkg.codigoCasillero.toUpperCase())
+      (foundPkg && c.nombre.toUpperCase() === (foundPkg.nombreConsignatario || '').toUpperCase())
     );
 
     // 🔍 SI EL MODO ES 'lookup' (Localizar 360°):
@@ -823,7 +819,7 @@ export default function MobileScannerModal({
             </span>
           </div>
           <p style={{ fontSize: '11.5px', color: '#64748b', margin: '4px 0 0 0' }}>
-            Lee Guías WR#, Trackings USA, Casilleros AMEX y códigos DNI PDF417.
+            Lee Guías WR#, Trackings USA y códigos DNI PDF417.
           </p>
         </div>
 
@@ -1430,9 +1426,6 @@ export default function MobileScannerModal({
                       <User className="w-3.5 h-3.5 text-blue-600" />
                       <span>{pendingConfirmation.pkg.nombreConsignatario || pendingConfirmation.cli?.nombre || 'Cliente'}</span>
                     </div>
-                    <span style={{ fontSize: '10.5px', fontWeight: 800, background: '#dbeafe', color: '#1e40af', padding: '2px 6px', borderRadius: '4px' }}>
-                      {pendingConfirmation.pkg.codigoCasillero}
-                    </span>
                   </div>
 
                   {pendingConfirmation.pkg.descripcion && (
@@ -1643,7 +1636,7 @@ export default function MobileScannerModal({
                     <div style={{ background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '12px', fontSize: '11.5px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
                         <User className="w-3.5 h-3.5 text-blue-600" />
-                        <strong>{lookupResult.cli.nombre}</strong> ({lookupResult.cli.codigoCasillero})
+                        <strong>{lookupResult.cli.nombre}</strong>
                       </div>
                       <div style={{ color: '#64748b', fontSize: '11px' }}>
                         <MapPin className="w-3 h-3 inline mr-1 text-slate-400" />
