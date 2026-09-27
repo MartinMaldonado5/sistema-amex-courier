@@ -161,6 +161,9 @@ async function updateJob(id, patch) {
 async function downloadFromR2(key, destPath) {
   const res = await s3.send(new GetObjectCommand({ Bucket: R2_BUCKET, Key: key }));
   const bytes = await res.Body.transformToByteArray();
+  if (bytes.length > 100 * 1024 * 1024) {
+    throw new Error(`El archivo ${key} supera el límite de 100 MB.`);
+  }
   await fsp.writeFile(destPath, Buffer.from(bytes));
 }
 

@@ -12,7 +12,8 @@ export const TAB_TO_PATH: Record<string, string> = {
   'boletas-shalom': '/boletas-shalom',
   'formato-entrega': '/formato-entrega',
   'invoices-usa': '/invoices-usa',
-  'info-amex': '/info-amex'
+  'info-amex': '/info-amex',
+  'completar-inventario': '/completar-inventario'
 };
 
 export const PATH_TO_TAB: Record<string, string> = {
@@ -37,6 +38,9 @@ export const PATH_TO_TAB: Record<string, string> = {
   '/facturas-usa': 'invoices-usa',
   '/facturas': 'invoices-usa',
   '/info-amex': 'info-amex',
+  '/completar-inventario': 'completar-inventario',
+  '/completar': 'completar-inventario',
+  '/inventario-tib': 'completar-inventario',
   '/imagenes': 'info-amex',
   '/info': 'info-amex',
   '/info-imagenes': 'info-amex',

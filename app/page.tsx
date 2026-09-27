@@ -92,6 +92,11 @@ const InfoAmexTab = dynamic(() => import('@/components/tabs/InfoAmexTab'), {
   loading: () => <DashboardSkeleton />
 });
 
+const InventarioJobsTab = dynamic(() => import('@/components/tabs/InventarioJobsTab'), {
+  ssr: false,
+  loading: () => <DashboardSkeleton />
+});
+
 const NewClientModal = dynamic(() => import('@/components/modals/NewClientModal'), { ssr: false });
 const NewPackageModal = dynamic(() => import('@/components/modals/NewPackageModal'), { ssr: false });
 const ThermalLabelModal = dynamic(() => import('@/components/modals/ThermalLabelModal'), { ssr: false });
@@ -143,7 +148,8 @@ const VALID_TABS = [
   'formato-entrega',
   'invoices-usa',
   'invoices',
-  'info-amex'
+  'info-amex',
+  'completar-inventario'
 ];
 
 export default function DashboardPage() {
@@ -770,6 +776,10 @@ export default function DashboardPage() {
 
               {activeTab === 'info-amex' && (
                 <InfoAmexTab />
+              )}
+
+              {activeTab === 'completar-inventario' && (
+                <InventarioJobsTab />
               )}
             </>
           )}

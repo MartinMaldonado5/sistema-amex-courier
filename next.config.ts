@@ -59,6 +59,7 @@ const nextConfig: NextConfig = {
         { source: '/fico-cobros', destination: '/' },
         { source: '/mm-lince', destination: '/' },
         { source: '/mm-inventory', destination: '/' },
+        { source: '/completar-inventario', destination: '/' },
       ],
       fallback: [
         {

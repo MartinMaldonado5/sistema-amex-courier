@@ -111,6 +111,7 @@ export default function Sidebar({
           {navItem('formato-entrega', 'fa-solid fa-file-signature', '10. Formato de Entrega')}
           {navItem('invoices-usa', 'fa-solid fa-file-invoice-dollar', '11. Facturas / Invoices USA')}
           {navItem('info-amex', 'fa-solid fa-photo-film', '12. Info Imágenes AMEX')}
+          {navItem('completar-inventario', 'fa-solid fa-cloud-arrow-up', '13. Completar Inventario')}
         </div>
       </div>
     </nav>

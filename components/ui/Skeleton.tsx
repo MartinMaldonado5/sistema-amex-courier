@@ -860,6 +860,8 @@ export function PageSkeleton({ activeTab, tab }: { activeTab?: string; tab?: str
     case 'invoices-usa':
     case 'invoices':
       return <InvoicesSkeleton />;
+    case 'completar-inventario':
+      return <DashboardSkeleton />;
     default:
       return <DashboardSkeleton />;
   }
