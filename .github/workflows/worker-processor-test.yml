@@ -1,0 +1,59 @@
+# Prueba el procesador C# en Linux nativo (ubuntu) con archivos de prueba.
+# Aísla si un fallo es del binario o del entorno Render.
+name: worker-processor-test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Automatizador_Inventario_AMEX_WhatsApp/processor/**'
+      - '.github/workflows/worker-processor-test.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: pip install openpyxl
+      - name: Generar xlsx de prueba
+        run: |
+          mkdir -p /tmp/t
+          python3 - <<'EOF'
+          import openpyxl
+          inv = [['Guía WR','Consignatario','Tracking','Tipo Empaque','Peso Kg','Estado Entrega'],
+                 ['WR-001','','','','',''],['WR-002','','','','',''],['WR-999',' intacto','X','CAJA',1,'PENDIENTE']]
+          ent = [['WR','Tracking','Cliente','Tipo Paquete','Peso','Estado','Modificado'],
+                 ['WR-001','000123','JUAN PEREZ','CAJA',2.5,'ENTREGADO','2026-09-20'],
+                 ['WR-002','TRK-002','MARIA LOPEZ','SOBRE',0.5,'ENTREGADO','2026-09-21']]
+          env = [['WR','Tracking','Cliente','Tipo Paquete','Peso','Estado','Modificado'],
+                 ['WR-003','TRK-003','CARLOS RUIZ','SACA',5,'ENVIADO','2026-09-22']]
+          for name, rows in [('inv.xlsx',inv),('ent.xlsx',ent),('env.xlsx',env)]:
+              wb = openpyxl.Workbook(); ws = wb.active
+              for r in rows: ws.append(r)
+              wb.save(f'/tmp/t/{name}')
+          print('archivos OK')
+          EOF
+      - name: Publicar procesador linux-x64
+        run: |
+          dotnet publish Automatizador_Inventario_AMEX_WhatsApp/processor/AmexInventoryProcessor/AmexInventoryProcessor.csproj \
+            -c Release -r linux-x64 --self-contained true \
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+            -o /tmp/proc
+          ls -la /tmp/proc
+      - name: Ejecutar procesador
+        run: |
+          cp /tmp/t/ent.xlsx /tmp/t/sent-vacio.xlsx
+          python3 -c "import openpyxl; wb=openpyxl.Workbook(); wb.active.append(['WR','Tracking','Cliente','Tipo Paquete','Peso','Estado']); wb.save('/tmp/t/rec-vacio.xlsx')"
+          /tmp/proc/AmexInventoryProcessor /tmp/t/inv.xlsx /tmp/t/ent.xlsx /tmp/t/env.xlsx /tmp/t/rec-vacio.xlsx /tmp/t/out.xlsx /tmp/t/unmatched.csv
+          echo "exit=$?"
+      - name: Verificar salida
+        run: |
+          python3 - <<'EOF'
+          import openpyxl
+          wb = openpyxl.load_workbook('/tmp/t/out.xlsx'); ws = wb.active
+          for row in ws.iter_rows(values_only=True): print(row)
+          EOF
