@@ -168,7 +168,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="operaciones@amexcourier.pe"
+                placeholder="sistemaamexcourier@gmail.com"
                 style={{
                   width: '100%',
                   padding: '11px 12px 11px 36px',

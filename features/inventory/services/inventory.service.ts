@@ -176,7 +176,7 @@ export const inventoryService = {
     await supabase.from('auditoria_sistema').insert({
       usuario_id: userId,
       usuario_nombre: authData?.user?.user_metadata?.nombre_completo || 'Operador Logístico AMEX',
-      usuario_email: authData?.user?.email || 'operaciones@amexcourier.pe',
+      usuario_email: authData?.user?.email || 'sistemaamexcourier@gmail.com',
       modulo: 'INVENTARIO',
       accion: 'ELIMINAR_SOFT',
       registro_id: id,
@@ -259,7 +259,7 @@ export const inventoryService = {
       await supabase.from('auditoria_sistema').insert({
         usuario_id: userId,
         usuario_nombre: authData?.user?.user_metadata?.nombre_completo || 'Operador Logístico AMEX',
-        usuario_email: authData?.user?.email || 'operaciones@amexcourier.pe',
+      usuario_email: authData?.user?.email || 'sistemaamexcourier@gmail.com',
         modulo: 'INVENTARIO',
         accion: 'ELIMINAR_SOFT',
         registro_id: id,

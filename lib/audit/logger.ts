@@ -21,7 +21,7 @@ export async function registrarAuditoria(entry: AuditLogEntry) {
         (user?.user_metadata?.nombre_completo as string) ||
         (user?.user_metadata?.nombre as string) ||
         'Operador Logístico AMEX',
-      usuario_email: user?.email || 'operaciones@amexcourier.pe',
+      usuario_email: user?.email || 'sistemaamexcourier@gmail.com',
       modulo: entry.modulo,
       accion: entry.accion,
       registro_id: entry.registroId || null,
