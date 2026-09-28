@@ -88,7 +88,7 @@ export const RotulosService = {
   async parseWithAi(params: { text?: string; imageBase64?: string }): Promise<Partial<RotuloSlotData> & { items?: Array<Partial<RotuloSlotData>> }> {
     let imageBase64 = params.imageBase64 || undefined;
     if (imageBase64) {
-      imageBase64 = await compressImageForAi(imageBase64, 1200, 0.82);
+      imageBase64 = await compressImageForAi(imageBase64, 1024, 0.82);
     }
 
     const res = await fetch('/api/ai/parse-rotulo', {

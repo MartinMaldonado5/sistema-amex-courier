@@ -4,11 +4,80 @@ function getOpenAiKey(): string {
   return process.env.OPENAI_API_KEY || '';
 }
 
-// Modelos por defecto
-export const DEFAULT_OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-6-luna';
+// Modelos por defecto y enrutamiento inteligente
+export const DEFAULT_OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o';
+export const FAST_TEXT_MODEL = process.env.OPENAI_FAST_MODEL || 'gpt-4o-mini';
 
 /**
- * Singleton del Cliente OpenAI (GPT-6 Luna):
+ * Esquemas JSON estrictos (Structured Outputs)
+ * Compilados con gramática libre de contexto por OpenAI para máxima velocidad y 0 errores
+ */
+export const DNI_JSON_SCHEMA = {
+  name: 'dni_extraction',
+  strict: true,
+  schema: {
+    type: 'object',
+    properties: {
+      dni: { type: 'string', description: 'Número del documento de 8 dígitos para DNI o CE' },
+      nombres: { type: 'string', description: 'Nombres de la persona en mayúsculas' },
+      apellidos: { type: 'string', description: 'Apellidos de la persona en mayúsculas' },
+      nombre_completo: { type: 'string', description: 'Nombres y apellidos completos en mayúsculas' }
+    },
+    required: ['dni', 'nombres', 'apellidos', 'nombre_completo'],
+    additionalProperties: false
+  }
+} as const;
+
+export const INVOICE_JSON_SCHEMA = {
+  name: 'invoice_extraction',
+  strict: true,
+  schema: {
+    type: 'object',
+    properties: {
+      tracking_usa: { type: 'string', description: 'Número de rastreo de la compra' },
+      invoice_number: { type: 'string', description: 'Número de factura' },
+      descripcion_mercancia: { type: 'string', description: 'Descripción breve de la mercancía' },
+      peso_kg: { type: 'number', description: 'Peso en kilogramos' },
+      valor_usd: { type: 'number', description: 'Valor total en dólares USD' }
+    },
+    required: ['tracking_usa', 'invoice_number', 'descripcion_mercancia', 'peso_kg', 'valor_usd'],
+    additionalProperties: false
+  }
+} as const;
+
+export const ROTULO_JSON_SCHEMA = {
+  name: 'rotulo_extraction',
+  strict: true,
+  schema: {
+    type: 'object',
+    properties: {
+      pedidos: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            siglas: { type: 'string' },
+            totalCajas: { type: 'string' },
+            agencia: { type: 'string', enum: ['SHALOM', 'CRUZ DEL SUR', 'OLVA', 'OTRA'] },
+            agenciaOtra: { type: 'string' },
+            nombre: { type: 'string' },
+            dni: { type: 'string' },
+            celular: { type: 'string' },
+            destino: { type: 'string' },
+            remitente: { type: 'string' }
+          },
+          required: ['siglas', 'totalCajas', 'agencia', 'agenciaOtra', 'nombre', 'dni', 'celular', 'destino', 'remitente'],
+          additionalProperties: false
+        }
+      }
+    },
+    required: ['pedidos'],
+    additionalProperties: false
+  }
+} as const;
+
+/**
+ * Singleton del Cliente OpenAI:
  * Mantiene conexiones TLS/HTTP persistentes y reutiliza el cliente.
  */
 let openAiClientInstance: OpenAI | null = null;
@@ -26,12 +95,10 @@ export function getOpenAiClient(): OpenAI {
 
 /**
  * Opciones dinámicas para el modelo OpenAI configurado.
- * Para modelos con capacidad de razonamiento (como GPT-6 Luna o familias o1/o3),
- * aplica reasoning_effort: 'low' y max_completion_tokens para reducir la latencia
- * a más de la mitad y evitar tokens de pensamiento innecesarios en tareas de extracción.
+ * Aplica temperatura 0.0 para muestreo determinista y límite de tokens ajustado.
  */
-export function getOpenAiModelOptions(maxTokens = 1000) {
-  const modelName = DEFAULT_OPENAI_MODEL.toLowerCase();
+export function getOpenAiModelOptions(maxTokens = 500, modelOverride?: string) {
+  const modelName = (modelOverride || DEFAULT_OPENAI_MODEL).toLowerCase();
   const isReasoningModel =
     modelName.includes('luna') ||
     modelName.includes('o1') ||
@@ -46,7 +113,7 @@ export function getOpenAiModelOptions(maxTokens = 1000) {
   }
   return {
     max_tokens: maxTokens,
-    temperature: 0.1
+    temperature: 0.0
   };
 }
 
@@ -109,8 +176,8 @@ Devuelve exclusivamente un objeto JSON válido con los campos solicitados.`;
     try {
       const response = await client.chat.completions.create({
         model: DEFAULT_OPENAI_MODEL,
-        response_format: { type: 'json_object' },
-        ...getOpenAiModelOptions(1000),
+        response_format: { type: 'json_schema', json_schema: INVOICE_JSON_SCHEMA },
+        ...getOpenAiModelOptions(300),
         messages: [
           {
             role: 'user',
@@ -129,8 +196,8 @@ Devuelve exclusivamente un objeto JSON válido con los campos solicitados.`;
 
   const response = await client.chat.completions.create({
     model: DEFAULT_OPENAI_MODEL,
-    response_format: { type: 'json_object' },
-    ...getOpenAiModelOptions(1000),
+    response_format: { type: 'json_schema', json_schema: INVOICE_JSON_SCHEMA },
+    ...getOpenAiModelOptions(300),
     messages: [
       {
         role: 'user',
@@ -139,7 +206,8 @@ Devuelve exclusivamente un objeto JSON válido con los campos solicitados.`;
           {
             type: 'image_url',
             image_url: {
-              url: `data:${mimeType || 'image/jpeg'};base64,${fileBase64}`
+              url: `data:${mimeType || 'image/jpeg'};base64,${fileBase64}`,
+              detail: 'high'
             }
           }
         ]
@@ -210,8 +278,8 @@ Reglas estrictas:
   const client = getOpenAiClient();
   const response = await client.chat.completions.create({
     model: DEFAULT_OPENAI_MODEL,
-    response_format: { type: 'json_object' },
-    ...getOpenAiModelOptions(1000),
+    response_format: { type: 'json_schema', json_schema: DNI_JSON_SCHEMA },
+    ...getOpenAiModelOptions(120),
     messages: [
       {
         role: 'user',
@@ -220,7 +288,8 @@ Reglas estrictas:
           {
             type: 'image_url',
             image_url: {
-              url: `data:${mimeType};base64,${base64}`
+              url: `data:${mimeType};base64,${base64}`,
+              detail: 'high'
             }
           }
         ]
@@ -329,10 +398,14 @@ Reglas estrictas:
 
   contentParts.push({ type: 'text', text: prompt });
 
+  const isTextOnly = !input.imageBase64 && Boolean(input.text && input.text.trim());
+  const selectedModel = isTextOnly ? FAST_TEXT_MODEL : DEFAULT_OPENAI_MODEL;
+  const maxTokens = isTextOnly ? 350 : 500;
+
   const response = await client.chat.completions.create({
-    model: DEFAULT_OPENAI_MODEL,
-    response_format: { type: 'json_object' },
-    ...getOpenAiModelOptions(1000),
+    model: selectedModel,
+    response_format: { type: 'json_schema', json_schema: ROTULO_JSON_SCHEMA },
+    ...getOpenAiModelOptions(maxTokens, selectedModel),
     messages: [
       {
         role: 'user',
@@ -507,7 +580,7 @@ Reglas estrictas:
       const response = await client.chat.completions.create({
         model: DEFAULT_OPENAI_MODEL,
         response_format: { type: 'json_object' },
-        ...getOpenAiModelOptions(1000),
+        ...getOpenAiModelOptions(500),
         messages: [
           {
             role: 'user',
@@ -526,7 +599,7 @@ Reglas estrictas:
     const response = await client.chat.completions.create({
       model: DEFAULT_OPENAI_MODEL,
       response_format: { type: 'json_object' },
-      ...getOpenAiModelOptions(1000),
+      ...getOpenAiModelOptions(500),
       messages: [
         {
           role: 'user',
@@ -535,7 +608,8 @@ Reglas estrictas:
             {
               type: 'image_url',
               image_url: {
-                url: `data:${mimeType || 'image/jpeg'};base64,${base64}`
+                url: `data:${mimeType || 'image/jpeg'};base64,${base64}`,
+                detail: 'high'
               }
             }
           ]

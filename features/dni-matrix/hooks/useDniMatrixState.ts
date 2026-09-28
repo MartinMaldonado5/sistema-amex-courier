@@ -187,8 +187,8 @@ export function useDniMatrixState() {
       playSound('click');
       showToast('🤖 AMEXito está leyendo el DNI...', 'info');
 
-      // Optimización de nitidez y rotación: Enviar imagen orientada y nítida para lectura OCR
-      const optimizedImage = await compressImageForAi(slot.anverso, 1400, 0.88, slot.anversoRotation || 0);
+      // Optimización de nitidez y rotación: Reducir a 1024px para encajar en 2 tiles de OpenAI Vision y acelerar transferencia
+      const optimizedImage = await compressImageForAi(slot.anverso, 1024, 0.82, slot.anversoRotation || 0);
 
       const res = await fetch('/api/ai/extract-dni-name', {
         method: 'POST',
