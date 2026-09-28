@@ -7,7 +7,7 @@ Sistema ERP de gestión logística integral para **SISTEMA AMEX COURIER** (Sede 
 - **Almacenamiento de Archivos:** **Cloudflare R2 Storage** (compatibilidad S3 API sin costos de transferencia) bajo la carpeta raíz **`FOLDER AMEX`**.
 - **IA Integradora:** **OpenAI GPT-6 Luna** para lectura y autocompletado inteligente de facturas, DNI, rótulos y boletas Shalom.
 - **Escáner Móvil QR & Barras:** Lector con cámara nativa para celulares, sonido *beep* y respuesta háptica (vibración).
-- **Despliegue CI/CD:** **Vercel** (`https://mensajeria-expreso-amex.vercel.app`).
+- **Despliegue CI/CD:** **Vercel** (`https://www.sistema-amex.online`).
 
 ---
 
