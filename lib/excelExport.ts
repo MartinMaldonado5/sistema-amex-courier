@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import writeXlsxFile from 'write-excel-file/browser';
 import { Paquete, MovimientoKardex, Cliente, OrdenPicking, ItemPicking } from '@/types';
 
 /**
@@ -15,12 +15,9 @@ export function exportToExcel(
     return;
   }
 
-  // 1. Crear hoja de cálculo a partir del JSON
-  const worksheet = XLSX.utils.json_to_sheet(data);
-
-  // 2. Auto-calcular el ancho óptimo de las columnas (wch)
+  // Crear columnas con ancho óptimo y cabeceras formateadas.
   const headers = Object.keys(data[0]);
-  const colWidths = headers.map(key => {
+  const columns = headers.map(key => {
     let maxLen = key.length;
     for (const row of data) {
       const val = row[key];
@@ -29,19 +26,15 @@ export function exportToExcel(
         maxLen = strVal.length;
       }
     }
-    // Añadimos padding y limitamos entre 10 y 60 caracteres
-    return { wch: Math.min(Math.max(maxLen + 3, 11), 60) };
+    return {
+      header: { value: key, fontWeight: 'bold' as const },
+      cell: (row: Record<string, any>) => ({ value: row[key] ?? '' }),
+      width: Math.min(Math.max(maxLen + 3, 11), 60)
+    };
   });
-  worksheet['!cols'] = colWidths;
-
-  // 3. Crear el libro de Excel y adjuntar la hoja
-  const workbook = XLSX.utils.book_new();
-  const safeSheetName = sheetName.slice(0, 31).replace(/[\\/?*[\]]/g, '');
-  XLSX.utils.book_append_sheet(workbook, worksheet, safeSheetName || 'Datos AMEX');
-
-  // 4. Descargar archivo en el navegador
+  const safeSheetName = sheetName.slice(0, 31).replace(/[\\/?*[\]]/g, '') || 'Datos AMEX';
   const finalFilename = filename.toLowerCase().endsWith('.xlsx') ? filename : `${filename}.xlsx`;
-  XLSX.writeFile(workbook, finalFilename);
+  void writeXlsxFile(data, { sheet: safeSheetName, columns }).toFile(finalFilename);
 }
 
 /**

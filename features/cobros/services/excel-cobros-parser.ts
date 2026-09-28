@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import readXlsxFile, { type SheetData } from 'read-excel-file/browser';
 import {
   ClienteCobroLote,
   ItemCobroWR,
@@ -26,17 +26,15 @@ export const ExcelCobrosParser = {
   /**
    * Lee un archivo ArrayBuffer de Excel y lo transforma en modelos ClienteCobroLote
    */
-  parseWorkbook(buffer: ArrayBuffer, fileName: string = 'Cobros.xlsx'): WorkbookParseResult {
-    const wb = XLSX.read(buffer, { type: 'array', cellDates: true });
-    const sheetNames = wb.SheetNames;
+  async parseWorkbook(buffer: ArrayBuffer, fileName: string = 'Cobros.xlsx'): Promise<WorkbookParseResult> {
+    const sheets = await readXlsxFile(buffer);
+    const sheetNames = sheets.map((sheet) => sheet.sheet);
     const sheetsMap: Record<string, SheetParseResult> = {};
     const todosLosLotes: ClienteCobroLote[] = [];
 
-    for (const sname of sheetNames) {
-      const ws = wb.Sheets[sname];
-      if (!ws) continue;
-
-      const clientes = this.parseSheet(ws, sname);
+    for (const sheet of sheets) {
+      const sname = sheet.sheet;
+      const clientes = this.parseSheet(sheet.data, sname);
       if (clientes.length > 0) {
         let sheetWRs = 0;
         let sheetUsd = 0;
@@ -67,8 +65,7 @@ export const ExcelCobrosParser = {
   /**
    * Parsea una hoja individual de Excel
    */
-  parseSheet(ws: XLSX.WorkSheet, sheetName: string): ClienteCobroLote[] {
-    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:H1');
+  parseSheet(rows: SheetData, sheetName: string): ClienteCobroLote[] {
     const clientes: ClienteCobroLote[] = [];
 
     let currentClienteName = '';
@@ -150,11 +147,8 @@ export const ExcelCobrosParser = {
       currentSubConsignee = '';
     };
 
-    for (let R = range.s.r; R <= range.e.r; ++R) {
-      const getVal = (colIdx: number): string => {
-        const cell = ws[XLSX.utils.encode_cell({ r: R, c: colIdx })];
-        return cell && cell.v !== undefined ? String(cell.v).trim() : '';
-      };
+    for (let R = 0; R < rows.length; ++R) {
+      const getVal = (colIdx: number): string => String(rows[R]?.[colIdx] ?? '').trim();
 
       const c1 = getVal(0); // Col A (Nombre)
       const c2 = getVal(1); // Col B (Peso)

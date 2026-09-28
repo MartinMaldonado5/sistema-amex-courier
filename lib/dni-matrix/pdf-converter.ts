@@ -300,11 +300,11 @@ export async function exportPdfToDirectoryFolder(
     const cleanDni = (slot.dni || '').replace(/[\\/:*?"<>|]/g, '_').trim();
     const numStr = String(slot.id).padStart(3, '0');
 
-    let baseName = cleanLabel && cleanDni 
-      ? `${cleanLabel}_${cleanDni}` 
-      : cleanLabel 
-      ? cleanLabel 
-      : cleanDni 
+    const baseName = cleanLabel && cleanDni
+      ? `${cleanLabel}_${cleanDni}`
+      : cleanLabel
+      ? cleanLabel
+      : cleanDni
       ? `DNI_${cleanDni}` 
       : `Expediente_${numStr}`;
 

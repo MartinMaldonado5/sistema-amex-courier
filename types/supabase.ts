@@ -7,6 +7,8 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
@@ -51,6 +53,51 @@ export type Database = {
         }
         Relationships: []
       }
+      auditoria_sistema: {
+        Row: {
+          accion: string
+          creado_en: string | null
+          detalles: string | null
+          id: string
+          ip_origen: string | null
+          modulo: string
+          registro_id: string | null
+          usuario_email: string
+          usuario_id: string | null
+          usuario_nombre: string
+          valores_anteriores: Json | null
+          valores_nuevos: Json | null
+        }
+        Insert: {
+          accion: string
+          creado_en?: string | null
+          detalles?: string | null
+          id?: string
+          ip_origen?: string | null
+          modulo: string
+          registro_id?: string | null
+          usuario_email: string
+          usuario_id?: string | null
+          usuario_nombre: string
+          valores_anteriores?: Json | null
+          valores_nuevos?: Json | null
+        }
+        Update: {
+          accion?: string
+          creado_en?: string | null
+          detalles?: string | null
+          id?: string
+          ip_origen?: string | null
+          modulo?: string
+          registro_id?: string | null
+          usuario_email?: string
+          usuario_id?: string | null
+          usuario_nombre?: string
+          valores_anteriores?: Json | null
+          valores_nuevos?: Json | null
+        }
+        Relationships: []
+      }
       boletas_shalom: {
         Row: {
           actualizado_en: string | null
@@ -64,6 +111,8 @@ export type Database = {
           destinatario_nombre: string
           destinatario_telefono: string | null
           destino: string
+          eliminado_en: string | null
+          eliminado_por: string | null
           estado_envio: string | null
           fecha_emision: string
           fecha_traslado: string | null
@@ -73,6 +122,7 @@ export type Database = {
           metadatos_ocr: Json | null
           moneda: string | null
           monto_total: number | null
+          motivo_eliminacion: string | null
           nro_orden: string | null
           observaciones: string | null
           origen: string | null
@@ -97,6 +147,8 @@ export type Database = {
           destinatario_nombre: string
           destinatario_telefono?: string | null
           destino: string
+          eliminado_en?: string | null
+          eliminado_por?: string | null
           estado_envio?: string | null
           fecha_emision: string
           fecha_traslado?: string | null
@@ -106,6 +158,7 @@ export type Database = {
           metadatos_ocr?: Json | null
           moneda?: string | null
           monto_total?: number | null
+          motivo_eliminacion?: string | null
           nro_orden?: string | null
           observaciones?: string | null
           origen?: string | null
@@ -130,6 +183,8 @@ export type Database = {
           destinatario_nombre?: string
           destinatario_telefono?: string | null
           destino?: string
+          eliminado_en?: string | null
+          eliminado_por?: string | null
           estado_envio?: string | null
           fecha_emision?: string
           fecha_traslado?: string | null
@@ -139,6 +194,7 @@ export type Database = {
           metadatos_ocr?: Json | null
           moneda?: string | null
           monto_total?: number | null
+          motivo_eliminacion?: string | null
           nro_orden?: string | null
           observaciones?: string | null
           origen?: string | null
@@ -205,12 +261,15 @@ export type Database = {
           cliente_telefono: string | null
           codigo_cobro: string
           creado_en: string
+          eliminado_en: string | null
+          eliminado_por: string | null
           estado: string
           fecha_operacion: string | null
           id: string
           metodo_pago: string
           moneda: string
           monto: number
+          motivo_eliminacion: string | null
           notas: string | null
           numero_operacion: string | null
           paquetes_wrs: Json
@@ -226,12 +285,15 @@ export type Database = {
           cliente_telefono?: string | null
           codigo_cobro: string
           creado_en?: string
+          eliminado_en?: string | null
+          eliminado_por?: string | null
           estado?: string
           fecha_operacion?: string | null
           id?: string
           metodo_pago?: string
           moneda?: string
           monto?: number
+          motivo_eliminacion?: string | null
           notas?: string | null
           numero_operacion?: string | null
           paquetes_wrs?: Json
@@ -247,12 +309,15 @@ export type Database = {
           cliente_telefono?: string | null
           codigo_cobro?: string
           creado_en?: string
+          eliminado_en?: string | null
+          eliminado_por?: string | null
           estado?: string
           fecha_operacion?: string | null
           id?: string
           metodo_pago?: string
           moneda?: string
           monto?: number
+          motivo_eliminacion?: string | null
           notas?: string | null
           numero_operacion?: string | null
           paquetes_wrs?: Json
@@ -590,6 +655,87 @@ export type Database = {
           },
         ]
       }
+      inventario_jobs: {
+        Row: {
+          coincidencias: number | null
+          creado_en: string
+          csv_key: string | null
+          duplicados: number | null
+          entregado_key: string | null
+          enviado_key: string | null
+          error: string | null
+          estado: string
+          etapa: string
+          filas_tib: number | null
+          fuentes: string[]
+          id: string
+          iniciado_en: string | null
+          inventario_key: string | null
+          mensaje: string
+          progreso: number
+          recibido_key: string | null
+          resultado_key: string | null
+          segundos: number | null
+          sin_coincidencia: number | null
+          terminado_en: string | null
+          total_guias: number | null
+          user_nombre: string | null
+          usuario_id: string | null
+        }
+        Insert: {
+          coincidencias?: number | null
+          creado_en?: string
+          csv_key?: string | null
+          duplicados?: number | null
+          entregado_key?: string | null
+          enviado_key?: string | null
+          error?: string | null
+          estado?: string
+          etapa?: string
+          filas_tib?: number | null
+          fuentes?: string[]
+          id?: string
+          iniciado_en?: string | null
+          inventario_key?: string | null
+          mensaje?: string
+          progreso?: number
+          recibido_key?: string | null
+          resultado_key?: string | null
+          segundos?: number | null
+          sin_coincidencia?: number | null
+          terminado_en?: string | null
+          total_guias?: number | null
+          user_nombre?: string | null
+          usuario_id?: string | null
+        }
+        Update: {
+          coincidencias?: number | null
+          creado_en?: string
+          csv_key?: string | null
+          duplicados?: number | null
+          entregado_key?: string | null
+          enviado_key?: string | null
+          error?: string | null
+          estado?: string
+          etapa?: string
+          filas_tib?: number | null
+          fuentes?: string[]
+          id?: string
+          iniciado_en?: string | null
+          inventario_key?: string | null
+          mensaje?: string
+          progreso?: number
+          recibido_key?: string | null
+          resultado_key?: string | null
+          segundos?: number | null
+          sin_coincidencia?: number | null
+          terminado_en?: string | null
+          total_guias?: number | null
+          user_nombre?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
       movimientos_kardex: {
         Row: {
           codigo_paquete: string
@@ -646,10 +792,13 @@ export type Database = {
           creado_en: string | null
           descripcion: string | null
           dni_consignatario: string | null
+          eliminado_en: string | null
+          eliminado_por: string | null
           estado_entrega: string | null
           factura_pdf_url: string | null
           id: string
           metodo_entrega: string | null
+          motivo_eliminacion: string | null
           nombre_consignatario: string | null
           numero_factura: string | null
           numero_recibo_bodega: string
@@ -669,10 +818,13 @@ export type Database = {
           creado_en?: string | null
           descripcion?: string | null
           dni_consignatario?: string | null
+          eliminado_en?: string | null
+          eliminado_por?: string | null
           estado_entrega?: string | null
           factura_pdf_url?: string | null
           id?: string
           metodo_entrega?: string | null
+          motivo_eliminacion?: string | null
           nombre_consignatario?: string | null
           numero_factura?: string | null
           numero_recibo_bodega: string
@@ -692,10 +844,13 @@ export type Database = {
           creado_en?: string | null
           descripcion?: string | null
           dni_consignatario?: string | null
+          eliminado_en?: string | null
+          eliminado_por?: string | null
           estado_entrega?: string | null
           factura_pdf_url?: string | null
           id?: string
           metodo_entrega?: string | null
+          motivo_eliminacion?: string | null
           nombre_consignatario?: string | null
           numero_factura?: string | null
           numero_recibo_bodega?: string
@@ -716,6 +871,68 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      perfiles_usuarios: {
+        Row: {
+          activo: boolean | null
+          actualizado_en: string | null
+          creado_en: string | null
+          email: string
+          id: string
+          nombre_completo: string
+          rol_id: string | null
+        }
+        Insert: {
+          activo?: boolean | null
+          actualizado_en?: string | null
+          creado_en?: string | null
+          email: string
+          id: string
+          nombre_completo: string
+          rol_id?: string | null
+        }
+        Update: {
+          activo?: boolean | null
+          actualizado_en?: string | null
+          creado_en?: string | null
+          email?: string
+          id?: string
+          nombre_completo?: string
+          rol_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "perfiles_usuarios_rol_id_fkey"
+            columns: ["rol_id"]
+            isOneToOne: false
+            referencedRelation: "roles_sistema"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roles_sistema: {
+        Row: {
+          creado_en: string | null
+          descripcion: string | null
+          id: string
+          nombre: string
+          permisos: Json
+        }
+        Insert: {
+          creado_en?: string | null
+          descripcion?: string | null
+          id?: string
+          nombre: string
+          permisos?: Json
+        }
+        Update: {
+          creado_en?: string | null
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+          permisos?: Json
+        }
+        Relationships: []
       }
     }
     Views: {

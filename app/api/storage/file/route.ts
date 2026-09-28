@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getR2Client, R2_BUCKET_NAME, R2_ROOT_FOLDER } from '@/lib/r2/client';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { authorizeUser } from '@/lib/auth/guards';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await authorizeUser();
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
     const { searchParams } = new URL(req.url);
     let key = searchParams.get('key');
     const download = searchParams.get('download') === 'true';
@@ -16,6 +20,10 @@ export async function GET(req: NextRequest) {
 
     // Limpiar y decodificar key
     key = decodeURIComponent(key).trim().replace(/^\/+/, '');
+
+    if (!key || key.includes('\0') || key.split('/').some((segment) => segment === '..')) {
+      return NextResponse.json({ error: 'Clave de archivo inválida.' }, { status: 400 });
+    }
 
     const client = getR2Client();
 
@@ -62,7 +70,7 @@ export async function GET(req: NextRequest) {
     if (response.ContentLength) {
       headers.set('Content-Length', String(response.ContentLength));
     }
-    headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+    headers.set('Cache-Control', 'private, max-age=300');
     headers.set(
       'Content-Disposition',
       download

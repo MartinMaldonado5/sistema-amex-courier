@@ -519,7 +519,7 @@ export function InvoiceControlPanel({
 
               {(!data.items || data.items.length === 0) && (
                 <div className="p-4 text-center text-xs text-slate-500 italic">
-                  No hay ítems registrados. Haz clic en "+ Agregar Ítem" o "Pegar Excel".
+                  No hay ítems registrados. Haz clic en &quot;+ Agregar Ítem&quot; o &quot;Pegar Excel&quot;.
                 </div>
               )}
             </div>

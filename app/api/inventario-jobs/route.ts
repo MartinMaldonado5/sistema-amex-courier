@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { authorizeUser, getUserDisplayName, hasAdminRole } from '@/lib/auth/guards';
 
 /**
  * POST /api/inventario-jobs — encola un trabajo para el worker Render.
@@ -20,6 +21,9 @@ function isXlsxKey(key: string): boolean {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await authorizeUser();
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
     const body = await req.json().catch(() => ({}));
 
     const inventarioKey = String(body.inventario_key || '').trim();
@@ -42,9 +46,10 @@ export async function POST(req: NextRequest) {
     }
 
     const row: Record<string, unknown> = {
+      usuario_id: auth.user.id,
       inventario_key: inventarioKey,
       fuentes,
-      user_nombre: String(body.user_nombre || 'Operador AMEX').slice(0, 120),
+      user_nombre: getUserDisplayName(auth.user).slice(0, 120),
       estado: 'queued',
       etapa: 'queued',
       mensaje: 'En cola, esperando al worker.',
@@ -86,14 +91,21 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
+    const auth = await authorizeUser();
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
     const admin = getSupabaseAdmin();
-    const { data, error } = await admin
+    let query = admin
       .from('inventario_jobs')
       .select(
         'id,estado,etapa,mensaje,progreso,fuentes,resultado_key,csv_key,total_guias,coincidencias,sin_coincidencia,segundos,creado_en,terminado_en'
-      )
-      .order('creado_en', { ascending: false })
-      .limit(20);
+      );
+
+    if (!(await hasAdminRole(auth.user))) {
+      query = query.eq('usuario_id', auth.user.id);
+    }
+
+    const { data, error } = await query.order('creado_en', { ascending: false }).limit(20);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

@@ -33,14 +33,17 @@ interface CobroDeliveryModalProps {
   }) => void;
 }
 
-export const CobroDeliveryModal: React.FC<CobroDeliveryModalProps> = ({
+export const CobroDeliveryModal: React.FC<CobroDeliveryModalProps> = (props) => {
+  if (!props.isOpen || !props.lote) return null;
+  return <CobroDeliveryModalContent {...props} lote={props.lote} />;
+};
+
+const CobroDeliveryModalContent: React.FC<CobroDeliveryModalProps & { lote: ClienteCobroLote }> = ({
   isOpen,
   onClose,
   lote,
   onConfirmEntrega
 }) => {
-  if (!isOpen || !lote) return null;
-
   // WRs aún pendientes de entrega en almacén
   const wrsEnAlmacen = useMemo(() => {
     return lote.itemsWR.filter((w) => w.estadoEntrega !== 'ENTREGADO');

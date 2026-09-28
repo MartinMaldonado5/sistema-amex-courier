@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase/client';
+import { createClient as createServerClient } from '@/lib/supabase/server';
+import { authorizeUser } from '@/lib/auth/guards';
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await authorizeUser();
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+    const supabase = await createServerClient();
+
     const { id } = await params;
     if (!id) {
       return NextResponse.json({ error: 'ID no proporcionado.' }, { status: 400 });
@@ -14,6 +19,7 @@ export async function GET(
     const { data, error } = await supabase
       .from('boletas_shalom')
       .select('*')
+      .is('eliminado_en', null)
       .eq('id', id)
       .single();
 
@@ -33,6 +39,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await authorizeUser();
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+    const supabase = await createServerClient();
+
     const { id } = await params;
     if (!id) {
       return NextResponse.json({ error: 'ID no proporcionado.' }, { status: 400 });
@@ -87,6 +97,7 @@ export async function PATCH(
       .from('boletas_shalom')
       .update(updates)
       .eq('id', id)
+      .is('eliminado_en', null)
       .select()
       .single();
 
@@ -107,22 +118,53 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await authorizeUser();
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+    const supabase = await createServerClient();
+
     const { id } = await params;
     if (!id) {
       return NextResponse.json({ error: 'ID no proporcionado.' }, { status: 400 });
     }
 
-    const { error } = await supabase
+    const motivo = 'Eliminación manual desde Boletas Shalom';
+    const eliminadoEn = new Date().toISOString();
+    const { data, error } = await supabase
       .from('boletas_shalom')
-      .delete()
-      .eq('id', id);
+      .update({
+        eliminado_en: eliminadoEn,
+        eliminado_por: auth.user.id,
+        motivo_eliminacion: motivo
+      })
+      .eq('id', id)
+      .is('eliminado_en', null)
+      .select('id')
+      .maybeSingle();
 
     if (error) {
-      console.error('[DELETE /api/shalom-boletas/[id] error]:', error);
+      console.error('[DELETE /api/shalom-boletas/[id] soft-delete error]:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, message: 'Boleta eliminada correctamente.' });
+    if (!data) return NextResponse.json({ error: 'Boleta no encontrada.' }, { status: 404 });
+
+    const { error: auditError } = await supabase.from('auditoria_sistema').insert({
+      usuario_id: auth.user.id,
+      usuario_nombre: auth.user.user_metadata?.nombre_completo || auth.user.email || 'Operador AMEX',
+      usuario_email: auth.user.email || '',
+      modulo: 'SHALOM',
+      accion: 'ELIMINAR_SOFT',
+      registro_id: id,
+      detalles: motivo,
+      valores_anteriores: { id, eliminado: false },
+      valores_nuevos: { id, eliminado_en: eliminadoEn, motivo_eliminacion: motivo }
+    });
+
+    if (auditError) {
+      console.error('[DELETE /api/shalom-boletas/[id] audit error]:', auditError);
+    }
+
+    return NextResponse.json({ success: true, message: 'Boleta archivada correctamente.' });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Error al eliminar la boleta';
     return NextResponse.json({ error: message }, { status: 500 });

@@ -12,16 +12,24 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = await createClient();
-    const isPlaceholder = !process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const allowDevLogin = process.env.NODE_ENV === 'development' && process.env.AMEX_ALLOW_DEV_LOGIN === 'true';
 
-    if (isPlaceholder) {
-      // Modo desarrollo local: Permitir inicio de sesión directo
+    if (allowDevLogin && (!supabaseUrl || supabaseUrl.includes('placeholder'))) {
+      // Modo desarrollo local explícito: no habilitar en producción ni por defecto.
       const user = {
         nombre: 'Operador Logístico AMEX',
-        rol: 'admin',
+        rol: 'Operador Logístico',
         email: email || 'admin@amexcourier.pe',
       };
       return NextResponse.json({ user });
+    }
+
+    if (!supabaseUrl || supabaseUrl.includes('placeholder')) {
+      return NextResponse.json(
+        { error: 'La autenticación no está configurada en el servidor.' },
+        { status: 503 }
+      );
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -33,7 +41,7 @@ export async function POST(req: NextRequest) {
 
     const user = {
       nombre: (data.user.user_metadata?.nombre_completo as string) || email,
-      rol: (data.user.app_metadata?.rol as string) || 'admin',
+      rol: (data.user.app_metadata?.rol as string) || 'Operador Logístico',
       email: data.user.email || email,
     };
 

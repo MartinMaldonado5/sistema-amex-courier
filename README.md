@@ -2,7 +2,7 @@
 
 Sistema ERP de gestión logística integral para **SISTEMA AMEX COURIER** (Sede Central Lince, Miami Hub, Tingo María), desarrollado con arquitectura **Full-Stack de Alto Rendimiento**:
 
-- **Framework Web:** **Next.js 14+ (React 18 / TypeScript)** con App Router y Server Actions.
+- **Framework Web:** **Next.js 16 / React 19 / TypeScript** con App Router y rutas API.
 - **Base de Datos:** **Supabase (PostgreSQL 17)** en la nube con esquemas 100% en español y políticas **Row Level Security (RLS)**.
 - **Almacenamiento de Archivos:** **Cloudflare R2 Storage** (compatibilidad S3 API sin costos de transferencia) bajo la carpeta raíz **`FOLDER AMEX`**.
 - **IA Integradora:** **OpenAI GPT-6 Luna** para lectura y autocompletado inteligente de facturas, DNI, rótulos y boletas Shalom.
@@ -69,3 +69,7 @@ npm run dev
 # Compilar producción
 npm run build
 ```
+
+## 🔐 Variables de entorno
+
+Usa [.env.example](.env.example) como plantilla para crear `.env.local`. La clave `SUPABASE_SERVICE_ROLE_KEY` se usa únicamente en el servidor y el worker; nunca debe llevar el prefijo `NEXT_PUBLIC_`. El inicio de sesión de desarrollo sólo se habilita de forma explícita con `AMEX_ALLOW_DEV_LOGIN=true` y `NODE_ENV=development`.

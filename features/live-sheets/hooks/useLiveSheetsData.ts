@@ -1,11 +1,10 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { HojaCotejo, ItemCotejo, Paquete, TipoProcesoCotejo } from '@/types';
 import { soundEffects } from '@/lib/audio/soundEffects';
-import * as XLSX from 'xlsx';
+import writeXlsxFile from 'write-excel-file/browser';
 import { sheetsService } from '../services/sheets.service';
 import { SheetRow, SheetStats } from '../types';
-import { getSheetLongCode } from '@/components/tabs/SheetsHub';
-import { extractLast6Digits } from '../utils/codeFormatters';
+import { extractLast6Digits, getSheetLongCode } from '../utils/codeFormatters';
 
 interface UseLiveSheetsDataProps {
   paquetes: Paquete[];
@@ -386,10 +385,12 @@ export function useLiveSheetsData({ paquetes, operatorName }: UseLiveSheetsDataP
         'NOMBRE ESCANEADO': r.nombreEscaneado
       }));
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, docTitle || 'AMEX WR');
-    XLSX.writeFile(workbook, fileName);
+    const columns = Object.keys(exportData[0]).map((key) => ({
+      header: { value: key, fontWeight: 'bold' as const },
+      cell: (row: Record<string, string | number>) => ({ value: row[key] ?? '' }),
+      width: Math.min(Math.max(key.length + 4, 14), 32)
+    }));
+    void writeXlsxFile(exportData, { sheet: docTitle || 'AMEX WR', columns }).toFile(fileName);
   };
 
   const handleResetScans = async () => {

@@ -9,3 +9,4 @@ export * from './components/ShalomPdfViewerPanel';
 export * from './modals/ShalomUploadModal';
 export * from './modals/ShalomEditModal';
 export * from './modals/ShalomDeleteModal';
+export { default as BoletasShalomTab } from './components/BoletasShalomTab';

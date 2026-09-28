@@ -267,7 +267,7 @@ export function useCobrosOperaciones() {
     let totalWrs = 0;
     let wrsEntregados = 0;
     let wrsEnAlmacen = 0;
-    let totalClientes = lotesFiltrados.length;
+    const totalClientes = lotesFiltrados.length;
     let totalCorporativos = 0;
 
     lotesFiltrados.forEach((l) => {
@@ -805,7 +805,7 @@ export function useCobrosOperaciones() {
       const clientLotes = lotes.filter((l) => l.clienteNombre.toUpperCase().trim() === norm);
       let totalPeso = 0;
       let totalUsd = 0;
-      let esCorp = clientLotes.some((l) => l.esCorporativo);
+      const esCorp = clientLotes.some((l) => l.esCorporativo);
 
       clientLotes.forEach((l) => {
         l.itemsWR.forEach((w) => {
@@ -861,7 +861,7 @@ export function useCobrosOperaciones() {
 
       if (matchingLotes.length === 0) return null;
 
-      let esCorporativo = matchingLotes.some((l) => l.esCorporativo);
+      const esCorporativo = matchingLotes.some((l) => l.esCorporativo);
       let totalWrsHistoricos = 0;
       let totalFacturadoUsd = 0;
       let totalPagadoUsd = 0;

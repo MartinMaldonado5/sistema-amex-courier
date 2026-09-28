@@ -60,6 +60,7 @@ const nextConfig: NextConfig = {
         { source: '/mm-lince', destination: '/' },
         { source: '/mm-inventory', destination: '/' },
         { source: '/completar-inventario', destination: '/' },
+        { source: '/admin-usuarios', destination: '/' },
       ],
       fallback: [
         {

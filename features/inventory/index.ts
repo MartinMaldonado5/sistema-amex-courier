@@ -10,6 +10,8 @@ export { default as ShelfPositionModal } from './modals/ShelfPositionModal';
 export { default as EditPositionModal } from './modals/EditPositionModal';
 
 // Components
+export { default as InventoryTab } from './components/InventoryTab';
+export type { InventoryTabProps } from './components/InventoryTab';
 export { default as InventoryStatsCards } from './components/InventoryStatsCards';
 export { default as InventoryToolbar } from './components/InventoryToolbar';
 export { default as InventoryTable } from './components/InventoryTable';

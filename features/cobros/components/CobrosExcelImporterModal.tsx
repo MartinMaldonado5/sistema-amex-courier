@@ -22,13 +22,15 @@ interface CobrosExcelImporterModalProps {
   onImportSuccess: (lotes: ClienteCobroLote[], modo: 'combinar' | 'reemplazar') => void;
 }
 
-export const CobrosExcelImporterModal: React.FC<CobrosExcelImporterModalProps> = ({
-  isOpen,
+export const CobrosExcelImporterModal: React.FC<CobrosExcelImporterModalProps> = (props) => {
+  if (!props.isOpen) return null;
+  return <CobrosExcelImporterModalContent {...props} />;
+};
+
+const CobrosExcelImporterModalContent: React.FC<CobrosExcelImporterModalProps> = ({
   onClose,
   onImportSuccess
 }) => {
-  if (!isOpen) return null;
-
   const [parsing, setParsing] = useState(false);
   const [parseResult, setParseResult] = useState<WorkbookParseResult | null>(null);
   const [selectedSheets, setSelectedSheets] = useState<string[]>([]);
@@ -54,7 +56,7 @@ export const CobrosExcelImporterModal: React.FC<CobrosExcelImporterModalProps> =
       setParsing(true);
       setErrorMsg(null);
       const buffer = await file.arrayBuffer();
-      const result = ExcelCobrosParser.parseWorkbook(buffer, file.name);
+      const result = await ExcelCobrosParser.parseWorkbook(buffer, file.name);
 
       if (Object.keys(result.sheets).length === 0) {
         throw new Error('No se encontraron hojas con datos de cobros válidos en el archivo.');

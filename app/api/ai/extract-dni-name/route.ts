@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { extractDniNameFromImage } from '@/lib/openai/analyzer';
+import { authorizeUser } from '@/lib/auth/guards';
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await authorizeUser();
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
     const body = await req.json();
     const { imageBase64 } = body;
 
@@ -11,6 +15,9 @@ export async function POST(req: NextRequest) {
         { error: 'Se requiere la imagen del anverso en formato base64.' },
         { status: 400 }
       );
+    }
+    if (imageBase64.length > 14_000_000) {
+      return NextResponse.json({ error: 'La imagen supera el límite permitido.' }, { status: 413 });
     }
 
     const result = await extractDniNameFromImage(imageBase64);

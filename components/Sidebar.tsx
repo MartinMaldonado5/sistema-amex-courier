@@ -113,6 +113,7 @@ export default function Sidebar({
           {navItem('info-amex', 'fa-solid fa-photo-film', '12. Info Imágenes AMEX')}
           {navItem('completar-inventario', 'fa-solid fa-cloud-arrow-up', '13. Completar Inventario')}
           {navItem('auditoria', 'fa-solid fa-shield-halved', '14. Auditoría & Gobernanza')}
+          {navItem('admin-usuarios', 'fa-solid fa-user-gear', '15. Gestión de Usuarios')}
         </div>
       </div>
     </nav>

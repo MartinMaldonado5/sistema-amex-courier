@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase/client';
+import { createClient as createServerClient } from '@/lib/supabase/server';
+import { authorizeUser } from '@/lib/auth/guards';
 import { uploadShalomBoletaPdf } from '@/lib/r2/shalomUpload';
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await authorizeUser();
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+    const supabase = await createServerClient();
+
     const { searchParams } = new URL(req.url);
     const q = (searchParams.get('q') || '').trim();
     const year = (searchParams.get('year') || '').trim();
@@ -18,6 +23,7 @@ export async function GET(req: NextRequest) {
     let query = supabase
       .from('boletas_shalom')
       .select('*', { count: 'exact' })
+      .is('eliminado_en', null)
       .order('fecha_emision', { ascending: false })
       .order('creado_en', { ascending: false });
 
@@ -77,10 +83,12 @@ export async function GET(req: NextRequest) {
       supabase
         .from('boletas_shalom')
         .select('id, monto_total', { count: 'exact' })
+        .is('eliminado_en', null)
         .eq('fecha_emision', todayStr),
       supabase
         .from('boletas_shalom')
         .select('id, monto_total, destino')
+        .is('eliminado_en', null)
         .gte('fecha_emision', startOfCurrentMonth)
     ]);
 
@@ -123,6 +131,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await authorizeUser();
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+    const supabase = await createServerClient();
+
     const contentType = req.headers.get('content-type') || '';
     let payload: Record<string, any> = {};
     let fileBuffer: Buffer | null = null;
@@ -216,6 +228,7 @@ export async function POST(req: NextRequest) {
     const formaPagoFinal = payload.forma_pago || payload.modalidad_pago || 'Pendiente de Pago';
 
     const rowToInsert = {
+      creado_por: auth.user.id,
       nro_orden: nroFinal,
       codigo: codFinal,
       fecha_emision: payload.fecha_emision || new Date().toISOString().split('T')[0],

@@ -59,8 +59,12 @@ interface RegistrarCobroDiarioModalProps {
   }) => void;
 }
 
-export const RegistrarCobroDiarioModal: React.FC<RegistrarCobroDiarioModalProps> = ({
-  isOpen,
+export const RegistrarCobroDiarioModal: React.FC<RegistrarCobroDiarioModalProps> = (props) => {
+  if (!props.isOpen) return null;
+  return <RegistrarCobroDiarioModalContent {...props} />;
+};
+
+const RegistrarCobroDiarioModalContent: React.FC<RegistrarCobroDiarioModalProps> = ({
   onClose,
   allClientNames = [],
   clientes = [],
@@ -69,8 +73,6 @@ export const RegistrarCobroDiarioModal: React.FC<RegistrarCobroDiarioModalProps>
   onNavigateToClientes,
   onGuardarCobro
 }) => {
-  if (!isOpen) return null;
-
   // Cliente seleccionado del Directorio
   const [clienteSearch, setClienteSearch] = useState('');
   const [clienteSeleccionado, setClienteSeleccionado] = useState('');

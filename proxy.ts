@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -11,8 +11,18 @@ export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
+  const pathname = request.nextUrl.pathname;
+  const isLoginPage = pathname.startsWith('/login');
+  const isApiRoute = pathname.startsWith('/api');
+  const isPublicAuthRoute =
+    pathname.startsWith('/api/auth/login') || pathname.startsWith('/api/auth/logout');
+
   if (!supabaseUrl || !supabaseAnonKey) {
-    return response;
+    if (isLoginPage || isPublicAuthRoute) return response;
+    if (isApiRoute) {
+      return NextResponse.json({ error: 'Autenticación no configurada.' }, { status: 503 });
+    }
+    return NextResponse.redirect(new URL('/login?error=auth-config', request.url));
   }
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
@@ -35,16 +45,19 @@ export async function middleware(request: NextRequest) {
   // Refrescar sesión de Supabase si existe cookie
   const { data: { user } } = await supabase.auth.getUser();
 
-  const isLoginPage = request.nextUrl.pathname.startsWith('/login');
-  const isApiRoute = request.nextUrl.pathname.startsWith('/api');
-  const isPublicStatic =
-    request.nextUrl.pathname.startsWith('/_next') ||
-    request.nextUrl.pathname.startsWith('/favicon.ico') ||
-    request.nextUrl.pathname.includes('.');
-
   // Si está en login y ya está autenticado, redirigir al panel
   if (isLoginPage && user) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  if (!user && !isLoginPage && !isPublicAuthRoute) {
+    if (isApiRoute) {
+      return NextResponse.json({ error: 'No autenticado.' }, { status: 401 });
+    }
+
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('next', `${pathname}${request.nextUrl.search}`);
+    return NextResponse.redirect(loginUrl);
   }
 
   return response;

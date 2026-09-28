@@ -750,7 +750,7 @@ export const CobrosDailySheetView: React.FC<CobrosDailySheetViewProps> = ({
                     <User style={{ width: '32px', height: '32px', color: '#94a3b8', margin: '0 auto 8px auto', opacity: 0.6 }} />
                     <p style={{ fontWeight: 800, fontSize: '14px', color: '#0f172a', margin: 0 }}>No hay cobros registrados.</p>
                     <p style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-                      Haz clic en el botón azul "+ Registrar Cobro a Persona" superior para agregar uno nuevo.
+                      Haz clic en el botón azul &quot;+ Registrar Cobro a Persona&quot; superior para agregar uno nuevo.
                     </p>
                   </td>
                 </tr>

@@ -8,3 +8,5 @@ export * from './components/LiveSheetsToolbar';
 export * from './components/FormulaBar';
 export * from './components/SpreadsheetGrid';
 export * from './components/LiveSheetsBottomBar';
+export { default as LiveSheetsTab } from './components/LiveSheetsTab';
+export { default as SheetsHub, getSheetLongCode } from './components/SheetsHub';

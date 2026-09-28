@@ -1,7 +1,14 @@
 export * from './types';
 export * from './hooks/useDashboardMetrics';
+export * from './hooks/useDashboardNavigation';
+export * from './hooks/useDashboardData';
+export * from './hooks/useDashboardActions';
+export * from './hooks/useDashboardSession';
 export * from './components/DashboardHeader';
+export { default as DashboardTabContent } from './components/DashboardTabContent';
+export { default as DashboardTab } from './components/DashboardTab';
 export * from './components/ExecutiveKpiGrid';
 export * from './components/DailyTasksSection';
 export * from './components/AnalyticsChartsSection';
 export * from './components/LivePackagesStream';
+export * from './data/default-forms';

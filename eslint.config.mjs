@@ -26,6 +26,13 @@ const eslintConfig = defineConfig([
       "react-hooks/preserve-manual-memoization": "warn",
     },
   },
+  {
+    files: ["**/*.js"],
+    rules: {
+      // El worker y el servidor heredado se ejecutan como CommonJS en Node.
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

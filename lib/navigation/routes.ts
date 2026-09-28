@@ -14,7 +14,8 @@ export const TAB_TO_PATH: Record<string, string> = {
   'invoices-usa': '/invoices-usa',
   'info-amex': '/info-amex',
   'completar-inventario': '/completar-inventario',
-  'auditoria': '/auditoria'
+  'auditoria': '/auditoria',
+  'admin-usuarios': '/admin-usuarios'
 };
 
 export const PATH_TO_TAB: Record<string, string> = {
@@ -41,6 +42,7 @@ export const PATH_TO_TAB: Record<string, string> = {
   '/facturas': 'invoices-usa',
   '/info-amex': 'info-amex',
   '/completar-inventario': 'completar-inventario',
+  '/admin-usuarios': 'admin-usuarios',
   '/completar': 'completar-inventario',
   '/inventario-tib': 'completar-inventario',
   '/imagenes': 'info-amex',
@@ -145,7 +147,9 @@ export function migrateLegacyHash(hash: string): string | null {
     'rotulos-a4': '/rotulos',
     'rotulos': '/rotulos',
     'boletas-shalom': '/boletas-shalom',
-    'shalom': '/boletas-shalom'
+    'shalom': '/boletas-shalom',
+    'admin-usuarios': '/admin-usuarios',
+    'usuarios': '/admin-usuarios'
   };
 
   return tabMap[raw] || null;

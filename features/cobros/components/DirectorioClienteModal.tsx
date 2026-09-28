@@ -29,16 +29,18 @@ interface DirectorioClienteModalProps {
   guardarTarifaCliente?: (clienteNombre: string, tarifa: number) => void;
 }
 
-export const DirectorioClienteModal: React.FC<DirectorioClienteModalProps> = ({
-  isOpen,
+export const DirectorioClienteModal: React.FC<DirectorioClienteModalProps> = (props) => {
+  if (!props.isOpen || !props.clienteResumen) return null;
+  return <DirectorioClienteModalContent {...props} clienteResumen={props.clienteResumen} />;
+};
+
+const DirectorioClienteModalContent: React.FC<DirectorioClienteModalProps & { clienteResumen: ResumenCliente360 }> = ({
   onClose,
   clienteResumen,
   tcVenta,
   onNavigateToCobros,
   guardarTarifaCliente
 }) => {
-  if (!isOpen || !clienteResumen) return null;
-
   const [tabInterna, setTabInterna] = useState<'wrs' | 'pagos' | 'consignatarios'>('wrs');
   const [filtroTexto, setFiltroTexto] = useState('');
   const [tarifaInput, setTarifaInput] = useState<string>(clienteResumen.tarifaPorKgUsd?.toString() || '7.00');

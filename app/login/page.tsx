@@ -25,8 +25,8 @@ export default function LoginPage() {
         throw error;
       }
 
-      // Redirigir al panel principal
-      window.location.href = '/dashboard';
+      const nextPath = new URLSearchParams(window.location.search).get('next');
+      window.location.href = nextPath?.startsWith('/') ? nextPath : '/dashboard';
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al iniciar sesión';
       setErrorMessage(msg === 'Invalid login credentials' ? 'Correo o contraseña incorrectos.' : msg);

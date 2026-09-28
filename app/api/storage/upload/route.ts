@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadFileToR2 } from '@/lib/r2/client';
-import { getSessionUser } from '@/lib/auth/session';
+import { authorizeUser } from '@/lib/auth/guards';
 import {
   buildEntregaPath,
   buildInvoicePath,
@@ -30,8 +30,8 @@ const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
 
 export async function POST(req: NextRequest) {
   try {
-    // Si hay sesión iniciada se toma el usuario, de lo contrario se permite la operación de almacén
-    const user = await getSessionUser();
+    const auth = await authorizeUser();
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
     const formData = await req.formData();
     const file = formData.get('file') as File | null;

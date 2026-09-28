@@ -3,6 +3,7 @@ import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'node:crypto';
 import { getR2Client, R2_BUCKET_NAME, R2_ROOT_FOLDER } from '@/lib/r2/client';
+import { authorizeUser } from '@/lib/auth/guards';
 
 /**
  * POST /api/inventario-jobs/presign
@@ -15,6 +16,9 @@ const MAX_FILE_BYTES = 100 * 1024 * 1024; // 100 MB (lo valida el worker al desc
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await authorizeUser();
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
     const body = await req.json().catch(() => ({}));
     const slot = String(body.slot || '').trim();
     const filename = String(body.filename || '').trim();

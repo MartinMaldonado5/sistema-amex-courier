@@ -1,4 +1,6 @@
 export * from './types';
+export { default as CobrosTab } from './components/CobrosTab';
+export { default as DirectorioClientesTab } from './components/DirectorioClientesTab';
 export * from './services/cobros.service';
 export * from './services/kambista.service';
 export * from './services/excel-cobros-parser';

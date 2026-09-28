@@ -44,15 +44,17 @@ interface CobroPaymentModalProps {
   }) => void;
 }
 
-export const CobroPaymentModal: React.FC<CobroPaymentModalProps> = ({
-  isOpen,
+export const CobroPaymentModal: React.FC<CobroPaymentModalProps> = (props) => {
+  if (!props.isOpen || !props.lote) return null;
+  return <CobroPaymentModalContent {...props} lote={props.lote} />;
+};
+
+const CobroPaymentModalContent: React.FC<CobroPaymentModalProps & { lote: ClienteCobroLote }> = ({
   onClose,
   lote,
   cotizacionKambista,
   onConfirmPago
 }) => {
-  if (!isOpen || !lote) return null;
-
   // Lista de WRs pendientes de pago en este lote
   const wrsPendientes = useMemo(() => {
     return lote.itemsWR.filter((w) => w.estadoPago !== 'PAGADO');

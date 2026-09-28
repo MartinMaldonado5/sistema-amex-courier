@@ -11,3 +11,4 @@ export * from './modals/DniPdfConverterModal';
 export * from './modals/DniLinkClientModal';
 export * from './modals/DniDeleteConfirmModal';
 export * from './modals/DniZoomModal';
+export { default as DniMatrixTab } from './components/DniMatrixTab';
