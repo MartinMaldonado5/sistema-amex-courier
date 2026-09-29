@@ -1395,7 +1395,7 @@ export default function MobileScannerModal({
                       Confirmar Código Escaneado
                     </h4>
                     <span style={{ fontSize: '11px', color: '#64748b' }}>
-                      Código detectado · Confirma para registrar
+                      Asignación y clasificación WMS
                     </span>
                   </div>
                 </div>
@@ -1446,7 +1446,7 @@ export default function MobileScannerModal({
               </div>
 
               {/* Información del Paquete si existe en BD */}
-              {pendingConfirmation.pkg ? (
+              {pendingConfirmation.pkg && (
                 <div style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: '10px', padding: '10px 12px', marginBottom: '12px', fontSize: '11.5px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#1e3a8a', fontWeight: 800 }}>
@@ -1472,11 +1472,6 @@ export default function MobileScannerModal({
                       <span style={{ color: '#64748b' }}>Ubicación Actual:</span> <strong>{pendingConfirmation.pkg.posicionEstante || pendingConfirmation.pkg.ubicacionActual || 'Recepción'}</strong>
                     </div>
                   </div>
-                </div>
-              ) : (
-                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', padding: '9px 12px', marginBottom: '12px', fontSize: '11.5px', color: '#1e40af', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Sparkles className="w-4 h-4 text-blue-600 shrink-0" />
-                  <span>Código detectado. Listo para registrar en la base de datos.</span>
                 </div>
               )}
 
