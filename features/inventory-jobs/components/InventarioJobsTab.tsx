@@ -20,6 +20,10 @@ interface Job {
   segundos: number | null;
   creado_en: string;
   terminado_en: string | null;
+  sincronizar_db?: boolean;
+  db_sincronizado?: boolean;
+  db_actualizados?: number;
+  db_sincronizado_en?: string | null;
 }
 
 const FUENTES: Array<{ key: FuenteKey; label: string; file: string }> = [
@@ -67,6 +71,10 @@ export default function InventarioJobsTab() {
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState('');
   const [history, setHistory] = useState<Job[]>([]);
+  const [autoSyncDb, setAutoSyncDb] = useState(true);
+  const [isSyncingDb, setIsSyncingDb] = useState(false);
+  const [syncDbMessage, setSyncDbMessage] = useState<string | null>(null);
+  const autoSyncedRef = useRef<Record<string, boolean>>({});
   const pollRef = useRef<NodeJS.Timeout | null>(null);
 
   const loadHistory = useCallback(async () => {
@@ -78,6 +86,40 @@ export default function InventarioJobsTab() {
       /* historial opcional */
     }
   }, []);
+
+  const handleSyncDb = useCallback(async (targetJobId?: string) => {
+    const idToSync = targetJobId || job?.id;
+    if (!idToSync) return;
+    setIsSyncingDb(true);
+    setSyncDbMessage(null);
+    try {
+      const res = await fetch(`/api/inventario-jobs/${idToSync}/sync-db`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'Error al sincronizar con la base de datos.');
+      }
+      setSyncDbMessage(data.message || `✓ Sincronizado: ${data.updatedCount ?? 0} paquetes actualizados.`);
+      const detail = await fetch(`/api/inventario-jobs/${idToSync}`).then((r) => r.json());
+      if (detail.job) {
+        setJob(detail.job);
+      }
+      void loadHistory();
+    } catch (err: unknown) {
+      setSyncDbMessage(`Error: ${err instanceof Error ? err.message : 'No se pudo sincronizar'}`);
+    } finally {
+      setIsSyncingDb(false);
+    }
+  }, [job?.id, loadHistory]);
+
+  // Disparar sincronización automática a DB cuando el job concluye exitosamente
+  useEffect(() => {
+    if (job?.estado === 'done' && job.sincronizar_db && !job.db_sincronizado && !autoSyncedRef.current[job.id]) {
+      autoSyncedRef.current[job.id] = true;
+      void handleSyncDb(job.id);
+    }
+  }, [job?.estado, job?.sincronizar_db, job?.db_sincronizado, job?.id, handleSyncDb]);
 
   useEffect(() => {
     void loadHistory();
@@ -208,6 +250,7 @@ export default function InventarioJobsTab() {
           recibido_key: keys.received,
           fuentes: activas,
           user_nombre: 'Operador AMEX',
+          sincronizar_db: autoSyncDb,
         }),
       }).then((r) => r.json());
       if (!res.id) throw new Error(res.error || 'No se pudo encolar el trabajo.');
@@ -227,6 +270,7 @@ export default function InventarioJobsTab() {
     setPhase('idle');
     setUploadPct({});
     setError('');
+    setSyncDbMessage(null);
   };
 
   const activeJob = job && (phase === 'processing' || phase === 'queued' || phase === 'done' || phase === 'error');
@@ -282,6 +326,54 @@ export default function InventarioJobsTab() {
             </div>
           ))}
 
+          <div
+            style={{
+              background: '#f8fafc',
+              border: `1.5px solid ${autoSyncDb ? '#86efac' : '#e2e8f0'}`,
+              borderRadius: '10px',
+              padding: '12px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              transition: 'border-color 0.2s ease',
+            }}
+            onClick={() => setAutoSyncDb(!autoSyncDb)}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  background: autoSyncDb ? '#dcfce7' : '#f1f5f9',
+                  color: autoSyncDb ? '#16a34a' : '#64748b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '17px',
+                }}
+              >
+                <i className="fa-solid fa-database"></i>
+              </div>
+              <div>
+                <strong style={{ fontSize: '13px', color: '#0f172a', display: 'block' }}>
+                  Sincronizar directamente a la Base de Datos (Recomendado)
+                </strong>
+                <span style={{ fontSize: '11.5px', color: '#64748b' }}>
+                  Aplica clientes, trackings, pesos y estados directamente en el sistema al terminar el cruce.
+                </span>
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              checked={autoSyncDb}
+              onChange={(e) => setAutoSyncDb(e.target.checked)}
+              onClick={(e) => e.stopPropagation()}
+              style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#16a34a' }}
+            />
+          </div>
+
           <button
             type="button"
             onClick={handleProcess}
@@ -334,12 +426,86 @@ export default function InventarioJobsTab() {
           </p>
 
           {job.estado === 'done' && (
-            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <span style={{ fontSize: '13px', color: '#166534', fontWeight: 700 }}>
                 {job.coincidencias ?? 0}/{job.total_guias ?? 0} guías completadas
                 {job.sin_coincidencia ? ` · ${job.sin_coincidencia} sin coincidencia` : ''}
                 {job.segundos ? ` · ${job.segundos}s de proceso` : ''}
               </span>
+
+              {/* Tarjeta de Sincronización Directa a Base de Datos */}
+              <div
+                style={{
+                  background: job.db_sincronizado ? '#ecfdf5' : '#ffffff',
+                  border: `1.5px solid ${job.db_sincronizado ? '#a7f3d0' : '#bae6fd'}`,
+                  borderRadius: '9px',
+                  padding: '12px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '10px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <i
+                    className={job.db_sincronizado ? 'fa-solid fa-circle-check' : 'fa-solid fa-database'}
+                    style={{ fontSize: '20px', color: job.db_sincronizado ? '#059669' : '#0284c7' }}
+                  ></i>
+                  <div>
+                    <strong style={{ fontSize: '13px', color: '#0f172a', display: 'block' }}>
+                      {job.db_sincronizado
+                        ? `✓ Base de Datos sincronizada (${job.db_actualizados ?? 0} paquetes actualizados)`
+                        : 'Cruzar directamente a la Base de Datos Master'}
+                    </strong>
+                    <span style={{ fontSize: '11.5px', color: '#64748b' }}>
+                      {job.db_sincronizado
+                        ? `Sincronizado exitosamente en ${job.db_sincronizado_en ? new Date(job.db_sincronizado_en).toLocaleTimeString() : 'la nube'}. La data ya está activa en Amex Courier.`
+                        : 'Inyecta y actualiza clientes, trackings, pesos y estados en la base de datos oficial.'}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleSyncDb(job.id)}
+                  disabled={isSyncingDb}
+                  style={{
+                    background: job.db_sincronizado ? '#f8fafc' : 'linear-gradient(135deg, #0284c7, #0369a1)',
+                    color: job.db_sincronizado ? '#0284c7' : '#fff',
+                    border: job.db_sincronizado ? '1px solid #cbd5e1' : 'none',
+                    borderRadius: '8px',
+                    padding: '8px 14px',
+                    fontSize: '12px',
+                    fontWeight: 800,
+                    cursor: isSyncingDb ? 'wait' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <i className={isSyncingDb ? 'fa-solid fa-spinner fa-spin' : job.db_sincronizado ? 'fa-solid fa-arrows-rotate' : 'fa-solid fa-bolt'}></i>
+                  {isSyncingDb ? 'Sincronizando…' : job.db_sincronizado ? 'Re-sincronizar BD' : 'Sincronizar a BD Ahora'}
+                </button>
+              </div>
+
+              {syncDbMessage && (
+                <div
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: syncDbMessage.startsWith('Error') ? '#b91c1c' : '#15803d',
+                    background: syncDbMessage.startsWith('Error') ? '#fef2f2' : '#f0fdf4',
+                    border: `1px solid ${syncDbMessage.startsWith('Error') ? '#fecaca' : '#bbf7d0'}`,
+                    borderRadius: '6px',
+                    padding: '8px 12px',
+                  }}
+                >
+                  {syncDbMessage}
+                </div>
+              )}
+
+              {/* Botones de Descarga */}
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 {job.resultado_key && (
                   <a
@@ -384,6 +550,20 @@ export default function InventarioJobsTab() {
                 <span style={{ color: '#94a3b8', fontSize: '11.5px' }}>
                   {new Date(h.creado_en).toLocaleString()}
                 </span>
+                {h.db_sincronizado ? (
+                  <span style={{ background: '#dcfce7', color: '#166534', borderRadius: '6px', padding: '2px 8px', fontSize: '11px', fontWeight: 800 }}>
+                    <i className="fa-solid fa-circle-check"></i> BD ({h.db_actualizados ?? 0})
+                  </span>
+                ) : h.estado === 'done' ? (
+                  <button
+                    type="button"
+                    onClick={() => handleSyncDb(h.id)}
+                    disabled={isSyncingDb}
+                    style={{ background: 'none', border: 'none', color: '#0284c7', fontSize: '11.5px', fontWeight: 800, cursor: 'pointer', padding: 0 }}
+                  >
+                    <i className="fa-solid fa-bolt"></i> Sincronizar BD
+                  </button>
+                ) : null}
                 {h.resultado_key && (
                   <a href={`/api/storage/file?key=${encodeURIComponent(h.resultado_key)}`} style={{ color: '#16a34a', fontWeight: 800 }}>
                     <i className="fa-solid fa-download"></i> Excel

@@ -45,10 +45,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const sincronizarDb = Boolean(body.sincronizar_db);
+
     const row: Record<string, unknown> = {
       usuario_id: auth.user.id,
       inventario_key: inventarioKey,
       fuentes,
+      sincronizar_db: sincronizarDb,
       user_nombre: getUserDisplayName(auth.user).slice(0, 120),
       estado: 'queued',
       etapa: 'queued',
