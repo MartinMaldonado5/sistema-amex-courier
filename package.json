@@ -6,6 +6,8 @@
     "dev": "next dev",
     "local": "next dev",
     "dev:https": "node scripts/gen-certs.mjs && next dev --experimental-https --experimental-https-key ./certificates/localhost-key.pem --experimental-https-cert ./certificates/localhost.pem",
+    "worker": "node Automatizador_Inventario_AMEX_WhatsApp/worker/worker.js",
+    "automatizador": "node Automatizador_Inventario_AMEX_WhatsApp/server.js",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

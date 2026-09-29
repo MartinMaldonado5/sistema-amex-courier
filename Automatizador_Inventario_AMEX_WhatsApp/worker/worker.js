@@ -31,7 +31,26 @@ const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/clien
 
 // ---------------------------------------------------------------- config
 
-const SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
+// Cargar .env.local de la raíz si existe (desarrollo local)
+const rootEnvPath = path.resolve(__dirname, '..', '..', '.env.local');
+if (fs.existsSync(rootEnvPath)) {
+  const envContent = fs.readFileSync(rootEnvPath, 'utf8');
+  for (const line of envContent.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#')) {
+      const idx = trimmed.indexOf('=');
+      if (idx > 0) {
+        const k = trimmed.slice(0, idx).trim();
+        const v = trimmed.slice(idx + 1).trim();
+        if (!process.env[k]) {
+          process.env[k] = v;
+        }
+      }
+    }
+  }
+}
+
+const SUPABASE_URL = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/+$/, '');
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const R2_ACCOUNT_ID = (process.env.CLOUDFLARE_R2_ACCOUNT_ID || '')
   .replace(/^https?:\/\//i, '')
@@ -42,8 +61,15 @@ const R2_SECRET_KEY = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || '';
 const R2_BUCKET = process.env.CLOUDFLARE_R2_BUCKET_NAME || 'amex-courier-cloud';
 const R2_ROOT = (process.env.CLOUDFLARE_R2_ROOT_FOLDER || 'FOLDER AMEX').replace(/^\/+|\/+$/g, '');
 
-const PROCESSOR = process.env.AMEX_PROCESSOR_BIN || process.env.PROCESSOR || '/app/processor/AmexInventoryProcessor';
-const EMPTY_TEMPLATE = process.env.EMPTY_TEMPLATE || '/app/assets/FUENTE_VACIA.xlsx';
+const defaultProcessor = process.platform === 'win32'
+  ? path.resolve(__dirname, '..', 'processor', 'AmexInventoryProcessor', 'publish', 'win-x64', 'AmexInventoryProcessor.exe')
+  : '/app/processor/AmexInventoryProcessor';
+const defaultEmptyTemplate = process.platform === 'win32'
+  ? path.resolve(__dirname, '..', 'assets', 'FUENTE_VACIA.xlsx')
+  : '/app/assets/FUENTE_VACIA.xlsx';
+
+const PROCESSOR = process.env.AMEX_PROCESSOR_BIN || process.env.PROCESSOR || defaultProcessor;
+const EMPTY_TEMPLATE = process.env.EMPTY_TEMPLATE || defaultEmptyTemplate;
 const WORK_DIR = process.env.WORK_DIR || path.join(os.tmpdir(), 'amex-jobs');
 const POLL_INTERVAL_MS = Math.max(2000, Number(process.env.POLL_INTERVAL_MS || 5000));
 const PROCESS_TIMEOUT_MS = Math.max(60_000, Number(process.env.PROCESS_TIMEOUT_MS || 20 * 60 * 1000));
