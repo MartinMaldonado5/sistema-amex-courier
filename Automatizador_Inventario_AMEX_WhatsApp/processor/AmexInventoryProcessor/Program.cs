@@ -389,16 +389,35 @@ internal static class Program
             {
                 columns.Add(name, column);
                 // Alias comunes para compatibilidad con las exportaciones del ERP y reportes TIB
-                if (name == "TRACKINGUSA" && !columns.ContainsKey("TRACKING"))
+                if ((name == "TRACKINGUSA" || name == "TRACKINGNUMBER") && !columns.ContainsKey("TRACKING"))
                     columns.Add("TRACKING", column);
-                if (name == "WR" && !columns.ContainsKey("GUIAWR"))
+                if (name == "TRACKING" && !columns.ContainsKey("TRACKINGUSA"))
+                    columns.Add("TRACKINGUSA", column);
+
+                if ((name == "WR" || name == "GUIA" || name == "RECIBO" || name == "NUMERORECIBOBODEGA") && !columns.ContainsKey("GUIAWR"))
                     columns.Add("GUIAWR", column);
-                if (name == "GUIAWR" && !columns.ContainsKey("WR"))
+                if ((name == "GUIAWR" || name == "NUMERORECIBOBODEGA") && !columns.ContainsKey("WR"))
                     columns.Add("WR", column);
-                if (name == "CLIENTE" && !columns.ContainsKey("CONSIGNATARIO"))
+
+                if ((name == "CLIENTE" || name == "DESTINATARIO") && !columns.ContainsKey("CONSIGNATARIO"))
                     columns.Add("CONSIGNATARIO", column);
-                if (name == "CONSIGNATARIO" && !columns.ContainsKey("CLIENTE"))
+                if ((name == "CONSIGNATARIO" || name == "NOMBRECONSIGNATARIO") && !columns.ContainsKey("CLIENTE"))
                     columns.Add("CLIENTE", column);
+
+                if ((name == "TIPOPAQUETE" || name == "TIPO" || name == "PAQUETE" || name == "TIPODEEMPAQUE") && !columns.ContainsKey("TIPOEMPAQUE"))
+                    columns.Add("TIPOEMPAQUE", column);
+                if ((name == "TIPOEMPAQUE" || name == "TIPODEEMPAQUE") && !columns.ContainsKey("TIPOPAQUETE"))
+                    columns.Add("TIPOPAQUETE", column);
+
+                if ((name == "PESO" || name == "PESOKGS" || name == "PESOFISICO" || name == "PESOFISICOKG") && !columns.ContainsKey("PESOKG"))
+                    columns.Add("PESOKG", column);
+                if ((name == "PESOKG" || name == "PESOKGS" || name == "PESOFISICOKG") && !columns.ContainsKey("PESO"))
+                    columns.Add("PESO", column);
+
+                if ((name == "ESTADO" || name == "ESTADODEENTREGA") && !columns.ContainsKey("ESTADOENTREGA"))
+                    columns.Add("ESTADOENTREGA", column);
+                if ((name == "ESTADOENTREGA" || name == "ESTADODEENTREGA") && !columns.ContainsKey("ESTADO"))
+                    columns.Add("ESTADO", column);
             }
         }
         return required.All(columns.ContainsKey) ? new HeaderInfo(RowNumber(row), columns) : null;

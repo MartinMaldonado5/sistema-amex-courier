@@ -56,4 +56,5 @@ certificates/
 
 # Automatizador Inventario AMEX (worker Render): resultados efímeros
 Automatizador_Inventario_AMEX_WhatsApp/runs/
+Automatizador_Inventario_AMEX_WhatsApp/test_output/
 Automatizador_Inventario_AMEX_WhatsApp/worker/run-worker-local.bat
