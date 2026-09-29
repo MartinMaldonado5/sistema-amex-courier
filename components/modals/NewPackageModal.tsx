@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Cliente } from '@/types';
 import {
   Package,
@@ -13,14 +13,9 @@ import {
   Truck,
   Sparkles,
   Check,
-  FileText,
   Boxes,
-  Layers,
-  Search,
   ArrowRight,
-  ShieldCheck,
-  Zap,
-  Info
+  AlertCircle
 } from 'lucide-react';
 
 export interface NewPkgFormData {
@@ -58,23 +53,11 @@ export default function NewPackageModal({
   onClose,
   isWarehouseMode = false
 }: NewPackageModalProps) {
-  const [activeTab, setActiveTab] = useState<'general' | 'carga' | 'resumen'>('general');
-  const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
-
-  // Keyboard shortcut: Ctrl + Enter to save, Esc to close
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault();
-        onSave(e as unknown as React.FormEvent);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose, onSave]);
+  const [activeTab, setActiveTab] = useState<'general' | 'carga'>('general');
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const set = (key: keyof NewPkgFormData, value: string) => {
+    if (validationError) setValidationError(null);
     onChange({ ...form, [key]: value });
   };
 
@@ -95,7 +78,14 @@ export default function NewPackageModal({
     'Calzado Deportivo',
     'Electrónicos / Gadgets',
     'Suplementos / Vitaminas',
-    'Repuestos & Accesorios'
+    'Repuestos / Accesorios'
+  ];
+
+  // Métodos de entrega
+  const METODOS_ENTREGA = [
+    { id: 'CarroAmexDomicilio', label: 'Reparto Domicilio', icon: '🚚' },
+    { id: 'RecojoLince', label: 'Recojo Lince', icon: '🏢' },
+    { id: 'AgenciaProvincia', label: 'Provincia', icon: '📦' }
   ];
 
   // Estantes preconfigurados
@@ -125,6 +115,71 @@ export default function NewPackageModal({
     set('numeroReciboBodega', `WR${randomNum}`);
   };
 
+  // Clientes sugeridos por coincidencia de nombre
+  const matchingClientes = useMemo(() => {
+    const query = form.nombreConsignatario?.trim().toLowerCase() || '';
+    if (!query) {
+      return clientes.slice(0, 5);
+    }
+    return clientes
+      .filter(c =>
+        c.nombre.toLowerCase().includes(query) ||
+        (c.apellido && c.apellido.toLowerCase().includes(query)) ||
+        (c.documentoIdentidad && c.documentoIdentidad.includes(query))
+      )
+      .slice(0, 5);
+  }, [clientes, form.nombreConsignatario]);
+
+  const handleSelectClient = (c: Cliente) => {
+    const fullName = c.nombre + (c.apellido ? ` ${c.apellido}` : '');
+    onChange({
+      ...form,
+      nombreConsignatario: fullName.trim().toUpperCase(),
+      dniConsignatario: c.documentoIdentidad || ''
+    });
+    setValidationError(null);
+  };
+
+  // Validación personalizada robusta (sin bloqueos silenciosos entre pestañas)
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!form.numeroReciboBodega?.trim()) {
+      setValidationError('Por favor ingrese o auto-genere el número de Guía WR.');
+      setActiveTab('general');
+      return;
+    }
+
+    if (!form.nombreConsignatario?.trim()) {
+      setValidationError('Por favor ingrese el nombre del cliente o destinatario.');
+      setActiveTab('general');
+      return;
+    }
+
+    const pesoNum = parseFloat(form.pesoKg);
+    if (isNaN(pesoNum) || pesoNum <= 0) {
+      setValidationError('Por favor ingrese un peso físico válido en kg (mayor a 0).');
+      setActiveTab('carga');
+      return;
+    }
+
+    setValidationError(null);
+    onSave(e);
+  };
+
+  // Atajos de teclado: Ctrl + Enter para guardar, Esc para cerrar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleSubmit(e as unknown as React.FormEvent);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose, form]);
+
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)' }}>
       <div style={{ background: '#ffffff', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.3)', border: '1px solid #cbd5e1', width: '100%', maxWidth: '820px', maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -141,7 +196,7 @@ export default function NewPackageModal({
                   Almacén Central Lince · Ingreso
                 </span>
               </div>
-              <p style={{ fontSize: '11.5px', color: '#94a3b8', margin: '2px 0 0 0' }}>Asigna código WR, peso y ubicación en almacén</p>
+              <p style={{ fontSize: '11.5px', color: '#94a3b8', margin: '2px 0 0 0' }}>Asigna código WR, cliente, peso y ubicación en almacén</p>
             </div>
           </div>
 
@@ -167,7 +222,7 @@ export default function NewPackageModal({
               type="button"
               onClick={() => setActiveTab('general')}
               style={{
-                padding: '6px 12px',
+                padding: '6px 14px',
                 borderRadius: '8px',
                 fontSize: '12px',
                 fontWeight: 800,
@@ -176,8 +231,11 @@ export default function NewPackageModal({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                background: activeTab === 'general' ? '#2563eb' : 'transparent',
-                color: activeTab === 'general' ? '#ffffff' : '#64748b'
+                background: activeTab === 'general' ? '#2563eb' : '#ffffff',
+                color: activeTab === 'general' ? '#ffffff' : '#64748b',
+                boxShadow: activeTab === 'general' ? '0 1px 3px rgba(37,99,235,0.3)' : 'none',
+                borderWidth: '1px',
+                borderColor: activeTab === 'general' ? '#2563eb' : '#cbd5e1'
               }}
             >
               <Barcode style={{ width: '14px', height: '14px' }} />
@@ -188,7 +246,7 @@ export default function NewPackageModal({
               type="button"
               onClick={() => setActiveTab('carga')}
               style={{
-                padding: '6px 12px',
+                padding: '6px 14px',
                 borderRadius: '8px',
                 fontSize: '12px',
                 fontWeight: 800,
@@ -197,8 +255,11 @@ export default function NewPackageModal({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                background: activeTab === 'carga' ? '#2563eb' : 'transparent',
-                color: activeTab === 'carga' ? '#ffffff' : '#64748b'
+                background: activeTab === 'carga' ? '#2563eb' : '#ffffff',
+                color: activeTab === 'carga' ? '#ffffff' : '#64748b',
+                boxShadow: activeTab === 'carga' ? '0 1px 3px rgba(37,99,235,0.3)' : 'none',
+                borderWidth: '1px',
+                borderColor: activeTab === 'carga' ? '#2563eb' : '#cbd5e1'
               }}
             >
               <Scale style={{ width: '14px', height: '14px' }} />
@@ -215,390 +276,399 @@ export default function NewPackageModal({
           </div>
         </div>
 
+        {/* Validation error notice */}
+        {validationError && (
+          <div style={{ margin: '12px 20px 0 20px', padding: '8px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', color: '#b91c1c', fontSize: '12px', fontWeight: 700 }}>
+            <AlertCircle style={{ width: '16px', height: '16px', flexShrink: 0 }} />
+            <span>{validationError}</span>
+          </div>
+        )}
+
         {/* Modal Form Body */}
-        <form onSubmit={onSave} style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* ---------------- TAB 1: IDENTIFICACIÓN & CASILLERO ---------------- */}
-            {activeTab === 'general' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                {/* Columna Izquierda: Identificación del Paquete */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <label style={{ fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Barcode style={{ width: '14px', height: '14px', color: '#2563eb' }} />
-                        Guía WR # (Recibo de Bodega) *
-                      </label>
-                      <button
-                        type="button"
-                        onClick={handleGenerateNextWr}
-                        style={{ fontSize: '11px', fontWeight: 800, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                      >
-                        <Sparkles style={{ width: '12px', height: '12px', color: '#d97706' }} />
-                        Auto-Generar WR
-                      </button>
-                    </div>
-                    <input
-                      type="text"
-                      required
-                      value={form.numeroReciboBodega}
-                      onChange={e => set('numeroReciboBodega', e.target.value.toUpperCase())}
-                      placeholder="WR000451"
-                      style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', fontFamily: 'monospace', fontWeight: 800, color: '#0f172a', outline: 'none', textTransform: 'uppercase' }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                      Tracking Carrier USA (FedEx, UPS, USPS, Amazon)
+        <form onSubmit={handleSubmit} style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* ---------------- TAB 1: IDENTIFICACIÓN & CLIENTE ---------------- */}
+            <div style={{ display: activeTab === 'general' ? 'grid' : 'none', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              {/* Columna Izquierda: Identificación del Paquete */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <label style={{ fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Barcode style={{ width: '14px', height: '14px', color: '#2563eb' }} />
+                      Guía WR # (Recibo de Bodega) *
                     </label>
-                    <input
-                      type="text"
-                      value={form.trackingUsa}
-                      onChange={e => set('trackingUsa', e.target.value.toUpperCase())}
-                      placeholder="Ej: 1Z999AA10123456784 o TBA..."
-                      style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', outline: 'none' }}
-                    />
+                    <button
+                      type="button"
+                      onClick={handleGenerateNextWr}
+                      style={{ fontSize: '11px', fontWeight: 800, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <Sparkles style={{ width: '12px', height: '12px', color: '#d97706' }} />
+                      Auto-Generar WR
+                    </button>
                   </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                      Tipo de Empaque
-                    </label>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
-                      {EMPAQUE_OPTIONS.map(opt => {
-                        const isSelected = form.tipoEmpaque === opt.id;
-                        return (
-                          <button
-                            key={opt.id}
-                            type="button"
-                            onClick={() => set('tipoEmpaque', opt.id)}
-                            style={{
-                              padding: '8px 4px',
-                              borderRadius: '8px',
-                              border: isSelected ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
-                              background: isSelected ? '#eff6ff' : '#ffffff',
-                              color: isSelected ? '#1e40af' : '#475569',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              gap: '2px',
-                              fontSize: '11px',
-                              fontWeight: 800
-                            }}
-                          >
-                            <span style={{ fontSize: '15px' }}>{opt.icon}</span>
-                            <span>{opt.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                      N° Factura Proveedor / Invoice ID
-                    </label>
-                    <input
-                      type="text"
-                      value={form.numeroFactura}
-                      onChange={e => set('numeroFactura', e.target.value)}
-                      placeholder="Ej: INV-2026-9901"
-                      style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', outline: 'none' }}
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    value={form.numeroReciboBodega}
+                    onChange={e => set('numeroReciboBodega', e.target.value.toUpperCase())}
+                    placeholder="WR000451"
+                    style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', fontFamily: 'monospace', fontWeight: 800, color: '#0f172a', outline: 'none', textTransform: 'uppercase' }}
+                  />
                 </div>
 
-                {/* Columna Derecha: Cliente & Consignatario */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div>
-                    <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                      <span>DNI / RUC del Cliente *</span>
-                      <span style={{ fontSize: '10.5px', fontWeight: 500, color: '#64748b' }}>Selecciona o escribe</span>
-                    </label>
-
-                    <input
-                      type="text"
-                      required
-                      value={form.dniConsignatario}
-                      onChange={e => {
-                        const val = e.target.value;
-                        const found = clientes.find(
-                          c => c.documentoIdentidad.toUpperCase() === val.toUpperCase()
-                        );
-                        onChange({
-                          ...form,
-                          nombreConsignatario: found ? found.nombre : form.nombreConsignatario,
-                          dniConsignatario: val.toUpperCase()
-                        });
-                      }}
-                      placeholder="DNI / RUC"
-                      style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', fontFamily: 'monospace', fontWeight: 800, color: '#2563eb', outline: 'none', textTransform: 'uppercase' }}
-                    />
-
-                    {/* Quick client select pills */}
-                    {clientes.length > 0 && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px', maxHeight: '60px', overflowY: 'auto' }}>
-                        {clientes.slice(0, 5).map(c => (
-                          <button
-                            key={c.id}
-                            type="button"
-                            onClick={() => {
-                              onChange({
-                                ...form,
-                                nombreConsignatario: c.nombre,
-                                dniConsignatario: c.documentoIdentidad
-                              });
-                            }}
-                            style={{ padding: '2px 6px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '10.5px', fontFamily: 'monospace', fontWeight: 700, color: '#334155', cursor: 'pointer' }}
-                          >
-                            {c.documentoIdentidad} · {c.nombre.split(' ')[0]}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                      Nombre del Consignatario
-                    </label>
-                    <input
-                      type="text"
-                      value={form.nombreConsignatario}
-                      onChange={e => set('nombreConsignatario', e.target.value)}
-                      placeholder="Nombre del destinatario final"
-                      style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', outline: 'none' }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                      DNI / RUC del Consignatario
-                    </label>
-                    <input
-                      type="text"
-                      value={form.dniConsignatario}
-                      onChange={e => set('dniConsignatario', e.target.value)}
-                      placeholder="DNI de 8 dígitos o RUC"
-                      style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', outline: 'none' }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                      Descripción de la Mercancía
-                    </label>
-                    <input
-                      type="text"
-                      value={form.descripcion}
-                      onChange={e => set('descripcion', e.target.value)}
-                      placeholder="Ej: Calzado deportivo, accesorios..."
-                      style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', outline: 'none' }}
-                    />
-                  </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
+                    Tracking Carrier USA (FedEx, UPS, USPS, Amazon)
+                  </label>
+                  <input
+                    type="text"
+                    value={form.trackingUsa}
+                    onChange={e => set('trackingUsa', e.target.value.toUpperCase())}
+                    placeholder="Ej: 1Z999AA10123456784 o TBA..."
+                    style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', outline: 'none' }}
+                  />
                 </div>
-              </div>
-            )}
 
-            {/* ---------------- TAB 2: PESO, VALORACIÓN & ESTANTE ---------------- */}
-            {activeTab === 'carga' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                {/* Columna Izquierda: Carga y Valor */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Scale style={{ width: '14px', height: '14px', color: '#2563eb' }} />
-                        Peso Real (Kilogramos) *
-                      </span>
-                      <span style={{ fontFamily: 'monospace', color: '#64748b' }}>$12 USD / kg</span>
-                    </div>
-
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      required
-                      value={form.pesoKg}
-                      onChange={e => set('pesoKg', e.target.value)}
-                      placeholder="1.0"
-                      style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '15px', fontFamily: 'monospace', fontWeight: 800, color: '#0f172a', outline: 'none' }}
-                    />
-
-                    {/* Weight Preset Buttons */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '6px' }}>
-                      <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>Preajustes:</span>
-                      {WEIGHT_PRESETS.map(w => (
+                <div>
+                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
+                    Tipo de Empaque
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                    {EMPAQUE_OPTIONS.map(opt => {
+                      const isSelected = form.tipoEmpaque === opt.id;
+                      return (
                         <button
-                          key={w}
+                          key={opt.id}
                           type="button"
-                          onClick={() => set('pesoKg', w)}
+                          onClick={() => set('tipoEmpaque', opt.id)}
                           style={{
-                            padding: '3px 8px',
-                            borderRadius: '6px',
-                            fontSize: '11.5px',
-                            fontFamily: 'monospace',
-                            fontWeight: 800,
-                            border: 'none',
+                            padding: '8px 4px',
+                            borderRadius: '8px',
+                            border: isSelected ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
+                            background: isSelected ? '#eff6ff' : '#ffffff',
+                            color: isSelected ? '#1e40af' : '#475569',
                             cursor: 'pointer',
-                            background: form.pesoKg === w ? '#2563eb' : '#f1f5f9',
-                            color: form.pesoKg === w ? '#ffffff' : '#334155'
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '2px',
+                            fontSize: '11px',
+                            fontWeight: 800
                           }}
                         >
-                          {w} kg
+                          <span style={{ fontSize: '15px' }}>{opt.icon}</span>
+                          <span>{opt.label}</span>
                         </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {!isWarehouseMode && (
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                        Valor Declarado (USD)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={form.valorDeclaradoUsd}
-                        onChange={e => set('valorDeclaradoUsd', e.target.value)}
-                        placeholder="0.00"
-                        style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', outline: 'none' }}
-                      />
-                    </div>
-                  )}
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                      Sede / Ubicación Inicial
-                    </label>
-                    <select
-                      value={form.ubicacionActual}
-                      onChange={e => set('ubicacionActual', e.target.value)}
-                      style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', fontWeight: 700, outline: 'none' }}
-                    >
-                      <option value="AmexLince">🏢 Almacén Central Lince (Lima)</option>
-                    </select>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* Columna Derecha: Selector de Anaqueles y Ticket de Cotización */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                      Posición de Estantería (Lince)
-                    </label>
-
-                    {/* Interactive Shelf Matrix Buttons */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                      {ESTANTES.map(est => {
-                        const isSelected = currentEstante === est.code;
-                        return (
-                          <button
-                            key={est.code}
-                            type="button"
-                            onClick={() => {
-                              onChange({
-                                ...form,
-                                anaquel: est.ana,
-                                piso: est.pis,
-                                posicionEstante: est.code
-                              });
-                            }}
-                            style={{
-                              padding: '8px 10px',
-                              borderRadius: '8px',
-                              border: isSelected ? '1.5px solid #9333ea' : '1px solid #cbd5e1',
-                              background: isSelected ? '#faf5ff' : '#ffffff',
-                              color: isSelected ? '#581c87' : '#334155',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              fontSize: '11.5px',
-                              fontWeight: 800
-                            }}
-                          >
-                            <span style={{ fontFamily: 'monospace' }}>{est.code}</span>
-                            <span style={{ fontSize: '10.5px', fontWeight: 500, color: '#64748b' }}>{est.label.split(' ')[0]}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Real-time Rate Ticket Card vs Ficha de Custodia WMS */}
-                  {isWarehouseMode ? (
-                    <div style={{ padding: '14px', background: '#0f172a', color: '#ffffff', borderRadius: '12px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 800, borderBottom: '1px solid #334155', paddingBottom: '6px', color: '#94a3b8' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <Boxes style={{ width: '14px', height: '14px', color: '#38bdf8' }} />
-                          Ficha de Ingreso a Almacén
-                        </span>
-                        <span style={{ fontFamily: 'monospace', color: '#38bdf8', fontWeight: 900 }}>WMS LINCE</span>
-                      </div>
-
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '11.5px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
-                          <span>Peso Físico:</span>
-                          <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#ffffff' }}>{previewPeso.toFixed(2)} kg</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
-                          <span>Tipo Empaque:</span>
-                          <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#ffffff' }}>{form.tipoEmpaque || 'CAJA'}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
-                          <span>Ubicación Estantería:</span>
-                          <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#a855f7' }}>{currentEstante || 'REC (Recepción)'}</span>
-                        </div>
-                      </div>
-
-                      <div style={{ paddingTop: '6px', borderTop: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontWeight: 800, fontSize: '11.5px', color: '#94a3b8' }}>Destino Custodia:</span>
-                        <span style={{ fontSize: '12px', fontWeight: 800, color: '#38bdf8' }}>
-                          {form.ubicacionActual === 'AmexLince' ? 'Almacén Central Lince' : form.ubicacionActual}
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ padding: '14px', background: '#0f172a', color: '#ffffff', borderRadius: '12px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 800, borderBottom: '1px solid #334155', paddingBottom: '6px', color: '#94a3b8' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <DollarSign style={{ width: '14px', height: '14px', color: '#10b981' }} />
-                          Desglose de Liquidación
-                        </span>
-                        <span style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 900 }}>AMEX RATE</span>
-                      </div>
-
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11.5px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
-                          <span>Flete Aéreo ({previewPeso.toFixed(1)} kg × $12):</span>
-                          <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#ffffff' }}>${previewFlete.toFixed(2)}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
-                          <span>Cargo Administrativo / Guía:</span>
-                          <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#ffffff' }}>${previewAdmin.toFixed(2)}</span>
-                        </div>
-                      </div>
-
-                      <div style={{ paddingTop: '6px', borderTop: '1px solid #334155', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-                        <span style={{ fontWeight: 900, fontSize: '13px', color: '#f8fafc' }}>Total a Cobrar:</span>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '16px', fontWeight: 900, fontFamily: 'monospace', color: '#10b981' }}>
-                            ${previewTotalUsd.toFixed(2)} USD
-                          </div>
-                          <div style={{ fontSize: '11.5px', fontWeight: 700, fontFamily: 'monospace', color: '#94a3b8' }}>
-                            ≈ S/ {previewTotalPen.toFixed(2)} PEN
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                <div>
+                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
+                    N° Factura Proveedor / Invoice ID (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    value={form.numeroFactura}
+                    onChange={e => set('numeroFactura', e.target.value)}
+                    placeholder="Ej: INV-2026-9901"
+                    style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', outline: 'none' }}
+                  />
                 </div>
               </div>
-            )}
+
+              {/* Columna Derecha: Cliente & Mercancía (Sin DNI innecesario) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <User style={{ width: '14px', height: '14px', color: '#2563eb' }} />
+                      Cliente / Destinatario *
+                    </span>
+                    <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#64748b' }}>Escribe o selecciona</span>
+                  </label>
+
+                  <input
+                    type="text"
+                    value={form.nombreConsignatario}
+                    onChange={e => set('nombreConsignatario', e.target.value.toUpperCase())}
+                    placeholder="Ej: AMEX JUAN PEREZ o MARIA GARCIA"
+                    style={{ width: '100%', padding: '9px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', fontWeight: 800, color: '#0f172a', outline: 'none', textTransform: 'uppercase' }}
+                  />
+
+                  {/* Sugerencias rápidas de clientes existentes */}
+                  {matchingClientes.length > 0 && (
+                    <div style={{ marginTop: '6px' }}>
+                      <div style={{ fontSize: '10.5px', color: '#64748b', fontWeight: 700, marginBottom: '4px' }}>
+                        Clientes sugeridos:
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                        {matchingClientes.map(c => {
+                          const fullName = c.nombre + (c.apellido ? ` ${c.apellido}` : '');
+                          const isMatch = form.nombreConsignatario?.toUpperCase() === fullName.toUpperCase();
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => handleSelectClient(c)}
+                              style={{
+                                padding: '3px 8px',
+                                background: isMatch ? '#eff6ff' : '#f1f5f9',
+                                border: isMatch ? '1px solid #3b82f6' : '1px solid #e2e8f0',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                color: isMatch ? '#1d4ed8' : '#334155',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              <User style={{ width: '10px', height: '10px', color: '#3b82f6' }} />
+                              <span>{fullName}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
+                    Descripción del Contenido / Mercancía
+                  </label>
+                  <input
+                    type="text"
+                    value={form.descripcion}
+                    onChange={e => set('descripcion', e.target.value)}
+                    placeholder="Ej: Calzado deportivo, ropa, accesorios..."
+                    style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', outline: 'none' }}
+                  />
+                  {/* Botones rápidos de categorías */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+                    {DESC_PRESETS.map(preset => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => set('descripcion', preset)}
+                        style={{
+                          padding: '2px 6px',
+                          background: form.descripcion === preset ? '#eff6ff' : '#f8fafc',
+                          border: form.descripcion === preset ? '1px solid #93c5fd' : '1px solid #e2e8f0',
+                          borderRadius: '4px',
+                          fontSize: '10.5px',
+                          fontWeight: 600,
+                          color: form.descripcion === preset ? '#1d4ed8' : '#64748b',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
+                    Método de Entrega Previsto
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                    {METODOS_ENTREGA.map(m => {
+                      const isSelected = (form.metodoEntrega || 'CarroAmexDomicilio') === m.id;
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => set('metodoEntrega', m.id)}
+                          style={{
+                            padding: '6px 4px',
+                            borderRadius: '8px',
+                            border: isSelected ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
+                            background: isSelected ? '#eff6ff' : '#ffffff',
+                            color: isSelected ? '#1e40af' : '#475569',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '2px',
+                            fontSize: '10.5px',
+                            fontWeight: 800
+                          }}
+                        >
+                          <span style={{ fontSize: '14px' }}>{m.icon}</span>
+                          <span>{m.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ---------------- TAB 2: PESO, VALORACIÓN & ESTANTE ---------------- */}
+            <div style={{ display: activeTab === 'carga' ? 'grid' : 'none', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              {/* Columna Izquierda: Carga y Valor */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Scale style={{ width: '14px', height: '14px', color: '#2563eb' }} />
+                      Peso Real (Kilogramos) *
+                    </span>
+                    <span style={{ fontFamily: 'monospace', color: '#64748b' }}>$12 USD / kg</span>
+                  </div>
+
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0.1"
+                    value={form.pesoKg}
+                    onChange={e => set('pesoKg', e.target.value)}
+                    placeholder="1.0"
+                    style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '15px', fontFamily: 'monospace', fontWeight: 800, color: '#0f172a', outline: 'none' }}
+                  />
+
+                  {/* Weight Preset Buttons */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '6px' }}>
+                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>Preajustes:</span>
+                    {WEIGHT_PRESETS.map(w => (
+                      <button
+                        key={w}
+                        type="button"
+                        onClick={() => set('pesoKg', w)}
+                        style={{
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          fontSize: '11.5px',
+                          fontFamily: 'monospace',
+                          fontWeight: 800,
+                          border: 'none',
+                          cursor: 'pointer',
+                          background: form.pesoKg === w ? '#2563eb' : '#f1f5f9',
+                          color: form.pesoKg === w ? '#ffffff' : '#334155'
+                        }}
+                      >
+                        {w} kg
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
+                    Valor Declarado / Invoice (USD) (Opcional)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.valorDeclaradoUsd}
+                    onChange={e => set('valorDeclaradoUsd', e.target.value)}
+                    placeholder="0.00"
+                    style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', outline: 'none' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
+                    Sede / Almacén de Custodia
+                  </label>
+                  <select
+                    value={form.ubicacionActual}
+                    onChange={e => set('ubicacionActual', e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', fontWeight: 700, outline: 'none' }}
+                  >
+                    <option value="AmexLince">🏢 Almacén Central Lince (Lima)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Columna Derecha: Selector de Anaqueles y Ticket de Cotización */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
+                    Posición de Estantería (Lince)
+                  </label>
+
+                  {/* Interactive Shelf Matrix Buttons */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                    {ESTANTES.map(est => {
+                      const isSelected = currentEstante === est.code;
+                      return (
+                        <button
+                          key={est.code}
+                          type="button"
+                          onClick={() => {
+                            onChange({
+                              ...form,
+                              anaquel: est.ana,
+                              piso: est.pis,
+                              posicionEstante: est.code
+                            });
+                          }}
+                          style={{
+                            padding: '8px 10px',
+                            borderRadius: '8px',
+                            border: isSelected ? '1.5px solid #9333ea' : '1px solid #cbd5e1',
+                            background: isSelected ? '#faf5ff' : '#ffffff',
+                            color: isSelected ? '#581c87' : '#334155',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            fontSize: '11.5px',
+                            fontWeight: 800
+                          }}
+                        >
+                          <span style={{ fontFamily: 'monospace' }}>{est.code}</span>
+                          <span style={{ fontSize: '10.5px', fontWeight: 500, color: '#64748b' }}>{est.label.split(' ')[0]}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Real-time Rate Ticket Card vs Ficha de Custodia WMS */}
+                <div style={{ padding: '14px', background: '#0f172a', color: '#ffffff', borderRadius: '12px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 800, borderBottom: '1px solid #334155', paddingBottom: '6px', color: '#94a3b8' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Boxes style={{ width: '14px', height: '14px', color: '#38bdf8' }} />
+                      Ficha de Custodia Almacén
+                    </span>
+                    <span style={{ fontFamily: 'monospace', color: '#38bdf8', fontWeight: 900 }}>WMS LINCE</span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '11.5px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
+                      <span>Peso Físico:</span>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#ffffff' }}>{previewPeso.toFixed(2)} kg</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
+                      <span>Tipo Empaque:</span>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#ffffff' }}>{form.tipoEmpaque || 'CAJA'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
+                      <span>Ubicación Estantería:</span>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#c084fc' }}>{currentEstante || 'REC (Recepción)'}</span>
+                    </div>
+                  </div>
+
+                  <div style={{ paddingTop: '6px', borderTop: '1px solid #334155', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                    <span style={{ fontWeight: 800, fontSize: '11.5px', color: '#94a3b8' }}>Flete Estimado:</span>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontSize: '14px', fontWeight: 900, fontFamily: 'monospace', color: '#34d399' }}>
+                        ${previewTotalUsd.toFixed(2)} USD
+                      </span>
+                      <span style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'monospace', color: '#94a3b8', marginLeft: '6px' }}>
+                        (S/ {previewTotalPen.toFixed(2)})
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Sticky Modal Footer Actions */}

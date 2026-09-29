@@ -117,24 +117,30 @@ export function useDashboardActions({
     const posicion = newPkgForm.posicionEstante || `${newPkgForm.anaquel || 'A1'}-${newPkgForm.piso || 'P1'}`;
     const [anaquel, piso] = posicion.includes('-') ? posicion.split('-') : [posicion, 'P1'];
 
+    const numPeso = parseFloat(newPkgForm.pesoKg) || 1.0;
+    const numValor = parseFloat(newPkgForm.valorDeclaradoUsd) || 0.0;
+    const wr = (newPkgForm.numeroReciboBodega || `WR${Math.floor(100000 + Math.random() * 900000)}`).trim().toUpperCase();
+    const tracking = newPkgForm.trackingUsa?.trim() || '';
+    const nombre = newPkgForm.nombreConsignatario?.trim() || 'CLIENTE AMEX';
+
     const newPackage: Paquete = {
       id: `p-${Date.now()}`,
-      numeroReciboBodega: newPkgForm.numeroReciboBodega,
-      trackingUsa: newPkgForm.trackingUsa || '940010000000000000',
-      tipoEmpaque: newPkgForm.tipoEmpaque,
-      numeroFactura: newPkgForm.numeroFactura,
-      dniConsignatario: newPkgForm.dniConsignatario,
-      nombreConsignatario: newPkgForm.nombreConsignatario,
-      descripcion: newPkgForm.descripcion,
-      pesoKg: Number(newPkgForm.pesoKg),
-      valorDeclaradoUsd: Number(newPkgForm.valorDeclaradoUsd),
-      ubicacionActual: newPkgForm.ubicacionActual as TipoUbicacion,
+      numeroReciboBodega: wr,
+      trackingUsa: tracking,
+      tipoEmpaque: newPkgForm.tipoEmpaque || 'CAJA',
+      numeroFactura: newPkgForm.numeroFactura?.trim() || '',
+      dniConsignatario: newPkgForm.dniConsignatario?.trim() || '',
+      nombreConsignatario: nombre,
+      descripcion: newPkgForm.descripcion?.trim() || 'MERCANCÍA GENERAL',
+      pesoKg: numPeso,
+      valorDeclaradoUsd: numValor,
+      ubicacionActual: (newPkgForm.ubicacionActual || 'AmexLince') as TipoUbicacion,
       anaquel,
       piso,
       posicionEstante: posicion,
-      metodoEntrega: newPkgForm.metodoEntrega as TipoMetodoEntrega,
+      metodoEntrega: (newPkgForm.metodoEntrega || 'CarroAmexDomicilio') as TipoMetodoEntrega,
       estadoEntrega: 'EnAlmacen' as TipoEstadoEntrega,
-      facturaPdfUrl: newPkgForm.facturaPdfUrl,
+      facturaPdfUrl: newPkgForm.facturaPdfUrl || '',
       usuarioEmail: currentUser?.email || '',
       creadoPor: currentUser?.id || undefined,
       creadoEn: new Date().toISOString()
@@ -144,25 +150,41 @@ export function useDashboardActions({
     setIsNewPkgModalOpen(false);
 
     try {
-      await supabase.from('paquetes').insert({
-        numero_recibo_bodega: newPkgForm.numeroReciboBodega,
-        tracking_usa: newPkgForm.trackingUsa,
-        tipo_empaque: newPkgForm.tipoEmpaque,
-        numero_factura: newPkgForm.numeroFactura,
-        dni_consignatario: newPkgForm.dniConsignatario,
-        nombre_consignatario: newPkgForm.nombreConsignatario,
-        descripcion: newPkgForm.descripcion,
-        peso_kg: newPkgForm.pesoKg,
-        valor_declarado_usd: newPkgForm.valorDeclaradoUsd,
-        ubicacion_actual: newPkgForm.ubicacionActual,
+      const { data: insertedPkg, error: insertError } = await supabase.from('paquetes').insert({
+        numero_recibo_bodega: wr,
+        tracking_usa: tracking || null,
+        tipo_empaque: newPkgForm.tipoEmpaque || 'CAJA',
+        numero_factura: newPkgForm.numeroFactura?.trim() || null,
+        dni_consignatario: newPkgForm.dniConsignatario?.trim() || null,
+        nombre_consignatario: nombre,
+        descripcion: newPkgForm.descripcion?.trim() || 'MERCANCÍA GENERAL',
+        peso_kg: numPeso,
+        valor_declarado_usd: numValor,
+        ubicacion_actual: newPkgForm.ubicacionActual || 'AmexLince',
         anaquel,
         piso,
         posicion_estante: posicion,
-        metodo_entrega: newPkgForm.metodoEntrega,
-        factura_pdf_url: newPkgForm.facturaPdfUrl,
+        metodo_entrega: newPkgForm.metodoEntrega || 'CarroAmexDomicilio',
+        factura_pdf_url: newPkgForm.facturaPdfUrl || null,
         usuario_email: currentUser?.email || '',
         creado_por: currentUser?.id || null
-      });
+      }).select('id').maybeSingle();
+
+      if (insertError) {
+        console.error('Error insert paquete:', insertError);
+      } else {
+        // Kardex audit movement
+        await supabase.from('movimientos_kardex').insert({
+          paquete_id: insertedPkg?.id || null,
+          codigo_paquete: wr,
+          consignatario: nombre,
+          origen_descripcion: 'INGRESO BODEGA / MIAMI',
+          destino_descripcion: `${newPkgForm.ubicacionActual || 'AmexLince'} (${posicion})`,
+          tipo_movimiento: 'INGRESO_ALMACEN',
+          motivo: 'Registro manual de paquete en almacén',
+          usuario_operador: currentUser?.nombre || currentUser?.email || 'Operador AMEX'
+        });
+      }
     } catch (error) {
       console.error('Error insert paquete:', error);
     }
