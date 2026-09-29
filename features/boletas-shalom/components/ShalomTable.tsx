@@ -91,7 +91,7 @@ export const ShalomTable: React.FC<ShalomTableProps> = ({
                 <th>N° Orden / Código</th>
                 <th>Destinatario</th>
                 <th>Destino / Entrega</th>
-                <th>Fechas (Emisión / Traslado)</th>
+                <th>Fecha Emisión</th>
                 <th>Detalle Envío</th>
                 <th>Forma de Pago</th>
                 <th>Total</th>
@@ -116,7 +116,6 @@ export const ShalomTable: React.FC<ShalomTableProps> = ({
                 const detalleDesc = b.descripcion || 'BULTO';
                 const detalleCant = b.cantidad || 1;
                 const detallePeso = b.peso ?? 0;
-                const detalleUm = b.unidad_medida || 'Volumen';
                 const entrega = b.tipo_entrega || 'ENTREGAR EN AGENCIA';
 
                 return (
@@ -176,14 +175,8 @@ export const ShalomTable: React.FC<ShalomTableProps> = ({
                     </td>
 
                     <td>
-                      <div className="flex flex-col text-xs text-slate-300">
-                        <span className="font-semibold">Emisión: {b.fecha_emision}</span>
-                        {b.hora_emision && (
-                          <span className="text-slate-500 text-[11px]">Hora: {b.hora_emision}</span>
-                        )}
-                        {b.fecha_traslado && (
-                          <span className="text-sky-400 text-[11px] font-medium">Traslado: {b.fecha_traslado}</span>
-                        )}
+                      <div className="text-xs text-slate-300 font-medium">
+                        {b.fecha_emision}
                       </div>
                     </td>
 
@@ -193,7 +186,7 @@ export const ShalomTable: React.FC<ShalomTableProps> = ({
                           {detalleCant}x {detalleDesc}
                         </span>
                         <span className="text-slate-400 text-[11px]">
-                          {detallePeso} {detalleUm}
+                          {detallePeso} kg
                         </span>
                       </div>
                     </td>

@@ -24,7 +24,7 @@ export const ShalomHeader: React.FC<ShalomHeaderProps> = ({
           </h1>
         </div>
         <p className="shalom-subtitle">
-          Archivo digital inteligente y buscador instantáneo de encomiendas escaneadas & AMEXito AI
+          Archivo digital inteligente y buscador instantáneo de encomiendas escaneadas & AMEXito IA (GPT-6 Luna)
         </p>
       </div>
 

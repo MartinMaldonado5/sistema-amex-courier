@@ -19,6 +19,7 @@ export const ShalomPdfViewerPanel: React.FC<ShalomPdfViewerPanelProps> = ({
   onClose
 }) => {
   const viewerUrl = getR2ViewUrl(selectedBoleta.pdf_url);
+  const isImage = /\.(jpe?g|png|webp|gif|bmp)(\?.*)?$/i.test(selectedBoleta.pdf_url || '');
 
   return (
     <aside className="shalom-viewer-panel">
@@ -47,7 +48,7 @@ export const ShalomPdfViewerPanel: React.FC<ShalomPdfViewerPanelProps> = ({
           <button
             type="button"
             className="shalom-btn-icon"
-            title="Copiar enlace del PDF"
+            title="Copiar enlace del documento"
             onClick={() => onCopy(viewerUrl, 'viewer-url')}
           >
             {copiedId === 'viewer-url' ? (
@@ -69,14 +70,24 @@ export const ShalomPdfViewerPanel: React.FC<ShalomPdfViewerPanelProps> = ({
       </div>
 
       <div className="shalom-viewer-iframe-wrap">
-        <iframe
-          src={viewerUrl}
-          className="shalom-viewer-iframe"
-          title={`Boleta ${selectedBoleta.numero_guia}`}
-        />
+        {isImage ? (
+          <div className="w-full h-full flex items-center justify-center p-2 bg-[#06090e] overflow-auto">
+            <img
+              src={viewerUrl}
+              alt={`Boleta ${selectedBoleta.numero_guia || selectedBoleta.nro_orden}`}
+              className="max-w-full max-h-full object-contain rounded"
+            />
+          </div>
+        ) : (
+          <iframe
+            src={viewerUrl}
+            className="shalom-viewer-iframe"
+            title={`Boleta ${selectedBoleta.numero_guia}`}
+          />
+        )}
       </div>
 
-      {/* Metadatos extraídos de la Boleta / Ticket */}
+      {/* Metadatos normalizados de la Boleta / Ticket */}
       <div className="shalom-viewer-metadata">
         <div className="shalom-meta-row">
           <span className="shalom-meta-key">N° Orden / Cód:</span>
@@ -90,24 +101,9 @@ export const ShalomPdfViewerPanel: React.FC<ShalomPdfViewerPanelProps> = ({
           </span>
         </div>
         <div className="shalom-meta-row">
-          <span className="shalom-meta-key">Fechas:</span>
+          <span className="shalom-meta-key">Fecha:</span>
           <span className="shalom-meta-val">
-            Emisión: {selectedBoleta.fecha_emision} {selectedBoleta.hora_emision || ''}
-            {selectedBoleta.fecha_traslado && (
-              <span className="text-sky-300 ml-1">| Traslado: {selectedBoleta.fecha_traslado}</span>
-            )}
-          </span>
-        </div>
-        <div className="shalom-meta-row">
-          <span className="shalom-meta-key">Remitente:</span>
-          <span className="shalom-meta-val">
-            {selectedBoleta.remitente_nombre || 'QUINTANA CORNEJO BLANCA ESTHER'}
-            {(selectedBoleta.remitente_dni || selectedBoleta.remitente_documento) && (
-              <span className="text-slate-400 ml-1">
-                (DNI: {selectedBoleta.remitente_dni || selectedBoleta.remitente_documento}
-                {selectedBoleta.remitente_telefono ? ` | Tel: ${selectedBoleta.remitente_telefono}` : ''})
-              </span>
-            )}
+            {selectedBoleta.fecha_emision}
           </span>
         </div>
         <div className="shalom-meta-row">
@@ -120,12 +116,6 @@ export const ShalomPdfViewerPanel: React.FC<ShalomPdfViewerPanelProps> = ({
                 {selectedBoleta.destinatario_telefono ? ` | Tel: ${selectedBoleta.destinatario_telefono}` : ''})
               </span>
             )}
-          </span>
-        </div>
-        <div className="shalom-meta-row">
-          <span className="shalom-meta-key">Origen:</span>
-          <span className="shalom-meta-val truncate max-w-[220px]" title={selectedBoleta.origen}>
-            {selectedBoleta.origen || 'LINCE - LIMA'}
           </span>
         </div>
         <div className="shalom-meta-row">
@@ -144,7 +134,7 @@ export const ShalomPdfViewerPanel: React.FC<ShalomPdfViewerPanelProps> = ({
           <span className="shalom-meta-key">Detalle Envío:</span>
           <span className="shalom-meta-val">
             {selectedBoleta.cantidad || 1}x {selectedBoleta.descripcion || selectedBoleta.contenido_bultos || 'BULTO'}
-            {' '}({selectedBoleta.peso !== undefined ? selectedBoleta.peso : (selectedBoleta.peso_total || 0)} {selectedBoleta.unidad_medida || 'Volumen'})
+            {' '}({selectedBoleta.peso !== undefined ? selectedBoleta.peso : (selectedBoleta.peso_total || 0)} kg)
           </span>
         </div>
         <div className="shalom-meta-row">
@@ -159,14 +149,6 @@ export const ShalomPdfViewerPanel: React.FC<ShalomPdfViewerPanelProps> = ({
             S/ {(Number(selectedBoleta.monto_total) || 0).toFixed(2)}
           </span>
         </div>
-        {selectedBoleta.observaciones && (
-          <div className="shalom-meta-row">
-            <span className="shalom-meta-key">Observaciones:</span>
-            <span className="shalom-meta-val text-[11px] text-slate-300 italic truncate max-w-[220px]" title={selectedBoleta.observaciones}>
-              {selectedBoleta.observaciones}
-            </span>
-          </div>
-        )}
       </div>
     </aside>
   );

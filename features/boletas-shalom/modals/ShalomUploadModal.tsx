@@ -58,8 +58,11 @@ export const ShalomUploadModal: React.FC<ShalomUploadModalProps> = ({
   };
 
   const handleFileSelected = (file: File) => {
-    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-      setUploadError('Por favor selecciona un archivo en formato PDF de la boleta escaneada.');
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const isImage = file.type.startsWith('image/') || /\.(jpe?g|png|webp|bmp)$/i.test(file.name);
+
+    if (!isPdf && !isImage) {
+      setUploadError('Por favor selecciona un archivo PDF o una imagen (JPG, PNG, WEBP) de la boleta.');
       return;
     }
 
@@ -91,28 +94,19 @@ export const ShalomUploadModal: React.FC<ShalomUploadModalProps> = ({
         nro_orden: extracted.nro_orden || prev.nro_orden,
         codigo: extracted.codigo || prev.codigo,
         fecha_emision: extracted.fecha_emision || prev.fecha_emision,
-        hora_emision: extracted.hora_emision || prev.hora_emision,
-        fecha_traslado: extracted.fecha_traslado || prev.fecha_traslado,
-        origen: extracted.origen || prev.origen,
-        destino: extracted.destino || prev.destino,
-        remitente_nombre: extracted.remitente_nombre || prev.remitente_nombre,
-        remitente_dni: extracted.remitente_dni || prev.remitente_dni,
-        remitente_telefono: extracted.remitente_telefono || prev.remitente_telefono,
         destinatario_nombre: extracted.destinatario_nombre || prev.destinatario_nombre,
         destinatario_dni: extracted.destinatario_dni || prev.destinatario_dni,
         destinatario_telefono: extracted.destinatario_telefono || prev.destinatario_telefono,
+        destino: extracted.destino || prev.destino,
         tipo_entrega: extracted.tipo_entrega || prev.tipo_entrega,
         forma_pago: extracted.forma_pago || prev.forma_pago,
         descripcion: extracted.descripcion || prev.descripcion,
         cantidad: extracted.cantidad || prev.cantidad,
-        unidad_medida: extracted.unidad_medida || prev.unidad_medida,
         peso: extracted.peso !== undefined ? extracted.peso : prev.peso,
-        observaciones: extracted.observaciones || prev.observaciones,
-        monto_total: Number(extracted.monto_total) || prev.monto_total,
-        moneda: extracted.moneda || prev.moneda
+        monto_total: Number(extracted.monto_total) || prev.monto_total
       }));
 
-      setAiSuccessMsg('¡Datos extraídos con éxito por AMEXito AI!');
+      setAiSuccessMsg('¡Datos extraídos con éxito por AMEXito IA (GPT-6 Luna)!');
       soundEffects.playSuccess();
       setTimeout(() => setAiSuccessMsg(null), 4000);
     } catch (err: unknown) {
@@ -128,7 +122,7 @@ export const ShalomUploadModal: React.FC<ShalomUploadModalProps> = ({
 
   const handleSaveBoleta = async (andLoadNext: boolean = false) => {
     if (!currentFile) {
-      setUploadError('Falta el archivo PDF de la boleta.');
+      setUploadError('Falta el archivo PDF o imagen de la boleta.');
       return;
     }
 
@@ -165,7 +159,7 @@ export const ShalomUploadModal: React.FC<ShalomUploadModalProps> = ({
         <div className="shalom-modal-header">
           <h3>
             <UploadCloud size={20} className="text-sky-400" />
-            Cargar Boleta de Shalom (Boleta Escaneada & OCR)
+            Cargar Boleta de Shalom (OCR AMEXito IA • GPT-6 Luna)
           </h3>
           <button
             type="button"
@@ -201,7 +195,7 @@ export const ShalomUploadModal: React.FC<ShalomUploadModalProps> = ({
               <input
                 type="file"
                 ref={fileInputRef}
-                accept="application/pdf"
+                accept="application/pdf,image/jpeg,image/png,image/webp,image/jpg"
                 style={{ display: 'none' }}
                 onChange={(e) => {
                   if (e.target.files && e.target.files[0]) {
@@ -213,12 +207,12 @@ export const ShalomUploadModal: React.FC<ShalomUploadModalProps> = ({
                 <UploadCloud size={32} />
               </div>
               <h4 className="shalom-dropzone-title">
-                Arrastra el archivo PDF escaneado aquí o haz clic para buscar
+                Arrastra el archivo PDF o foto/imagen aquí o haz clic para buscar
               </h4>
               <p className="shalom-dropzone-subtitle">
-                Compatible con los archivos PDF generados por cualquier escáner o impresora multifuncional. AMEXito AI leerá los datos al instante.
+                Compatible con archivos PDF e imágenes (JPG, PNG, WEBP) desde escáner o celular. AMEXito IA (GPT-6 Luna) procesará y extraerá los datos automáticamente con alta resolución.
               </p>
-              <span className="shalom-dropzone-tag">Solo archivos .PDF</span>
+              <span className="shalom-dropzone-tag">PDF o Imágenes (JPG, PNG, WEBP)</span>
             </div>
           )}
 
@@ -229,10 +223,10 @@ export const ShalomUploadModal: React.FC<ShalomUploadModalProps> = ({
               <div className="flex flex-col gap-1 items-center">
                 <h4 className="shalom-ocr-scan-title flex items-center gap-2">
                   <Sparkles size={18} className="text-sky-400 animate-pulse" />
-                  AMEXito AI está leyendo la boleta de Shalom...
+                  AMEXito IA (GPT-6 Luna) está leyendo la boleta de Shalom...
                 </h4>
                 <p className="shalom-ocr-scan-desc">
-                  Extrayendo N° de guía, destinatario, DNI, ciudad destino, importes y modalidad de pago...
+                  Extrayendo N° de orden, código de retiro, destinatario, DNI, ciudad destino, importes y modalidad de pago...
                 </p>
               </div>
             </div>
@@ -247,11 +241,21 @@ export const ShalomUploadModal: React.FC<ShalomUploadModalProps> = ({
                   <span className="text-[11px] text-sky-400 font-semibold">{currentFile?.name}</span>
                 </div>
                 {filePreviewBlobUrl && (
-                  <iframe
-                    src={filePreviewBlobUrl}
-                    className="shalom-split-preview-frame"
-                    title="Previsualización PDF"
-                  />
+                  currentFile?.type.startsWith('image/') || /\.(jpe?g|png|webp|bmp)$/i.test(currentFile?.name || '') ? (
+                    <div className="shalom-split-preview-image-container">
+                      <img
+                        src={filePreviewBlobUrl}
+                        alt="Boleta Shalom Escaneada"
+                        className="shalom-split-preview-image"
+                      />
+                    </div>
+                  ) : (
+                    <iframe
+                      src={filePreviewBlobUrl}
+                      className="shalom-split-preview-frame"
+                      title="Previsualización PDF"
+                    />
+                  )
                 )}
               </div>
 
@@ -267,17 +271,17 @@ export const ShalomUploadModal: React.FC<ShalomUploadModalProps> = ({
                     {isExtractingAi ? (
                       <>
                         <RefreshCw size={15} className="animate-spin" />
-                        <span>AMEXito AI extrayendo datos...</span>
+                        <span>AMEXito IA (GPT-6 Luna) analizando PDF...</span>
                       </>
                     ) : (
                       <>
                         <Sparkles size={16} className="text-amber-300" />
-                        <span>🤖 Extraer datos con AMEXito AI</span>
+                        <span>🤖 Extraer datos con AMEXito IA (GPT-6 Luna)</span>
                       </>
                     )}
                   </button>
                   <span className="shalom-ai-hint">
-                    Opcional: completa a mano o pulsa el botón para auto-rellenar con IA.
+                    AMEXito IA (GPT-6 Luna) optimizada para tickets térmicos y guías Shalom.
                   </span>
                 </div>
 
@@ -288,12 +292,12 @@ export const ShalomUploadModal: React.FC<ShalomUploadModalProps> = ({
                   </div>
                 )}
 
-                {/* Sección 1: Datos Ticket Shalom */}
+                {/* Sección 1: Comprobante Shalom */}
                 <div className="shalom-form-section">
                   <div className="shalom-form-section-title">
-                    <FileText size={14} /> 1. Datos Ticket Shalom
+                    <FileText size={14} /> 1. Comprobante Shalom
                   </div>
-                  <div className="shalom-form-grid-2">
+                  <div className="shalom-form-grid-3">
                     <div className="shalom-field">
                       <label>NRO. ORDEN *</label>
                       <input
@@ -327,9 +331,7 @@ export const ShalomUploadModal: React.FC<ShalomUploadModalProps> = ({
                         }
                       />
                     </div>
-                  </div>
 
-                  <div className="shalom-form-grid-3">
                     <div className="shalom-field">
                       <label>Fecha Emisión *</label>
                       <input
@@ -341,85 +343,13 @@ export const ShalomUploadModal: React.FC<ShalomUploadModalProps> = ({
                         }
                       />
                     </div>
-
-                    <div className="shalom-field">
-                      <label>Hora Emisión</label>
-                      <input
-                        type="text"
-                        className="shalom-input"
-                        placeholder="17:53:14"
-                        value={formData.hora_emision}
-                        onChange={(e) =>
-                          setFormData({ ...formData, hora_emision: e.target.value })
-                        }
-                      />
-                    </div>
-
-                    <div className="shalom-field">
-                      <label>Fecha Traslado</label>
-                      <input
-                        type="date"
-                        className="shalom-input"
-                        value={formData.fecha_traslado}
-                        onChange={(e) =>
-                          setFormData({ ...formData, fecha_traslado: e.target.value })
-                        }
-                      />
-                    </div>
                   </div>
                 </div>
 
-                {/* Sección 2: Datos del Remitente */}
+                {/* Sección 2: Datos del Destinatario */}
                 <div className="shalom-form-section">
                   <div className="shalom-form-section-title">
-                    <User size={14} /> 2. Datos del Remitente
-                  </div>
-                  <div className="shalom-field">
-                    <label>Nombre Remitente</label>
-                    <input
-                      type="text"
-                      className="shalom-input"
-                      placeholder="QUINTANA CORNEJO BLANCA ESTHER"
-                      value={formData.remitente_nombre}
-                      onChange={(e) =>
-                        setFormData({ ...formData, remitente_nombre: e.target.value.toUpperCase() })
-                      }
-                    />
-                  </div>
-
-                  <div className="shalom-form-grid-2">
-                    <div className="shalom-field">
-                      <label>DNI Remitente</label>
-                      <input
-                        type="text"
-                        className="shalom-input font-mono"
-                        placeholder="06779177"
-                        value={formData.remitente_dni}
-                        onChange={(e) =>
-                          setFormData({ ...formData, remitente_dni: e.target.value })
-                        }
-                      />
-                    </div>
-
-                    <div className="shalom-field">
-                      <label>Teléfono Remitente</label>
-                      <input
-                        type="text"
-                        className="shalom-input font-mono"
-                        placeholder="982400043"
-                        value={formData.remitente_telefono}
-                        onChange={(e) =>
-                          setFormData({ ...formData, remitente_telefono: e.target.value })
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Sección 3: Datos del Destinatario */}
-                <div className="shalom-form-section">
-                  <div className="shalom-form-section-title">
-                    <User size={14} /> 3. Datos del Destinatario
+                    <User size={14} /> 2. Datos del Destinatario
                   </div>
                   <div className="shalom-field">
                     <label>Nombre Destinatario *</label>
@@ -436,7 +366,7 @@ export const ShalomUploadModal: React.FC<ShalomUploadModalProps> = ({
 
                   <div className="shalom-form-grid-2">
                     <div className="shalom-field">
-                      <label>DNI Destinatario</label>
+                      <label>DNI / RUC Destinatario</label>
                       <input
                         type="text"
                         className="shalom-input font-mono"
@@ -467,61 +397,50 @@ export const ShalomUploadModal: React.FC<ShalomUploadModalProps> = ({
                   </div>
                 </div>
 
-                {/* Sección 4: Origen, Destino y Entrega */}
+                {/* Sección 3: Destino y Entrega */}
                 <div className="shalom-form-section">
                   <div className="shalom-form-section-title">
-                    <MapPin size={14} /> 4. Origen, Destino y Entrega
+                    <MapPin size={14} /> 3. Destino y Entrega
                   </div>
-                  <div className="shalom-field">
-                    <label>Origen (Dirección / Agencia)</label>
-                    <input
-                      type="text"
-                      className="shalom-input text-xs"
-                      placeholder="AV. CORONEL JOSÉ LEAL 648, URB. FUNDO LOBATÓN, LINCE - LIMA"
-                      value={formData.origen}
-                      onChange={(e) =>
-                        setFormData({ ...formData, origen: e.target.value.toUpperCase() })
-                      }
-                    />
-                  </div>
+                  <div className="shalom-form-grid-2">
+                    <div className="shalom-field">
+                      <label>Destino (Ciudad / Agencia Shalom) *</label>
+                      <input
+                        type="text"
+                        className="shalom-input text-xs"
+                        placeholder="AREQUIPA - AGENCIA ZAMACOLA"
+                        value={formData.destino}
+                        onChange={(e) =>
+                          setFormData({ ...formData, destino: e.target.value.toUpperCase() })
+                        }
+                      />
+                    </div>
 
-                  <div className="shalom-field">
-                    <label>Destino (Dirección / Agencia Shalom) *</label>
-                    <input
-                      type="text"
-                      className="shalom-input text-xs"
-                      placeholder="CALLE YAVARÍ 507 B - ZAMACOLA - CERRO COLORADO - AREQUIPA"
-                      value={formData.destino}
-                      onChange={(e) =>
-                        setFormData({ ...formData, destino: e.target.value.toUpperCase() })
-                      }
-                    />
-                  </div>
-
-                  <div className="shalom-field">
-                    <label>Entrega</label>
-                    <input
-                      type="text"
-                      className="shalom-input"
-                      placeholder="ENTREGAR EN AGENCIA"
-                      value={formData.tipo_entrega}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          tipo_entrega: e.target.value.toUpperCase(),
-                          agencia_destino: e.target.value.toUpperCase()
-                        })
-                      }
-                    />
+                    <div className="shalom-field">
+                      <label>Tipo Entrega</label>
+                      <input
+                        type="text"
+                        className="shalom-input"
+                        placeholder="ENTREGAR EN AGENCIA"
+                        value={formData.tipo_entrega}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            tipo_entrega: e.target.value.toUpperCase(),
+                            agencia_destino: e.target.value.toUpperCase()
+                          })
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* Sección 5: Detalle del Envío */}
+                {/* Sección 4: Paquete, Pago e Importe */}
                 <div className="shalom-form-section">
                   <div className="shalom-form-section-title">
-                    <Package size={14} /> 5. Detalle del Envío
+                    <Package size={14} /> 4. Detalle del Envío y Pago
                   </div>
-                  <div className="shalom-form-grid-2">
+                  <div className="shalom-form-grid-3">
                     <div className="shalom-field">
                       <label>Descripción</label>
                       <input
@@ -551,24 +470,9 @@ export const ShalomUploadModal: React.FC<ShalomUploadModalProps> = ({
                         }
                       />
                     </div>
-                  </div>
-
-                  <div className="shalom-form-grid-2">
-                    <div className="shalom-field">
-                      <label>Unidad de Medida</label>
-                      <input
-                        type="text"
-                        className="shalom-input"
-                        placeholder="Volumen"
-                        value={formData.unidad_medida}
-                        onChange={(e) =>
-                          setFormData({ ...formData, unidad_medida: e.target.value })
-                        }
-                      />
-                    </div>
 
                     <div className="shalom-field">
-                      <label>Peso / Volumen</label>
+                      <label>Peso (kg)</label>
                       <input
                         type="number"
                         step="0.001"
@@ -585,13 +489,7 @@ export const ShalomUploadModal: React.FC<ShalomUploadModalProps> = ({
                       />
                     </div>
                   </div>
-                </div>
 
-                {/* Sección 6: Pago, Total y Observaciones */}
-                <div className="shalom-form-section">
-                  <div className="shalom-form-section-title">
-                    <DollarSign size={14} /> 6. Forma de Pago, Importe y Observaciones
-                  </div>
                   <div className="shalom-form-grid-2">
                     <div className="shalom-field">
                       <label>Forma de Pago</label>
@@ -625,19 +523,6 @@ export const ShalomUploadModal: React.FC<ShalomUploadModalProps> = ({
                         }
                       />
                     </div>
-                  </div>
-
-                  <div className="shalom-field">
-                    <label>Observaciones</label>
-                    <textarea
-                      rows={2}
-                      className="shalom-input text-xs"
-                      placeholder="USTED NO CONTRATO EL SERVICIO DE GARANTIA..."
-                      value={formData.observaciones}
-                      onChange={(e) =>
-                        setFormData({ ...formData, observaciones: e.target.value })
-                      }
-                    />
                   </div>
                 </div>
               </div>

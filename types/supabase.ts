@@ -101,7 +101,6 @@ export type Database = {
       boletas_shalom: {
         Row: {
           actualizado_en: string | null
-          archivo_nombre_original: string | null
           cantidad: number | null
           codigo: string | null
           creado_en: string | null
@@ -115,29 +114,18 @@ export type Database = {
           eliminado_por: string | null
           estado_envio: string | null
           fecha_emision: string
-          fecha_traslado: string | null
           forma_pago: string | null
-          hora_emision: string | null
           id: string
-          metadatos_ocr: Json | null
-          moneda: string | null
           monto_total: number | null
           motivo_eliminacion: string | null
           nro_orden: string | null
-          observaciones: string | null
-          origen: string | null
           pdf_url: string
           peso: number | null
           r2_key: string
-          remitente_dni: string | null
-          remitente_nombre: string | null
-          remitente_telefono: string | null
           tipo_entrega: string | null
-          unidad_medida: string | null
         }
         Insert: {
           actualizado_en?: string | null
-          archivo_nombre_original?: string | null
           cantidad?: number | null
           codigo?: string | null
           creado_en?: string | null
@@ -151,29 +139,18 @@ export type Database = {
           eliminado_por?: string | null
           estado_envio?: string | null
           fecha_emision: string
-          fecha_traslado?: string | null
           forma_pago?: string | null
-          hora_emision?: string | null
           id?: string
-          metadatos_ocr?: Json | null
-          moneda?: string | null
           monto_total?: number | null
           motivo_eliminacion?: string | null
           nro_orden?: string | null
-          observaciones?: string | null
-          origen?: string | null
           pdf_url: string
           peso?: number | null
           r2_key: string
-          remitente_dni?: string | null
-          remitente_nombre?: string | null
-          remitente_telefono?: string | null
           tipo_entrega?: string | null
-          unidad_medida?: string | null
         }
         Update: {
           actualizado_en?: string | null
-          archivo_nombre_original?: string | null
           cantidad?: number | null
           codigo?: string | null
           creado_en?: string | null
@@ -187,25 +164,15 @@ export type Database = {
           eliminado_por?: string | null
           estado_envio?: string | null
           fecha_emision?: string
-          fecha_traslado?: string | null
           forma_pago?: string | null
-          hora_emision?: string | null
           id?: string
-          metadatos_ocr?: Json | null
-          moneda?: string | null
           monto_total?: number | null
           motivo_eliminacion?: string | null
           nro_orden?: string | null
-          observaciones?: string | null
-          origen?: string | null
           pdf_url?: string
           peso?: number | null
           r2_key?: string
-          remitente_dni?: string | null
-          remitente_nombre?: string | null
-          remitente_telefono?: string | null
           tipo_entrega?: string | null
-          unidad_medida?: string | null
         }
         Relationships: []
       }

@@ -29,8 +29,8 @@ export const shalomService = {
   },
 
   async extractWithAi(file: File) {
-    // Comprime imágenes a máx 1200px / JPEG y preserva PDFs tal cual
-    const { mimeType, base64 } = await compressFileForAi(file, 1200, 0.82);
+    // Prepara el archivo con alta resolución (2400px / 95% calidad) para lectura precisa de tickets térmicos por IA
+    const { mimeType, base64 } = await compressFileForAi(file, 2400, 0.95);
 
     const res = await fetch('/api/ai/analyze-shalom-boleta', {
       method: 'POST',
@@ -57,25 +57,16 @@ export const shalomService = {
     formPayload.append('nro_orden', formData.nro_orden.trim().toUpperCase());
     formPayload.append('codigo', formData.codigo.trim().toUpperCase());
     formPayload.append('fecha_emision', formData.fecha_emision);
-    formPayload.append('hora_emision', formData.hora_emision.trim());
-    formPayload.append('fecha_traslado', formData.fecha_traslado);
-    formPayload.append('remitente_nombre', formData.remitente_nombre.trim().toUpperCase());
-    formPayload.append('remitente_dni', formData.remitente_dni.trim());
-    formPayload.append('remitente_telefono', formData.remitente_telefono.trim());
     formPayload.append('destinatario_nombre', formData.destinatario_nombre.trim().toUpperCase());
     formPayload.append('destinatario_dni', formData.destinatario_dni.trim());
     formPayload.append('destinatario_telefono', formData.destinatario_telefono.trim());
-    formPayload.append('origen', formData.origen.trim().toUpperCase());
     formPayload.append('destino', formData.destino.trim().toUpperCase());
     formPayload.append('tipo_entrega', formData.tipo_entrega.trim().toUpperCase());
     formPayload.append('forma_pago', formData.forma_pago.trim());
     formPayload.append('descripcion', formData.descripcion.trim().toUpperCase());
     formPayload.append('cantidad', String(formData.cantidad));
-    formPayload.append('unidad_medida', formData.unidad_medida.trim());
     formPayload.append('peso', String(formData.peso));
-    formPayload.append('observaciones', formData.observaciones.trim());
     formPayload.append('monto_total', String(formData.monto_total));
-    formPayload.append('moneda', formData.moneda);
 
     const res = await fetch('/api/shalom-boletas', {
       method: 'POST',

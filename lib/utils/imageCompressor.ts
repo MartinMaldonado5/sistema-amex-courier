@@ -124,22 +124,34 @@ export async function compressImageForAi(
 
 /**
  * Convierte y comprime un archivo (File) para envío directo a la API de IA.
- * Si es PDF se mantiene en PDF, si es imagen se redimensiona a JPEG comprimido.
+ * Si es PDF se extrae su base64 de forma nativa en el navegador; si es imagen se redimensiona con alta fidelidad.
  */
 export async function compressFileForAi(
   file: File,
-  maxWidth = 1200,
-  quality = 0.82
+  maxWidth = 2048,
+  quality = 0.92
 ): Promise<{ mimeType: string; base64: string }> {
   const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
 
   if (isPdf) {
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    return {
-      mimeType: 'application/pdf',
-      base64: buffer.toString('base64')
-    };
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const result = reader.result as string;
+          const commaIdx = result.indexOf(',');
+          const base64 = commaIdx !== -1 ? result.substring(commaIdx + 1) : result;
+          resolve({
+            mimeType: 'application/pdf',
+            base64
+          });
+        } catch (e) {
+          reject(e);
+        }
+      };
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
   }
 
   // Es una imagen (JPEG, PNG, WEBP, etc.)

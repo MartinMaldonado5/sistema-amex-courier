@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { analyzeShalomBoletaPdf } from '@/lib/openai/analyzer';
+import { analyzeShalomBoletaPdf, SHALOM_AI_MODEL } from '@/lib/openai/analyzer';
 import { authorizeUser } from '@/lib/auth/guards';
 
 export async function POST(req: NextRequest) {
@@ -12,19 +12,20 @@ export async function POST(req: NextRequest) {
 
     if (!pdfBase64 || typeof pdfBase64 !== 'string') {
       return NextResponse.json(
-        { error: 'Se requiere el archivo PDF en formato base64.' },
+        { error: 'Se requiere el archivo PDF o imagen en formato base64.' },
         { status: 400 }
       );
     }
     if (pdfBase64.length > 14_000_000) {
-      return NextResponse.json({ error: 'El PDF supera el límite de 10 MB.' }, { status: 413 });
+      return NextResponse.json({ error: 'El archivo supera el límite de 10 MB.' }, { status: 413 });
     }
 
     const extracted = await analyzeShalomBoletaPdf(pdfBase64);
 
     return NextResponse.json({
       success: true,
-      data: extracted
+      data: extracted,
+      model: SHALOM_AI_MODEL
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Error al analizar la boleta con IA';

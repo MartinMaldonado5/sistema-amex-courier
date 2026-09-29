@@ -54,26 +54,16 @@ export async function PATCH(
       'nro_orden',
       'codigo',
       'fecha_emision',
-      'hora_emision',
-      'fecha_traslado',
-      'remitente_nombre',
-      'remitente_dni',
-      'remitente_telefono',
       'destinatario_nombre',
       'destinatario_dni',
       'destinatario_telefono',
-      'origen',
       'destino',
       'tipo_entrega',
       'forma_pago',
       'descripcion',
       'cantidad',
-      'unidad_medida',
       'peso',
-      'observaciones',
-      'monto_total',
-      'moneda',
-      'metadatos_ocr'
+      'monto_total'
     ];
 
     const updates: Record<string, any> = {
@@ -83,11 +73,14 @@ export async function PATCH(
     for (const field of allowedFields) {
       if (field in body) {
         let val = body[field];
-        if (typeof val === 'string' && ['destinatario_nombre', 'remitente_nombre', 'origen', 'destino', 'tipo_entrega'].includes(field)) {
+        if (typeof val === 'string' && ['destinatario_nombre', 'destino', 'tipo_entrega', 'nro_orden', 'codigo', 'descripcion'].includes(field)) {
           val = val.trim().toUpperCase();
         }
         if (field === 'monto_total' || field === 'peso') {
           val = Number(val) || 0;
+        }
+        if (field === 'cantidad') {
+          val = parseInt(val, 10) || 1;
         }
         updates[field] = val;
       }

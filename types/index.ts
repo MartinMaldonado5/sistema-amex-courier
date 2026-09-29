@@ -339,91 +339,90 @@ export type ModalidadPagoShalom = 'PAGO_DESTINO' | 'PAGADO' | 'CREDITO' | 'Pendi
 
 export interface BoletaShalom {
   id: string;
-  // Campos del Ticket Shalom
+  // 13 Campos Esenciales Normalizados
   nro_orden?: string;             // Ej: 95294190
   codigo?: string;                // Ej: 7HH7
   fecha_emision: string;          // YYYY-MM-DD
-  hora_emision?: string;          // HH:mm:ss
-  fecha_traslado?: string;        // YYYY-MM-DD
-  origen?: string;                // Dirección o ciudad origen
-  destino: string;                // Dirección o ciudad destino
-  // Datos del Remitente
-  remitente_nombre?: string;      // Nombre / Razón Social
-  remitente_dni?: string;         // DNI / RUC Remitente
-  remitente_telefono?: string;    // Celular / Teléfono Remitente
-  // Datos del Destinatario
   destinatario_nombre: string;    // Nombre / Razón Social
   destinatario_dni?: string;      // DNI / RUC Destinatario
   destinatario_telefono?: string; // Celular / Teléfono Destinatario
-  // Entrega y Detalle
+  destino: string;                // Dirección o ciudad destino
   tipo_entrega?: string;          // Ej: ENTREGAR EN AGENCIA o DOMICILIO
+  forma_pago?: string;            // Ej: Pendiente de Pago, Cancelado
   descripcion?: string;           // Ej: BULTO, PAQUETE
   cantidad?: number;              // Ej: 1
-  unidad_medida?: string;         // Ej: Volumen, Peso, Unidad
   peso?: number;                  // Ej: 0.120 kg
-  observaciones?: string;         // Observaciones del ticket
-  // Pago
-  forma_pago?: string;            // Ej: Pendiente de Pago, Cancelado
-  monto_total: number;
-  moneda?: string;
-  estado_envio?: string;
+  monto_total: number;            // Monto en Soles (PEN)
   // Storage & Cloudflare R2
   pdf_url: string;
   r2_key: string;
-  archivo_nombre_original?: string;
+  // Gobernanza y Auditoría
   creado_por?: string;
-  metadatos_ocr?: Record<string, any>;
   creado_en?: string;
   actualizado_en?: string;
-  // Campos alias/compatibilidad
+  eliminado_en?: string | null;
+  eliminado_por?: string | null;
+  motivo_eliminacion?: string | null;
+  // Retrocompatibilidad
   numero_guia?: string;
   codigo_seguimiento?: string;
   modalidad_pago?: ModalidadPagoShalom;
   agencia_destino?: string;
   destinatario_documento?: string;
-  remitente_documento?: string;
   contenido_bultos?: string;
   peso_total?: number;
   storage_path?: string;
-}
-
-export interface BoletaShalomInput {
-  nro_orden?: string;
-  codigo?: string;
-  fecha_emision: string;
   hora_emision?: string;
   fecha_traslado?: string;
   origen?: string;
-  destino: string;
   remitente_nombre?: string;
   remitente_dni?: string;
   remitente_telefono?: string;
+  unidad_medida?: string;
+  observaciones?: string;
+  moneda?: string;
+  estado_envio?: string;
+  archivo_nombre_original?: string;
+  metadatos_ocr?: Record<string, any>;
+}
+
+export interface BoletaShalomInput {
+  // 13 Campos Esenciales Normalizados
+  nro_orden?: string;
+  codigo?: string;
+  fecha_emision: string;
   destinatario_nombre: string;
   destinatario_dni?: string;
   destinatario_telefono?: string;
+  destino: string;
   tipo_entrega?: string;
+  forma_pago?: string;
   descripcion?: string;
   cantidad?: number;
-  unidad_medida?: string;
   peso?: number;
-  observaciones?: string;
-  forma_pago?: string;
   monto_total: number;
-  moneda?: string;
   pdf_url: string;
   r2_key?: string;
-  archivo_nombre_original?: string;
-  metadatos_ocr?: Record<string, any>;
-  // Campos alias/compatibilidad
+  // Retrocompatibilidad
   numero_guia?: string;
   codigo_seguimiento?: string;
   modalidad_pago?: ModalidadPagoShalom;
   agencia_destino?: string;
   destinatario_documento?: string;
-  remitente_documento?: string;
   contenido_bultos?: string;
   peso_total?: number;
   storage_path?: string;
+  hora_emision?: string;
+  fecha_traslado?: string;
+  origen?: string;
+  remitente_nombre?: string;
+  remitente_dni?: string;
+  remitente_telefono?: string;
+  unidad_medida?: string;
+  observaciones?: string;
+  moneda?: string;
+  archivo_nombre_original?: string;
+  metadatos_ocr?: Record<string, any>;
 }
 
 export interface FiltrosBoletaShalom {

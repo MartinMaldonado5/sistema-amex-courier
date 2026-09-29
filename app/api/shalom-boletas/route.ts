@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { authorizeUser } from '@/lib/auth/guards';
-import { uploadShalomBoletaPdf } from '@/lib/r2/shalomUpload';
+import { uploadShalomBoletaFile } from '@/lib/r2/shalomUpload';
 
 export async function GET(req: NextRequest) {
   try {
@@ -29,10 +29,10 @@ export async function GET(req: NextRequest) {
 
     // Filtro por texto general (fuzzy / ilike en columnas clave)
     if (q) {
-      // Búsqueda en número de orden, código, destinatario, DNI, remitente, destino o descripción
+      // Búsqueda en número de orden, código, destinatario, DNI, teléfono, destino o descripción
       const escapedQ = q.replace(/[%_]/g, '\\$&');
       query = query.or(
-        `nro_orden.ilike.%${escapedQ}%,codigo.ilike.%${escapedQ}%,destinatario_nombre.ilike.%${escapedQ}%,destinatario_dni.ilike.%${escapedQ}%,destinatario_telefono.ilike.%${escapedQ}%,remitente_nombre.ilike.%${escapedQ}%,remitente_dni.ilike.%${escapedQ}%,destino.ilike.%${escapedQ}%,descripcion.ilike.%${escapedQ}%`
+        `nro_orden.ilike.%${escapedQ}%,codigo.ilike.%${escapedQ}%,destinatario_nombre.ilike.%${escapedQ}%,destinatario_dni.ilike.%${escapedQ}%,destinatario_telefono.ilike.%${escapedQ}%,destino.ilike.%${escapedQ}%,descripcion.ilike.%${escapedQ}%`
       );
     }
 
@@ -139,6 +139,7 @@ export async function POST(req: NextRequest) {
     let payload: Record<string, any> = {};
     let fileBuffer: Buffer | null = null;
     let fileName = '';
+    let fileType = '';
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await req.formData();
@@ -146,6 +147,7 @@ export async function POST(req: NextRequest) {
 
       if (file && file.size > 0) {
         fileName = file.name;
+        fileType = file.type;
         const bytes = await file.arrayBuffer();
         fileBuffer = Buffer.from(bytes);
       }
@@ -154,37 +156,19 @@ export async function POST(req: NextRequest) {
         nro_orden: (formData.get('nro_orden') || formData.get('numero_guia')) as string,
         codigo: (formData.get('codigo') || formData.get('codigo_seguimiento')) as string,
         fecha_emision: formData.get('fecha_emision') as string,
-        hora_emision: formData.get('hora_emision') as string,
-        fecha_traslado: formData.get('fecha_traslado') as string,
-        remitente_nombre: formData.get('remitente_nombre') as string,
-        remitente_dni: (formData.get('remitente_dni') || formData.get('remitente_documento')) as string,
-        remitente_telefono: formData.get('remitente_telefono') as string,
         destinatario_nombre: formData.get('destinatario_nombre') as string,
         destinatario_dni: (formData.get('destinatario_dni') || formData.get('destinatario_documento')) as string,
         destinatario_telefono: formData.get('destinatario_telefono') as string,
-        origen: formData.get('origen') as string,
         destino: formData.get('destino') as string,
         tipo_entrega: (formData.get('tipo_entrega') || formData.get('agencia_destino') || 'ENTREGAR EN AGENCIA') as string,
         forma_pago: (formData.get('forma_pago') || formData.get('modalidad_pago') || 'Pendiente de Pago') as string,
         descripcion: (formData.get('descripcion') || formData.get('contenido_bultos') || 'BULTO') as string,
         cantidad: parseInt((formData.get('cantidad') as string) || '1', 10),
-        unidad_medida: (formData.get('unidad_medida') as string) || 'Volumen',
         peso: parseFloat(((formData.get('peso') || formData.get('peso_total')) as string) || '0'),
-        observaciones: formData.get('observaciones') as string,
         monto_total: parseFloat((formData.get('monto_total') as string) || '0'),
-        moneda: formData.get('moneda') as string || 'PEN',
         pdf_url: formData.get('pdf_url') as string,
         r2_key: (formData.get('r2_key') || formData.get('storage_path')) as string,
       };
-
-      const rawMetadatos = formData.get('metadatos_ocr') as string;
-      if (rawMetadatos) {
-        try {
-          payload.metadatos_ocr = JSON.parse(rawMetadatos);
-        } catch {
-          payload.metadatos_ocr = {};
-        }
-      }
     } else {
       payload = await req.json();
     }
@@ -199,14 +183,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Si se adjuntó el archivo PDF directamente, subirlo a R2
+    // Si se adjuntó el archivo directamente (PDF o imagen), subirlo a R2
     if (fileBuffer) {
       const fecha = payload.fecha_emision || new Date().toISOString().split('T')[0];
-      const r2Result = await uploadShalomBoletaPdf(
+      const r2Result = await uploadShalomBoletaFile(
         fileBuffer,
         fecha,
         String(guiaOrOrden),
-        payload.destinatario_nombre
+        payload.destinatario_nombre,
+        fileName,
+        fileType || 'application/pdf'
       );
       payload.pdf_url = r2Result.url;
       payload.r2_key = r2Result.key;
@@ -214,7 +200,7 @@ export async function POST(req: NextRequest) {
 
     if (!payload.pdf_url) {
       return NextResponse.json(
-        { error: 'Se requiere el archivo PDF del comprobante de Shalom.' },
+        { error: 'Se requiere el archivo PDF o imagen del comprobante de Shalom.' },
         { status: 400 }
       );
     }
@@ -222,7 +208,6 @@ export async function POST(req: NextRequest) {
     const nroFinal = String(guiaOrOrden).trim().toUpperCase();
     const codFinal = payload.codigo ? String(payload.codigo).trim().toUpperCase() : null;
     const destDniFinal = payload.destinatario_dni || payload.destinatario_documento ? String(payload.destinatario_dni || payload.destinatario_documento).trim() : null;
-    const remDniFinal = payload.remitente_dni || payload.remitente_documento ? String(payload.remitente_dni || payload.remitente_documento).trim() : null;
     const descFinal = payload.descripcion || payload.contenido_bultos ? String(payload.descripcion || payload.contenido_bultos).trim() : 'BULTO';
     const pesoFinal = Number(payload.peso || payload.peso_total) || 0;
     const formaPagoFinal = payload.forma_pago || payload.modalidad_pago || 'Pendiente de Pago';
@@ -232,28 +217,18 @@ export async function POST(req: NextRequest) {
       nro_orden: nroFinal,
       codigo: codFinal,
       fecha_emision: payload.fecha_emision || new Date().toISOString().split('T')[0],
-      hora_emision: payload.hora_emision ? String(payload.hora_emision).trim() : null,
-      fecha_traslado: payload.fecha_traslado || null,
-      remitente_nombre: String(payload.remitente_nombre || 'AMEX COURIER').trim().toUpperCase(),
-      remitente_dni: remDniFinal,
-      remitente_telefono: payload.remitente_telefono ? String(payload.remitente_telefono).trim() : null,
       destinatario_nombre: String(payload.destinatario_nombre).trim().toUpperCase(),
       destinatario_dni: destDniFinal,
       destinatario_telefono: payload.destinatario_telefono ? String(payload.destinatario_telefono).trim() : null,
-      origen: String(payload.origen || 'LIMA').trim().toUpperCase(),
       destino: String(payload.destino).trim().toUpperCase(),
       tipo_entrega: payload.tipo_entrega ? String(payload.tipo_entrega).trim().toUpperCase() : 'ENTREGAR EN AGENCIA',
       forma_pago: formaPagoFinal,
       descripcion: descFinal,
       cantidad: parseInt(payload.cantidad, 10) || 1,
-      unidad_medida: String(payload.unidad_medida || 'Volumen').trim(),
       peso: pesoFinal,
-      observaciones: payload.observaciones ? String(payload.observaciones).trim() : null,
       monto_total: Number(payload.monto_total) || 0,
-      moneda: String(payload.moneda || 'PEN').trim().toUpperCase(),
       pdf_url: payload.pdf_url,
-      r2_key: payload.r2_key || payload.storage_path || '',
-      metadatos_ocr: payload.metadatos_ocr || {}
+      r2_key: payload.r2_key || payload.storage_path || ''
     };
 
     const { data, error } = await supabase

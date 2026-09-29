@@ -37,25 +37,16 @@ export const ShalomEditModal: React.FC<ShalomEditModalProps> = ({
         nro_orden: boleta.nro_orden || '',
         codigo: boleta.codigo || '',
         fecha_emision: boleta.fecha_emision,
-        hora_emision: boleta.hora_emision || '',
-        fecha_traslado: boleta.fecha_traslado || boleta.fecha_emision,
-        remitente_nombre: boleta.remitente_nombre || 'QUINTANA CORNEJO BLANCA ESTHER',
-        remitente_dni: boleta.remitente_dni || '',
-        remitente_telefono: boleta.remitente_telefono || '',
         destinatario_nombre: boleta.destinatario_nombre,
         destinatario_dni: boleta.destinatario_dni || '',
         destinatario_telefono: boleta.destinatario_telefono || '',
-        origen: boleta.origen || '',
         destino: boleta.destino,
         tipo_entrega: boleta.tipo_entrega || 'ENTREGAR EN AGENCIA',
         forma_pago: boleta.forma_pago || 'Pendiente de Pago',
         descripcion: boleta.descripcion || 'BULTO',
         cantidad: boleta.cantidad || 1,
-        unidad_medida: boleta.unidad_medida || 'Volumen',
         peso: boleta.peso ?? 0,
-        observaciones: boleta.observaciones || '',
-        monto_total: boleta.monto_total,
-        moneda: boleta.moneda || 'PEN'
+        monto_total: boleta.monto_total
       });
     }
   }, [boleta]);
@@ -77,7 +68,7 @@ export const ShalomEditModal: React.FC<ShalomEditModalProps> = ({
 
   return (
     <div className="shalom-modal-overlay">
-      <div className="shalom-modal-container" style={{ maxWidth: '720px' }}>
+      <div className="shalom-modal-container" style={{ maxWidth: '680px' }}>
         <div className="shalom-modal-header">
           <h3>
             <Edit2 size={18} className="text-sky-400" />
@@ -93,12 +84,12 @@ export const ShalomEditModal: React.FC<ShalomEditModalProps> = ({
         </div>
 
         <div className="shalom-modal-body flex flex-col gap-4">
-          {/* Sección 1: Ticket */}
+          {/* Sección 1: Comprobante */}
           <div className="shalom-form-section">
             <div className="shalom-form-section-title">
-              <FileText size={14} /> 1. Datos Ticket Shalom
+              <FileText size={14} /> 1. Comprobante Shalom
             </div>
-            <div className="shalom-form-grid-2">
+            <div className="shalom-form-grid-3">
               <div className="shalom-field">
                 <label>NRO. ORDEN *</label>
                 <input
@@ -129,11 +120,8 @@ export const ShalomEditModal: React.FC<ShalomEditModalProps> = ({
                   }
                 />
               </div>
-            </div>
-
-            <div className="shalom-form-grid-3">
               <div className="shalom-field">
-                <label>Fecha Emisión</label>
+                <label>Fecha Emisión *</label>
                 <input
                   type="date"
                   className="shalom-input"
@@ -143,77 +131,13 @@ export const ShalomEditModal: React.FC<ShalomEditModalProps> = ({
                   }
                 />
               </div>
-              <div className="shalom-field">
-                <label>Hora Emisión</label>
-                <input
-                  type="text"
-                  className="shalom-input"
-                  value={editFormData.hora_emision}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, hora_emision: e.target.value })
-                  }
-                />
-              </div>
-              <div className="shalom-field">
-                <label>Fecha Traslado</label>
-                <input
-                  type="date"
-                  className="shalom-input"
-                  value={editFormData.fecha_traslado}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, fecha_traslado: e.target.value })
-                  }
-                />
-              </div>
             </div>
           </div>
 
-          {/* Sección 2: Remitente */}
+          {/* Sección 2: Destinatario */}
           <div className="shalom-form-section">
             <div className="shalom-form-section-title">
-              <User size={14} /> 2. Datos del Remitente
-            </div>
-            <div className="shalom-field">
-              <label>Nombre Remitente</label>
-              <input
-                type="text"
-                className="shalom-input"
-                value={editFormData.remitente_nombre}
-                onChange={(e) =>
-                  setEditFormData({ ...editFormData, remitente_nombre: e.target.value.toUpperCase() })
-                }
-              />
-            </div>
-            <div className="shalom-form-grid-2">
-              <div className="shalom-field">
-                <label>DNI Remitente</label>
-                <input
-                  type="text"
-                  className="shalom-input font-mono"
-                  value={editFormData.remitente_dni}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, remitente_dni: e.target.value })
-                  }
-                />
-              </div>
-              <div className="shalom-field">
-                <label>Teléfono Remitente</label>
-                <input
-                  type="text"
-                  className="shalom-input font-mono"
-                  value={editFormData.remitente_telefono}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, remitente_telefono: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Sección 3: Destinatario */}
-          <div className="shalom-form-section">
-            <div className="shalom-form-section-title">
-              <User size={14} /> 3. Datos del Destinatario
+              <User size={14} /> 2. Datos del Destinatario
             </div>
             <div className="shalom-field">
               <label>Nombre Destinatario *</label>
@@ -228,7 +152,7 @@ export const ShalomEditModal: React.FC<ShalomEditModalProps> = ({
             </div>
             <div className="shalom-form-grid-2">
               <div className="shalom-field">
-                <label>DNI Destinatario</label>
+                <label>DNI / RUC Destinatario</label>
                 <input
                   type="text"
                   className="shalom-input font-mono"
@@ -256,56 +180,47 @@ export const ShalomEditModal: React.FC<ShalomEditModalProps> = ({
             </div>
           </div>
 
-          {/* Sección 4: Origen, Destino y Entrega */}
+          {/* Sección 3: Destino y Entrega */}
           <div className="shalom-form-section">
             <div className="shalom-form-section-title">
-              <MapPin size={14} /> 4. Origen, Destino y Entrega
+              <MapPin size={14} /> 3. Destino y Entrega
             </div>
-            <div className="shalom-field">
-              <label>Origen</label>
-              <input
-                type="text"
-                className="shalom-input text-xs"
-                value={editFormData.origen}
-                onChange={(e) =>
-                  setEditFormData({ ...editFormData, origen: e.target.value.toUpperCase() })
-                }
-              />
-            </div>
-            <div className="shalom-field">
-              <label>Destino *</label>
-              <input
-                type="text"
-                className="shalom-input text-xs"
-                value={editFormData.destino}
-                onChange={(e) =>
-                  setEditFormData({ ...editFormData, destino: e.target.value.toUpperCase() })
-                }
-              />
-            </div>
-            <div className="shalom-field">
-              <label>Entrega</label>
-              <input
-                type="text"
-                className="shalom-input"
-                value={editFormData.tipo_entrega}
-                onChange={(e) =>
-                  setEditFormData({
-                    ...editFormData,
-                    tipo_entrega: e.target.value.toUpperCase(),
-                    agencia_destino: e.target.value.toUpperCase()
-                  })
-                }
-              />
+            <div className="shalom-form-grid-2">
+              <div className="shalom-field">
+                <label>Destino (Ciudad / Agencia Shalom) *</label>
+                <input
+                  type="text"
+                  className="shalom-input text-xs"
+                  value={editFormData.destino}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, destino: e.target.value.toUpperCase() })
+                  }
+                />
+              </div>
+              <div className="shalom-field">
+                <label>Tipo Entrega</label>
+                <input
+                  type="text"
+                  className="shalom-input"
+                  value={editFormData.tipo_entrega}
+                  onChange={(e) =>
+                    setEditFormData({
+                      ...editFormData,
+                      tipo_entrega: e.target.value.toUpperCase(),
+                      agencia_destino: e.target.value.toUpperCase()
+                    })
+                  }
+                />
+              </div>
             </div>
           </div>
 
-          {/* Sección 5: Detalle del Envío */}
+          {/* Sección 4: Paquete y Pago */}
           <div className="shalom-form-section">
             <div className="shalom-form-section-title">
-              <Package size={14} /> 5. Detalle del Envío
+              <Package size={14} /> 4. Detalle del Envío y Pago
             </div>
-            <div className="shalom-form-grid-2">
+            <div className="shalom-form-grid-3">
               <div className="shalom-field">
                 <label>Descripción</label>
                 <input
@@ -333,21 +248,8 @@ export const ShalomEditModal: React.FC<ShalomEditModalProps> = ({
                   }
                 />
               </div>
-            </div>
-            <div className="shalom-form-grid-2">
               <div className="shalom-field">
-                <label>Unidad de Medida</label>
-                <input
-                  type="text"
-                  className="shalom-input"
-                  value={editFormData.unidad_medida}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, unidad_medida: e.target.value })
-                  }
-                />
-              </div>
-              <div className="shalom-field">
-                <label>Peso / Volumen</label>
+                <label>Peso (kg)</label>
                 <input
                   type="number"
                   step="0.001"
@@ -363,13 +265,7 @@ export const ShalomEditModal: React.FC<ShalomEditModalProps> = ({
                 />
               </div>
             </div>
-          </div>
 
-          {/* Sección 6: Pago, Total y Observaciones */}
-          <div className="shalom-form-section">
-            <div className="shalom-form-section-title">
-              <DollarSign size={14} /> 6. Forma de Pago, Importe y Observaciones
-            </div>
             <div className="shalom-form-grid-2">
               <div className="shalom-field">
                 <label>Forma de Pago</label>
@@ -400,17 +296,6 @@ export const ShalomEditModal: React.FC<ShalomEditModalProps> = ({
                   }
                 />
               </div>
-            </div>
-            <div className="shalom-field">
-              <label>Observaciones</label>
-              <textarea
-                rows={2}
-                className="shalom-input text-xs"
-                value={editFormData.observaciones}
-                onChange={(e) =>
-                  setEditFormData({ ...editFormData, observaciones: e.target.value })
-                }
-              />
             </div>
           </div>
         </div>

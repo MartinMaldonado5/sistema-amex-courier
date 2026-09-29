@@ -14,14 +14,16 @@ function sanitizeFileNamePart(str: string): string {
 }
 
 /**
- * Sube una boleta de Shalom a Cloudflare R2 organizándola por fecha:
- * FOLDER AMEX/boletas-shalom/YYYY/MM/DD/SHALOM_{NRO_GUIA}_{DESTINATARIO}_{TIMESTAMP}.pdf
+ * Sube una boleta o ticket de Shalom (PDF o imagen) a Cloudflare R2 organizándola por fecha:
+ * FOLDER AMEX/boletas-shalom/YYYY/MM/DD/SHALOM_{NRO_GUIA}_{DESTINATARIO}_{TIMESTAMP}.[pdf|jpg|png|webp]
  */
-export async function uploadShalomBoletaPdf(
+export async function uploadShalomBoletaFile(
   fileBuffer: Buffer,
   fechaEmision: string,
   nroGuia: string,
-  destinatario: string
+  destinatario: string,
+  originalFilename = 'document.pdf',
+  mimeType = 'application/pdf'
 ): Promise<{ url: string; publicUrl: string; key: string }> {
   // Parsear fecha o usar fecha actual
   let year = '2026';
@@ -44,8 +46,44 @@ export async function uploadShalomBoletaPdf(
   const cleanDest = sanitizeFileNamePart(destinatario) || 'CLIENTE';
   const timestamp = Date.now();
 
-  const fileName = `SHALOM_${cleanGuia}_${cleanDest}_${timestamp}.pdf`;
+  let extension = 'pdf';
+  const lowerName = (originalFilename || '').toLowerCase();
+  const lowerMime = (mimeType || '').toLowerCase();
+
+  if (lowerName.endsWith('.png') || lowerMime.includes('png')) {
+    extension = 'png';
+  } else if (lowerName.endsWith('.webp') || lowerMime.includes('webp')) {
+    extension = 'webp';
+  } else if (
+    lowerName.endsWith('.jpg') ||
+    lowerName.endsWith('.jpeg') ||
+    lowerMime.includes('jpeg') ||
+    lowerMime.includes('jpg')
+  ) {
+    extension = 'jpg';
+  }
+
+  const fileName = `SHALOM_${cleanGuia}_${cleanDest}_${timestamp}.${extension}`;
   const subPath = `boletas-shalom/${year}/${month}/${day}/${fileName}`;
 
-  return await uploadFileToR2(fileBuffer, subPath, 'application/pdf');
+  return await uploadFileToR2(fileBuffer, subPath, mimeType || 'application/pdf');
+}
+
+/**
+ * Función de compatibilidad para subidas PDF
+ */
+export async function uploadShalomBoletaPdf(
+  fileBuffer: Buffer,
+  fechaEmision: string,
+  nroGuia: string,
+  destinatario: string
+): Promise<{ url: string; publicUrl: string; key: string }> {
+  return uploadShalomBoletaFile(
+    fileBuffer,
+    fechaEmision,
+    nroGuia,
+    destinatario,
+    'document.pdf',
+    'application/pdf'
+  );
 }

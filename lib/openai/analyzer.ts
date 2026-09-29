@@ -7,6 +7,7 @@ function getOpenAiKey(): string {
 // Modelos por defecto y enrutamiento inteligente
 export const DEFAULT_OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o';
 export const FAST_TEXT_MODEL = process.env.OPENAI_FAST_MODEL || 'gpt-4o-mini';
+export const SHALOM_AI_MODEL = process.env.OPENAI_SHALOM_MODEL || 'gpt-6-luna';
 
 /**
  * Esquemas JSON estrictos (Structured Outputs)
@@ -72,6 +73,45 @@ export const ROTULO_JSON_SCHEMA = {
       }
     },
     required: ['pedidos'],
+    additionalProperties: false
+  }
+} as const;
+
+export const SHALOM_BOLETA_JSON_SCHEMA = {
+  name: 'shalom_boleta_extraction',
+  strict: true,
+  schema: {
+    type: 'object',
+    properties: {
+      nro_orden: { type: 'string', description: 'Número de orden o guía de Shalom impreso en negrita (7 a 9 dígitos, ej: 95294190)' },
+      codigo: { type: 'string', description: 'Código alfanumérico corto de retiro o seguimiento en agencia (ej: 7HH7)' },
+      fecha_emision: { type: 'string', description: 'Fecha de emisión en formato YYYY-MM-DD' },
+      destinatario_nombre: { type: 'string', description: 'Nombres y apellidos completos de quien recibe en mayúsculas' },
+      destinatario_dni: { type: 'string', description: 'DNI (8 dígitos) o RUC (11 dígitos) del destinatario' },
+      destinatario_telefono: { type: 'string', description: 'Número de celular o teléfono del destinatario (9 dígitos)' },
+      destino: { type: 'string', description: 'Ciudad y agencia Shalom de destino en mayúsculas' },
+      tipo_entrega: { type: 'string', description: 'ENTREGAR EN AGENCIA o ENTREGA A DOMICILIO' },
+      forma_pago: { type: 'string', description: 'PAGO_DESTINO (Pendiente de Pago) o PAGADO (Contado)' },
+      descripcion: { type: 'string', description: 'Descripción de la encomienda (ej: BULTO, PAQUETE, CAJA)' },
+      cantidad: { type: 'number', description: 'Cantidad de bultos o piezas (entero, default 1)' },
+      peso: { type: 'number', description: 'Peso o volumen numérico decimal en Kg' },
+      monto_total: { type: 'number', description: 'Importe total en Soles (PEN)' }
+    },
+    required: [
+      'nro_orden',
+      'codigo',
+      'fecha_emision',
+      'destinatario_nombre',
+      'destinatario_dni',
+      'destinatario_telefono',
+      'destino',
+      'tipo_entrega',
+      'forma_pago',
+      'descripcion',
+      'cantidad',
+      'peso',
+      'monto_total'
+    ],
     additionalProperties: false
   }
 } as const;
@@ -466,110 +506,107 @@ export interface ShalomBoletaExtractedData {
   nro_orden: string;
   codigo: string;
   fecha_emision: string; // YYYY-MM-DD
-  hora_emision: string;
-  fecha_traslado: string; // YYYY-MM-DD
-  origen: string;
-  destino: string;
-  remitente_nombre: string;
-  remitente_dni: string;
-  remitente_telefono: string;
   destinatario_nombre: string;
   destinatario_dni: string;
   destinatario_telefono: string;
+  destino: string;
   tipo_entrega: string;
   forma_pago: string;
   monto_total: number;
-  moneda: string;
   descripcion: string;
   cantidad: number;
-  unidad_medida: string;
   peso: number;
-  observaciones: string;
-  // Campos de compatibilidad
-  numero_guia: string;
-  codigo_seguimiento: string;
-  remitente_documento: string;
-  destinatario_documento: string;
-  modalidad_pago: string;
-  contenido_bultos: string;
-  peso_total: number;
+  // Campos opcionales para retrocompatibilidad
+  numero_guia?: string;
+  codigo_seguimiento?: string;
+  destinatario_documento?: string;
   agencia_destino?: string;
+  modalidad_pago?: string;
+  contenido_bultos?: string;
+  peso_total?: number;
+  origen?: string;
+  moneda?: string;
+  hora_emision?: string;
+  fecha_traslado?: string;
+  remitente_nombre?: string;
+  remitente_dni?: string;
+  remitente_telefono?: string;
+  unidad_medida?: string;
+  observaciones?: string;
 }
 
 /**
- * Analiza un documento PDF o imagen de ticket / boleta de SHALOM (ej: DATOS TICKET SHALOM)
- * Utiliza GPT-6 Luna con JSON estricto para máxima velocidad y precisión
+ * Analiza un documento PDF o imagen de ticket / boleta de SHALOM
+ * Utiliza AMEXito IA con GPT-6 Luna con Structured Outputs (JSON Schema estricto)
+ * extrayendo ÚNICAMENTE la información operativa esencial a ultra alta velocidad.
  */
 export async function analyzeShalomBoletaPdf(pdfBase64: string): Promise<ShalomBoletaExtractedData> {
   const { mimeType, base64 } = parseBase64Data(pdfBase64);
 
-  const prompt = `Analiza detalladamente este comprobante impreso correspondiente a un TICKET / BOLETA DE SHALOM (DATOS TICKET SHALOM / SHALOM EMPRESARIAL S.A.C).
+  const prompt = `Eres AMEXito IA con GPT-6 Luna, el sistema de visión e inteligencia artificial de AMEX Courier SAC especializado en comprobantes de Shalom en Perú.
+Analiza con máxima precisión este TICKET O BOLETA DE SHALOM y extrae ÚNICAMENTE los datos operativos esenciales:
 
-Examina minuciosamente todas las secciones del ticket:
-1. Encabezado y sub-encabezado con ciudad y sede (ej: "AREQUIPA - CERRO COLORADO / ZAMACOLA - TERRESTRE").
-2. Bloque "DATOS":
-   - "NRO. ORDEN:" (ej: 95294190)
-   - "CÓDIGO:" (código alfanumérico corto, ej: 7HH7)
-   - "Fecha Emision:" (Fecha y hora, ej: 2026-09-09 17:53:14)
-   - "Fecha Traslado:" (Fecha programada de traslado, ej: 2026-09-10)
-3. Bloques de Origen y Destino:
-   - "Origen:" (dirección o agencia de salida)
-   - "Destino:" (dirección o agencia de llegada)
-4. "DATOS DEL REMITENTE":
-   - "Nombre:" (Nombres y apellidos o razón social)
-   - "DNI:" o RUC
-   - "Telefono:"
-5. "DATOS DEL DESTINATARIO":
-   - "Nombre:" (Nombres y apellidos de quien recibe)
-   - "DNI:" o RUC
-   - "Telefono:"
-6. "ENTREGA":
-   - "Direccion:" o modalidad (ej: "ENTREGAR EN AGENCIA" o dirección a domicilio)
-7. "FORMA DE PAGO": (ej: "Pendiente de Pago", "Pagado", "Contado", "Crédito")
-8. Tabla de Ítems / Encomienda:
-   - "Descripción": (ej: "BULTO", "PAQUETE", etc.)
-   - "Cantidad": (número entero, ej: 1)
-   - "Unidad de medida": (ej: "Volumen", "Peso", "Unidad")
-   - "Peso": (valor numérico decimal, ej: 0.120)
-9. "Observaciones:" (textos informativos, seguros, garantías, etc.)
-10. "TOTAL: S/." (Importe total en soles, ej: 33.00)
+CAMPOS A EXTRAER:
+1. "nro_orden": Número de orden o guía impreso en negrita (ej: "95294190").
+2. "codigo": Código alfanumérico corto de retiro en agencia (ej: "7HH7", "W3W").
+3. "fecha_emision": Fecha de emisión en formato YYYY-MM-DD (ej: "2026-09-28").
+4. "destinatario_nombre": Nombres y apellidos completos de quien recibe en mayúsculas (ej: "ORTEGA USCA LEANDRA ELIZABETH").
+5. "destinatario_dni": DNI (8 dígitos) o documento de quien recibe.
+6. "destinatario_telefono": Celular o teléfono del receptor (9 dígitos).
+7. "destino": Ciudad y agencia Shalom de destino (ej: "AREQUIPA - MALL LAMBRAMANI").
+8. "tipo_entrega": "ENTREGAR EN AGENCIA" o "ENTREGA A DOMICILIO".
+9. "forma_pago": "Pendiente de Pago" (o PAGO DESTINO) o "Pagado" (Contado).
+10. "descripcion": Tipo de paquete (ej: "BULTO", "PAQUETE", "CAJA").
+11. "cantidad": Número entero de bultos (default 1).
+12. "peso": Peso numérico decimal en Kg (ej: 0.50).
+13. "monto_total": Importe total en Soles (número decimal, ej: 22.00).
 
-Devuelve un objeto JSON estructurado con estos campos:
-{
-  "nro_orden": "95294190",
-  "codigo": "7HH7",
-  "fecha_emision": "YYYY-MM-DD",
-  "hora_emision": "HH:mm:ss",
-  "fecha_traslado": "YYYY-MM-DD",
-  "origen": "ORIGEN DETALLADO",
-  "destino": "DESTINO DETALLADO",
-  "remitente_nombre": "NOMBRE REMITENTE",
-  "remitente_dni": "DNI REMITENTE",
-  "remitente_telefono": "TELEFONO REMITENTE",
-  "destinatario_nombre": "NOMBRE DESTINATARIO",
-  "destinatario_dni": "DNI DESTINATARIO",
-  "destinatario_telefono": "TELEFONO DESTINATARIO",
-  "tipo_entrega": "ENTREGAR EN AGENCIA",
-  "forma_pago": "Pendiente de Pago",
-  "descripcion": "BULTO",
-  "cantidad": 1,
-  "unidad_medida": "Volumen",
-  "peso": 0.120,
-  "observaciones": "TEXTO DE OBSERVACIONES",
-  "monto_total": 33.00,
-  "moneda": "PEN"
-}
-
-Reglas estrictas:
-- Todo en mayúsculas salvo fechas u horas.
+REGLAS ESTRICTAS:
+- Nombres y destino siempre en MAYÚSCULAS.
 - Fechas siempre en formato ISO YYYY-MM-DD.
-- Si algún dato no aparece o no es legible, asigna "" (cadena vacía) o 0 (cero) en campos numéricos.
-- Devuelve exclusivamente el objeto JSON válido.`;
+- Omite texto legal de observaciones o datos repetitivos del remitente.`;
 
   let responseRaw = '';
-
   const client = getOpenAiClient();
   const isPdf = (mimeType || '').toLowerCase().includes('pdf');
+  const targetModel = SHALOM_AI_MODEL;
+
+  // Helper para ejecutar la llamada a OpenAI con soporte para GPT-6 Luna y fallback automático a DEFAULT_OPENAI_MODEL
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const executeChatWithModelFallback = async (messages: any[]): Promise<string> => {
+    try {
+      console.log(`[AMEXito IA Shalom] Procesando boleta optimizada con modelo: ${targetModel}`);
+      const response = await client.chat.completions.create({
+        model: targetModel,
+        response_format: { type: 'json_schema', json_schema: SHALOM_BOLETA_JSON_SCHEMA },
+        ...getOpenAiModelOptions(1200, targetModel),
+        messages
+      });
+      return response.choices[0]?.message?.content || '{}';
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      const isModelNotFound =
+        errMsg.includes('does not exist') ||
+        errMsg.includes('model_not_found') ||
+        errMsg.includes('not found') ||
+        errMsg.includes('unsupported model') ||
+        errMsg.includes('Invalid model');
+
+      if (isModelNotFound && targetModel !== DEFAULT_OPENAI_MODEL) {
+        console.warn(
+          `[AMEXito IA Shalom] Modelo '${targetModel}' no está activo en la cuenta. Aplicando fallback automático a '${DEFAULT_OPENAI_MODEL}'.`
+        );
+        const fallbackResponse = await client.chat.completions.create({
+          model: DEFAULT_OPENAI_MODEL,
+          response_format: { type: 'json_schema', json_schema: SHALOM_BOLETA_JSON_SCHEMA },
+          ...getOpenAiModelOptions(1200, DEFAULT_OPENAI_MODEL),
+          messages
+        });
+        return fallbackResponse.choices[0]?.message?.content || '{}';
+      }
+      throw err;
+    }
+  };
 
   if (isPdf) {
     const buffer = Buffer.from(base64, 'base64');
@@ -577,104 +614,76 @@ Reglas estrictas:
     const uploaded = await client.files.create({ file, purpose: 'user_data' });
 
     try {
-      const response = await client.chat.completions.create({
-        model: DEFAULT_OPENAI_MODEL,
-        response_format: { type: 'json_object' },
-        ...getOpenAiModelOptions(500),
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              { type: 'file', file: { file_id: uploaded.id } }
-            ]
-            }
-          ]
-        });
-      responseRaw = response.choices[0]?.message?.content || '{}';
-    } finally {
-      await client.files.delete(uploaded.id).catch(() => {});
-    }
-  } else {
-    const response = await client.chat.completions.create({
-      model: DEFAULT_OPENAI_MODEL,
-      response_format: { type: 'json_object' },
-      ...getOpenAiModelOptions(500),
-      messages: [
+      responseRaw = await executeChatWithModelFallback([
         {
           role: 'user',
           content: [
             { type: 'text', text: prompt },
-            {
-              type: 'image_url',
-              image_url: {
-                url: `data:${mimeType || 'image/jpeg'};base64,${base64}`,
-                detail: 'high'
-              }
-            }
+            { type: 'file', file: { file_id: uploaded.id } }
           ]
         }
-      ]
-    });
-    responseRaw = response.choices[0]?.message?.content || '{}';
+      ]);
+    } finally {
+      await client.files.delete(uploaded.id).catch(() => {});
+    }
+  } else {
+    responseRaw = await executeChatWithModelFallback([
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: prompt },
+          {
+            type: 'image_url',
+            image_url: {
+              url: `data:${mimeType || 'image/jpeg'};base64,${base64}`,
+              detail: 'high'
+            }
+          }
+        ]
+      }
+    ]);
   }
 
   try {
     const parsed = parseAiJsonResponse(responseRaw);
     const nroOrden = (parsed.nro_orden || parsed.numero_guia || '').trim().toUpperCase();
     const codigo = (parsed.codigo || parsed.codigo_seguimiento || '').trim().toUpperCase();
-    const fechaEmision = (parsed.fecha_emision || '').trim();
-    const horaEmision = (parsed.hora_emision || '').trim();
-    const fechaTraslado = (parsed.fecha_traslado || '').trim();
-    const remitenteNombre = (parsed.remitente_nombre || 'AMEX COURIER').trim().toUpperCase();
-    const remitenteDni = (parsed.remitente_dni || parsed.remitente_documento || '').trim();
-    const remitenteTel = (parsed.remitente_telefono || '').trim();
+    const fechaEmision = (parsed.fecha_emision || new Date().toISOString().split('T')[0]).trim();
     const destNombre = (parsed.destinatario_nombre || '').trim().toUpperCase();
     const destDni = (parsed.destinatario_dni || parsed.destinatario_documento || '').trim();
     const destTel = (parsed.destinatario_telefono || '').trim();
-    const origen = (parsed.origen || 'LIMA').trim().toUpperCase();
     const destino = (parsed.destino || '').trim().toUpperCase();
     const tipoEntrega = (parsed.tipo_entrega || 'ENTREGAR EN AGENCIA').trim().toUpperCase();
     const formaPago = (parsed.forma_pago || 'Pendiente de Pago').trim();
     const desc = (parsed.descripcion || parsed.contenido_bultos || 'BULTO').trim().toUpperCase();
     const cantidad = parseInt(parsed.cantidad, 10) || 1;
-    const unidadMedida = (parsed.unidad_medida || 'Volumen').trim();
     const peso = parseFloat(parsed.peso || parsed.peso_total) || 0;
     const montoTotal = parseFloat(parsed.monto_total) || 0;
-    const observaciones = (parsed.observaciones || '').trim();
 
     return {
       nro_orden: nroOrden,
       codigo,
       fecha_emision: fechaEmision,
-      hora_emision: horaEmision,
-      fecha_traslado: fechaTraslado,
-      origen,
-      destino,
-      remitente_nombre: remitenteNombre,
-      remitente_dni: remitenteDni,
-      remitente_telefono: remitenteTel,
       destinatario_nombre: destNombre,
       destinatario_dni: destDni,
       destinatario_telefono: destTel,
+      destino,
       tipo_entrega: tipoEntrega,
       forma_pago: formaPago,
       monto_total: montoTotal,
-      moneda: (parsed.moneda || 'PEN').trim().toUpperCase(),
       descripcion: desc,
       cantidad,
-      unidad_medida: unidadMedida,
       peso,
-      observaciones,
-      // Alias
+      // Retrocompatibilidad
       numero_guia: nroOrden || codigo,
       codigo_seguimiento: codigo,
-      remitente_documento: remitenteDni,
       destinatario_documento: destDni,
       modalidad_pago: formaPago.toUpperCase().includes('PENDIENTE') ? 'PAGO_DESTINO' : formaPago.toUpperCase(),
       contenido_bultos: desc,
       peso_total: peso,
-      agencia_destino: tipoEntrega
+      agencia_destino: tipoEntrega,
+      moneda: 'PEN',
+      origen: 'LINCE - LIMA'
     };
   } catch (err) {
     console.error('Error al parsear respuesta JSON de IA para ticket Shalom:', responseRaw, err);
