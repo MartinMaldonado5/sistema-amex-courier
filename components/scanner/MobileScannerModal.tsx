@@ -242,8 +242,8 @@ export default function MobileScannerModal({
       return;
     }
 
-    // Debounce de 1.8s para el mismo código consecutivo
-    if (lastCodeTimeRef.current.code === cleanCode && now - lastCodeTimeRef.current.timestamp < 1800) {
+    // Debounce de 1.0s para el mismo código consecutivo (permite escaneo ágil de bultos repetidos)
+    if (lastCodeTimeRef.current.code === cleanCode && now - lastCodeTimeRef.current.timestamp < 1000) {
       return;
     }
 

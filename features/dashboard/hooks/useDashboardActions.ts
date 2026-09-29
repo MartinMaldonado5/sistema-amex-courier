@@ -65,7 +65,15 @@ export function useDashboardActions({
     try {
       await supabase
         .from('paquetes')
-        .update({ anaquel, piso, posicion_estante: location })
+        .update({
+          anaquel,
+          piso,
+          posicion_estante: location,
+          eliminado_en: null,
+          motivo_eliminacion: null,
+          eliminado_por: null,
+          actualizado_en: new Date().toISOString()
+        })
         .or(`numero_recibo_bodega.eq.${upper},tracking_usa.eq.${upper}`);
     } catch (error) {
       console.warn('Error syncing package location to Supabase:', error);

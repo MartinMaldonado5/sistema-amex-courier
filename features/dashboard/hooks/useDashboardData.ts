@@ -124,29 +124,31 @@ export function useDashboardData() {
       .channel('amex-erp-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'paquetes' }, (payload) => {
         if (payload.eventType === 'INSERT') {
-          const paquete = mapRealtimePaquete(payload.new as Record<string, unknown>);
+          const raw = payload.new as Record<string, unknown>;
+          if (raw.eliminado_en) return; // Si nace ya eliminado, ignorar
+          const paquete = mapRealtimePaquete(raw);
           setPaquetes((previous) => {
-            if (
-              previous.some(
-                (item) =>
-                  item.id === paquete.id ||
-                  item.numeroReciboBodega === paquete.numeroReciboBodega
-              )
-            ) {
+            if (previous.some((item) => item.id === paquete.id)) {
               return previous;
             }
             return [paquete, ...previous];
           });
         } else if (payload.eventType === 'UPDATE') {
-          const paquete = mapRealtimePaquete(payload.new as Record<string, unknown>);
-          setPaquetes((previous) =>
-            previous.map((item) =>
-              item.id === paquete.id ||
-              item.numeroReciboBodega === paquete.numeroReciboBodega
-                ? { ...item, ...paquete }
-                : item
-            )
-          );
+          const raw = payload.new as Record<string, unknown>;
+          if (raw.eliminado_en) {
+            // Si fue eliminado lógicamente, retirarlo del estado activo
+            setPaquetes((previous) => previous.filter((item) => item.id !== raw.id));
+            return;
+          }
+          const paquete = mapRealtimePaquete(raw);
+          setPaquetes((previous) => {
+            const exists = previous.some((item) => item.id === paquete.id);
+            if (exists) {
+              return previous.map((item) => (item.id === paquete.id ? { ...item, ...paquete } : item));
+            }
+            // Si fue reactivado o no estaba en memoria, agregarlo
+            return [paquete, ...previous];
+          });
         } else if (payload.eventType === 'DELETE') {
           const oldRecord = payload.old as Record<string, unknown>;
           setPaquetes((previous) => previous.filter((item) => item.id !== oldRecord.id));

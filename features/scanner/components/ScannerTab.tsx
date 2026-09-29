@@ -194,7 +194,7 @@ export default function ScannerTab({
     exportScannerLogsToExcel(scannedLogs, 'Lecturas_Escaneo_AMEX');
   };
 
-  // 🚀 SUBIDA CONFIRMADA A SUPABASE MASTER
+  // 🚀 SUBIDA CONFIRMADA A SUPABASE MASTER (Soporta WRs repetidos, reactivación y slotting dinámico)
   const handleExecuteMasterSync = async () => {
     // Determinar qué logs se van a subir: si hay seleccionados, solo los seleccionados; si no, todos los pendientes
     const targetLogs = selectedIds.length > 0
@@ -211,62 +211,142 @@ export default function ScannerTab({
 
     try {
       let count = 0;
+      let updatedCount = 0;
+      let insertedCount = 0;
+      let errorCount = 0;
+
+      // Diccionario en memoria para rastrear y sincronizar paquetes existentes
+      const existingMap = new Map<string, { id: string; numero_recibo_bodega?: string; nombre_consignatario?: string; ubicacion_actual?: string; posicion_estante?: string }>();
+
+      // Pre-cargar paquetes en memoria
+      for (const p of paquetes) {
+        const pkgEntry = {
+          id: p.id,
+          numero_recibo_bodega: p.numeroReciboBodega,
+          nombre_consignatario: p.nombreConsignatario,
+          ubicacion_actual: p.ubicacionActual,
+          posicion_estante: p.posicionEstante
+        };
+        if (p.numeroReciboBodega) existingMap.set(p.numeroReciboBodega.trim().toUpperCase(), pkgEntry);
+        if (p.trackingUsa) existingMap.set(p.trackingUsa.trim().toUpperCase(), pkgEntry);
+      }
+
       for (const log of targetLogs) {
         const upper = log.code.trim().toUpperCase();
         const loc = log.location || (log.anaquel && log.piso ? `${log.anaquel}-${log.piso}` : 'REC');
         const [ana, pis] = loc.includes('-') ? loc.split('-') : [loc, 'P1'];
 
-        // 1. Buscar si el paquete ya existe en el estado local o base de datos
-        const existingPkg = paquetes.find(
-          p =>
-            p.numeroReciboBodega.toUpperCase() === upper ||
-            p.trackingUsa.toUpperCase() === upper
-        );
+        let targetPkgId: string | null = null;
+        let targetPkgWr: string = upper;
+        let targetConsignatario = log.nombreConsignatario || '';
 
-        if (existingPkg) {
-          // Actualizar paquete existente
-          await supabase
+        // 1. Buscar si el paquete ya existe en memoria o en la base de datos (incluso si fue borrado lógicamente)
+        let matchedPkg = existingMap.get(upper);
+
+        if (!matchedPkg) {
+          const { data: foundList } = await supabase
+            .from('paquetes')
+            .select('id, numero_recibo_bodega, nombre_consignatario, ubicacion_actual, posicion_estante, eliminado_en')
+            .or(`numero_recibo_bodega.eq.${upper},tracking_usa.eq.${upper}`)
+            .order('creado_en', { ascending: false })
+            .limit(1);
+
+          if (foundList && foundList.length > 0) {
+            matchedPkg = foundList[0];
+            existingMap.set(upper, matchedPkg);
+            if (matchedPkg.numero_recibo_bodega) {
+              existingMap.set(matchedPkg.numero_recibo_bodega.trim().toUpperCase(), matchedPkg);
+            }
+          }
+        }
+
+        if (matchedPkg) {
+          targetPkgId = matchedPkg.id;
+          targetPkgWr = matchedPkg.numero_recibo_bodega || upper;
+          if (!targetConsignatario && matchedPkg.nombre_consignatario) {
+            targetConsignatario = matchedPkg.nombre_consignatario;
+          }
+
+          // Reactivar paquete (eliminado_en = null) y actualizar posición de estante
+          const { error: updateErr } = await supabase
             .from('paquetes')
             .update({
               anaquel: ana,
               piso: pis,
               posicion_estante: loc,
-              ubicacion_actual: 'AmexLince'
+              ubicacion_actual: 'AmexLince',
+              estado_entrega: 'EnAlmacen',
+              eliminado_en: null,
+              motivo_eliminacion: null,
+              eliminado_por: null,
+              actualizado_en: new Date().toISOString()
             })
-            .eq('id', existingPkg.id);
+            .eq('id', matchedPkg.id);
 
-          await supabase.from('historial_trazabilidad').insert({
-            paquete_id: existingPkg.id,
-            ubicacion: loc,
-            descripcion_evento: `Escaneado confirmado y clasificado a estante: ${loc}`,
-            usuario_operador: 'Operador Logístico AMEX'
-          });
+          if (updateErr) {
+            console.error(`Error actualizando paquete ${upper}:`, updateErr);
+            errorCount++;
+          } else {
+            updatedCount++;
+            // Registrar trazabilidad
+            await supabase.from('historial_trazabilidad').insert({
+              paquete_id: matchedPkg.id,
+              ubicacion: loc,
+              descripcion_evento: `Escaneado confirmado y clasificado a estante: ${loc}`,
+              usuario_operador: 'Operador Logístico AMEX'
+            });
+          }
         } else {
-          // Insertar nuevo paquete si no existía
+          // Insertar nuevo paquete (permite datos repetidos y múltiples bultos sin restricciones)
           const newWr = upper.startsWith('WR') ? upper : `WR${upper.slice(-6)}`;
-          await supabase.from('paquetes').insert({
-            numero_recibo_bodega: newWr,
-            tracking_usa: '',
-            tipo_empaque: '',
-            dni_consignatario: '',
-            nombre_consignatario: log.nombreConsignatario || '',
-            descripcion: 'Mercadería ingresada por Escáner',
-            peso_kg: null,
-            valor_declarado_usd: 50.0,
-            ubicacion_actual: 'AmexLince',
-            anaquel: ana,
-            piso: pis,
-            posicion_estante: loc,
-            estado_entrega: 'EnAlmacen'
-          });
+          targetPkgWr = newWr;
+
+          const { data: newPkg, error: insertErr } = await supabase
+            .from('paquetes')
+            .insert({
+              numero_recibo_bodega: newWr,
+              tracking_usa: upper.startsWith('WR') ? '' : upper,
+              tipo_empaque: 'Paquete',
+              dni_consignatario: '',
+              nombre_consignatario: targetConsignatario,
+              descripcion: 'Mercadería ingresada por Escáner',
+              peso_kg: null,
+              valor_declarado_usd: 50.0,
+              ubicacion_actual: 'AmexLince',
+              anaquel: ana,
+              piso: pis,
+              posicion_estante: loc,
+              estado_entrega: 'EnAlmacen',
+              eliminado_en: null
+            })
+            .select('id, numero_recibo_bodega, nombre_consignatario, ubicacion_actual, posicion_estante')
+            .single();
+
+          if (insertErr) {
+            console.error(`Error insertando nuevo paquete ${newWr}:`, insertErr);
+            errorCount++;
+          } else if (newPkg) {
+            insertedCount++;
+            targetPkgId = newPkg.id;
+            existingMap.set(upper, newPkg);
+            existingMap.set(newWr.toUpperCase(), newPkg);
+
+            // Registrar trazabilidad inicial
+            await supabase.from('historial_trazabilidad').insert({
+              paquete_id: newPkg.id,
+              ubicacion: loc,
+              descripcion_evento: `Ingreso por escáner móvil a estante: ${loc}`,
+              usuario_operador: 'Operador Logístico AMEX'
+            });
+          }
         }
 
         // 2. Registrar evento inmutable en Kardex
         await supabase.from('movimientos_kardex').insert({
-          paquete_id: existingPkg ? existingPkg.id : null,
-          codigo_paquete: existingPkg ? existingPkg.numeroReciboBodega : upper,
-          consignatario: log.nombreConsignatario || (existingPkg ? existingPkg.nombreConsignatario : 'Cliente AMEX'),
-          origen_descripcion: existingPkg ? `${existingPkg.ubicacionActual} (${existingPkg.posicionEstante || 'REC'})` : 'Recepción Escáner',
+          paquete_id: targetPkgId,
+          codigo_paquete: targetPkgWr,
+          consignatario: targetConsignatario || 'Cliente AMEX',
+          origen_descripcion: matchedPkg ? `${matchedPkg.ubicacion_actual || 'Almacén'} (${matchedPkg.posicion_estante || 'REC'})` : 'Recepción Escáner',
           destino_descripcion: `AmexLince (${loc})`,
           tipo_movimiento: 'SLOTTING',
           motivo: `Clasificación y Slotting Escáner a estante ${loc}`,
@@ -276,6 +356,7 @@ export default function ScannerTab({
         // 3. Registrar auditoría en escaneos_log
         await supabase.from('escaneos_log').insert({
           codigo: log.code,
+          paquete_id: targetPkgId,
           formato: log.format,
           modo_workflow: log.workflow || 'slotting',
           ubicacion: loc,
@@ -296,8 +377,14 @@ export default function ScannerTab({
       setSelectedIds([]);
       setIsConfirmSyncModalOpen(false);
 
-      setSyncNotification(`✓ ¡Éxito! ${targetLogs.length} paquete(s) y movimientos Kardex guardados en Supabase Master.`);
-      setTimeout(() => setSyncNotification(null), 4000);
+      // Refrescar datos en el Dashboard / Inventario
+      if (onRefreshData) {
+        await onRefreshData();
+      }
+
+      const summaryMsg = `✓ ¡Éxito! ${count} lectura(s) procesadas (${updatedCount} actualizadas/reactivadas, ${insertedCount} nuevas creadas${errorCount > 0 ? `, ${errorCount} errores` : ''}).`;
+      setSyncNotification(summaryMsg);
+      setTimeout(() => setSyncNotification(null), 5000);
     } catch (err) {
       console.error('Error syncing staging logs to Supabase Master:', err);
       alert('Ocurrió un problema al sincronizar con la base de datos master.');
