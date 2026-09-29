@@ -428,6 +428,29 @@
   border-color: rgba(52, 211, 153, 0.4);
 }
 
+.slot-quick-pill.has-ai {
+  border-color: rgba(56, 189, 248, 0.55);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.slot-ai-pill-icon {
+  font-size: 0.72rem;
+  line-height: 1;
+  display: inline-block;
+  animation: pulse-ai 2s infinite ease-in-out;
+}
+
+@keyframes pulse-ai {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.85;
+  }
+}
+
 .slot-status-dot {
   width: 6px;
   height: 6px;
@@ -1027,6 +1050,20 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+
+.ai-card-slot-badge {
+  font-size: 0.68rem;
+  background: rgba(14, 165, 233, 0.18);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
 }
 
 .ai-card-badge-pending {
@@ -2489,6 +2526,49 @@
   flex-wrap: wrap;
 }
 
+/* Remitente Oficial: Solo Logo corporativo de AMEX Courier */
+.strip-remitente-logo-wrap {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+}
+
+.strip-remitente-logo-img {
+  height: 24px;
+  width: auto;
+  max-width: 105px;
+  object-fit: contain;
+  display: block;
+}
+
+.strip-remitente {
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: #000000;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  text-transform: uppercase;
+}
+
+.strip-remitente-label {
+  font-size: 0.70rem;
+  font-weight: 900;
+  color: #0f172a;
+  background: #e2e8f0;
+  border: 1px solid #94a3b8;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.4px;
+}
+
+.strip-remitente-name {
+  font-weight: 900;
+  color: #000000;
+  letter-spacing: 0.6px;
+}
+
 .strip-active-tag {
   display: inline-flex;
   align-items: center;
@@ -2709,10 +2789,21 @@
   transition: all 0.15s ease;
 }
 
+.strip-empty-placeholder.has-ai-pending {
+  background: rgba(14, 165, 233, 0.08);
+  border: 1.5px dashed #38bdf8;
+  color: #0284c7;
+}
+
 .rotulo-strip-preview:hover .strip-empty-placeholder {
   background: #f0f9ff;
   border-color: #38bdf8;
   color: #0284c7;
+}
+
+.rotulo-strip-preview:hover .strip-empty-placeholder.has-ai-pending {
+  background: rgba(14, 165, 233, 0.16);
+  border-color: #0284c7;
 }
 
 /* ==========================================================================
@@ -2949,11 +3040,51 @@
     gap: 3mm !important;
   }
 
+  .strip-remitente-logo-wrap {
+    display: inline-flex !important;
+    align-items: center !important;
+    height: 7.0mm !important;
+  }
+
+  .strip-remitente-logo-img {
+    height: 7.0mm !important;
+    width: auto !important;
+    max-width: 30mm !important;
+    object-fit: contain !important;
+    display: block !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   .strip-remitente {
-    font-size: 8.8pt !important;
-    font-weight: 800 !important;
-    color: #475569 !important;
+    font-size: 9.8pt !important;
+    font-weight: 900 !important;
+    color: #000000 !important;
     letter-spacing: 0.5px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 1.5mm !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .strip-remitente-label {
+    font-size: 9.0pt !important;
+    font-weight: 900 !important;
+    color: #000000 !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .strip-remitente-name {
+    font-weight: 900 !important;
+    color: #000000 !important;
+    letter-spacing: 0.5px !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   .strip-bulto-badge {

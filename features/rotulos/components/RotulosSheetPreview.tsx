@@ -15,6 +15,7 @@ interface RotulosSheetPreviewProps {
   handleSelectSheet: (sheet: number) => void;
   handleAddNewSheet: () => void;
   handleDeleteCurrentSheet: () => void;
+  slotsAiData?: Record<number, { text: string; image: string | null }>;
 }
 
 export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
@@ -27,7 +28,8 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
   setCurrentSheet,
   handleSelectSheet,
   handleAddNewSheet,
-  handleDeleteCurrentSheet
+  handleDeleteCurrentSheet,
+  slotsAiData
 }) => {
   const renderStrip = (slot: RotuloSlotData, isInteractive = true) => {
     const hasData = Boolean(slot.nombre || slot.dni || slot.celular || slot.destino);
@@ -59,7 +61,14 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
           <>
             <div className="strip-header">
               <div className="strip-header-left">
-                <span className="strip-remitente">AMEX COURIER PERÚ</span>
+                <div className="strip-remitente-logo-wrap" title="AMEX COURIER PERÚ">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/images/logo-amex-clean.png"
+                    alt="AMEX Courier"
+                    className="strip-remitente-logo-img"
+                  />
+                </div>
                 {isEditingThisSlot && (
                   <span className="strip-active-tag">
                     <i className="fa-solid fa-pen-nib"></i> EDITANDO ESPACIO #{slotInSheet}
@@ -107,12 +116,28 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
             </div>
           </>
         ) : (
-          <div className="strip-empty-placeholder">
-            <span>
-              <i className="fa-regular fa-square-plus" style={{ marginRight: '6px', opacity: 0.7 }}></i>
-              [ Hoja {sheetNum} — Espacio #{slotInSheet} libre {isInteractive ? '• Clic para editar' : ''} ]
-            </span>
-          </div>
+          (() => {
+            const hasAiData = Boolean(slotsAiData?.[slot.id]?.text || slotsAiData?.[slot.id]?.image);
+            return (
+              <div className={`strip-empty-placeholder ${hasAiData ? 'has-ai-pending' : ''}`}>
+                <span>
+                  {hasAiData ? (
+                    <>
+                      <span style={{ marginRight: '6px', fontSize: '1rem' }}>🤖</span>
+                      <strong style={{ color: '#38bdf8' }}>
+                        [ Hoja {sheetNum} — Espacio #{slotInSheet}: Datos de AMEXito IA listos para rellenar ]
+                      </strong>
+                    </>
+                  ) : (
+                    <>
+                      <i className="fa-regular fa-square-plus" style={{ marginRight: '6px', opacity: 0.7 }}></i>
+                      [ Hoja {sheetNum} — Espacio #{slotInSheet} libre {isInteractive ? '• Clic para editar' : ''} ]
+                    </>
+                  )}
+                </span>
+              </div>
+            );
+          })()
         )}
       </div>
     );

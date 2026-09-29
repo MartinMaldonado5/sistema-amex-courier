@@ -90,6 +90,8 @@ export const RotulosToolbar: React.FC<RotulosToolbarProps> = ({
         handlePasteCapture={handlePasteCapture}
         playSound={playSound}
         amexitoRef={amexitoRef}
+        activeSlotId={activeSlot.id}
+        activeSheetNum={Math.max(1, Math.ceil(activeSlot.id / 5))}
       />
 
       {/* 2. MEDIO: Selector de Agencia de Envío */}

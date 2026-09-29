@@ -23,6 +23,8 @@ interface RotulosSlotEditorProps {
   // Deshacer
   canUndo?: boolean;
   handleUndo?: () => void;
+  // AI Slot Data
+  slotsAiData?: Record<number, { text: string; image: string | null }>;
   // Toolbar props
   isAiCardExpanded: boolean;
   setIsAiCardExpanded: (expanded: boolean) => void;
@@ -73,6 +75,7 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
   clientes = [],
   canUndo = false,
   handleUndo,
+  slotsAiData,
   isAiCardExpanded,
   setIsAiCardExpanded,
   aiInputText,
@@ -264,19 +267,21 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
           {currentSheetSlots.map((s) => {
             const isSelected = s.id === activeSlotId;
             const hasData = Boolean(s.nombre?.trim() || s.destino?.trim());
+            const hasAiData = Boolean(slotsAiData?.[s.id]?.text || slotsAiData?.[s.id]?.image);
             const inSheetNum = ((s.id - 1) % 5) + 1;
             return (
               <button
                 key={s.id}
                 type="button"
-                className={`slot-quick-pill ${isSelected ? 'active' : ''} ${hasData ? 'has-data' : ''}`}
+                className={`slot-quick-pill ${isSelected ? 'active' : ''} ${hasData ? 'has-data' : ''} ${hasAiData ? 'has-ai' : ''}`}
                 onClick={() => {
                   setActiveSlotId(s.id);
                   playSound('click');
                 }}
-                title={`Hoja ${currentSheet} — Espacio #${inSheetNum} ${hasData ? `(${s.nombre || 'Con datos'})` : '(Vacío)'}`}
+                title={`Hoja ${currentSheet} — Espacio #${inSheetNum} ${hasData ? `(${s.nombre || 'Con datos'})` : '(Vacío)'}${hasAiData ? ' • Con datos de AMEXito IA pendientes' : ''}`}
               >
                 <span className="slot-quick-num">#{inSheetNum}</span>
+                {hasAiData && <span className="slot-ai-pill-icon" title="Tiene datos de IA pendientes">🤖</span>}
                 <span className={`slot-status-dot ${hasData ? 'filled' : 'empty'}`}></span>
               </button>
             );

@@ -15,6 +15,8 @@ interface AmexitoAiRotulosPanelProps {
   handlePasteCapture: (e: React.ClipboardEvent<HTMLTextAreaElement | HTMLDivElement>) => void;
   playSound: (type: 'complete' | 'paste' | 'click' | 'error') => void;
   amexitoRef: React.RefObject<HTMLDivElement | null>;
+  activeSlotId?: number;
+  activeSheetNum?: number;
 }
 
 export const AmexitoAiRotulosPanel: React.FC<AmexitoAiRotulosPanelProps> = ({
@@ -28,8 +30,12 @@ export const AmexitoAiRotulosPanel: React.FC<AmexitoAiRotulosPanelProps> = ({
   handleProcessWithAmexito,
   handlePasteCapture,
   playSound,
-  amexitoRef
+  amexitoRef,
+  activeSlotId = 1,
+  activeSheetNum
 }) => {
+  const inSheetNum = ((activeSlotId - 1) % 5) + 1;
+  const sheetNum = activeSheetNum || Math.max(1, Math.ceil(activeSlotId / 5));
   return (
     <div
       className="rotulo-toolbar-col amexito"
@@ -70,6 +76,9 @@ export const AmexitoAiRotulosPanel: React.FC<AmexitoAiRotulosPanelProps> = ({
               <div className="ai-card-titles">
                 <div className="ai-card-name-row">
                   <span className="ai-card-name">AMEXito IA</span>
+                  <span className="ai-card-slot-badge" title={`Espacio actual donde se aplicará la IA`}>
+                    <i className="fa-solid fa-crosshairs"></i> Hoja {sheetNum} • Espacio #{inSheetNum}
+                  </span>
                   {(aiImagePreview || aiInputText) && (
                     <span className="ai-card-badge-pending">
                       <i className="fa-solid fa-circle-check"></i> Con datos listos
@@ -77,7 +86,7 @@ export const AmexitoAiRotulosPanel: React.FC<AmexitoAiRotulosPanelProps> = ({
                   )}
                 </div>
                 <span className="ai-card-sub">
-                  Pega texto o presiona Ctrl + V con una captura para autocompletar automáticamente
+                  Pega texto o presiona Ctrl + V con una captura para autocompletar automáticamente el Espacio #{inSheetNum}
                 </span>
               </div>
             </div>
@@ -100,7 +109,7 @@ export const AmexitoAiRotulosPanel: React.FC<AmexitoAiRotulosPanelProps> = ({
             <div className="ai-textarea-wrapper">
               <textarea
                 className="ai-textarea"
-                placeholder="Pega aquí el texto del pedido o presiona Ctrl + V con una captura de WhatsApp (ej: CE79, 2 cajas, Shalom, Nombre, DNI, Teléfono...)"
+                placeholder={`Pega aquí el pedido o captura de WhatsApp para Espacio #${inSheetNum} (Hoja ${sheetNum})...`}
                 value={aiInputText}
                 onChange={(e) => setAiInputText(e.target.value)}
                 onPaste={handlePasteCapture}
@@ -129,7 +138,7 @@ export const AmexitoAiRotulosPanel: React.FC<AmexitoAiRotulosPanelProps> = ({
                     <strong>Captura de WhatsApp cargada</strong>
                     <span className="ai-image-ready-tag">Lista para extraer</span>
                   </div>
-                  <span>AMEXito extraerá automáticamente los datos del envío</span>
+                  <span>AMEXito extraerá automáticamente los datos para el Espacio #{inSheetNum}</span>
                 </div>
                 <button
                   type="button"
@@ -152,7 +161,7 @@ export const AmexitoAiRotulosPanel: React.FC<AmexitoAiRotulosPanelProps> = ({
                     setAiInputText('');
                     setAiImagePreview(null);
                   }}
-                  title="Limpiar entrada de IA"
+                  title={`Limpiar entrada de IA del Espacio #${inSheetNum}`}
                 >
                   <i className="fa-solid fa-trash-can"></i>
                   <span>Limpiar</span>
@@ -164,7 +173,7 @@ export const AmexitoAiRotulosPanel: React.FC<AmexitoAiRotulosPanelProps> = ({
                 className={`ai-submit-btn ${isAiProcessing ? 'processing' : ''}`}
                 onClick={handleProcessWithAmexito}
                 disabled={isAiProcessing || (!aiInputText.trim() && !aiImagePreview)}
-                title="Interpretar con AMEXito IA y rellenar automáticamente los campos"
+                title={`Interpretar con AMEXito IA y rellenar automáticamente en Hoja ${sheetNum} — Espacio #${inSheetNum}`}
               >
                 {isAiProcessing ? (
                   <>
@@ -174,7 +183,7 @@ export const AmexitoAiRotulosPanel: React.FC<AmexitoAiRotulosPanelProps> = ({
                 ) : (
                   <>
                     <i className="fa-solid fa-wand-magic-sparkles"></i>
-                    <span>Rellenar con AMEXito IA</span>
+                    <span>Rellenar Espacio #{inSheetNum} con IA</span>
                   </>
                 )}
               </button>

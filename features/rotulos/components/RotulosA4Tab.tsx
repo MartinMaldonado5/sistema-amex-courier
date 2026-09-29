@@ -66,6 +66,7 @@ export default function RotulosA4Tab({ clientes = [] }: RotulosA4TabProps) {
           clientes={clientes}
           canUndo={state.canUndo}
           handleUndo={state.handleUndo}
+          slotsAiData={state.slotsAiData}
           isAiCardExpanded={state.isAiCardExpanded}
           setIsAiCardExpanded={state.setIsAiCardExpanded}
           aiInputText={state.aiInputText}
@@ -110,6 +111,7 @@ export default function RotulosA4Tab({ clientes = [] }: RotulosA4TabProps) {
           handleSelectSheet={state.handleSelectSheet}
           handleAddNewSheet={state.handleAddNewSheet}
           handleDeleteCurrentSheet={state.handleDeleteCurrentSheet}
+          slotsAiData={state.slotsAiData}
         />
       </div>
     </div>

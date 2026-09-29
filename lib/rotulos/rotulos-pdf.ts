@@ -33,6 +33,23 @@ export function sanitizePdfText(text: string | undefined | null): string {
     .trim();
 }
 
+async function getBase64ImageFromUrl(imageUrl: string): Promise<string | null> {
+  if (typeof window === 'undefined') return null;
+  try {
+    const res = await fetch(imageUrl);
+    const blob = await res.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch (err) {
+    console.warn('No se pudo cargar el logo de AMEX Courier:', err);
+    return null;
+  }
+}
+
 /**
  * Genera un archivo PDF en tamaño físico A4 (210 mm x 297 mm)
  * dividido exactamente en 5 franjas de 59.4 mm de alto cada una.
@@ -46,6 +63,9 @@ export async function generateRotulosA4Pdf(
     unit: 'mm',
     format: 'a4' // 210 x 297 mm
   });
+
+  // Cargar logo oficial de AMEX COURIER una sola vez para reutilizar en todas las franjas
+  const logoBase64 = await getBase64ImageFromUrl('/images/logo-amex-clean.png');
 
   const stripHeight = 59.4; // 297 mm / 5 = 59.4 mm
   const pageWidth = 210.0;  // 210 mm
@@ -80,12 +100,31 @@ export async function generateRotulosA4Pdf(
       );
 
       if (hasData) {
-        // 1. Cabecera pequeña de la franja (Remitente y bulto/embalaje)
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8.5);
-        doc.setTextColor(71, 85, 105); // Slate-600
-        const remitenteText = 'AMEX COURIER PERÚ';
-        doc.text(remitenteText, 12, yStart + 7.5);
+        // 1. Cabecera pequeña de la franja (Solo Logo oficial y bulto/embalaje)
+        let headerLeftOffset = 12;
+        if (logoBase64) {
+          try {
+            // Logo oficial AMEX Courier (relación de aspecto 3.93 -> 27.5 mm x 7.0 mm)
+            const logoW = 27.5;
+            const logoH = 7.0;
+            doc.addImage(logoBase64, 'PNG', 12, yStart + 2.0, logoW, logoH);
+            headerLeftOffset = 12 + logoW;
+          } catch {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9.8);
+            doc.setTextColor(0, 0, 0);
+            const remitenteText = 'AMEX COURIER PERÚ';
+            doc.text(remitenteText, 12, yStart + 7.5);
+            headerLeftOffset = 12 + doc.getTextWidth(remitenteText);
+          }
+        } else {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9.8);
+          doc.setTextColor(0, 0, 0);
+          const remitenteText = 'AMEX COURIER PERÚ';
+          doc.text(remitenteText, 12, yStart + 7.5);
+          headerLeftOffset = 12 + doc.getTextWidth(remitenteText);
+        }
 
         const bNum = slot.numeroRotulo || 1;
         const bTotR = slot.totalRotulos || 1;
@@ -100,7 +139,7 @@ export async function generateRotulosA4Pdf(
         let obsFontSize = 8.8;
         doc.setFontSize(obsFontSize);
         doc.setTextColor(15, 23, 42); // Slate-900 (alta legibilidad)
-        const maxObsWidth = pageWidth - 12 - (12 + doc.getTextWidth(remitenteText) + 8);
+        const maxObsWidth = pageWidth - 12 - (headerLeftOffset + 8);
         while (doc.getTextWidth(obsText) > maxObsWidth && obsFontSize > 6.0) {
           obsFontSize -= 0.5;
           doc.setFontSize(obsFontSize);

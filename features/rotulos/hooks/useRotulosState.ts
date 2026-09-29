@@ -19,11 +19,34 @@ export function useRotulosState() {
   const [totalRotulos, setTotalRotulos] = useState<string>('1');
   const [totalCajas, setTotalCajas] = useState<string>('1');
 
-  // AMEXito IA
-  const [aiInputText, setAiInputText] = useState<string>('');
-  const [aiImagePreview, setAiImagePreview] = useState<string | null>(null);
+  // AMEXito IA: Estado aislado e independiente por cada Espacio (Slot)
+  const [slotsAiData, setSlotsAiData] = useState<Record<number, { text: string; image: string | null }>>({});
   const [isAiProcessing, setIsAiProcessing] = useState<boolean>(false);
   const [isAiCardExpanded, setIsAiCardExpanded] = useState<boolean>(false);
+
+  // Datos de AMEXito IA correspondientes al espacio activo actual
+  const aiInputText = slotsAiData[activeSlotId]?.text || '';
+  const aiImagePreview = slotsAiData[activeSlotId]?.image || null;
+
+  const setAiInputText = useCallback((text: string) => {
+    setSlotsAiData((prev) => ({
+      ...prev,
+      [activeSlotId]: {
+        text,
+        image: prev[activeSlotId]?.image || null
+      }
+    }));
+  }, [activeSlotId]);
+
+  const setAiImagePreview = useCallback((image: string | null) => {
+    setSlotsAiData((prev) => ({
+      ...prev,
+      [activeSlotId]: {
+        text: prev[activeSlotId]?.text || '',
+        image
+      }
+    }));
+  }, [activeSlotId]);
 
   // Dropdowns
   const [isAgencyDropdownOpen, setIsAgencyDropdownOpen] = useState<boolean>(false);
@@ -503,6 +526,20 @@ export function useRotulosState() {
     saveSlots(reindexedSlots, false);
     setCurrentSheet(newCurrentSheet);
     setActiveSlotId(newActiveSlotId);
+
+    // Reindexar datos de IA de los espacios restantes
+    setSlotsAiData((prev) => {
+      const next: Record<number, { text: string; image: string | null }> = {};
+      remainingSlots.forEach((s, idx) => {
+        const oldId = s.id;
+        const newId = idx + 1;
+        if (prev[oldId]) {
+          next[newId] = prev[oldId];
+        }
+      });
+      return next;
+    });
+
     playSound('click');
     showToast(`🗑️ Hoja #${deletedSheetNum} eliminada. Visualizando Hoja #${newCurrentSheet} de ${newTotalSheets}.`);
   };
@@ -532,6 +569,15 @@ export function useRotulosState() {
     setTotalRotulos('1');
     setTotalCajas('1');
     saveSlots(updated, false);
+
+    // Limpiar datos de AMEXito IA del espacio actual
+    setSlotsAiData((prev) => {
+      if (!prev[activeSlotId]) return prev;
+      const next = { ...prev };
+      delete next[activeSlotId];
+      return next;
+    });
+
     const inSheetNum = ((activeSlotId - 1) % 5) + 1;
     showToast(`Hoja ${activeSheetNum} — Espacio #${inSheetNum} limpiado.`);
   };
@@ -561,6 +607,15 @@ export function useRotulosState() {
       return s;
     });
     saveSlots(updated, false);
+
+    // Limpiar datos de AMEXito IA de los 5 espacios de esta hoja
+    const sheetSlotIds = slots.slice(startIdx, endIdx).map((s) => s.id);
+    setSlotsAiData((prev) => {
+      const next = { ...prev };
+      sheetSlotIds.forEach((id) => delete next[id]);
+      return next;
+    });
+
     playSound('click');
     showToast(`🧹 Hoja #${currentSheet} reiniciada (5 espacios limpios).`);
   };
@@ -575,6 +630,7 @@ export function useRotulosState() {
     pushHistory(slots);
     setSlots(DEFAULT_SLOTS);
     saveSlots(DEFAULT_SLOTS, false);
+    setSlotsAiData({});
     setCurrentSheet(1);
     setActiveSlotId(1);
     setTotalRotulos('1');
@@ -706,11 +762,19 @@ export function useRotulosState() {
         const file = item.getAsFile();
         if (file) {
           const reader = new FileReader();
+          const targetSlotId = activeSlotId;
           reader.onload = (event) => {
             const base64 = event.target?.result as string;
-            setAiImagePreview(base64);
+            setSlotsAiData((prev) => ({
+              ...prev,
+              [targetSlotId]: {
+                text: prev[targetSlotId]?.text || '',
+                image: base64
+              }
+            }));
             playSound('paste');
-            showToast('📸 ¡Captura pegada! Haz clic en "Rellenar con AMEXito IA".');
+            const inSheetNum = ((targetSlotId - 1) % 5) + 1;
+            showToast(`📸 ¡Captura pegada en Espacio #${inSheetNum}! Haz clic en "Rellenar con AMEXito IA".`);
           };
           reader.readAsDataURL(file);
         }
@@ -720,7 +784,11 @@ export function useRotulosState() {
   };
 
   const handleProcessWithAmexito = async () => {
-    if (!aiInputText.trim() && !aiImagePreview) {
+    const currentAiData = slotsAiData[activeSlotId];
+    const currentText = currentAiData?.text || '';
+    const currentImage = currentAiData?.image || null;
+
+    if (!currentText.trim() && !currentImage) {
       playSound('error');
       showToast('⚠️ Pega primero el texto o captura del pedido de WhatsApp.');
       return;
@@ -732,8 +800,8 @@ export function useRotulosState() {
       showToast('🤖 AMEXito está leyendo y organizando los datos del pedido...');
 
       const extracted = await RotulosService.parseWithAi({
-        text: aiInputText,
-        imageBase64: aiImagePreview || undefined
+        text: currentText,
+        imageBase64: currentImage || undefined
       });
 
       pushHistory(slots);
@@ -811,6 +879,13 @@ export function useRotulosState() {
       saveSlots(workingSlots, false);
       playSound('complete');
 
+      // Limpiar los datos de AMEXito IA del espacio que se acaba de procesar exitosamente
+      setSlotsAiData((prev) => {
+        const next = { ...prev };
+        delete next[activeSlotId];
+        return next;
+      });
+
       if (orders.length > 1) {
         showToast(`🤖 ¡AMEXito extrajo ${orders.length} pedidos y los colocó en espacios libres!`);
       } else {
@@ -879,6 +954,7 @@ export function useRotulosState() {
     canUndo,
     handleUndo,
     // AI
+    slotsAiData,
     aiInputText,
     setAiInputText,
     aiImagePreview,
