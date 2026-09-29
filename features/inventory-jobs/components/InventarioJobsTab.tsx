@@ -71,6 +71,9 @@ export default function InventarioJobsTab() {
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState('');
   const [history, setHistory] = useState<Job[]>([]);
+  const [origenInventario, setOrigenInventario] = useState<'db' | 'file'>('db');
+  const [filtroEstado, setFiltroEstado] = useState<'activos' | 'todos'>('activos');
+  const [dbStats, setDbStats] = useState<{ activos: number; todos: number }>({ activos: 0, todos: 0 });
   const [autoSyncDb, setAutoSyncDb] = useState(true);
   const [isSyncingDb, setIsSyncingDb] = useState(false);
   const [syncDbMessage, setSyncDbMessage] = useState<string | null>(null);
@@ -82,6 +85,7 @@ export default function InventarioJobsTab() {
       const res = await fetch('/api/inventario-jobs');
       const data = await res.json();
       if (data.jobs) setHistory(data.jobs);
+      if (data.dbStats) setDbStats(data.dbStats);
     } catch {
       /* historial opcional */
     }
@@ -202,17 +206,17 @@ export default function InventarioJobsTab() {
     try {
       setError('');
       const activas = (Object.keys(fuentesActivas) as FuenteKey[]).filter((k) => fuentesActivas[k]);
-      if (!files.inventory) {
-        setError('Selecciona el inventario AMEX (.xlsx).');
+      if (origenInventario === 'file' && !files.inventory) {
+        setError('Selecciona el inventario AMEX (.xlsx) para el modo manual.');
         return;
       }
       if (activas.length === 0) {
-        setError('Activa al menos una fuente TIB.');
+        setError('Activa al menos una fuente TIB (Entregado, Enviado o Recibido).');
         return;
       }
       for (const f of activas) {
         if (!files[f]) {
-          setError(`Falta adjuntar: ${FUENTES.find((x) => x.key === f)?.file}.`);
+          setError(`Falta adjuntar el archivo: ${FUENTES.find((x) => x.key === f)?.file}.`);
           return;
         }
       }
@@ -221,8 +225,8 @@ export default function InventarioJobsTab() {
       setUploadPct({});
       const keys: Record<string, string> = {};
 
-      // 1. Subida directa a R2 con URL presignada (slot por slot)
-      const slots = ['inventory', ...activas];
+      // 1. Subida directa a R2 con URL presignada (solo los archivos necesarios)
+      const slots = origenInventario === 'file' ? ['inventory', ...activas] : [...activas];
       for (const slot of slots) {
         const file = files[slot];
         if (!file) continue;
@@ -244,7 +248,9 @@ export default function InventarioJobsTab() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          inventario_key: keys.inventory,
+          origen_inventario: origenInventario,
+          filtro_estado: filtroEstado,
+          inventario_key: origenInventario === 'file' ? keys.inventory : undefined,
           entregado_key: keys.delivered,
           enviado_key: keys.sent,
           recibido_key: keys.received,
@@ -297,81 +303,175 @@ export default function InventarioJobsTab() {
       )}
 
       {!activeJob && (
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <FileRow
-            label="1. Inventario AMEX (.xlsx) — obligatorio"
-            file={files.inventory}
-            onPick={(f) => pickFile('inventory', f)}
-            pct={uploadPct.inventory}
-          />
-          {FUENTES.map((f, i) => (
-            <div key={f.key} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 800, color: '#0f172a', minWidth: '170px', paddingTop: '10px', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={fuentesActivas[f.key]}
-                  onChange={() => setFuentesActivas((p) => ({ ...p, [f.key]: !p[f.key] }))}
-                />
-                {i + 2}. {f.label}
-              </label>
-              <div style={{ flex: 1, opacity: fuentesActivas[f.key] ? 1 : 0.4 }}>
-                <FileRow
-                  label={f.file}
-                  file={files[f.key]}
-                  disabled={!fuentesActivas[f.key]}
-                  onPick={(file) => pickFile(f.key, file)}
-                  pct={uploadPct[f.key]}
-                />
-              </div>
-            </div>
-          ))}
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Selector de Modo: Base de Datos vs Archivo Manual */}
+          <div style={{ display: 'flex', gap: '8px', background: '#f1f5f9', padding: '5px', borderRadius: '10px' }}>
+            <button
+              type="button"
+              onClick={() => setOrigenInventario('db')}
+              style={{
+                flex: 1,
+                padding: '10px 14px',
+                border: 'none',
+                borderRadius: '8px',
+                background: origenInventario === 'db' ? '#ffffff' : 'transparent',
+                color: origenInventario === 'db' ? '#0f172a' : '#64748b',
+                fontWeight: origenInventario === 'db' ? 800 : 600,
+                fontSize: '13px',
+                boxShadow: origenInventario === 'db' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <i className="fa-solid fa-database" style={{ color: origenInventario === 'db' ? '#16a34a' : '#94a3b8' }}></i>
+              Cruzar con Base de Datos AMEX (Recomendado)
+            </button>
 
-          <div
-            style={{
-              background: '#f8fafc',
-              border: `1.5px solid ${autoSyncDb ? '#86efac' : '#e2e8f0'}`,
-              borderRadius: '10px',
-              padding: '12px 14px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              cursor: 'pointer',
-              transition: 'border-color 0.2s ease',
-            }}
-            onClick={() => setAutoSyncDb(!autoSyncDb)}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '8px',
-                  background: autoSyncDb ? '#dcfce7' : '#f1f5f9',
-                  color: autoSyncDb ? '#16a34a' : '#64748b',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '17px',
-                }}
-              >
-                <i className="fa-solid fa-database"></i>
+            <button
+              type="button"
+              onClick={() => setOrigenInventario('file')}
+              style={{
+                flex: 1,
+                padding: '10px 14px',
+                border: 'none',
+                borderRadius: '8px',
+                background: origenInventario === 'file' ? '#ffffff' : 'transparent',
+                color: origenInventario === 'file' ? '#0f172a' : '#64748b',
+                fontWeight: origenInventario === 'file' ? 800 : 600,
+                fontSize: '13px',
+                boxShadow: origenInventario === 'file' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <i className="fa-solid fa-file-excel" style={{ color: origenInventario === 'file' ? '#0284c7' : '#94a3b8' }}></i>
+              Subir Archivo Excel Manual
+            </button>
+          </div>
+
+          {/* Panel Informativo si el origen es la Base de Datos */}
+          {origenInventario === 'db' ? (
+            <div
+              style={{
+                background: '#f0fdf4',
+                border: '1.5px solid #86efac',
+                borderRadius: '10px',
+                padding: '14px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '12px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div
+                  style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '10px',
+                    background: '#dcfce7',
+                    color: '#16a34a',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '20px',
+                  }}
+                >
+                  <i className="fa-solid fa-boxes-stacked"></i>
+                </div>
+                <div>
+                  <strong style={{ fontSize: '13.5px', color: '#166534', display: 'block' }}>
+                    Inventario Activo Conectado ({filtroEstado === 'activos' ? dbStats.activos : dbStats.todos} paquetes listos)
+                  </strong>
+                  <span style={{ fontSize: '12px', color: '#15803d' }}>
+                    No necesitas subir ningún Excel de inventario. El sistema cruzará directamente los paquetes de la base de datos.
+                  </span>
+                </div>
               </div>
-              <div>
-                <strong style={{ fontSize: '13px', color: '#0f172a', display: 'block' }}>
-                  Sincronizar directamente a la Base de Datos (Recomendado)
-                </strong>
-                <span style={{ fontSize: '11.5px', color: '#64748b' }}>
-                  Aplica clientes, trackings, pesos y estados directamente en el sistema al terminar el cruce.
-                </span>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <button
+                  type="button"
+                  onClick={() => setFiltroEstado('activos')}
+                  style={{
+                    background: filtroEstado === 'activos' ? '#16a34a' : '#ffffff',
+                    color: filtroEstado === 'activos' ? '#ffffff' : '#166534',
+                    border: `1.5px solid ${filtroEstado === 'activos' ? '#16a34a' : '#86efac'}`,
+                    borderRadius: '8px',
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  Activos en almacén ({dbStats.activos})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFiltroEstado('todos')}
+                  style={{
+                    background: filtroEstado === 'todos' ? '#16a34a' : '#ffffff',
+                    color: filtroEstado === 'todos' ? '#ffffff' : '#166534',
+                    border: `1.5px solid ${filtroEstado === 'todos' ? '#16a34a' : '#86efac'}`,
+                    borderRadius: '8px',
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  Todos ({dbStats.todos})
+                </button>
               </div>
             </div>
-            <input
-              type="checkbox"
-              checked={autoSyncDb}
-              onChange={(e) => setAutoSyncDb(e.target.checked)}
-              onClick={(e) => e.stopPropagation()}
-              style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#16a34a' }}
+          ) : (
+            <FileRow
+              label="1. Inventario AMEX (.xlsx) — obligatorio en modo manual"
+              file={files.inventory}
+              onPick={(f) => pickFile('inventory', f)}
+              pct={uploadPct.inventory}
             />
+          )}
+
+          {/* Sección de Reportes TIB */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 800, color: '#334155', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <i className="fa-solid fa-cloud-arrow-up" style={{ color: '#0284c7' }}></i>
+              {origenInventario === 'db' ? 'Adjunta los reportes TIB del día a cruzar:' : 'Reportes TIB a cruzar:'}
+            </span>
+
+            {FUENTES.map((f, i) => (
+              <div key={f.key} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 800, color: '#0f172a', minWidth: '170px', paddingTop: '10px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={fuentesActivas[f.key]}
+                    onChange={() => setFuentesActivas((p) => ({ ...p, [f.key]: !p[f.key] }))}
+                  />
+                  {i + 1}. {f.label}
+                </label>
+                <div style={{ flex: 1, opacity: fuentesActivas[f.key] ? 1 : 0.4 }}>
+                  <FileRow
+                    label={f.file}
+                    file={files[f.key]}
+                    disabled={!fuentesActivas[f.key]}
+                    onPick={(file) => pickFile(f.key, file)}
+                    pct={uploadPct[f.key]}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
 
           <button
@@ -383,18 +483,29 @@ export default function InventarioJobsTab() {
               color: '#fff',
               border: 'none',
               borderRadius: '10px',
-              padding: '13px',
-              fontSize: '14px',
+              padding: '14px',
+              fontSize: '14.5px',
               fontWeight: 900,
               cursor: 'pointer',
               opacity: phase === 'uploading' || phase === 'queued' ? 0.6 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              boxShadow: '0 4px 12px rgba(22, 163, 74, 0.25)',
             }}
           >
-            <i className="fa-solid fa-cloud-arrow-up"></i>{' '}
-            {phase === 'uploading' ? 'Subiendo a la nube…' : phase === 'queued' ? 'Encolando…' : 'Completar inventario en la nube'}
+            <i className={phase === 'uploading' ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-bolt"}></i>
+            {phase === 'uploading'
+              ? 'Subiendo reportes TIB a la nube…'
+              : phase === 'queued'
+              ? 'Encolando cruce…'
+              : origenInventario === 'db'
+              ? `Cruzar ${filtroEstado === 'activos' ? dbStats.activos : dbStats.todos} paquetes de la BD con TIB`
+              : 'Completar inventario en la nube'}
           </button>
           <p style={{ margin: 0, fontSize: '11.5px', color: '#94a3b8' }}>
-            Límite 100 MB por archivo. El Tracking se guarda como texto para conservar ceros iniciales.
+            Los resultados actualizarán clientes, trackings, pesos y estados directamente en el sistema. Límite 100 MB por reporte TIB.
           </p>
         </div>
       )}
