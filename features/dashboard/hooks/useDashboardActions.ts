@@ -6,6 +6,8 @@ import type { NewClientFormData } from '@/components/modals/NewClientModal';
 import type { NewPkgFormData } from '@/components/modals/NewPackageModal';
 import { supabase } from '@/lib/supabase/client';
 
+import { DashboardUser } from './useDashboardSession';
+
 export interface DashboardScanExtra {
   mode?: string;
   location?: string;
@@ -18,6 +20,7 @@ export interface DashboardScanExtra {
 interface UseDashboardActionsOptions {
   newClientForm: NewClientFormData;
   newPkgForm: NewPkgFormData;
+  currentUser?: DashboardUser | null;
   setClientes: Dispatch<SetStateAction<Cliente[]>>;
   setPaquetes: Dispatch<SetStateAction<Paquete[]>>;
   setScannedLogs: Dispatch<SetStateAction<ScannedLog[]>>;
@@ -32,6 +35,7 @@ interface UseDashboardActionsOptions {
 export function useDashboardActions({
   newClientForm,
   newPkgForm,
+  currentUser,
   setClientes,
   setPaquetes,
   setScannedLogs,
@@ -131,6 +135,8 @@ export function useDashboardActions({
       metodoEntrega: newPkgForm.metodoEntrega as TipoMetodoEntrega,
       estadoEntrega: 'EnAlmacen' as TipoEstadoEntrega,
       facturaPdfUrl: newPkgForm.facturaPdfUrl,
+      usuarioEmail: currentUser?.email || '',
+      creadoPor: currentUser?.id || undefined,
       creadoEn: new Date().toISOString()
     };
 
@@ -153,12 +159,14 @@ export function useDashboardActions({
         piso,
         posicion_estante: posicion,
         metodo_entrega: newPkgForm.metodoEntrega,
-        factura_pdf_url: newPkgForm.facturaPdfUrl
+        factura_pdf_url: newPkgForm.facturaPdfUrl,
+        usuario_email: currentUser?.email || '',
+        creado_por: currentUser?.id || null
       });
     } catch (error) {
       console.error('Error insert paquete:', error);
     }
-  }, [newPkgForm, setIsNewPkgModalOpen, setPaquetes]);
+  }, [newPkgForm, currentUser, setIsNewPkgModalOpen, setPaquetes]);
 
   const openNewClientModal = useCallback(() => {
     setNewClientForm(emptyClientForm);
@@ -185,6 +193,8 @@ export function useDashboardActions({
       piso: extra?.piso,
       workflow: (extra?.mode as 'slotting' | 'lookup' | 'delivery' | 'general') || 'slotting',
       nombreConsignatario: extra?.pkg?.nombreConsignatario || extra?.cli?.nombre,
+      operadorEmail: currentUser?.email || '',
+      operadorNombre: currentUser?.nombre || 'Operador Logístico AMEX',
       synced: false
     };
 
@@ -201,7 +211,7 @@ export function useDashboardActions({
     if (extra?.location) {
       void handleAssignPackageLocation(code, extra.location);
     }
-  }, [handleAssignPackageLocation, setScannedLogs]);
+  }, [currentUser, handleAssignPackageLocation, setScannedLogs]);
 
   return {
     handleUpdatePackage,

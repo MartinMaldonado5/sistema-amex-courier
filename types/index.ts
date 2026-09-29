@@ -43,6 +43,8 @@ export interface Paquete {
   metodoEntrega: TipoMetodoEntrega;
   estadoEntrega: TipoEstadoEntrega;
   facturaPdfUrl?: string;
+  usuarioEmail?: string;
+  creadoPor?: string;
   creadoEn: string;
 }
 
@@ -130,6 +132,8 @@ export interface MovimientoKardex {
   tipoMovimiento: string;            // RECEPCION, SLOTTING, REUBICACION, DESPACHO, ENTREGA
   motivo?: string;
   usuarioOperador: string;
+  usuarioEmail?: string;
+  usuarioId?: string;
   creadoEn: string;
 }
 
@@ -144,6 +148,8 @@ export interface ScannedLog {
   piso?: string;
   workflow?: 'slotting' | 'lookup' | 'delivery' | 'general';
   nombreConsignatario?: string;
+  operadorEmail?: string;
+  operadorNombre?: string;
   synced: boolean;
   syncedAt?: string;
 }

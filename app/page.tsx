@@ -69,6 +69,7 @@ export default function DashboardPage() {
   const dashboardActions = useDashboardActions({
     newClientForm,
     newPkgForm,
+    currentUser,
     setClientes,
     setPaquetes,
     setScannedLogs,

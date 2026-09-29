@@ -54,6 +54,8 @@ function mapPaquete(row: Record<string, unknown>): Paquete {
     metodoEntrega: (row.metodo_entrega as TipoMetodoEntrega) || 'CarroAmexDomicilio',
     estadoEntrega: (row.estado_entrega as TipoEstadoEntrega) || 'EnAlmacen',
     facturaPdfUrl: String(row.factura_pdf_url || ''),
+    usuarioEmail: String(row.usuario_email || ''),
+    creadoPor: row.creado_por ? String(row.creado_por) : undefined,
     creadoEn: String(row.creado_en || '')
   };
 }

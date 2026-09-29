@@ -8,7 +8,8 @@ import {
   Edit3,
   Printer,
   FileText,
-  Trash2
+  Trash2,
+  User
 } from 'lucide-react';
 import { Paquete } from '@/types';
 
@@ -125,6 +126,26 @@ export default function InventoryTable({
                       <div style={{ fontSize: '11px', color: '#64748b', fontFamily: 'monospace' }}>
                         {pkg.trackingUsa}
                       </div>
+                      {pkg.usuarioEmail && (
+                        <div
+                          style={{
+                            fontSize: '10px',
+                            color: '#0369a1',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                            marginTop: '2px',
+                            background: '#f0f9ff',
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            border: '1px solid #bae6fd'
+                          }}
+                          title={`Ingresado por: ${pkg.usuarioEmail}`}
+                        >
+                          <User style={{ width: '10px', height: '10px' }} />
+                          <span>{pkg.usuarioEmail}</span>
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: '10px 14px' }}>
                       <div style={{ fontWeight: 800, color: '#2563eb' }}>

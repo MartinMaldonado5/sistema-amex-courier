@@ -5,11 +5,14 @@ import { supabase } from '@/lib/supabase/client';
 
 export interface DashboardUser {
   nombre: string;
+  email: string;
   rol: string;
+  id?: string;
 }
 
 const DEFAULT_DASHBOARD_USER: DashboardUser = {
   nombre: 'Operador Logístico AMEX',
+  email: '',
   rol: 'Operador Logístico'
 };
 
@@ -29,7 +32,9 @@ export function useDashboardSession() {
           (metadata.nombre as string) ||
           data.user.email?.split('@')[0] ||
           'Operador AMEX',
-        rol: (data.user.app_metadata?.rol as string) || 'Operador Logístico'
+        email: data.user.email || '',
+        rol: (data.user.app_metadata?.rol as string) || 'Operador Logístico',
+        id: data.user.id
       });
     });
 

@@ -61,6 +61,7 @@ export function exportPaquetesToExcel(paquetes: Paquete[], filenamePrefix = 'Inv
     'Almacén Actual': p.ubicacionActual === 'Entregado'
       ? 'Entregado'
       : 'Almacén Central Lince',
+    'Usuario que Ingresó (Email)': p.usuarioEmail || '',
     'Descripción del Paquete': p.descripcion || '',
     'Fecha de Registro': p.creadoEn ? new Date(p.creadoEn).toLocaleString('es-PE') : ''
   }));
@@ -82,7 +83,8 @@ export function exportKardexToExcel(kardexList: MovimientoKardex[], filenamePref
     'Destino': k.destinoDescripcion,
     'Tipo Movimiento': k.tipoMovimiento,
     'Motivo': k.motivo || '',
-    'Operador Responsable': k.usuarioOperador
+    'Operador Responsable': k.usuarioOperador,
+    'Email Operador': k.usuarioEmail || ''
   }));
 
   const dateStr = new Date().toISOString().slice(0, 10);
@@ -100,6 +102,8 @@ export function exportScannerLogsToExcel(
     nombreConsignatario?: string;
     time: string;
     synced?: boolean;
+    operadorEmail?: string;
+    operadorNombre?: string;
   }>,
   filenamePrefix = 'Lecturas_Escaneo_AMEX'
 ) {
@@ -109,6 +113,8 @@ export function exportScannerLogsToExcel(
     'Formato': l.format,
     'Ubicación Estante WMS': l.location || 'N/A',
     'Consignatario': l.nombreConsignatario || '',
+    'Operador': l.operadorNombre || '',
+    'Email Operador': l.operadorEmail || '',
     'Hora Escaneo': l.time,
     'Estado Sincronización': l.synced ? 'Sincronizado Master' : 'Borrador Local (Pendiente)'
   }));

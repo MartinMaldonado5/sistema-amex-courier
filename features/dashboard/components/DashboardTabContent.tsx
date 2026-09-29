@@ -109,7 +109,7 @@ interface DashboardTabContentProps {
   entregas: OrdenEntrega[];
   cobros: CobroVoucher[];
   scannedLogs: ScannedLog[];
-  currentUser: { nombre: string; rol: string } | null;
+  currentUser: { nombre: string; email: string; rol: string; id?: string } | null;
   targetCliente360?: string;
   targetClienteCobros?: string;
   onNavigateTab: (tabId: string) => void;
@@ -219,6 +219,7 @@ export default function DashboardTabContent({
           scannedLogs={scannedLogs}
           paquetes={paquetes}
           clientes={clientes}
+          currentUser={currentUser}
           onConfirm={onConfirmScan}
           onSlotPackage={onSlotPackage}
           onUpdateLogs={onUpdateLogs}

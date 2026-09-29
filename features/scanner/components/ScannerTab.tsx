@@ -44,6 +44,7 @@ interface ScannerTabProps {
   scannedLogs: ScannedLog[];
   paquetes?: Paquete[];
   clientes?: Cliente[];
+  currentUser?: { nombre: string; email: string; rol: string; id?: string } | null;
   onConfirm: (code: string, format: string, extra?: { mode: string; location?: string; anaquel?: string; piso?: string; pkg?: Paquete; cli?: Cliente }) => void;
   onSlotPackage?: (code: string, location: string) => void;
   onUpdateLogs?: React.Dispatch<React.SetStateAction<ScannedLog[]>>;
@@ -54,6 +55,7 @@ export default function ScannerTab({
   scannedLogs = [],
   paquetes = [],
   clientes = [],
+  currentUser,
   onConfirm,
   onSlotPackage,
   onUpdateLogs,
@@ -206,6 +208,10 @@ export default function ScannerTab({
       return;
     }
 
+    const activeUserName = currentUser?.nombre || 'Operador Logístico AMEX';
+    const activeUserEmail = currentUser?.email || '';
+    const activeUserId = currentUser?.id || null;
+
     setIsSyncing(true);
     setSyncProgress({ current: 0, total: targetLogs.length });
 
@@ -276,6 +282,7 @@ export default function ScannerTab({
               posicion_estante: loc,
               ubicacion_actual: 'AmexLince',
               estado_entrega: 'EnAlmacen',
+              ...(activeUserEmail ? { usuario_email: activeUserEmail } : {}),
               eliminado_en: null,
               motivo_eliminacion: null,
               eliminado_por: null,
@@ -293,7 +300,7 @@ export default function ScannerTab({
               paquete_id: matchedPkg.id,
               ubicacion: loc,
               descripcion_evento: `Escaneado confirmado y clasificado a estante: ${loc}`,
-              usuario_operador: 'Operador Logístico AMEX'
+              usuario_operador: activeUserName
             });
           }
         } else {
@@ -317,6 +324,8 @@ export default function ScannerTab({
               piso: pis,
               posicion_estante: loc,
               estado_entrega: 'EnAlmacen',
+              usuario_email: activeUserEmail || null,
+              creado_por: activeUserId || null,
               eliminado_en: null
             })
             .select('id, numero_recibo_bodega, nombre_consignatario, ubicacion_actual, posicion_estante')
@@ -336,7 +345,7 @@ export default function ScannerTab({
               paquete_id: newPkg.id,
               ubicacion: loc,
               descripcion_evento: `Ingreso por escáner móvil a estante: ${loc}`,
-              usuario_operador: 'Operador Logístico AMEX'
+              usuario_operador: activeUserName
             });
           }
         }
@@ -350,7 +359,9 @@ export default function ScannerTab({
           destino_descripcion: `AmexLince (${loc})`,
           tipo_movimiento: 'SLOTTING',
           motivo: `Clasificación y Slotting Escáner a estante ${loc}`,
-          usuario_operador: 'Operador Logístico AMEX'
+          usuario_operador: activeUserName,
+          usuario_email: activeUserEmail || null,
+          usuario_id: activeUserId || null
         });
 
         // 3. Registrar auditoría en escaneos_log
@@ -360,7 +371,9 @@ export default function ScannerTab({
           formato: log.format,
           modo_workflow: log.workflow || 'slotting',
           ubicacion: loc,
-          operador: 'Operador Logístico AMEX'
+          operador: activeUserName,
+          operador_email: activeUserEmail || null,
+          usuario_id: activeUserId || null
         });
 
         count++;
@@ -425,8 +438,16 @@ export default function ScannerTab({
 
   return (
     <div style={{ width: '100%', maxWidth: '100%', margin: 0, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '16px', boxSizing: 'border-box' }}>
-      <div className="sap-breadcrumb">
-        <span>Operaciones y Almacenes</span> / <span>Escáner de Códigos, Búsqueda 360° & Slotting WMS</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+        <div className="sap-breadcrumb" style={{ margin: 0 }}>
+          <span>Operaciones y Almacenes</span> / <span>Escáner de Códigos, Búsqueda 360° & Slotting WMS</span>
+        </div>
+        {currentUser && (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '20px', padding: '4px 12px', fontSize: '12px', color: '#1e40af', fontWeight: 600 }}>
+            <User className="w-3.5 h-3.5 text-blue-600" />
+            <span>Operador Activo: <strong>{currentUser.nombre || currentUser.email}</strong> {currentUser.email ? `(${currentUser.email})` : ''}</span>
+          </div>
+        )}
       </div>
 
       {/* Notificación flotante de sincronización */}
@@ -447,6 +468,7 @@ export default function ScannerTab({
             isInline={true}
             paquetes={paquetes}
             clientes={clientes}
+            currentUser={currentUser}
             onClose={() => {}}
             onConfirm={onConfirm}
             onSlotPackage={onSlotPackage}
@@ -746,6 +768,7 @@ export default function ScannerTab({
                       <th style={{ width: '36px', padding: '8px 10px', textAlign: 'center' }}>✓</th>
                       <th style={{ padding: '8px 10px' }}>Código / WR</th>
                       <th style={{ padding: '8px 10px' }}>Ubicación Asignada</th>
+                      <th style={{ padding: '8px 10px' }}>Operador</th>
                       <th style={{ padding: '8px 10px' }}>Estado BD</th>
                       <th style={{ padding: '8px 10px' }}>Hora</th>
                       <th style={{ padding: '8px 10px', textAlign: 'center' }}>Acciones</th>
@@ -805,6 +828,16 @@ export default function ScannerTab({
                               </span>
                             ) : (
                               <span style={{ color: '#94a3b8', fontSize: '11px' }}>Recepción General</span>
+                            )}
+                          </td>
+                          <td style={{ padding: '8px 10px' }}>
+                            <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155' }}>
+                              {log.operadorNombre || currentUser?.nombre || 'Operador'}
+                            </div>
+                            {(log.operadorEmail || currentUser?.email) && (
+                              <div style={{ fontSize: '10px', color: '#64748b' }}>
+                                {log.operadorEmail || currentUser?.email}
+                              </div>
                             )}
                           </td>
                           <td style={{ padding: '8px 10px' }}>
