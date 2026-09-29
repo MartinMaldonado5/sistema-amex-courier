@@ -69,7 +69,9 @@ export default function InventoryTable({
                   onChange={onSelectAll}
                 />
               </th>
-              <th style={{ padding: '10px 14px' }}>Guía WR / Tracking</th>
+              <th style={{ padding: '10px 14px' }}>Guía WR</th>
+              <th style={{ padding: '10px 14px' }}>Tracking USA</th>
+              <th style={{ padding: '10px 14px' }}>Usuario (Correo)</th>
               <th style={{ padding: '10px 14px' }}>Cliente</th>
               <th style={{ padding: '10px 14px' }}>Descripción & Tipo</th>
               <th style={{ padding: '10px 14px' }}>Peso Físico (kg)</th>
@@ -82,7 +84,7 @@ export default function InventoryTable({
           <tbody>
             {filteredPaquetes.length === 0 ? (
               <tr>
-                <td colSpan={9} style={{ textAlign: 'center', padding: '36px', color: '#94a3b8' }}>
+                <td colSpan={11} style={{ textAlign: 'center', padding: '36px', color: '#94a3b8' }}>
                   <Boxes style={{ width: '40px', height: '40px', margin: '0 auto 8px auto', color: '#cbd5e1' }} />
                   <div style={{ fontWeight: 800, color: '#64748b' }}>
                     No se encontraron paquetes con los filtros seleccionados
@@ -112,7 +114,7 @@ export default function InventoryTable({
                         onChange={() => onToggleSelect(pkg.id)}
                       />
                     </td>
-                    <td style={{ padding: '10px 14px' }}>
+                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
                       <div
                         style={{
                           fontWeight: 800,
@@ -123,28 +125,41 @@ export default function InventoryTable({
                       >
                         {pkg.numeroReciboBodega}
                       </div>
-                      <div style={{ fontSize: '11px', color: '#64748b', fontFamily: 'monospace' }}>
-                        {pkg.trackingUsa}
+                    </td>
+                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
+                      <div
+                        style={{
+                          fontSize: '11.5px',
+                          color: '#475569',
+                          fontFamily: 'monospace',
+                          fontWeight: 600
+                        }}
+                      >
+                        {pkg.trackingUsa || '—'}
                       </div>
-                      {pkg.usuarioEmail && (
+                    </td>
+                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
+                      {pkg.usuarioEmail ? (
                         <div
                           style={{
-                            fontSize: '10px',
+                            fontSize: '11px',
                             color: '#0369a1',
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '3px',
-                            marginTop: '2px',
+                            gap: '4px',
                             background: '#f0f9ff',
-                            padding: '1px 6px',
-                            borderRadius: '4px',
-                            border: '1px solid #bae6fd'
+                            padding: '2px 8px',
+                            borderRadius: '6px',
+                            border: '1px solid #bae6fd',
+                            fontWeight: 600
                           }}
                           title={`Ingresado por: ${pkg.usuarioEmail}`}
                         >
-                          <User style={{ width: '10px', height: '10px' }} />
+                          <User style={{ width: '11px', height: '11px' }} />
                           <span>{pkg.usuarioEmail}</span>
                         </div>
+                      ) : (
+                        <span style={{ color: '#94a3b8', fontSize: '11px' }}>—</span>
                       )}
                     </td>
                     <td style={{ padding: '10px 14px' }}>
