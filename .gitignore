@@ -46,6 +46,7 @@ desktop.ini
 .env*
 !.env.example
 certificates/
+askpass.bat
 
 # Excel data files & TypeScript cache
 *.xlsx
@@ -58,3 +59,4 @@ certificates/
 Automatizador_Inventario_AMEX_WhatsApp/runs/
 Automatizador_Inventario_AMEX_WhatsApp/test_output/
 Automatizador_Inventario_AMEX_WhatsApp/worker/run-worker-local.bat
+benchmark-data/
