@@ -181,7 +181,7 @@ export default function InventarioJobsTab() {
       } catch {
         /* reintenta en el siguiente ciclo */
       }
-    }, 5000);
+    }, 1500);
 
     return () => {
       supabase.removeChannel(channel);
@@ -225,22 +225,24 @@ export default function InventarioJobsTab() {
       setUploadPct({});
       const keys: Record<string, string> = {};
 
-      // 1. Subida directa a R2 con URL presignada (solo los archivos necesarios)
+      // 1. Subida directa a R2 con URL presignada en PARALELO
       const slots = origenInventario === 'file' ? ['inventory', ...activas] : [...activas];
-      for (const slot of slots) {
-        const file = files[slot];
-        if (!file) continue;
-        const presign = await fetch('/api/inventario-jobs/presign', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slot, filename: file.name }),
-        }).then((r) => r.json());
-        if (!presign.uploadUrl) throw new Error(presign.error || 'No se pudo preparar la subida.');
-        await uploadWithProgress(presign.uploadUrl, file, (pct) =>
-          setUploadPct((prev) => ({ ...prev, [slot]: pct }))
-        );
-        keys[slot] = presign.key;
-      }
+      await Promise.all(
+        slots.map(async (slot) => {
+          const file = files[slot];
+          if (!file) return;
+          const presign = await fetch('/api/inventario-jobs/presign', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slot, filename: file.name }),
+          }).then((r) => r.json());
+          if (!presign.uploadUrl) throw new Error(presign.error || `No se pudo preparar la subida para ${slot}.`);
+          await uploadWithProgress(presign.uploadUrl, file, (pct) =>
+            setUploadPct((prev) => ({ ...prev, [slot]: pct }))
+          );
+          keys[slot] = presign.key;
+        })
+      );
 
       // 2. Encolar trabajo
       setPhase('queued');

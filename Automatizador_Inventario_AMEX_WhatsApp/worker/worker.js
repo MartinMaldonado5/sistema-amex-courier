@@ -71,7 +71,7 @@ const defaultEmptyTemplate = process.platform === 'win32'
 const PROCESSOR = process.env.AMEX_PROCESSOR_BIN || process.env.PROCESSOR || defaultProcessor;
 const EMPTY_TEMPLATE = process.env.EMPTY_TEMPLATE || defaultEmptyTemplate;
 const WORK_DIR = process.env.WORK_DIR || path.join(os.tmpdir(), 'amex-jobs');
-const POLL_INTERVAL_MS = Math.max(2000, Number(process.env.POLL_INTERVAL_MS || 5000));
+const POLL_INTERVAL_MS = Math.max(1000, Number(process.env.POLL_INTERVAL_MS || 1500));
 const PROCESS_TIMEOUT_MS = Math.max(60_000, Number(process.env.PROCESS_TIMEOUT_MS || 20 * 60 * 1000));
 const HOST = process.env.HOST || '0.0.0.0';
 const PORT = Number(process.env.PORT || 10000);
