@@ -52,11 +52,12 @@ askpass.bat
 *.xlsx
 *.xls
 *.tsbuildinfo
-# Plantilla interna del automatizador (sí se versiona)
-!Automatizador_Inventario_AMEX_WhatsApp/assets/FUENTE_VACIA.xlsx
+# Plantilla interna del worker (sí se versiona)
+!worker/assets/FUENTE_VACIA.xlsx
 
-# Automatizador Inventario AMEX (worker Render): resultados efímeros
-Automatizador_Inventario_AMEX_WhatsApp/runs/
-Automatizador_Inventario_AMEX_WhatsApp/test_output/
-Automatizador_Inventario_AMEX_WhatsApp/worker/run-worker-local.bat
+# Worker Inventario AMEX: resultados efímeros y archivos de prueba
+worker/runs/
+worker/test_output/
+worker/test_files/
+worker/run-worker-local.bat
 benchmark-data/

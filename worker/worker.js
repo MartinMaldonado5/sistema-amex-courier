@@ -62,11 +62,16 @@ const R2_BUCKET = process.env.CLOUDFLARE_R2_BUCKET_NAME || 'amex-courier-cloud';
 const R2_ROOT = (process.env.CLOUDFLARE_R2_ROOT_FOLDER || 'FOLDER AMEX').replace(/^\/+|\/+$/g, '');
 
 const defaultProcessor = process.platform === 'win32'
-  ? path.resolve(__dirname, '..', 'processor', 'AmexInventoryProcessor', 'publish', 'win-x64', 'AmexInventoryProcessor.exe')
+  ? (fs.existsSync(path.resolve(__dirname, 'processor', 'AmexInventoryProcessor', 'publish', 'win-x64', 'AmexInventoryProcessor.exe'))
+      ? path.resolve(__dirname, 'processor', 'AmexInventoryProcessor', 'publish', 'win-x64', 'AmexInventoryProcessor.exe')
+      : path.resolve(__dirname, '..', 'processor', 'AmexInventoryProcessor', 'publish', 'win-x64', 'AmexInventoryProcessor.exe'))
   : '/app/processor/AmexInventoryProcessor';
 const defaultEmptyTemplate = process.platform === 'win32'
-  ? path.resolve(__dirname, '..', 'assets', 'FUENTE_VACIA.xlsx')
+  ? (fs.existsSync(path.resolve(__dirname, 'assets', 'FUENTE_VACIA.xlsx'))
+      ? path.resolve(__dirname, 'assets', 'FUENTE_VACIA.xlsx')
+      : path.resolve(__dirname, '..', 'assets', 'FUENTE_VACIA.xlsx'))
   : '/app/assets/FUENTE_VACIA.xlsx';
+
 
 const PROCESSOR = process.env.AMEX_PROCESSOR_BIN || process.env.PROCESSOR || defaultProcessor;
 const EMPTY_TEMPLATE = process.env.EMPTY_TEMPLATE || defaultEmptyTemplate;

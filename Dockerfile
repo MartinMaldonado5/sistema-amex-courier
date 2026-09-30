@@ -5,9 +5,9 @@
 # ---- Etapa 1: compilar el procesador C# para linux-x64 ----
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS dotnet-build
 WORKDIR /src
-COPY Automatizador_Inventario_AMEX_WhatsApp/processor/AmexInventoryProcessor/AmexInventoryProcessor.csproj ./processor/AmexInventoryProcessor/
+COPY worker/processor/AmexInventoryProcessor/AmexInventoryProcessor.csproj ./processor/AmexInventoryProcessor/
 RUN dotnet restore ./processor/AmexInventoryProcessor/AmexInventoryProcessor.csproj -r linux-x64
-COPY Automatizador_Inventario_AMEX_WhatsApp/processor/AmexInventoryProcessor/ ./processor/AmexInventoryProcessor/
+COPY worker/processor/AmexInventoryProcessor/ ./processor/AmexInventoryProcessor/
 RUN dotnet publish ./processor/AmexInventoryProcessor/AmexInventoryProcessor.csproj \
     -c Release -r linux-x64 --self-contained true \
     -p:PublishSingleFile=false \
@@ -25,10 +25,10 @@ RUN apt-get update \
 WORKDIR /app
 COPY --from=dotnet-build /out/processor /app/processor
 RUN chmod +x /app/processor/AmexInventoryProcessor
-COPY Automatizador_Inventario_AMEX_WhatsApp/worker/package.json ./worker/package.json
+COPY worker/package.json ./worker/package.json
 RUN cd worker && npm install --omit=dev --no-audit --no-fund
-COPY Automatizador_Inventario_AMEX_WhatsApp/worker/worker.js ./worker/worker.js
-COPY Automatizador_Inventario_AMEX_WhatsApp/assets/FUENTE_VACIA.xlsx ./assets/FUENTE_VACIA.xlsx
+COPY worker/worker.js ./worker/worker.js
+COPY worker/assets/FUENTE_VACIA.xlsx ./assets/FUENTE_VACIA.xlsx
 ENV PROCESSOR=/app/processor/AmexInventoryProcessor
 ENV EMPTY_TEMPLATE=/app/assets/FUENTE_VACIA.xlsx
 ENV WORK_DIR=/tmp/amex-jobs

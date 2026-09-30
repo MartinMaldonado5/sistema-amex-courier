@@ -15,7 +15,7 @@ if errorlevel 1 (
 )
 
 echo 1. Iniciando Worker en segundo plano (Modulo 13)...
-start "AMEX Worker - Modulo 13" cmd /k "title AMEX Worker Modulo 13 && node Automatizador_Inventario_AMEX_WhatsApp/worker/worker.js"
+start "AMEX Worker - Modulo 13" cmd /k "title AMEX Worker Modulo 13 && node worker/worker.js"
 
 echo 2. Iniciando Servidor Web Next.js (localhost:3000)...
 start "AMEX Web Dev - localhost:3000" cmd /k "title AMEX Next.js Dev && npm run dev"
