@@ -34,6 +34,7 @@ import { exportScannerLogsToExcel } from '@/lib/excelExport';
 import { matchesFuzzySearch } from '@/lib/fuzzySearch';
 import { Paquete, Cliente, ScannedLog } from '@/types';
 import { supabase } from '@/lib/supabase/client';
+import { soundEffects } from '@/lib/audio/soundEffects';
 
 const MobileScannerModal = dynamic(
   () => import('@/components/scanner/MobileScannerModal'),
@@ -75,6 +76,21 @@ export default function ScannerTab({
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState({ current: 0, total: 0 });
   const [editingLog, setEditingLog] = useState<ScannedLog | null>(null);
+  const [isOnline, setIsOnline] = useState<boolean>(true);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsOnline(navigator.onLine);
+      const onOn = () => setIsOnline(true);
+      const onOff = () => setIsOnline(false);
+      window.addEventListener('online', onOn);
+      window.addEventListener('offline', onOff);
+      return () => {
+        window.removeEventListener('online', onOn);
+        window.removeEventListener('offline', onOff);
+      };
+    }
+  }, []);
 
   // Conteo de paquetes por Anaquel y Pisos
   const a1_P1 = paquetes.filter(p => (p.posicionEstante === 'A1-P1' || (p.anaquel === 'A1' && p.piso === 'P1'))).length;
@@ -196,8 +212,14 @@ export default function ScannerTab({
     exportScannerLogsToExcel(scannedLogs, 'Lecturas_Escaneo_AMEX');
   };
 
-  // 🚀 SUBIDA CONFIRMADA A SUPABASE MASTER (Soporta WRs repetidos, reactivación y slotting dinámico)
+  // 🚀 SUBIDA CONFIRMADA A SUPABASE MASTER (Optimización Batch Ultrarrápida + Checkpointing Resiliente)
   const handleExecuteMasterSync = async () => {
+    // 0. Validar conexión a internet
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      alert('Sin conexión a Internet. Las lecturas permanecen guardadas y seguras en tu dispositivo. Vuelve a intentarlo al recuperar la señal.');
+      return;
+    }
+
     // Determinar qué logs se van a subir: si hay seleccionados, solo los seleccionados; si no, todos los pendientes
     const targetLogs = selectedIds.length > 0
       ? scannedLogs.filter(l => selectedIds.includes(l.id))
@@ -215,193 +237,138 @@ export default function ScannerTab({
     setIsSyncing(true);
     setSyncProgress({ current: 0, total: targetLogs.length });
 
-    try {
-      let count = 0;
-      let updatedCount = 0;
-      let insertedCount = 0;
-      let errorCount = 0;
+    // Protección de ciclo de vida: advertir si el usuario intenta cerrar la ventana/pestaña
+    const preventClose = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = 'Hay una sincronización en curso. ¿Estás seguro de salir?';
+    };
+    window.addEventListener('beforeunload', preventClose);
 
-      // Diccionario en memoria para rastrear y sincronizar paquetes existentes
-      const existingMap = new Map<string, { id: string; numero_recibo_bodega?: string; nombre_consignatario?: string; ubicacion_actual?: string; posicion_estante?: string }>();
-
-      // Pre-cargar paquetes en memoria
-      for (const p of paquetes) {
-        const pkgEntry = {
-          id: p.id,
-          numero_recibo_bodega: p.numeroReciboBodega,
-          nombre_consignatario: p.nombreConsignatario,
-          ubicacion_actual: p.ubicacionActual,
-          posicion_estante: p.posicionEstante
-        };
-        if (p.numeroReciboBodega) existingMap.set(p.numeroReciboBodega.trim().toUpperCase(), pkgEntry);
-        if (p.trackingUsa) existingMap.set(p.trackingUsa.trim().toUpperCase(), pkgEntry);
+    // Evitar suspensión de pantalla en móviles (Screen Wake Lock API)
+    let wakeLockSentinel: { release: () => Promise<void> } | null = null;
+    if (typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
+      try {
+        wakeLockSentinel = await (navigator as unknown as { wakeLock: { request: (type: string) => Promise<{ release: () => Promise<void> }> } }).wakeLock.request('screen');
+      } catch {
+        // WakeLock no soportado o bloqueado por permisos, continuar sin interrupción
       }
+    }
 
-      for (const log of targetLogs) {
-        const upper = log.code.trim().toUpperCase();
-        const loc = log.location || (log.anaquel && log.piso ? `${log.anaquel}-${log.piso}` : 'REC');
-        const [ana, pis] = loc.includes('-') ? loc.split('-') : [loc, 'P1'];
+    const CHUNK_SIZE = 30; // Tamaño óptimo por bloque HTTP
+    let totalUpdated = 0;
+    let totalInserted = 0;
+    let totalSynced = 0;
+    let currentLogsState = [...scannedLogs];
 
-        let targetPkgId: string | null = null;
-        let targetPkgWr: string = upper;
-        let targetConsignatario = log.nombreConsignatario || '';
+    try {
+      // Obtener token de sesión Supabase si está disponible
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token || '';
 
-        // 1. Buscar si el paquete ya existe en memoria o en la base de datos (incluso si fue borrado lógicamente)
-        let matchedPkg = existingMap.get(upper);
+      // Dividir en bloques para evitar sobrecargar memoria o timeouts de red móvil
+      for (let i = 0; i < targetLogs.length; i += CHUNK_SIZE) {
+        const chunk = targetLogs.slice(i, i + CHUNK_SIZE);
 
-        if (!matchedPkg) {
-          const { data: foundList } = await supabase
-            .from('paquetes')
-            .select('id, numero_recibo_bodega, nombre_consignatario, ubicacion_actual, posicion_estante, eliminado_en')
-            .or(`numero_recibo_bodega.eq.${upper},tracking_usa.eq.${upper}`)
-            .order('creado_en', { ascending: false })
-            .limit(1);
+        const payload = {
+          items: chunk.map(it => ({
+            id: it.id,
+            code: it.code,
+            format: it.format || 'CODE_128',
+            location: it.location || (it.anaquel && it.piso ? `${it.anaquel}-${it.piso}` : 'REC'),
+            anaquel: it.anaquel,
+            piso: it.piso,
+            workflow: it.workflow || 'slotting',
+            nombreConsignatario: it.nombreConsignatario || '',
+            operadorEmail: activeUserEmail,
+            operadorNombre: activeUserName,
+          })),
+          operadorNombre: activeUserName,
+          operadorEmail: activeUserEmail,
+          operadorId: activeUserId || undefined,
+        };
 
-          if (foundList && foundList.length > 0) {
-            matchedPkg = foundList[0];
-            existingMap.set(upper, matchedPkg);
-            if (matchedPkg.numero_recibo_bodega) {
-              existingMap.set(matchedPkg.numero_recibo_bodega.trim().toUpperCase(), matchedPkg);
+        // Función de envío con reintentos exponenciales para resistir caídas momentáneas de red
+        let chunkResponse: { success: boolean; syncedIds: string[]; updatedCount: number; insertedCount: number; message?: string } | null = null;
+        let lastError: unknown = null;
+
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            const res = await fetch('/api/scanner/batch-sync', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+              },
+              credentials: 'include',
+              body: JSON.stringify(payload),
+            });
+
+            if (!res.ok) {
+              const errJson = await res.json().catch(() => ({}));
+              throw new Error(errJson.error || `Error HTTP ${res.status}`);
+            }
+
+            chunkResponse = await res.json();
+            break; // Éxito
+          } catch (err) {
+            lastError = err;
+            if (attempt < 3) {
+              // Espera incremental (1s, 2s) antes de reintentar
+              await new Promise(r => setTimeout(r, attempt * 1000));
             }
           }
         }
 
-        if (matchedPkg) {
-          targetPkgId = matchedPkg.id;
-          targetPkgWr = matchedPkg.numero_recibo_bodega || upper;
-          if (!targetConsignatario && matchedPkg.nombre_consignatario) {
-            targetConsignatario = matchedPkg.nombre_consignatario;
-          }
-
-          // Reactivar paquete (eliminado_en = null) y actualizar posición de estante
-          const { error: updateErr } = await supabase
-            .from('paquetes')
-            .update({
-              anaquel: ana,
-              piso: pis,
-              posicion_estante: loc,
-              ubicacion_actual: 'AmexLince',
-              estado_entrega: 'EnAlmacen',
-              ...(activeUserEmail ? { usuario_email: activeUserEmail } : {}),
-              eliminado_en: null,
-              motivo_eliminacion: null,
-              eliminado_por: null,
-              actualizado_en: new Date().toISOString()
-            })
-            .eq('id', matchedPkg.id);
-
-          if (updateErr) {
-            console.error(`Error actualizando paquete ${upper}:`, updateErr);
-            errorCount++;
-          } else {
-            updatedCount++;
-            // Registrar trazabilidad
-            await supabase.from('historial_trazabilidad').insert({
-              paquete_id: matchedPkg.id,
-              ubicacion: loc,
-              descripcion_evento: `Escaneado confirmado y clasificado a estante: ${loc}`,
-              usuario_operador: activeUserName
-            });
-          }
-        } else {
-          // Insertar nuevo paquete (permite datos repetidos y múltiples bultos sin restricciones)
-          const newWr = upper.startsWith('WR') ? upper : `WR${upper.slice(-6)}`;
-          targetPkgWr = newWr;
-
-          const { data: newPkg, error: insertErr } = await supabase
-            .from('paquetes')
-            .insert({
-              numero_recibo_bodega: newWr,
-              tracking_usa: upper.startsWith('WR') ? '' : upper,
-              tipo_empaque: 'Paquete',
-              dni_consignatario: '',
-              nombre_consignatario: targetConsignatario,
-              descripcion: 'Mercadería ingresada por Escáner',
-              peso_kg: null,
-              valor_declarado_usd: 50.0,
-              ubicacion_actual: 'AmexLince',
-              anaquel: ana,
-              piso: pis,
-              posicion_estante: loc,
-              estado_entrega: 'EnAlmacen',
-              usuario_email: activeUserEmail || null,
-              creado_por: activeUserId || null,
-              eliminado_en: null
-            })
-            .select('id, numero_recibo_bodega, nombre_consignatario, ubicacion_actual, posicion_estante')
-            .single();
-
-          if (insertErr) {
-            console.error(`Error insertando nuevo paquete ${newWr}:`, insertErr);
-            errorCount++;
-          } else if (newPkg) {
-            insertedCount++;
-            targetPkgId = newPkg.id;
-            existingMap.set(upper, newPkg);
-            existingMap.set(newWr.toUpperCase(), newPkg);
-
-            // Registrar trazabilidad inicial
-            await supabase.from('historial_trazabilidad').insert({
-              paquete_id: newPkg.id,
-              ubicacion: loc,
-              descripcion_evento: `Ingreso por escáner móvil a estante: ${loc}`,
-              usuario_operador: activeUserName
-            });
-          }
+        if (!chunkResponse || !chunkResponse.success) {
+          throw lastError || new Error('No se pudo sincronizar el bloque tras 3 reintentos.');
         }
 
-        // 2. Registrar evento inmutable en Kardex
-        await supabase.from('movimientos_kardex').insert({
-          paquete_id: targetPkgId,
-          codigo_paquete: targetPkgWr,
-          consignatario: targetConsignatario || 'Cliente AMEX',
-          origen_descripcion: matchedPkg ? `${matchedPkg.ubicacion_actual || 'Almacén'} (${matchedPkg.posicion_estante || 'REC'})` : 'Recepción Escáner',
-          destino_descripcion: `AmexLince (${loc})`,
-          tipo_movimiento: 'SLOTTING',
-          motivo: `Clasificación y Slotting Escáner a estante ${loc}`,
-          usuario_operador: activeUserName,
-          usuario_email: activeUserEmail || null,
-          usuario_id: activeUserId || null
-        });
+        // 🛡️ CHECKPOINTING PROGRESIVO INMEDIATO:
+        // Guardar de inmediato en localStorage y memoria los items confirmados de este bloque.
+        // Si el usuario sale de la app o se apaga el teléfono en el siguiente bloque,
+        // ESTOS ITEMS YA QUEDARON 100% REGISTRADOS Y NO SE PERDERÁN.
+        const syncedIdsSet = new Set(chunkResponse.syncedIds || chunk.map(c => c.id));
+        currentLogsState = currentLogsState.map(l =>
+          syncedIdsSet.has(l.id)
+            ? { ...l, synced: true, syncedAt: new Date().toISOString() }
+            : l
+        );
 
-        // 3. Registrar auditoría en escaneos_log
-        await supabase.from('escaneos_log').insert({
-          codigo: log.code,
-          paquete_id: targetPkgId,
-          formato: log.format,
-          modo_workflow: log.workflow || 'slotting',
-          ubicacion: loc,
-          operador: activeUserName,
-          operador_email: activeUserEmail || null,
-          usuario_id: activeUserId || null
-        });
+        saveLogsToStorage(currentLogsState);
 
-        count++;
-        setSyncProgress({ current: count, total: targetLogs.length });
+        totalSynced += syncedIdsSet.size;
+        totalUpdated += chunkResponse.updatedCount || 0;
+        totalInserted += chunkResponse.insertedCount || 0;
+
+        setSyncProgress({ current: totalSynced, total: targetLogs.length });
       }
 
-      // Marcar los logs como sincronizados
-      const targetIds = targetLogs.map(l => l.id);
-      const updatedLogs = scannedLogs.map(l =>
-        targetIds.includes(l.id) ? { ...l, synced: true, syncedAt: new Date().toISOString() } : l
-      );
-
-      saveLogsToStorage(updatedLogs);
+      // Finalización exitosa
       setSelectedIds([]);
       setIsConfirmSyncModalOpen(false);
 
-      // Refrescar datos en el Dashboard / Inventario
       if (onRefreshData) {
         await onRefreshData();
       }
 
-      const summaryMsg = `✓ ¡Éxito! ${count} lectura(s) procesadas (${updatedCount} actualizadas/reactivadas, ${insertedCount} nuevas creadas${errorCount > 0 ? `, ${errorCount} errores` : ''}).`;
+      const summaryMsg = `✓ ¡Éxito! ${totalSynced} lectura(s) sincronizadas (${totalUpdated} actualizadas, ${totalInserted} nuevas registradas).`;
       setSyncNotification(summaryMsg);
+      soundEffects.playSuccess();
       setTimeout(() => setSyncNotification(null), 5000);
-    } catch (err) {
-      console.error('Error syncing staging logs to Supabase Master:', err);
-      alert('Ocurrió un problema al sincronizar con la base de datos master.');
+    } catch (err: unknown) {
+      console.error('Error sincronizando lote de escáner:', err);
+      soundEffects.playNotFound();
+      const msg = err instanceof Error ? err.message : 'Error desconocido';
+      alert(`Ocurrió una interrupción al sincronizar: ${msg}.\n\n✓ Las lecturas procesadas hasta el momento han sido guardadas con seguridad en tu dispositivo.\nPuedes volver a pulsar "Subir a BD Master" para continuar con las pendientes.`);
     } finally {
+      window.removeEventListener('beforeunload', preventClose);
+      if (wakeLockSentinel) {
+        try {
+          await wakeLockSentinel.release();
+        } catch {
+          // Silent
+        }
+      }
       setIsSyncing(false);
     }
   };
@@ -455,6 +422,14 @@ export default function ScannerTab({
         <div style={{ background: '#dcfce7', border: '1px solid #86efac', color: '#166534', padding: '12px 16px', borderRadius: '10px', fontWeight: 800, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(22,163,74,0.15)' }}>
           <CheckCircle2 className="w-5 h-5 text-green-600" />
           <span>{syncNotification}</span>
+        </div>
+      )}
+
+      {/* Alerta de Modo Fuera de Línea */}
+      {!isOnline && (
+        <div style={{ background: '#fef3c7', border: '1px solid #fcd34d', color: '#92400e', padding: '10px 14px', borderRadius: '10px', fontWeight: 700, fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 6px rgba(180,83,9,0.1)' }}>
+          <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+          <span>📡 <strong>Modo Fuera de Línea:</strong> Sin conexión a Internet detectada. Tus lecturas se guardan localmente en tu equipo con total seguridad. Podrás sincronizarlas a la base de datos master cuando vuelva la red.</span>
         </div>
       )}
 
@@ -854,8 +829,25 @@ export default function ScannerTab({
                                   padding: '2px 6px',
                                   borderRadius: '4px'
                                 }}
+                                title={log.syncedAt ? `Confirmado en Supabase a las ${new Date(log.syncedAt).toLocaleTimeString()}` : 'Confirmado en Supabase'}
                               >
                                 <CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> Sincronizado Master
+                              </span>
+                            ) : isSyncing && (selectedIds.length === 0 || selectedIds.includes(log.id)) ? (
+                              <span
+                                style={{
+                                  fontSize: '10.5px',
+                                  fontWeight: 800,
+                                  color: '#2563eb',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px',
+                                  background: '#dbeafe',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px'
+                                }}
+                              >
+                                <RefreshCw className="w-3.5 h-3.5 text-blue-600 animate-spin" /> Subiendo lote...
                               </span>
                             ) : (
                               <span

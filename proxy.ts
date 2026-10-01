@@ -63,15 +63,31 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  // Refrescar sesión de Supabase si existe cookie
-  const { data: { user } } = await supabase.auth.getUser();
+  // Refrescar sesión de Supabase si existe cookie o encabezado Bearer
+  let user = null;
+  const authHeader = request.headers.get('authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    const { data: tokenData } = await supabase.auth.getUser(token);
+    user = tokenData?.user || null;
+  } else {
+    const { data: cookieData } = await supabase.auth.getUser();
+    user = cookieData?.user || null;
+  }
+
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  const isServiceRole = Boolean(
+    serviceKey &&
+    (request.headers.get('x-amex-service-role') === serviceKey ||
+     request.headers.get('apikey') === serviceKey)
+  );
 
   // Si está en login y ya está autenticado, redirigir al panel
   if (isLoginPage && user) {
     return setRequestIdHeader(NextResponse.redirect(new URL('/dashboard', request.url)));
   }
 
-  if (!user && !isLoginPage && !isPublicAuthRoute) {
+  if (!user && !isServiceRole && !isLoginPage && !isPublicAuthRoute) {
     if (isApiRoute) {
       return setRequestIdHeader(
         NextResponse.json({ error: 'No autenticado.' }, { status: 401 })

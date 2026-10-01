@@ -81,4 +81,30 @@ describe('Validaciones Zod — Suite de Pruebas', () => {
       expect(UploadMetadataSchema.safeParse({ folder: 'root-malicioso' }).success).toBe(false);
     });
   });
+
+  describe('BatchSyncScannerSchema', () => {
+    it('debe aceptar lotes válidos de escaneo y asignar defaults', async () => {
+      const { BatchSyncScannerSchema } = await import('@/lib/validations/scanner.schema');
+      const res = BatchSyncScannerSchema.safeParse({
+        items: [
+          { id: '1', code: 'WR123456', location: 'A1-P1' },
+          { id: '2', code: 'WR789012', location: 'A2-P2' }
+        ],
+        operadorNombre: 'Operador Test'
+      });
+      expect(res.success).toBe(true);
+      if (res.success) {
+        expect(res.data.items).toHaveLength(2);
+        expect(res.data.items[0].format).toBe('CODE_128');
+        expect(res.data.items[0].workflow).toBe('slotting');
+      }
+    });
+
+    it('debe rechazar lotes vacíos', async () => {
+      const { BatchSyncScannerSchema } = await import('@/lib/validations/scanner.schema');
+      const res = BatchSyncScannerSchema.safeParse({ items: [] });
+      expect(res.success).toBe(false);
+    });
+  });
 });
+
