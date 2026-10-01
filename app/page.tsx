@@ -107,6 +107,8 @@ export default function DashboardPage() {
           isSidebarCollapsed={isSidebarCollapsed}
           onSelectTab={setActiveTab}
           onCloseSidebar={() => setIsSidebarCollapsed(true)}
+          currentUser={currentUser}
+          onLogout={handleLogout}
         />
 
         <main className={`main-content tab-${activeTab} ${['dni-matrix', 'rotulos-a4', 'boletas-shalom'].includes(activeTab) ? 'dark-tab-mode' : ''} ${activeTab === 'live-sheets' ? 'live-sheets-mode' : ''} ${activeTab === 'dni-matrix' ? 'dni-matrix-mode' : ''} ${activeTab === 'rotulos-a4' ? 'rotulos-mode' : ''} ${activeTab === 'boletas-shalom' ? 'boletas-shalom-mode' : ''} ${activeTab === 'fico-cobros' ? 'cobros-mode' : ''}`}>

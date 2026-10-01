@@ -7,14 +7,24 @@ interface SidebarProps {
   isSidebarCollapsed: boolean;
   onSelectTab: (tab: string) => void;
   onCloseSidebar?: () => void;
+  currentUser?: { nombre: string; rol: string; email?: string } | null;
+  onLogout?: () => void;
 }
 
 export default function Sidebar({
   activeTab,
   isSidebarCollapsed,
   onSelectTab,
-  onCloseSidebar
+  onCloseSidebar,
+  currentUser,
+  onLogout
 }: SidebarProps) {
+  const handleLogoutClick = () => {
+    if (typeof window !== 'undefined' && window.confirm('¿Estás seguro de que deseas cerrar tu sesión en el sistema?')) {
+      onLogout?.();
+    }
+  };
+
   const navItem = (tab: string, icon: string, label: string) => {
     const isActive = activeTab === tab || (tab === 'directorio-clientes' && activeTab === 'clientes-360');
     return (
@@ -45,7 +55,7 @@ export default function Sidebar({
   };
 
   return (
-    <nav className={`sap-sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`} aria-label="Menú principal de Operaciones y Almacenes">
+    <nav className={`sap-sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`} aria-label="Menú principal de Operaciones y Almacenes" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       {/* Encabezado Móvil con Botón Cerrar (Oculto en PC vía CSS) */}
       <div className="sidebar-mobile-header">
         <span style={{ fontSize: '13px', fontWeight: 900, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -73,8 +83,8 @@ export default function Sidebar({
         </button>
       </div>
 
-      {/* SECCIÓN ÚNICA EXCLUSIVA: MÓDULOS DEL SISTEMA */}
-      <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      {/* ÁREA SCROLLABLE: TÍTULO Y MÓDULOS DEL SISTEMA */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
         <div
           style={{
             display: 'flex',
@@ -87,7 +97,7 @@ export default function Sidebar({
             fontWeight: 900,
             fontSize: '11.5px',
             letterSpacing: '0.5px',
-            marginBottom: '10px',
+            marginBottom: '8px',
             textTransform: 'uppercase',
             boxShadow: '0 2px 8px rgba(37, 99, 235, 0.15)'
           }}
@@ -98,7 +108,7 @@ export default function Sidebar({
         </div>
 
         {/* SUBMÓDULOS EN ORDEN OPERATIVO */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', paddingBottom: '60px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
           {navItem('dashboard', 'fa-solid fa-chart-pie', '1. Panel Operativo')}
           {navItem('live-sheets', 'fa-solid fa-table-list', '2. Amex Excel')}
           {navItem('mm-lince', 'fa-solid fa-boxes-stacked', '3. Inventario')}
@@ -114,7 +124,128 @@ export default function Sidebar({
           {navItem('completar-inventario', 'fa-solid fa-cloud-arrow-up', '13. Completar Inventario')}
           {navItem('auditoria', 'fa-solid fa-shield-halved', '14. Auditoría & Gobernanza')}
           {navItem('admin-usuarios', 'fa-solid fa-user-gear', '15. Gestión de Usuarios')}
+
+          {/* OPCIÓN ADICIONAL EN LA LISTA: CERRAR SESIÓN */}
+          <div
+            onClick={handleLogoutClick}
+            role="button"
+            tabIndex={0}
+            style={{
+              borderRadius: '8px',
+              padding: '10px 14px',
+              fontSize: '13px',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+              borderLeft: '3.5px solid #ef4444',
+              color: '#fca5a5',
+              marginTop: '8px',
+              marginBottom: '12px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.22)';
+              e.currentTarget.style.color = '#ffffff';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)';
+              e.currentTarget.style.color = '#fca5a5';
+            }}
+            title="Cerrar sesión actual en el sistema"
+          >
+            <i className="fa-solid fa-right-from-bracket" style={{ width: '18px', textAlign: 'center', color: '#ef4444' }}></i>
+            <span>Cerrar Sesión</span>
+          </div>
         </div>
+      </div>
+
+      {/* PIE FIJO DEL SIDEBAR: USUARIO ACTIVO Y BOTÓN DESTACADO DE CIERRE DE SESIÓN */}
+      <div
+        style={{
+          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+          background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 1) 100%)',
+          padding: '12px 10px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+          flexShrink: 0,
+          boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.25)'
+        }}
+      >
+        {/* Identidad del Operador */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '2px 4px' }}>
+          <div
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+              border: '1.5px solid #38bdf8',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ffffff',
+              fontSize: '14px',
+              fontWeight: 900,
+              flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(37, 99, 235, 0.35)'
+            }}
+          >
+            {(currentUser?.nombre || 'AMEX')[0]?.toUpperCase()}
+          </div>
+          <div style={{ overflow: 'hidden', flex: 1 }}>
+            <div style={{ fontSize: '12px', fontWeight: 800, color: '#f8fafc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {currentUser?.nombre || 'Operador Logístico'}
+            </div>
+            <div style={{ fontSize: '10.5px', color: '#38bdf8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', display: 'inline-block' }}></span>
+              {currentUser?.rol || 'Operador Activo'}
+            </div>
+          </div>
+        </div>
+
+        {/* Botón Principal Cerrar Sesión */}
+        <button
+          onClick={handleLogoutClick}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '9px 14px',
+            borderRadius: '8px',
+            fontSize: '12px',
+            fontWeight: 800,
+            cursor: 'pointer',
+            background: 'rgba(239, 68, 68, 0.15)',
+            border: '1.5px solid rgba(239, 68, 68, 0.4)',
+            color: '#fca5a5',
+            transition: 'all 0.18s ease',
+            boxShadow: '0 2px 6px rgba(239, 68, 68, 0.12)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#dc2626';
+            e.currentTarget.style.color = '#ffffff';
+            e.currentTarget.style.borderColor = '#b91c1c';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.35)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
+            e.currentTarget.style.color = '#fca5a5';
+            e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+            e.currentTarget.style.boxShadow = '0 2px 6px rgba(239, 68, 68, 0.12)';
+          }}
+          aria-label="Cerrar sesión del sistema"
+          title="Cerrar sesión y volver a la pantalla de login"
+        >
+          <i className="fa-solid fa-right-from-bracket" style={{ fontSize: '13px' }}></i>
+          <span>Cerrar Sesión</span>
+        </button>
       </div>
     </nav>
   );

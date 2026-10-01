@@ -103,12 +103,9 @@ body {
   background: var(--sap-sidebar-bg);
   display: flex;
   flex-direction: column;
-  padding: 14px 10px;
-  gap: 6px;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
-  overscroll-behavior-y: contain;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
   border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -156,8 +153,10 @@ body {
     visibility: visible !important;
     pointer-events: auto !important;
     display: flex !important;
-    padding: 14px 10px !important;
+    flex-direction: column !important;
+    padding: 0 !important;
     margin: 0 !important;
+    overflow: hidden !important;
     border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
     position: relative !important;
     height: 100% !important;

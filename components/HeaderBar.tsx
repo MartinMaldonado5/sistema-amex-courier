@@ -10,9 +10,17 @@ interface HeaderBarProps {
 }
 
 export default function HeaderBar({
+  currentUser,
   isSidebarCollapsed,
   onToggleSidebar,
+  onLogout
 }: HeaderBarProps) {
+  const handleLogoutClick = () => {
+    if (typeof window !== 'undefined' && window.confirm('¿Estás seguro de que deseas cerrar tu sesión en el sistema?')) {
+      onLogout?.();
+    }
+  };
+
   return (
     <header
       className="sap-header"
@@ -61,6 +69,40 @@ export default function HeaderBar({
           <i className="fa-solid fa-boxes-stacked" style={{ color: '#38bdf8' }}></i>
           AMEX COURIER
         </span>
+        {onLogout && (
+          <button
+            onClick={handleLogoutClick}
+            className="header-logout-btn"
+            style={{
+              marginLeft: 'auto',
+              background: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
+              color: '#fca5a5',
+              cursor: 'pointer',
+              fontSize: '11.5px',
+              fontWeight: 700,
+              padding: '5px 10px',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.15s ease'
+            }}
+            title="Cerrar sesión"
+            aria-label="Cerrar sesión"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#dc2626';
+              e.currentTarget.style.color = '#ffffff';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
+              e.currentTarget.style.color = '#fca5a5';
+            }}
+          >
+            <i className="fa-solid fa-right-from-bracket" style={{ color: '#ef4444' }}></i>
+            <span className="header-logout-text">Salir</span>
+          </button>
+        )}
       </div>
     </header>
   );
