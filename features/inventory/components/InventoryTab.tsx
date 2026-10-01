@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Paquete, Cliente } from '@/types';
 import ThermalLabelModal from '@/components/modals/ThermalLabelModal';
 import Modal from '@/components/ui/Modal';
@@ -16,6 +16,7 @@ import EditPackageModal from '../modals/EditPackageModal';
 import BatchStatusModal from '../modals/BatchStatusModal';
 import ShelfPositionModal from '../modals/ShelfPositionModal';
 import EditPositionModal from '../modals/EditPositionModal';
+import SyncTibModal from '../modals/SyncTibModal';
 
 export interface InventoryTabProps {
   paquetes: Paquete[];
@@ -149,6 +150,8 @@ export default function InventoryTab({
     onRefreshData
   });
 
+  const [isSyncTibModalOpen, setIsSyncTibModalOpen] = useState(false);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', maxWidth: '100%', padding: '16px 20px', boxSizing: 'border-box' }}>
       {/* Barra de herramientas, subpestañas y filtros */}
@@ -181,6 +184,7 @@ export default function InventoryTab({
         onOpenMatrizModal={() => setIsMatrizModalOpen(true)}
         onOpenGestorModal={() => setIsGestorModalOpen(true)}
         onOpenKardexModal={() => setIsKardexModalOpen(true)}
+        onOpenSyncTibModal={() => setIsSyncTibModalOpen(true)}
         onExportExcel={handleExportExcel}
         onRefreshData={onRefreshData}
         onNewPackage={onNewPackage}
@@ -412,6 +416,13 @@ export default function InventoryTab({
           onOpenTransferModal={() => openTransferModal()}
         />
       </Modal>
+
+      {/* Modal de Cruce Rápido con TIB del Día (Worker Hostinger) */}
+      <SyncTibModal
+        isOpen={isSyncTibModalOpen}
+        onClose={() => setIsSyncTibModalOpen(false)}
+        onRefreshData={onRefreshData}
+      />
     </div>
   );
 }

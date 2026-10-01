@@ -32,16 +32,57 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => ({}));
 
-    const rawFuentes: unknown[] = Array.isArray(body.fuentes) ? body.fuentes : [];
-    const fuentes: string[] = [...new Set(rawFuentes.map((f) => String(f).trim()))].filter(
-      (f) => VALID_SOURCES.has(f)
-    );
+    const admin = getSupabaseAdmin();
+    const usarTibDiario = Boolean(body.usar_tib_diario);
+    let fuentes: string[] = [];
+    const tibKeys: Record<string, string> = {};
 
-    if (fuentes.length === 0) {
-      return NextResponse.json(
-        { error: 'Selecciona al menos una fuente TIB (Entregado, Enviado o Recibido).' },
-        { status: 400 }
+    if (usarTibDiario) {
+      // Consultar archivos TIB activos más recientes
+      const { data: tibRows, error: tibErr } = await admin
+        .from('inventario_tib_diario')
+        .select('tipo, r2_key, fecha')
+        .eq('es_activo', true)
+        .order('fecha', { ascending: false });
+
+      if (tibErr || !tibRows || tibRows.length === 0) {
+        return NextResponse.json(
+          { error: 'No se encontraron archivos TIB activos guardados en el sistema. Por favor cárgalos primero.' },
+          { status: 400 }
+        );
+      }
+
+      for (const tRow of tibRows) {
+        if (!tibKeys[tRow.tipo] && ['delivered', 'sent', 'received'].includes(tRow.tipo)) {
+          tibKeys[tRow.tipo] = tRow.r2_key;
+        }
+      }
+
+      const requestedFuentes: unknown[] = Array.isArray(body.fuentes) && body.fuentes.length > 0
+        ? body.fuentes
+        : ['delivered', 'sent', 'received'];
+      fuentes = [...new Set(requestedFuentes.map((f) => String(f).trim()))].filter(
+        (f) => VALID_SOURCES.has(f) && tibKeys[f]
       );
+
+      if (fuentes.length === 0) {
+        return NextResponse.json(
+          { error: 'Ninguna de las fuentes TIB seleccionadas cuenta con archivo guardado en el sistema.' },
+          { status: 400 }
+        );
+      }
+    } else {
+      const rawFuentes: unknown[] = Array.isArray(body.fuentes) ? body.fuentes : [];
+      fuentes = [...new Set(rawFuentes.map((f) => String(f).trim()))].filter(
+        (f) => VALID_SOURCES.has(f)
+      );
+
+      if (fuentes.length === 0) {
+        return NextResponse.json(
+          { error: 'Selecciona al menos una fuente TIB (Entregado, Enviado o Recibido).' },
+          { status: 400 }
+        );
+      }
     }
 
     const origenInventario = body.origen_inventario === 'file' ? 'file' : 'db';
@@ -90,7 +131,7 @@ export async function POST(req: NextRequest) {
 
     for (const fuente of fuentes) {
       const field = SOURCE_KEY_FIELD[fuente];
-      const key = String(body[field] || '').trim();
+      const key = (usarTibDiario ? tibKeys[fuente] : String(body[field] || '')).trim();
       if (!key || !isXlsxKey(key)) {
         return NextResponse.json(
           { error: `Falta el archivo TIB de la fuente activada: ${fuente}.` },
@@ -100,7 +141,6 @@ export async function POST(req: NextRequest) {
       row[field] = key;
     }
 
-    const admin = getSupabaseAdmin();
     const { data, error } = await admin
       .from('inventario_jobs')
       .insert(row)

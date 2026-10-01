@@ -34,6 +34,14 @@ const FUENTES: Array<{ key: FuenteKey; label: string; file: string }> = [
 
 const MAX_BYTES = 100 * 1024 * 1024;
 
+function formatBytes(bytes: number): string {
+  if (!bytes) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+}
+
 function uploadWithProgress(url: string, file: File, onProgress: (pct: number) => void): Promise<void> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -54,6 +62,24 @@ function uploadWithProgress(url: string, file: File, onProgress: (pct: number) =
   });
 }
 
+interface TibFileInfo {
+  id?: string;
+  tipo: FuenteKey;
+  r2_key: string;
+  nombre_archivo: string;
+  peso_bytes: number;
+  subido_en: string;
+  subido_por_nombre: string;
+}
+
+interface TibState {
+  fecha: string;
+  fechaHoy: string;
+  isToday: boolean;
+  isComplete: boolean;
+  files: Record<FuenteKey, TibFileInfo | null>;
+}
+
 export default function InventarioJobsTab() {
   const [files, setFiles] = useState<Record<string, File | null>>({
     inventory: null,
@@ -72,6 +98,10 @@ export default function InventarioJobsTab() {
   const [error, setError] = useState('');
   const [history, setHistory] = useState<Job[]>([]);
   const [origenInventario, setOrigenInventario] = useState<'db' | 'file'>('db');
+  const [modoTib, setModoTib] = useState<'diario' | 'manual'>('diario');
+  const [tibState, setTibState] = useState<TibState | null>(null);
+  const [uploadingTib, setUploadingTib] = useState<Record<string, boolean>>({});
+  const [tibUploadPct, setTibUploadPct] = useState<Record<string, number>>({});
   const [filtroEstado, setFiltroEstado] = useState<'activos' | 'todos'>('activos');
   const [dbStats, setDbStats] = useState<{ activos: number; todos: number }>({ activos: 0, todos: 0 });
   const [autoSyncDb, setAutoSyncDb] = useState(true);
@@ -80,16 +110,27 @@ export default function InventarioJobsTab() {
   const autoSyncedRef = useRef<Record<string, boolean>>({});
   const pollRef = useRef<NodeJS.Timeout | null>(null);
 
+  const loadTibState = useCallback(async () => {
+    try {
+      const res = await fetch('/api/inventario-tib');
+      const data = await res.json();
+      if (data.files) setTibState(data);
+    } catch {
+      /* opcional */
+    }
+  }, []);
+
   const loadHistory = useCallback(async () => {
     try {
       const res = await fetch('/api/inventario-jobs');
       const data = await res.json();
       if (data.jobs) setHistory(data.jobs);
       if (data.dbStats) setDbStats(data.dbStats);
+      void loadTibState();
     } catch {
       /* historial opcional */
     }
-  }, []);
+  }, [loadTibState]);
 
   const handleSyncDb = useCallback(async (targetJobId?: string) => {
     const idToSync = targetJobId || job?.id;
@@ -202,18 +243,112 @@ export default function InventarioJobsTab() {
     setFiles((prev) => ({ ...prev, [slot]: file }));
   };
 
+  const handleUploadDailyTib = async (slot: FuenteKey, file: File) => {
+    if (!file.name.toLowerCase().endsWith('.xlsx')) {
+      setError(`"${file.name}" debe ser formato .xlsx.`);
+      return;
+    }
+    if (file.size > MAX_BYTES) {
+      setError(`"${file.name}" supera los 100 MB.`);
+      return;
+    }
+
+    setUploadingTib((p) => ({ ...p, [slot]: true }));
+    setTibUploadPct((p) => ({ ...p, [slot]: 0 }));
+    setError('');
+
+    try {
+      const presign = await fetch('/api/inventario-jobs/presign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slot, filename: file.name, isDailyTib: true }),
+      }).then((r) => r.json());
+
+      if (!presign.uploadUrl) throw new Error(presign.error || `No se pudo preparar la subida para ${slot}.`);
+
+      await uploadWithProgress(presign.uploadUrl, file, (pct) =>
+        setTibUploadPct((p) => ({ ...p, [slot]: pct }))
+      );
+
+      const confirmRes = await fetch('/api/inventario-tib', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: slot,
+          r2_key: presign.key,
+          nombre_archivo: file.name,
+          peso_bytes: file.size,
+        }),
+      }).then((r) => r.json());
+
+      if (!confirmRes.ok) throw new Error(confirmRes.error || 'No se pudo registrar en base de datos.');
+      await loadTibState();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al subir reporte TIB diario.');
+    } finally {
+      setUploadingTib((p) => ({ ...p, [slot]: false }));
+    }
+  };
+
   const handleProcess = async () => {
     try {
       setError('');
       const activas = (Object.keys(fuentesActivas) as FuenteKey[]).filter((k) => fuentesActivas[k]);
-      if (origenInventario === 'file' && !files.inventory) {
-        setError('Selecciona el inventario AMEX (.xlsx) para el modo manual.');
-        return;
-      }
       if (activas.length === 0) {
         setError('Activa al menos una fuente TIB (Entregado, Enviado o Recibido).');
         return;
       }
+      if (origenInventario === 'file' && !files.inventory) {
+        setError('Selecciona el inventario AMEX (.xlsx) para el modo manual.');
+        return;
+      }
+
+      // Si usamos el modo de TIB diario guardado
+      if (modoTib === 'diario') {
+        for (const f of activas) {
+          if (!tibState?.files[f]) {
+            setError(`Falta el archivo guardado para: ${FUENTES.find((x) => x.key === f)?.label}. Puedes cargarlo arriba.`);
+            return;
+          }
+        }
+
+        let manualInvKey: string | undefined = undefined;
+        if (origenInventario === 'file' && files.inventory) {
+          setPhase('uploading');
+          const presign = await fetch('/api/inventario-jobs/presign', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slot: 'inventory', filename: files.inventory.name }),
+          }).then((r) => r.json());
+          if (!presign.uploadUrl) throw new Error(presign.error || 'No se pudo subir inventario manual.');
+          await uploadWithProgress(presign.uploadUrl, files.inventory, (pct) =>
+            setUploadPct((prev) => ({ ...prev, inventory: pct }))
+          );
+          manualInvKey = presign.key;
+        }
+
+        setPhase('queued');
+        const res = await fetch('/api/inventario-jobs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            usar_tib_diario: true,
+            origen_inventario: origenInventario,
+            filtro_estado: filtroEstado,
+            inventario_key: manualInvKey,
+            fuentes: activas,
+            user_nombre: 'Operador AMEX',
+            sincronizar_db: autoSyncDb,
+          }),
+        }).then((r) => r.json());
+
+        if (!res.id) throw new Error(res.error || 'No se pudo encolar el trabajo.');
+        const detail = await fetch(`/api/inventario-jobs/${res.id}`).then((r) => r.json());
+        setJob(detail.job);
+        setPhase('processing');
+        return;
+      }
+
       for (const f of activas) {
         if (!files[f]) {
           setError(`Falta adjuntar el archivo: ${FUENTES.find((x) => x.key === f)?.file}.`);
@@ -446,34 +581,189 @@ export default function InventarioJobsTab() {
             />
           )}
 
-          {/* Sección de Reportes TIB */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 800, color: '#334155', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <i className="fa-solid fa-cloud-arrow-up" style={{ color: '#0284c7' }}></i>
-              {origenInventario === 'db' ? 'Adjunta los reportes TIB del día a cruzar:' : 'Reportes TIB a cruzar:'}
-            </span>
+          {/* Selector de Modo TIB: Guardados del Día vs Manuales */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 800, color: '#334155', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <i className="fa-solid fa-cloud" style={{ color: '#0284c7' }}></i>
+                Origen de los Reportes TIB:
+              </span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  type="button"
+                  onClick={() => setModoTib('diario')}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    fontSize: '12px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    background: modoTib === 'diario' ? '#2563eb' : '#ffffff',
+                    color: modoTib === 'diario' ? '#ffffff' : '#64748b',
+                    boxShadow: modoTib === 'diario' ? '0 1px 3px rgba(37,99,235,0.3)' : 'none',
+                    borderWidth: '1px',
+                    borderStyle: 'solid',
+                    borderColor: modoTib === 'diario' ? '#2563eb' : '#cbd5e1',
+                  }}
+                >
+                  ⚡ Archivos Guardados del Día (Recomendado)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModoTib('manual')}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: modoTib === 'manual' ? '#2563eb' : '#ffffff',
+                    color: modoTib === 'manual' ? '#ffffff' : '#64748b',
+                    borderWidth: '1px',
+                    borderStyle: 'solid',
+                    borderColor: modoTib === 'manual' ? '#2563eb' : '#cbd5e1',
+                  }}
+                >
+                  📁 Adjuntar Manualmente
+                </button>
+              </div>
+            </div>
 
-            {FUENTES.map((f, i) => (
-              <div key={f.key} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 800, color: '#0f172a', minWidth: '170px', paddingTop: '10px', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={fuentesActivas[f.key]}
-                    onChange={() => setFuentesActivas((p) => ({ ...p, [f.key]: !p[f.key] }))}
-                  />
-                  {i + 1}. {f.label}
-                </label>
-                <div style={{ flex: 1, opacity: fuentesActivas[f.key] ? 1 : 0.4 }}>
-                  <FileRow
-                    label={f.file}
-                    file={files[f.key]}
-                    disabled={!fuentesActivas[f.key]}
-                    onPick={(file) => pickFile(f.key, file)}
-                    pct={uploadPct[f.key]}
-                  />
+            {/* MODO 1: Repositorio de Archivos TIB Activos del Día */}
+            {modoTib === 'diario' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>
+                    Archivos vigentes para la fecha operativa: <strong>{tibState?.fecha || 'Hoy'}</strong>
+                  </span>
+                  {tibState && (
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        background: tibState.isComplete ? '#dcfce7' : '#fef3c7',
+                        color: tibState.isComplete ? '#15803d' : '#b45309',
+                      }}
+                    >
+                      {tibState.isComplete ? '✓ Reportes Completos (3/3)' : 'Carga parcial'}
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
+                  {FUENTES.map((f) => {
+                    const fileData = tibState?.files[f.key];
+                    const isUp = uploadingTib[f.key];
+                    const pct = tibUploadPct[f.key] || 0;
+
+                    return (
+                      <div
+                        key={f.key}
+                        style={{
+                          background: '#ffffff',
+                          border: fileData ? '1.5px solid #86efac' : '1.5px dashed #cbd5e1',
+                          borderRadius: '8px',
+                          padding: '12px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '6px',
+                          position: 'relative',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 800, color: '#0f172a', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={fuentesActivas[f.key]}
+                              onChange={() => setFuentesActivas((p) => ({ ...p, [f.key]: !p[f.key] }))}
+                            />
+                            {f.label}
+                          </label>
+                          {fileData ? (
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#16a34a', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <i className="fa-solid fa-circle-check"></i> Activo
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: '11px', fontWeight: 600, color: '#d97706' }}>Pendiente</span>
+                          )}
+                        </div>
+
+                        {fileData ? (
+                          <div style={{ fontSize: '11.5px', color: '#334155' }}>
+                            <div style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={fileData.nombre_archivo}>
+                              {fileData.nombre_archivo}
+                            </div>
+                            <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '2px' }}>
+                              {formatBytes(fileData.peso_bytes)} • {fileData.subido_en ? new Date(fileData.subido_en).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '11px', color: '#94a3b8' }}>
+                            Archivo esperado: <code>{f.file}</code>
+                          </div>
+                        )}
+
+                        <label
+                          style={{
+                            marginTop: '4px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            color: '#2563eb',
+                            cursor: isUp || phase === 'uploading' ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          <i className="fa-solid fa-upload"></i>
+                          <span>{isUp ? `Subiendo ${pct}%...` : fileData ? 'Reemplazar archivo' : 'Subir archivo'}</span>
+                          <input
+                            type="file"
+                            accept=".xlsx"
+                            disabled={isUp || phase === 'uploading'}
+                            style={{ display: 'none' }}
+                            onChange={(e) => {
+                              const picked = e.target.files?.[0];
+                              if (picked) void handleUploadDailyTib(f.key, picked);
+                              e.target.value = '';
+                            }}
+                          />
+                        </label>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            ))}
+            ) : (
+              /* MODO 2: Subida Manual Tradicional */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {FUENTES.map((f, i) => (
+                  <div key={f.key} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 800, color: '#0f172a', minWidth: '170px', paddingTop: '10px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={fuentesActivas[f.key]}
+                        onChange={() => setFuentesActivas((p) => ({ ...p, [f.key]: !p[f.key] }))}
+                      />
+                      {i + 1}. {f.label}
+                    </label>
+                    <div style={{ flex: 1, opacity: fuentesActivas[f.key] ? 1 : 0.4 }}>
+                      <FileRow
+                        label={f.file}
+                        file={files[f.key]}
+                        disabled={!fuentesActivas[f.key]}
+                        onPick={(file) => pickFile(f.key, file)}
+                        pct={uploadPct[f.key]}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <button
@@ -502,6 +792,8 @@ export default function InventarioJobsTab() {
               ? 'Subiendo reportes TIB a la nube…'
               : phase === 'queued'
               ? 'Encolando cruce…'
+              : modoTib === 'diario' && origenInventario === 'db'
+              ? `⚡ Iniciar Cruce con Worker Hostinger (${filtroEstado === 'activos' ? dbStats.activos : dbStats.todos} paquetes BD)`
               : origenInventario === 'db'
               ? `Cruzar ${filtroEstado === 'activos' ? dbStats.activos : dbStats.todos} paquetes de la BD con TIB`
               : 'Completar inventario en la nube'}

@@ -32,21 +32,27 @@ const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/clien
 // ---------------------------------------------------------------- config
 
 // Cargar .env.local de la raíz si existe (desarrollo local)
-const rootEnvPath = path.resolve(__dirname, '..', '..', '.env.local');
-if (fs.existsSync(rootEnvPath)) {
-  const envContent = fs.readFileSync(rootEnvPath, 'utf8');
-  for (const line of envContent.split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (trimmed && !trimmed.startsWith('#')) {
-      const idx = trimmed.indexOf('=');
-      if (idx > 0) {
-        const k = trimmed.slice(0, idx).trim();
-        const v = trimmed.slice(idx + 1).trim();
-        if (!process.env[k]) {
-          process.env[k] = v;
+const candidateEnvPaths = [
+  path.resolve(__dirname, '..', '.env.local'),
+  path.resolve(__dirname, '..', '..', '.env.local'),
+];
+for (const rootEnvPath of candidateEnvPaths) {
+  if (fs.existsSync(rootEnvPath)) {
+    const envContent = fs.readFileSync(rootEnvPath, 'utf8');
+    for (const line of envContent.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('#')) {
+        const idx = trimmed.indexOf('=');
+        if (idx > 0) {
+          const k = trimmed.slice(0, idx).trim();
+          const v = trimmed.slice(idx + 1).trim();
+          if (!process.env[k]) {
+            process.env[k] = v;
+          }
         }
       }
     }
+    break;
   }
 }
 
@@ -76,6 +82,7 @@ const defaultEmptyTemplate = process.platform === 'win32'
 const PROCESSOR = process.env.AMEX_PROCESSOR_BIN || process.env.PROCESSOR || defaultProcessor;
 const EMPTY_TEMPLATE = process.env.EMPTY_TEMPLATE || defaultEmptyTemplate;
 const WORK_DIR = process.env.WORK_DIR || path.join(os.tmpdir(), 'amex-jobs');
+const TIB_CACHE_DIR = process.env.TIB_CACHE_DIR || path.resolve(__dirname, '..', 'cache', 'tib-active');
 const POLL_INTERVAL_MS = Math.max(1000, Number(process.env.POLL_INTERVAL_MS || 1500));
 const PROCESS_TIMEOUT_MS = Math.max(60_000, Number(process.env.PROCESS_TIMEOUT_MS || 20 * 60 * 1000));
 const HOST = process.env.HOST || '0.0.0.0';
@@ -215,6 +222,63 @@ async function uploadToR2(localPath, key, contentType) {
   return key;
 }
 
+// -------------------------------------------------------- TIB local disk cache
+
+function getTibCacheMetaPath(tipo) {
+  return path.join(TIB_CACHE_DIR, `${tipo}.meta.json`);
+}
+
+function getTibCacheFilePath(tipo) {
+  return path.join(TIB_CACHE_DIR, `${tipo}.xlsx`);
+}
+
+async function readTibMeta(tipo) {
+  try {
+    const metaPath = getTibCacheMetaPath(tipo);
+    if (!fs.existsSync(metaPath)) return null;
+    const data = await fsp.readFile(metaPath, 'utf8');
+    return JSON.parse(data);
+  } catch {
+    return null;
+  }
+}
+
+async function writeTibMeta(tipo, meta) {
+  const metaPath = getTibCacheMetaPath(tipo);
+  await fsp.writeFile(metaPath, JSON.stringify(meta, null, 2), 'utf8');
+}
+
+/**
+ * Obtiene el archivo TIB directamente desde el disco local del VPS.
+ * Si no existe o la versión cambió (clave R2 distinta), lo descarga de Cloudflare R2
+ * y lo almacena localmente de forma permanente, reemplazando la versión previa.
+ */
+async function getOrSyncCachedTibFile(tipo, r2Key, originalName) {
+  await fsp.mkdir(TIB_CACHE_DIR, { recursive: true });
+  const filePath = getTibCacheFilePath(tipo);
+  const meta = await readTibMeta(tipo);
+
+  // CACHE HIT: archivo existe en disco y coincide la clave R2
+  if (fs.existsSync(filePath) && meta && meta.r2_key === r2Key) {
+    console.log(`[worker] [CACHE HIT ⚡] Usando ${tipo} directamente de disco local VPS (${filePath}) - 0ms red`);
+    return { filePath, hit: true };
+  }
+
+  // CACHE MISS O ACTUALIZACIÓN: descargar de R2 a disco local
+  console.log(`[worker] [CACHE SYNC 💾] Descargando ${tipo} desde R2 (${r2Key}) para almacenamiento local en VPS...`);
+  const tempPath = `${filePath}.download.${Date.now()}`;
+  await downloadFromR2(r2Key, tempPath);
+  await fsp.rename(tempPath, filePath);
+  await writeTibMeta(tipo, {
+    tipo,
+    r2_key: r2Key,
+    nombre_archivo: originalName || path.basename(r2Key),
+    updated_at: new Date().toISOString(),
+  });
+  console.log(`[worker] [CACHE GUARDADO ✅] ${tipo} guardado con éxito en disco VPS: ${filePath}`);
+  return { filePath, hit: false };
+}
+
 // ------------------------------------------------------------- processor
 
 function runProcessor(args, onProgress) {
@@ -323,14 +387,16 @@ async function processJob(job) {
     const sourcePaths = [];
     const emptyTemplate = await fsp.readFile(EMPTY_TEMPLATE);
     for (const key of SOURCE_KEYS) {
-      const dest = path.join(jobDir, SOURCE_FILE_NAMES[key]);
       const r2Key = job[SOURCE_COLUMN[key]];
       if (fuentes.includes(key) && r2Key) {
-        await downloadFromR2(r2Key, dest);
+        // Usar archivo directamente de la caché local persistente en disco VPS (0ms si ya está presente)
+        const { filePath } = await getOrSyncCachedTibFile(key, r2Key, SOURCE_FILE_NAMES[key]);
+        sourcePaths.push(filePath);
       } else {
+        const dest = path.join(jobDir, SOURCE_FILE_NAMES[key]);
         await fsp.writeFile(dest, emptyTemplate);
+        sourcePaths.push(dest);
       }
-      sourcePaths.push(dest);
     }
 
     const outputPath = path.join(jobDir, OUTPUT_FILE_NAME);
@@ -420,13 +486,86 @@ function readCgroup() {
 }
 
 const server = http.createServer((req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+
+  // Endpoint de sincronización anticipada: POST /sync-tib
+  if (req.method === 'POST' && parsedUrl.pathname === '/sync-tib') {
+    let bodyText = '';
+    req.on('data', (chunk) => { bodyText += chunk; });
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(bodyText || '{}');
+        const { tipo, r2_key, nombre_archivo } = payload;
+        if (!tipo || !SOURCE_KEYS.includes(tipo) || !r2_key) {
+          const errBody = Buffer.from(JSON.stringify({ error: 'Parámetros inválidos (tipo y r2_key requeridos).' }));
+          res.writeHead(400, { 'Content-Type': 'application/json', 'Content-Length': errBody.length });
+          res.end(errBody);
+          return;
+        }
+
+        console.log(`[worker] Petición /sync-tib recibida para ${tipo}: ${r2_key}`);
+        const result = await getOrSyncCachedTibFile(tipo, r2_key, nombre_archivo);
+        const stats = await fsp.stat(result.filePath).catch(() => null);
+
+        const resp = Buffer.from(JSON.stringify({
+          ok: true,
+          tipo,
+          r2_key,
+          cachedPath: result.filePath,
+          cacheHit: result.hit,
+          sizeBytes: stats ? stats.size : 0,
+          time: new Date().toISOString(),
+        }));
+
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': resp.length });
+        res.end(resp);
+      } catch (err) {
+        console.error(`[worker] Error en /sync-tib: ${err.message}`);
+        const errResp = Buffer.from(JSON.stringify({ error: err.message }));
+        res.writeHead(500, { 'Content-Type': 'application/json', 'Content-Length': errResp.length });
+        res.end(errResp);
+      }
+    });
+    return;
+  }
+
+  // Health y estado del cache (GET /)
   const mem = process.memoryUsage();
+  const tibCache = {};
+  for (const k of SOURCE_KEYS) {
+    try {
+      const metaPath = getTibCacheMetaPath(k);
+      const filePath = getTibCacheFilePath(k);
+      const exists = fs.existsSync(filePath);
+      const meta = exists && fs.existsSync(metaPath) ? JSON.parse(fs.readFileSync(metaPath, 'utf8')) : null;
+      let sizeBytes = 0;
+      if (exists) {
+        sizeBytes = fs.statSync(filePath).size;
+      }
+      tibCache[k] = { exists, sizeBytes, meta };
+    } catch {
+      tibCache[k] = { exists: false, error: 'read_fail' };
+    }
+  }
+
   const body = Buffer.from(JSON.stringify({
     status: 'ok',
     mode: 'worker',
     node: process.versions.node,
     processor: fs.existsSync(PROCESSOR) ? 'openxml' : 'missing',
     nodeRssMB: Math.round(mem.rss / 1024 / 1024),
+    tibCacheDir: TIB_CACHE_DIR,
+    tibCache,
     cgroup: readCgroup(),
     telemetry,
     time: new Date().toISOString(),
@@ -460,10 +599,13 @@ function preflight() {
 
 assertConfig();
 preflight();
-fsp.mkdir(WORK_DIR, { recursive: true })
+Promise.all([
+  fsp.mkdir(WORK_DIR, { recursive: true }),
+  fsp.mkdir(TIB_CACHE_DIR, { recursive: true }),
+])
   .then(() => {
     server.listen(PORT, HOST, () => {
-      console.log(`[worker] Health en http://${HOST}:${PORT} | poll cada ${POLL_INTERVAL_MS}ms | dir ${WORK_DIR}`);
+      console.log(`[worker] Health en http://${HOST}:${PORT} | poll cada ${POLL_INTERVAL_MS}ms | workDir ${WORK_DIR} | cacheDir ${TIB_CACHE_DIR}`);
     });
     void loop();
   })

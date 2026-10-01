@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
 function getEnv(name: string, defaultValue: string = ''): string {
   const val = process.env[name];
@@ -130,3 +130,23 @@ export async function getFileFromR2(key: string) {
   });
   return await client.send(command);
 }
+
+/**
+ * Eliminar archivo de Cloudflare R2
+ */
+export async function deleteFileFromR2(key: string): Promise<void> {
+  if (!key) return;
+  try {
+    const client = getR2Client();
+    const command = new DeleteObjectCommand({
+      Bucket: R2_BUCKET_NAME,
+      Key: key,
+    });
+    await client.send(command);
+    console.log(`[R2] Archivo eliminado con éxito de Cloudflare R2: ${key}`);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`[R2] Advertencia al eliminar archivo de R2 (${key}): ${msg}`);
+  }
+}
+

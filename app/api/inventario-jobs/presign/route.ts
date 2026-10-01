@@ -30,8 +30,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Solo se permiten archivos .xlsx.' }, { status: 400 });
     }
 
-    const batch = randomUUID().replace(/-/g, '');
-    const key = `${R2_ROOT_FOLDER}/inventario-jobs/uploads/${batch}/${slot}.xlsx`;
+    const isDailyTib = Boolean(body.isDailyTib);
+    let key: string;
+    let batch = '';
+
+    if (isDailyTib) {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Lima',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).formatToParts(new Date());
+      const y = parts.find((p) => p.type === 'year')?.value || '2026';
+      const m = parts.find((p) => p.type === 'month')?.value || '01';
+      const d = parts.find((p) => p.type === 'day')?.value || '01';
+      const todayLima = `${y}-${m}-${d}`;
+      const fecha = String(body.fecha || '').trim() || todayLima;
+      key = `${R2_ROOT_FOLDER}/inventario-tib/diario/${fecha}/${slot}.xlsx`;
+    } else {
+      batch = randomUUID().replace(/-/g, '');
+      key = `${R2_ROOT_FOLDER}/inventario-jobs/uploads/${batch}/${slot}.xlsx`;
+    }
 
     const client = getR2Client();
     const uploadUrl = await getSignedUrl(

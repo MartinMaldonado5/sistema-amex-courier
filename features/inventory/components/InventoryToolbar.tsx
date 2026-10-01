@@ -13,7 +13,8 @@ import {
   Trash2,
   FileSpreadsheet,
   RefreshCw,
-  Warehouse
+  Warehouse,
+  Zap
 } from 'lucide-react';
 import { EstanteriaPosicion } from '@/types';
 
@@ -43,6 +44,7 @@ export interface InventoryToolbarProps {
   onOpenMatrizModal: () => void;
   onOpenGestorModal: () => void;
   onOpenKardexModal: () => void;
+  onOpenSyncTibModal?: () => void;
   onExportExcel: () => void;
   onRefreshData?: () => Promise<void> | void;
   onNewPackage: () => void;
@@ -74,6 +76,7 @@ export default function InventoryToolbar({
   onOpenMatrizModal,
   onOpenGestorModal,
   onOpenKardexModal,
+  onOpenSyncTibModal,
   onExportExcel,
   onRefreshData,
   onNewPackage
@@ -112,7 +115,27 @@ export default function InventoryToolbar({
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          {onOpenSyncTibModal && (
+            <button
+              className="btn btn-primary"
+              onClick={onOpenSyncTibModal}
+              title="Cruzar inventario con reportes TIB del día usando el Worker Hostinger"
+              style={{
+                background: 'linear-gradient(135deg, #1e40af, #2563eb)',
+                border: '1px solid #1d4ed8',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontWeight: 800,
+                boxShadow: '0 2px 8px rgba(37, 99, 235, 0.25)',
+              }}
+            >
+              <Zap className="w-4 h-4 text-amber-300" /> ⚡ Cruzar con TIB del Día
+            </button>
+          )}
+
           <button
             className="btn"
             onClick={onExportExcel}

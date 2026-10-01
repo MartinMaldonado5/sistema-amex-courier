@@ -167,123 +167,169 @@ export async function syncCompletedExcelToDatabase(
     const activeUserName = options?.userNombre || 'Operador AMEX';
     const activeUserId = options?.userId || null;
 
-    // Procesar actualizaciones e inserciones en lotes concurrentes para máxima velocidad
-    const CHUNK_SIZE = 15;
-    for (let i = 0; i < parsedRows.length; i += CHUNK_SIZE) {
-      const chunk = parsedRows.slice(i, i + CHUNK_SIZE);
-      await Promise.all(
-        chunk.map(async (item) => {
-          const existing = existingMap.get(item.wr);
-          const mappedEstado = mapEstadoEntrega(item.estadoEntrega, existing?.ubicacion_actual);
+    // Procesar en bloques masivos (bulk upsert / bulk insert) para máxima velocidad
+    const nowIso = new Date().toISOString();
+    const updatesList: Array<{
+      item: ParsedRow;
+      existing: any;
+      mappedEstado: string;
+      payload: Record<string, any>;
+    }> = [];
+    const insertsList: Array<{
+      item: ParsedRow;
+      mappedEstado: string;
+      payload: Record<string, any>;
+    }> = [];
 
-          if (existing) {
-            // Actualizar paquete existente
-            const updatePayload: Record<string, any> = {
-              actualizado_en: new Date().toISOString(),
-              eliminado_en: null
-            };
+    for (const item of parsedRows) {
+      const existing = existingMap.get(item.wr);
+      const mappedEstado = mapEstadoEntrega(item.estadoEntrega, existing?.ubicacion_actual);
 
-            if (item.cliente) updatePayload.nombre_consignatario = item.cliente;
-            if (item.tracking) updatePayload.tracking_usa = item.tracking;
-            if (item.tipoEmpaque) updatePayload.tipo_empaque = item.tipoEmpaque;
-            if (item.pesoKg !== null) updatePayload.peso_kg = item.pesoKg;
-            if (mappedEstado) updatePayload.estado_entrega = mappedEstado;
+      if (existing) {
+        updatesList.push({
+          item,
+          existing,
+          mappedEstado,
+          payload: {
+            id: existing.id,
+            numero_recibo_bodega: existing.numero_recibo_bodega,
+            tracking_usa: item.tracking || existing.tracking_usa,
+            nombre_consignatario: item.cliente || existing.nombre_consignatario,
+            tipo_empaque: item.tipoEmpaque || existing.tipo_empaque || 'CAJA',
+            peso_kg: item.pesoKg !== null ? item.pesoKg : existing.peso_kg,
+            estado_entrega: mappedEstado || existing.estado_entrega,
+            actualizado_en: nowIso,
+            eliminado_en: null,
+          },
+        });
+      } else {
+        const [ana, pis] = item.posicionWms.includes('-')
+          ? item.posicionWms.split('-')
+          : ['REC', 'P1'];
 
-            const { error: updErr } = await admin
-              .from('paquetes')
-              .update(updatePayload)
-              .eq('id', existing.id);
-
-            if (!updErr) {
-              updatedCount++;
-              detalles.push({
-                wr: item.wr,
-                cliente: item.cliente,
-                tracking: item.tracking,
-                peso: item.pesoKg ?? undefined,
-                estado: mappedEstado
-              });
-
-              kardexEntries.push({
-                paquete_id: existing.id,
-                codigo_paquete: item.wr,
-                consignatario: item.cliente || existing.nombre_consignatario || 'Cliente AMEX',
-                origen_descripcion: 'Reportes TIB (Nube)',
-                destino_descripcion: `Almacén Lince (${existing.posicion_estante || 'REC'})`,
-                tipo_movimiento: 'ACTUALIZACION_TIB',
-                motivo: `Cruce automático TIB: ${item.cliente ? 'Cliente actualizado' : ''} ${item.tracking ? 'Tracking asignado' : ''} ${item.pesoKg ? `(${item.pesoKg}kg)` : ''}`.trim(),
-                usuario_operador: activeUserName,
-                usuario_email: activeUserEmail || null,
-                usuario_id: activeUserId
-              });
-            }
-          } else {
-            // Insertar nuevo paquete si no existía
-            const [ana, pis] = item.posicionWms.includes('-')
-              ? item.posicionWms.split('-')
-              : ['REC', 'P1'];
-
-            const insertPayload: Record<string, any> = {
-              numero_recibo_bodega: item.wr,
-              tracking_usa: item.tracking,
-              tipo_empaque: item.tipoEmpaque || 'CAJA',
-              nombre_consignatario: item.cliente,
-              peso_kg: item.pesoKg,
-              estado_entrega: mappedEstado,
-              ubicacion_actual: 'AmexLince',
-              anaquel: ana,
-              piso: pis,
-              posicion_estante: item.posicionWms || 'REC-P1',
-              usuario_email: activeUserEmail || null,
-              creado_por: activeUserId,
-              eliminado_en: null
-            };
-
-            const { data: newPkg, error: insErr } = await admin
-              .from('paquetes')
-              .insert(insertPayload)
-              .select('id')
-              .single();
-
-            if (!insErr && newPkg) {
-              insertedCount++;
-              detalles.push({
-                wr: item.wr,
-                cliente: item.cliente,
-                tracking: item.tracking,
-                peso: item.pesoKg ?? undefined,
-                estado: mappedEstado
-              });
-
-              kardexEntries.push({
-                paquete_id: newPkg.id,
-                codigo_paquete: item.wr,
-                consignatario: item.cliente || 'Cliente AMEX',
-                origen_descripcion: 'Ingreso Cruce TIB',
-                destino_descripcion: `Almacén Lince (${item.posicionWms})`,
-                tipo_movimiento: 'INGRESO_TIB',
-                motivo: 'Paquete nuevo registrado automáticamente desde cruce TIB',
-                usuario_operador: activeUserName,
-                usuario_email: activeUserEmail || null,
-                usuario_id: activeUserId
-              });
-            }
-          }
-        })
-      );
+        insertsList.push({
+          item,
+          mappedEstado,
+          payload: {
+            numero_recibo_bodega: item.wr,
+            tracking_usa: item.tracking,
+            tipo_empaque: item.tipoEmpaque || 'CAJA',
+            nombre_consignatario: item.cliente,
+            peso_kg: item.pesoKg,
+            estado_entrega: mappedEstado,
+            ubicacion_actual: 'AmexLince',
+            anaquel: ana,
+            piso: pis,
+            posicion_estante: item.posicionWms || 'REC-P1',
+            usuario_email: activeUserEmail || null,
+            creado_por: activeUserId,
+            eliminado_en: null,
+          },
+        });
+      }
     }
 
-    // Registrar eventos en Kardex de forma robusta
-    if (kardexEntries.length > 0) {
-      try {
-        const { error: kardexErr } = await admin.from('movimientos_kardex').insert(kardexEntries);
-        if (kardexErr) {
-          // Reintentar sin usuario_id por si hay restricción de clave foránea
-          const fallbackEntries = kardexEntries.map((e) => ({ ...e, usuario_id: null }));
-          await admin.from('movimientos_kardex').insert(fallbackEntries);
+    // 1. Ejecutar actualizaciones por lotes de 100 con upsert sobre la clave primaria id
+    const BULK_CHUNK = 100;
+    for (let i = 0; i < updatesList.length; i += BULK_CHUNK) {
+      const chunk = updatesList.slice(i, i + BULK_CHUNK);
+      const payloads = chunk.map((c) => c.payload);
+
+      const { error: upsertErr } = await admin
+        .from('paquetes')
+        .upsert(payloads, { onConflict: 'id' });
+
+      if (!upsertErr) {
+        updatedCount += chunk.length;
+        for (const c of chunk) {
+          detalles.push({
+            wr: c.item.wr,
+            cliente: c.item.cliente,
+            tracking: c.item.tracking,
+            peso: c.item.pesoKg ?? undefined,
+            estado: c.mappedEstado,
+          });
+
+          kardexEntries.push({
+            paquete_id: c.existing.id,
+            codigo_paquete: c.item.wr,
+            consignatario: c.item.cliente || c.existing.nombre_consignatario || 'Cliente AMEX',
+            origen_descripcion: 'Reportes TIB (Nube)',
+            destino_descripcion: `Almacén Lince (${c.existing.posicion_estante || 'REC'})`,
+            tipo_movimiento: 'ACTUALIZACION_TIB',
+            motivo: `Cruce automático TIB: ${c.item.cliente ? 'Cliente actualizado' : ''} ${c.item.tracking ? 'Tracking asignado' : ''} ${c.item.pesoKg ? `(${c.item.pesoKg}kg)` : ''}`.trim(),
+            usuario_operador: activeUserName,
+            usuario_email: activeUserEmail || null,
+            usuario_id: activeUserId,
+          });
         }
-      } catch (e: unknown) {
-        console.warn('Advertencia insertando kardex masivo TIB:', e);
+      } else {
+        console.error('Error en lote de actualización de paquetes, reintentando individualmente:', upsertErr);
+        // Fallback resiliente si falla el lote
+        for (const c of chunk) {
+          const { error: singleErr } = await admin.from('paquetes').update(c.payload).eq('id', c.existing.id);
+          if (!singleErr) updatedCount++;
+        }
+      }
+    }
+
+    // 2. Ejecutar inserciones por lotes de 100
+    for (let i = 0; i < insertsList.length; i += BULK_CHUNK) {
+      const chunk = insertsList.slice(i, i + BULK_CHUNK);
+      const payloads = chunk.map((c) => c.payload);
+
+      const { data: insertedData, error: insErr } = await admin
+        .from('paquetes')
+        .insert(payloads)
+        .select('id, numero_recibo_bodega');
+
+      if (!insErr && insertedData) {
+        insertedCount += insertedData.length;
+        const insertedMap = new Map<string, string>();
+        for (const ins of insertedData) {
+          insertedMap.set(ins.numero_recibo_bodega.toUpperCase(), ins.id);
+        }
+
+        for (const c of chunk) {
+          const newId = insertedMap.get(c.item.wr) || '';
+          detalles.push({
+            wr: c.item.wr,
+            cliente: c.item.cliente,
+            tracking: c.item.tracking,
+            peso: c.item.pesoKg ?? undefined,
+            estado: c.mappedEstado,
+          });
+
+          kardexEntries.push({
+            paquete_id: newId || undefined,
+            codigo_paquete: c.item.wr,
+            consignatario: c.item.cliente || 'Cliente AMEX',
+            origen_descripcion: 'Ingreso Cruce TIB',
+            destino_descripcion: `Almacén Lince (${c.item.posicionWms})`,
+            tipo_movimiento: 'INGRESO_TIB',
+            motivo: 'Paquete nuevo registrado automáticamente desde cruce TIB',
+            usuario_operador: activeUserName,
+            usuario_email: activeUserEmail || null,
+            usuario_id: activeUserId,
+          });
+        }
+      }
+    }
+
+    // 3. Registrar eventos en Kardex de forma agrupada
+    if (kardexEntries.length > 0) {
+      const KARDEX_CHUNK = 200;
+      for (let i = 0; i < kardexEntries.length; i += KARDEX_CHUNK) {
+        const kChunk = kardexEntries.slice(i, i + KARDEX_CHUNK);
+        try {
+          const { error: kardexErr } = await admin.from('movimientos_kardex').insert(kChunk);
+          if (kardexErr) {
+            const fallbackEntries = kChunk.map((e) => ({ ...e, usuario_id: null }));
+            await admin.from('movimientos_kardex').insert(fallbackEntries);
+          }
+        } catch (e: unknown) {
+          console.warn('Advertencia insertando kardex masivo TIB:', e);
+        }
       }
     }
 
