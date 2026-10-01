@@ -142,6 +142,48 @@ const s3 = new S3Client({
   credentials: { accessKeyId: R2_ACCESS_KEY, secretAccessKey: R2_SECRET_KEY },
 });
 
+function workerLog(level, message, meta = {}) {
+  const isDev = process.env.NODE_ENV === 'development';
+  const entry = {
+    timestamp: new Date().toISOString(),
+    level,
+    service: 'amex-worker',
+    message,
+    ...meta,
+  };
+  if (isDev) {
+    const prefix = level === 'error' ? '❌' : level === 'warn' ? '⚠️' : 'ℹ️';
+    console.log(`${prefix} [${entry.timestamp}] [${level.toUpperCase()}] ${message}`);
+  } else {
+    console.log(JSON.stringify(entry));
+  }
+}
+
+async function withRetry(fn, options = {}) {
+  const { maxRetries = 3, initialDelayMs = 1000, factor = 2, operationName = 'Operación' } = options;
+  let attempt = 0;
+  let delay = initialDelayMs;
+
+  while (attempt < maxRetries) {
+    try {
+      return await fn();
+    } catch (err) {
+      attempt++;
+      if (attempt >= maxRetries) {
+        workerLog('error', `${operationName} falló definitivamente tras ${maxRetries} intentos: ${err.message}`, {
+          error: err.stack,
+        });
+        throw err;
+      }
+      workerLog('warn', `${operationName} falló (intento ${attempt}/${maxRetries}), reintentando en ${delay}ms...`, {
+        error: err.message,
+      });
+      await new Promise((r) => setTimeout(r, delay));
+      delay *= factor;
+    }
+  }
+}
+
 function sbHeaders(extra = {}) {
   return {
     apikey: SUPABASE_SERVICE_KEY,
@@ -152,16 +194,21 @@ function sbHeaders(extra = {}) {
 }
 
 async function sbFetch(pathQuery, options = {}) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1${pathQuery}`, {
-    ...options,
-    headers: sbHeaders(options.headers),
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`Supabase ${res.status}: ${text.slice(0, 300)}`);
-  }
-  const text = await res.text();
-  return text ? JSON.parse(text) : null;
+  return withRetry(
+    async () => {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1${pathQuery}`, {
+        ...options,
+        headers: sbHeaders(options.headers),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(`Supabase ${res.status}: ${text.slice(0, 300)}`);
+      }
+      const text = await res.text();
+      return text ? JSON.parse(text) : null;
+    },
+    { maxRetries: 3, initialDelayMs: 1000, operationName: `Supabase REST (${pathQuery.slice(0, 35)})` }
+  );
 }
 
 // ------------------------------------------------------------ job queue
@@ -196,30 +243,40 @@ async function updateJob(id, patch) {
       body: JSON.stringify(patch),
     });
   } catch (err) {
-    console.error(`[worker] No se pudo actualizar el job ${id}: ${err.message}`);
+    workerLog('error', `No se pudo actualizar el job ${id}: ${err.message}`, { error: err.stack });
   }
 }
 
 // ------------------------------------------------------------------ R2
 
 async function downloadFromR2(key, destPath) {
-  const res = await s3.send(new GetObjectCommand({ Bucket: R2_BUCKET, Key: key }));
-  const bytes = await res.Body.transformToByteArray();
-  if (bytes.length > 100 * 1024 * 1024) {
-    throw new Error(`El archivo ${key} supera el límite de 100 MB.`);
-  }
-  await fsp.writeFile(destPath, Buffer.from(bytes));
+  return withRetry(
+    async () => {
+      const res = await s3.send(new GetObjectCommand({ Bucket: R2_BUCKET, Key: key }));
+      const bytes = await res.Body.transformToByteArray();
+      if (bytes.length > 100 * 1024 * 1024) {
+        throw new Error(`El archivo ${key} supera el límite de 100 MB.`);
+      }
+      await fsp.writeFile(destPath, Buffer.from(bytes));
+    },
+    { maxRetries: 3, initialDelayMs: 1500, operationName: `Descarga R2 (${key})` }
+  );
 }
 
 async function uploadToR2(localPath, key, contentType) {
-  const body = await fsp.readFile(localPath);
-  await s3.send(new PutObjectCommand({
-    Bucket: R2_BUCKET,
-    Key: key,
-    Body: body,
-    ContentType: contentType,
-  }));
-  return key;
+  return withRetry(
+    async () => {
+      const body = await fsp.readFile(localPath);
+      await s3.send(new PutObjectCommand({
+        Bucket: R2_BUCKET,
+        Key: key,
+        Body: body,
+        ContentType: contentType,
+      }));
+      return key;
+    },
+    { maxRetries: 3, initialDelayMs: 1500, operationName: `Subida R2 (${key})` }
+  );
 }
 
 // -------------------------------------------------------- TIB local disk cache
@@ -448,25 +505,48 @@ async function processJob(job) {
   }
 }
 
+let wakeUpResolver = null;
+
+function triggerImmediatePoll() {
+  if (wakeUpResolver) {
+    wakeUpResolver();
+    wakeUpResolver = null;
+  }
+}
+
+function waitForNextPoll(ms) {
+  return new Promise((resolve) => {
+    wakeUpResolver = resolve;
+    setTimeout(() => {
+      wakeUpResolver = null;
+      resolve();
+    }, ms);
+  });
+}
+
 async function loop() {
+  workerLog('info', `Bucle del worker iniciado (polling adaptativo: ${POLL_INTERVAL_MS}ms)`);
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
       const job = await takeNextJob();
       if (job) {
+        telemetry.jobsProcessed = (telemetry.jobsProcessed || 0) + 1;
+        telemetry.lastJobTime = new Date().toISOString();
         await processJob(job);
         continue;
       }
     } catch (err) {
-      console.error(`[worker] Error en el loop: ${err.message}`);
+      workerLog('error', `Error en el loop principal: ${err.message}`, { error: err.stack });
     }
-    await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+    await waitForNextPoll(POLL_INTERVAL_MS);
   }
 }
 
 // ---------------------------------------------------------------- health
 
-const telemetry = { preflight: null, lastError: null };
+const workerStartTime = Date.now();
+const telemetry = { preflight: null, lastError: null, jobsProcessed: 0, lastJobTime: null };
 
 function readCgroup() {
   const info = {};
@@ -539,6 +619,19 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Endpoint para despertar al worker inmediatamente: POST /trigger-job
+  if (req.method === 'POST' && parsedUrl.pathname === '/trigger-job') {
+    triggerImmediatePoll();
+    const resp = Buffer.from(JSON.stringify({
+      ok: true,
+      message: 'Worker notificado: ciclo de polling despertado inmediatamente.',
+      time: new Date().toISOString(),
+    }));
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': resp.length });
+    res.end(resp);
+    return;
+  }
+
   // Health y estado del cache (GET /)
   const mem = process.memoryUsage();
   const tibCache = {};
@@ -558,12 +651,18 @@ const server = http.createServer((req, res) => {
     }
   }
 
+  const uptimeSeconds = Math.round((Date.now() - workerStartTime) / 1000);
+
   const body = Buffer.from(JSON.stringify({
     status: 'ok',
     mode: 'worker',
     node: process.versions.node,
+    uptimeSeconds,
+    jobsProcessed: telemetry.jobsProcessed,
+    lastJobTime: telemetry.lastJobTime,
     processor: fs.existsSync(PROCESSOR) ? 'openxml' : 'missing',
     nodeRssMB: Math.round(mem.rss / 1024 / 1024),
+    nodeHeapUsedMB: Math.round(mem.heapUsed / 1024 / 1024),
     tibCacheDir: TIB_CACHE_DIR,
     tibCache,
     cgroup: readCgroup(),

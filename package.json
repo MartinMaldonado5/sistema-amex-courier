@@ -9,7 +9,9 @@
     "worker": "node worker/worker.js",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1101.0",
@@ -27,7 +29,8 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "read-excel-file": "^9.3.10",
-    "write-excel-file": "^4.1.1"
+    "write-excel-file": "^4.1.1",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -41,6 +44,8 @@
     "selfsigned": "^5.5.0",
     "supabase": "2.118.0",
     "tailwindcss": "^4",
-    "typescript": "npm:@typescript/typescript6@^6.0.2"
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.3"
   }
 }

@@ -10,4 +10,7 @@ export type { BadgeProps } from './Badge';
 export { Input, Select } from './Input';
 export type { InputProps, SelectProps } from './Input';
 
+export { default as Table, TableHeader, TableBody, TableFooter, TableRow, TableHead, TableCell } from './Table';
+export type { TableProps } from './Table';
+
 export * from './Skeleton';

@@ -4,6 +4,8 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { authorizeUser, getUserDisplayName, hasAdminRole } from '@/lib/auth/guards';
 import { uploadFileToR2 } from '@/lib/r2/client';
 import { generateInventoryExcelBufferFromDb, getDbInventoryCount } from '@/lib/inventory-jobs/exportDbInventory';
+import { CreateInventarioJobSchema } from '@/lib/validations/inventario-jobs.schema';
+import { validateBody } from '@/lib/api/validate';
 
 /**
  * POST /api/inventario-jobs — encola un trabajo para el worker Render.
@@ -30,7 +32,9 @@ export async function POST(req: NextRequest) {
     const auth = await authorizeUser();
     if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-    const body = await req.json().catch(() => ({}));
+    const validation = await validateBody(CreateInventarioJobSchema, req);
+    if (!validation.ok) return validation.response;
+    const body = validation.data;
 
     const admin = getSupabaseAdmin();
     const usarTibDiario = Boolean(body.usar_tib_diario);
@@ -131,7 +135,7 @@ export async function POST(req: NextRequest) {
 
     for (const fuente of fuentes) {
       const field = SOURCE_KEY_FIELD[fuente];
-      const key = (usarTibDiario ? tibKeys[fuente] : String(body[field] || '')).trim();
+      const key = (usarTibDiario ? tibKeys[fuente] : String((body as Record<string, unknown>)[field] || '')).trim();
       if (!key || !isXlsxKey(key)) {
         return NextResponse.json(
           { error: `Falta el archivo TIB de la fuente activada: ${fuente}.` },
@@ -152,6 +156,18 @@ export async function POST(req: NextRequest) {
         { error: `No se pudo encolar el trabajo: ${error?.message || 'error desconocido'}` },
         { status: 500 }
       );
+    }
+
+    // Notificación proactiva push al worker para despertar de inmediato sin esperar el intervalo de polling
+    const workerUrl = process.env.INVENTORY_WORKER_URL || process.env.RENDER_WORKER_URL;
+    if (workerUrl) {
+      void fetch(`${workerUrl.replace(/\/+$/, '')}/trigger-job`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(2000),
+      }).catch(() => {
+        // Fallback garantizado: si el worker no responde el webhook directo, lo tomará por polling
+      });
     }
 
     return NextResponse.json({ id: (data as { id: string }).id });

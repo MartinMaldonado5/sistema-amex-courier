@@ -1,15 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { LoginSchema } from '@/lib/validations/auth.schema';
+import { validateBody } from '@/lib/api/validate';
+import { checkRateLimit, rateLimitExceededResponse } from '@/lib/security/rateLimit';
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const email = String(body?.email || '').trim().toLowerCase();
-    const password = String(body?.password || '');
-
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Ingrese correo y contraseña.' }, { status: 400 });
+    // 1. Rate limiting: máx 10 intentos por minuto por IP
+    const rateCheck = checkRateLimit(req, {
+      prefix: 'auth-login',
+      limit: 10,
+      windowMs: 60 * 1000,
+    });
+    if (!rateCheck.allowed) {
+      return rateLimitExceededResponse(rateCheck.resetAt);
     }
+
+    // 2. Validación de esquema con Zod
+    const validation = await validateBody(LoginSchema, req);
+    if (!validation.ok) {
+      return validation.response;
+    }
+    const { email, password } = validation.data;
 
     const supabase = await createClient();
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';

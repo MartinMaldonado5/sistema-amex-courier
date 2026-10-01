@@ -1,0 +1,49 @@
+name: CI - Integración Continua AMEX
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-typecheck:
+    name: Lint & Verificación de Tipos
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci --legacy-peer-deps
+
+      - name: Verificación de Tipos TypeScript
+        run: npx tsc --noEmit
+
+      - name: Análisis estático con ESLint
+        run: npm run lint
+
+  unit-tests:
+    name: Pruebas Unitarias Automatizadas
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci --legacy-peer-deps
+
+      - name: Ejecutar Suite Vitest
+        run: npm run test

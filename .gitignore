@@ -61,3 +61,8 @@ worker/test_output/
 worker/test_files/
 worker/run-worker-local.bat
 benchmark-data/
+
+# Graphify cache y backups temporales
+graphify-out/cache/
+graphify-out/20*/
+.graphify_root

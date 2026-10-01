@@ -49,36 +49,28 @@ export default function InventoryTable({
   totalPages
 }: InventoryTableProps) {
   return (
-    <div
-      style={{
-        background: '#ffffff',
-        border: '1px solid #e2e8f0',
-        borderRadius: '12px',
-        overflow: 'hidden',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
-      }}
-    >
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
+    <div className="w-full bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-xs text-left">
           <thead>
-            <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 800 }}>
-              <th style={{ padding: '10px 14px', width: '40px' }}>
+            <tr className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold">
+              <th className="py-2.5 px-3.5 w-10">
                 <input
                   type="checkbox"
                   checked={selectedIds.length > 0 && selectedIds.length === filteredPaquetes.length}
                   onChange={onSelectAll}
                 />
               </th>
-              <th style={{ padding: '10px 14px' }}>Guía WR</th>
-              <th style={{ padding: '10px 14px' }}>Tracking USA</th>
-              <th style={{ padding: '10px 14px' }}>Usuario (Correo)</th>
-              <th style={{ padding: '10px 14px' }}>Cliente</th>
-              <th style={{ padding: '10px 14px' }}>Descripción & Tipo</th>
-              <th style={{ padding: '10px 14px' }}>Peso Físico (kg)</th>
-              <th style={{ padding: '10px 14px' }}>Ubicación Sede</th>
-              <th style={{ padding: '10px 14px' }}>Anaquel & Piso (WMS)</th>
-              <th style={{ padding: '10px 14px' }}>Estado</th>
-              <th style={{ padding: '10px 14px', textAlign: 'center' }}>Acciones</th>
+              <th className="py-2.5 px-3.5">Guía WR</th>
+              <th className="py-2.5 px-3.5">Tracking USA</th>
+              <th className="py-2.5 px-3.5">Usuario (Correo)</th>
+              <th className="py-2.5 px-3.5">Cliente</th>
+              <th className="py-2.5 px-3.5">Descripción & Tipo</th>
+              <th className="py-2.5 px-3.5">Peso Físico (kg)</th>
+              <th className="py-2.5 px-3.5">Ubicación Sede</th>
+              <th className="py-2.5 px-3.5">Anaquel & Piso (WMS)</th>
+              <th className="py-2.5 px-3.5">Estado</th>
+              <th className="py-2.5 px-3.5 text-center">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -415,41 +407,25 @@ export default function InventoryTable({
             </label>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               disabled={currentPage <= 1}
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              style={{
-                padding: '4px 10px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                background: currentPage <= 1 ? '#f1f5f9' : '#ffffff',
-                color: currentPage <= 1 ? '#94a3b8' : '#0f172a',
-                fontWeight: 700,
-                cursor: currentPage <= 1 ? 'not-allowed' : 'pointer'
-              }}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              className="px-3 py-1 rounded-md border text-xs font-bold transition-colors disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed bg-white text-slate-800 hover:bg-slate-50 border-slate-300 cursor-pointer"
             >
               Anterior
             </button>
 
-            <span style={{ padding: '4px 8px', fontWeight: 800, color: '#2563eb' }}>
+            <span className="px-2.5 py-1 font-extrabold text-blue-600 text-xs">
               {currentPage} / {totalPages}
             </span>
 
             <button
               type="button"
               disabled={currentPage >= totalPages}
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              style={{
-                padding: '4px 10px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                background: currentPage >= totalPages ? '#f1f5f9' : '#ffffff',
-                color: currentPage >= totalPages ? '#94a3b8' : '#0f172a',
-                fontWeight: 700,
-                cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer'
-              }}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              className="px-3 py-1 rounded-md border text-xs font-bold transition-colors disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed bg-white text-slate-800 hover:bg-slate-50 border-slate-300 cursor-pointer"
             >
               Siguiente
             </button>
