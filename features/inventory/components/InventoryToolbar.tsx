@@ -473,69 +473,6 @@ export default function InventoryToolbar({
             )}
           </div>
 
-          {/* Píldoras de Segmentación Inmediata por Estado AMEX */}
-          <div
-            style={{
-              display: 'flex',
-              gap: '6px',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              padding: '2px 0'
-            }}
-          >
-            <span style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginRight: '4px' }}>
-              Filtro Rápido AMEX:
-            </span>
-
-            <button
-              type="button"
-              onClick={() => setStatusAmexFilter && setStatusAmexFilter('ALL')}
-              style={getPillStyle(statusAmexFilter === 'ALL', '#2563eb', '#eff6ff')}
-            >
-              🌐 Todos ({amexStatusCounts?.total ?? paquetes.length})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setStatusAmexFilter && setStatusAmexFilter('recibido')}
-              style={getPillStyle(statusAmexFilter === 'recibido', '#0369a1', '#e0f2fe')}
-            >
-              📥 Recibidos ({amexStatusCounts?.recibido ?? 0})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setStatusAmexFilter && setStatusAmexFilter('en_almacen')}
-              style={getPillStyle(statusAmexFilter === 'en_almacen', '#3730a3', '#e0e7ff')}
-            >
-              📦 En Almacén ({amexStatusCounts?.en_almacen ?? 0})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setStatusAmexFilter && setStatusAmexFilter('listo_recojo')}
-              style={getPillStyle(statusAmexFilter === 'listo_recojo', '#92400e', '#fef3c7')}
-            >
-              🏪 Listo Recojo ({amexStatusCounts?.listo_recojo ?? 0})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setStatusAmexFilter && setStatusAmexFilter('en_ruta')}
-              style={getPillStyle(statusAmexFilter === 'en_ruta', '#6b21a8', '#f3e8ff')}
-            >
-              🚚 En Ruta ({amexStatusCounts?.en_ruta ?? 0})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setStatusAmexFilter && setStatusAmexFilter('entregado')}
-              style={getPillStyle(statusAmexFilter === 'entregado', '#15803d', '#dcfce7')}
-            >
-              ✅ Entregados ({amexStatusCounts?.entregado ?? 0})
-            </button>
-          </div>
-
           {/* Selectores de Filtros */}
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', fontSize: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -706,22 +643,5 @@ export default function InventoryToolbar({
   );
 }
 
-const getPillStyle = (
-  isActive: boolean,
-  activeColor: string,
-  activeBg: string
-): React.CSSProperties => ({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '4px',
-  padding: '4px 10px',
-  borderRadius: '20px',
-  fontSize: '11.5px',
-  fontWeight: isActive ? 800 : 600,
-  background: isActive ? activeBg : '#f8fafc',
-  color: isActive ? activeColor : '#64748b',
-  border: isActive ? `1.5px solid ${activeColor}` : '1px solid #e2e8f0',
-  cursor: 'pointer',
-  transition: 'all 0.15s ease'
-});
+
 
