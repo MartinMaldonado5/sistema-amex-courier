@@ -67,6 +67,7 @@ export function useInventoryData({
   const [isNewPositionModalOpen, setIsNewPositionModalOpen] = useState(false);
   const [editingPosition, setEditingPosition] = useState<EstanteriaPosicion | null>(null);
   const [isBatchStatusModalOpen, setIsBatchStatusModalOpen] = useState(false);
+  const [isBulkWrModalOpen, setIsBulkWrModalOpen] = useState(false);
   const [batchTargetStatus, setBatchTargetStatus] = useState<TipoEstadoEntrega>('EnAlmacen');
   const [batchTargetStatusAmex, setBatchTargetStatusAmex] = useState<TipoEstadoAmex>('recibido');
   const [selectedThermalPkg, setSelectedThermalPkg] = useState<Paquete | null>(null);
@@ -217,6 +218,33 @@ export function useInventoryData({
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, locationFilter, shelfFilter, floorFilter, packageTypeFilter, statusFilter, statusAmexFilter, pageSize]);
+
+  // Conteos en tiempo real por Estado AMEX para píldoras rápidas
+  const amexStatusCounts = useMemo(() => {
+    let recibido = 0;
+    let en_almacen = 0;
+    let listo_recojo = 0;
+    let en_ruta = 0;
+    let entregado = 0;
+
+    paquetes.forEach(p => {
+      const st = p.estadoAmex;
+      if (st === 'recibido') recibido++;
+      else if (st === 'en_almacen') en_almacen++;
+      else if (st === 'listo_recojo') listo_recojo++;
+      else if (st === 'en_ruta') en_ruta++;
+      else if (st === 'entregado') entregado++;
+    });
+
+    return {
+      total: paquetes.length,
+      recibido,
+      en_almacen,
+      listo_recojo,
+      en_ruta,
+      entregado
+    };
+  }, [paquetes]);
 
   const totalPages = Math.max(1, Math.ceil(filteredPaquetes.length / pageSize));
   const paginatedPaquetes = useMemo(() => {
@@ -401,6 +429,37 @@ export function useInventoryData({
     }
   };
 
+  // Entrega rápida en 1 clic
+  const handleQuickDeliver = async (pkg: Paquete) => {
+    try {
+      const updated = await inventoryService.quickDeliver(pkg);
+      if (onUpdatePackage) {
+        onUpdatePackage(updated);
+      }
+    } catch (err) {
+      console.error('Error al entregar paquete rápido:', err);
+      alert('Error al marcar como entregado.');
+    }
+  };
+
+  // Aplicar cambio de estado masivo directo (usado por modal de WRs)
+  const handleBulkStatusChangeDirect = async (
+    matchedIds: string[],
+    targetStatusAmex: TipoEstadoAmex,
+    targetStatusTib: TipoEstadoEntrega
+  ) => {
+    if (matchedIds.length === 0) return;
+    const updatedList = await inventoryService.batchStatusChange(
+      matchedIds,
+      targetStatusTib,
+      paquetes,
+      targetStatusAmex
+    );
+    if (onUpdatePackage) {
+      updatedList.forEach(p => onUpdatePackage(p));
+    }
+  };
+
   // Cambio de estado masivo en lote
   const handleBatchStatusChange = async () => {
     if (selectedIds.length === 0) return;
@@ -540,6 +599,7 @@ export function useInventoryData({
     setStatusFilter,
     statusAmexFilter,
     setStatusAmexFilter,
+    amexStatusCounts,
 
     // Paginación
     pageSize,
@@ -596,11 +656,14 @@ export function useInventoryData({
 
     isBatchStatusModalOpen,
     setIsBatchStatusModalOpen,
+    isBulkWrModalOpen,
+    setIsBulkWrModalOpen,
     batchTargetStatus,
     setBatchTargetStatus,
     batchTargetStatusAmex,
     setBatchTargetStatusAmex,
     handleBatchStatusChange,
+    handleBulkStatusChangeDirect,
     handleBatchDelete,
 
     isNewPositionModalOpen,
@@ -632,6 +695,7 @@ export function useInventoryData({
 
     // Acciones de paquetes
     handleDeletePackage,
+    handleQuickDeliver,
     handleQuickStatusChange,
     handleQuickStatusAmexChange,
     handleExportExcel,

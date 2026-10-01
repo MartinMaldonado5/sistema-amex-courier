@@ -220,6 +220,36 @@ export const inventoryService = {
     });
   },
 
+  // Entrega rápida en 1 clic desde el mostrador/almacén
+  async quickDeliver(pkg: Paquete): Promise<Paquete> {
+    await supabase
+      .from('paquetes')
+      .update({
+        estado_amex: 'entregado',
+        estado_entrega: 'Entregado',
+        ubicacion_actual: 'Entregado'
+      })
+      .eq('id', pkg.id);
+
+    await supabase.from('movimientos_kardex').insert({
+      paquete_id: pkg.id,
+      codigo_paquete: pkg.numeroReciboBodega,
+      consignatario: pkg.nombreConsignatario || 'Cliente AMEX',
+      origen_descripcion: `AmexLince (${pkg.posicionEstante || 'REC'})`,
+      destino_descripcion: 'Entregado al Cliente Final en Mostrador Lince',
+      tipo_movimiento: 'ENTREGA',
+      motivo: 'Entrega directa rápida desde Módulo de Inventario',
+      usuario_operador: 'Operador Logístico AMEX'
+    });
+
+    return {
+      ...pkg,
+      estadoAmex: 'entregado',
+      estadoEntrega: 'Entregado',
+      ubicacionActual: 'Entregado'
+    };
+  },
+
   // Cambio de estado masivo en lote (soporta Estado TIB y/o Estado AMEX)
   async batchStatusChange(
     selectedIds: string[],

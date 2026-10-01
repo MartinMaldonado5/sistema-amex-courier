@@ -9,7 +9,8 @@ import {
   Printer,
   FileText,
   Trash2,
-  User
+  User,
+  CheckCircle2
 } from 'lucide-react';
 import { Paquete } from '@/types';
 
@@ -19,6 +20,7 @@ export interface InventoryTableProps {
   selectedIds: string[];
   onToggleSelect: (id: string) => void;
   onSelectAll: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onQuickDeliver?: (pkg: Paquete) => void;
   onOpenTransferModal: (pkg: Paquete) => void;
   onOpenEditModal: (pkg: Paquete) => void;
   onSelectThermalPkg: (pkg: Paquete) => void;
@@ -37,6 +39,7 @@ export default function InventoryTable({
   selectedIds,
   onToggleSelect,
   onSelectAll,
+  onQuickDeliver,
   onOpenTransferModal,
   onOpenEditModal,
   onSelectThermalPkg,
@@ -321,6 +324,35 @@ export default function InventoryTable({
                     </td>
                     <td style={{ padding: '10px 14px', textAlign: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                        {onQuickDeliver && pkg.estadoAmex !== 'entregado' && (
+                          <button
+                            title="Marcar como Entregado en 1 Clic"
+                            onClick={() => {
+                              if (confirm(`¿Confirmar entrega del paquete ${pkg.numeroReciboBodega} a ${pkg.nombreConsignatario || 'cliente'}?`)) {
+                                onQuickDeliver(pkg);
+                              }
+                            }}
+                            style={{
+                              background: '#f0fdf4',
+                              border: '1px solid #86efac',
+                              color: '#15803d',
+                              padding: '0 8px',
+                              height: '28px',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontSize: '11px',
+                              fontWeight: 800,
+                              boxShadow: '0 1px 2px rgba(21, 128, 61, 0.1)'
+                            }}
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            Entregar
+                          </button>
+                        )}
+
                         <button
                           title="Mover a otro Estante / Anaquel"
                           onClick={() => onOpenTransferModal(pkg)}

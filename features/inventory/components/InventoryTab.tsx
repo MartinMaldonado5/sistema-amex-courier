@@ -17,6 +17,7 @@ import BatchStatusModal from '../modals/BatchStatusModal';
 import ShelfPositionModal from '../modals/ShelfPositionModal';
 import EditPositionModal from '../modals/EditPositionModal';
 import SyncTibModal from '../modals/SyncTibModal';
+import BulkStatusByWrModal from '../modals/BulkStatusByWrModal';
 
 export interface InventoryTabProps {
   paquetes: Paquete[];
@@ -57,6 +58,7 @@ export default function InventoryTab({
     setStatusFilter,
     statusAmexFilter,
     setStatusAmexFilter,
+    amexStatusCounts,
 
     // Paginación
     pageSize,
@@ -112,11 +114,14 @@ export default function InventoryTab({
 
     isBatchStatusModalOpen,
     setIsBatchStatusModalOpen,
+    isBulkWrModalOpen,
+    setIsBulkWrModalOpen,
     batchTargetStatus,
     setBatchTargetStatus,
     batchTargetStatusAmex,
     setBatchTargetStatusAmex,
     handleBatchStatusChange,
+    handleBulkStatusChangeDirect,
     handleBatchDelete,
 
     isNewPositionModalOpen,
@@ -148,6 +153,7 @@ export default function InventoryTab({
 
     // Acciones
     handleDeletePackage,
+    handleQuickDeliver,
     handleExportExcel
   } = useInventoryData({
     paquetes,
@@ -162,6 +168,10 @@ export default function InventoryTab({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', maxWidth: '100%', padding: '16px 20px', boxSizing: 'border-box' }}>
       {/* Barra de herramientas, subpestañas y filtros */}
       <InventoryToolbar
+        paquetes={paquetes}
+        filteredPaquetes={filteredPaquetes}
+        amexStatusCounts={amexStatusCounts}
+        onOpenBulkWrModal={() => setIsBulkWrModalOpen(true)}
         activeSubTab={activeSubTab}
         setActiveSubTab={setActiveSubTab}
         filteredCount={filteredPaquetes.length}
@@ -211,6 +221,7 @@ export default function InventoryTab({
           selectedIds={selectedIds}
           onToggleSelect={handleToggleSelect}
           onSelectAll={handleSelectAll}
+          onQuickDeliver={handleQuickDeliver}
           onOpenTransferModal={openTransferModal}
           onOpenEditModal={openEditModal}
           onSelectThermalPkg={setSelectedThermalPkg}
@@ -317,6 +328,13 @@ export default function InventoryTab({
         batchTargetStatusAmex={batchTargetStatusAmex}
         setBatchTargetStatusAmex={setBatchTargetStatusAmex}
         onConfirm={handleBatchStatusChange}
+      />
+
+      <BulkStatusByWrModal
+        isOpen={isBulkWrModalOpen}
+        onClose={() => setIsBulkWrModalOpen(false)}
+        paquetes={paquetes}
+        onApply={handleBulkStatusChangeDirect}
       />
 
       <ShelfPositionModal
