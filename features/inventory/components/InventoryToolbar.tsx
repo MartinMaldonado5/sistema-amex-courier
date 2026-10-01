@@ -57,7 +57,7 @@ export interface InventoryToolbarProps {
   onOpenBatchStatusModal: () => void;
   onBatchDelete: () => void;
   onOpenNewPositionModal: () => void;
-  onOpenMatrizModal: () => void;
+  onOpenMatrizModal?: () => void;
   onOpenGestorModal: () => void;
   onOpenKardexModal: () => void;
   onOpenSyncTibModal?: () => void;
@@ -97,7 +97,6 @@ export default function InventoryToolbar({
   onOpenBatchStatusModal,
   onBatchDelete,
   onOpenNewPositionModal,
-  onOpenMatrizModal,
   onOpenGestorModal,
   onOpenKardexModal,
   onOpenSyncTibModal,
@@ -189,21 +188,6 @@ export default function InventoryToolbar({
             </button>
           )}
 
-          <button
-            className="btn"
-            onClick={onOpenMatrizModal}
-            style={{
-              background: '#eff6ff',
-              border: '1px solid #bfdbfe',
-              color: '#1e40af',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontWeight: 700
-            }}
-          >
-            <Layers className="w-4 h-4 text-blue-600" /> 🗺️ Mapa 3D Slotting
-          </button>
 
           <button
             className="btn"

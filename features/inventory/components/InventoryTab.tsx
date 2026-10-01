@@ -201,7 +201,6 @@ export default function InventoryTab({
           setNewPositionMode('batch');
           setIsNewPositionModalOpen(true);
         }}
-        onOpenMatrizModal={() => setIsMatrizModalOpen(true)}
         onOpenGestorModal={() => setIsGestorModalOpen(true)}
         onOpenKardexModal={() => setIsKardexModalOpen(true)}
         onOpenSyncTibModal={() => setIsSyncTibModalOpen(true)}
@@ -363,38 +362,6 @@ export default function InventoryTab({
           onClose={() => setSelectedThermalPkg(null)}
         />
       )}
-
-      {/* Modal Pop-up: Mapa 3D Slotting */}
-      <Modal
-        isOpen={isMatrizModalOpen}
-        onClose={() => setIsMatrizModalOpen(false)}
-        title="🗺️ Mapa Visual de Anaqueles & Slotting"
-        subtitle="Visualización y gestión espacial de estanterías en Almacén Lince"
-        maxWidth="full"
-      >
-        <ShelfMatrixGrid
-          shelfGroups={shelfGroups}
-          paquetes={paquetes}
-          shelfSearchTerm={shelfSearchTerm}
-          setShelfSearchTerm={setShelfSearchTerm}
-          shelfZoneFilter={shelfZoneFilter}
-          setShelfZoneFilter={setShelfZoneFilter}
-          shelfOccupancyFilter={shelfOccupancyFilter}
-          setShelfOccupancyFilter={setShelfOccupancyFilter}
-          onOpenNewPositionModal={() => {
-            setNewPositionMode('batch');
-            setIsNewPositionModalOpen(true);
-          }}
-          onOpenTransferModal={openTransferModal}
-          onFilterShelf={(shelfCode, floorLevel) => {
-            setShelfFilter(shelfCode);
-            if (floorLevel) setFloorFilter(floorLevel);
-            setIsMatrizModalOpen(false);
-            setActiveSubTab('existencias');
-          }}
-          onEditPosition={setEditingPosition}
-        />
-      </Modal>
 
       {/* Modal Pop-up: Configuración de Anaqueles */}
       <Modal
