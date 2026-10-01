@@ -53,6 +53,10 @@ export default function InventoryTab({
     setFloorFilter,
     packageTypeFilter,
     setPackageTypeFilter,
+    statusFilter,
+    setStatusFilter,
+    statusAmexFilter,
+    setStatusAmexFilter,
 
     // Paginación
     pageSize,
@@ -110,6 +114,8 @@ export default function InventoryTab({
     setIsBatchStatusModalOpen,
     batchTargetStatus,
     setBatchTargetStatus,
+    batchTargetStatusAmex,
+    setBatchTargetStatusAmex,
     handleBatchStatusChange,
     handleBatchDelete,
 
@@ -172,6 +178,10 @@ export default function InventoryTab({
         setFloorFilter={setFloorFilter}
         packageTypeFilter={packageTypeFilter}
         setPackageTypeFilter={setPackageTypeFilter}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        statusAmexFilter={statusAmexFilter}
+        setStatusAmexFilter={setStatusAmexFilter}
         selectedIds={selectedIds}
         setSelectedIds={setSelectedIds}
         onOpenTransferModal={() => openTransferModal()}
@@ -304,6 +314,8 @@ export default function InventoryTab({
         selectedCount={selectedIds.length}
         batchTargetStatus={batchTargetStatus}
         setBatchTargetStatus={setBatchTargetStatus}
+        batchTargetStatusAmex={batchTargetStatusAmex}
+        setBatchTargetStatusAmex={setBatchTargetStatusAmex}
         onConfirm={handleBatchStatusChange}
       />
 

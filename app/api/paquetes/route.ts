@@ -6,7 +6,7 @@ import {
   CreatePaqueteSchema,
 } from '@/lib/validations/paquetes.schema';
 import { validateQuery, validateBody } from '@/lib/api/validate';
-import type { Paquete, TipoEstadoEntrega, TipoMetodoEntrega, TipoUbicacion } from '@/types';
+import type { Paquete, TipoEstadoEntrega, TipoEstadoAmex, TipoMetodoEntrega, TipoUbicacion } from '@/types';
 
 function mapPaqueteRow(row: Record<string, unknown>): Paquete {
   const posicion = String(
@@ -32,6 +32,7 @@ function mapPaqueteRow(row: Record<string, unknown>): Paquete {
     posicionEstante: posicion,
     metodoEntrega: (row.metodo_entrega as TipoMetodoEntrega) || 'CarroAmexDomicilio',
     estadoEntrega: (row.estado_entrega as TipoEstadoEntrega) || 'EnAlmacen',
+    estadoAmex: (row.estado_amex as TipoEstadoAmex) || 'recibido',
     facturaPdfUrl: String(row.factura_pdf_url || ''),
     usuarioEmail: String(row.usuario_email || ''),
     creadoPor: row.creado_por ? String(row.creado_por) : undefined,
@@ -141,6 +142,7 @@ export async function POST(req: NextRequest) {
       posicion_estante: data.posicionEstante || null,
       metodo_entrega: data.metodoEntrega,
       estado_entrega: data.estadoEntrega,
+      estado_amex: (data as any).estadoAmex || 'recibido',
       factura_pdf_url: data.facturaPdfUrl || null,
       creado_por: auth.user.id,
       usuario_email: auth.user.email || null,

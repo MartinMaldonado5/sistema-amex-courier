@@ -69,14 +69,15 @@ export default function InventoryTable({
               <th className="py-2.5 px-3.5">Peso Físico (kg)</th>
               <th className="py-2.5 px-3.5">Ubicación Sede</th>
               <th className="py-2.5 px-3.5">Anaquel & Piso (WMS)</th>
-              <th className="py-2.5 px-3.5">Estado</th>
+              <th className="py-2.5 px-3.5">Estado AMEX</th>
+              <th className="py-2.5 px-3.5">Estado TIB</th>
               <th className="py-2.5 px-3.5 text-center">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {filteredPaquetes.length === 0 ? (
               <tr>
-                <td colSpan={11} style={{ textAlign: 'center', padding: '36px', color: '#94a3b8' }}>
+                <td colSpan={12} style={{ textAlign: 'center', padding: '36px', color: '#94a3b8' }}>
                   <Boxes style={{ width: '40px', height: '40px', margin: '0 auto 8px auto', color: '#cbd5e1' }} />
                   <div style={{ fontWeight: 800, color: '#64748b' }}>
                     No se encontraron paquetes con los filtros seleccionados
@@ -217,26 +218,94 @@ export default function InventoryTable({
                         📍 {pos}
                       </span>
                     </td>
-                    <td style={{ padding: '10px 14px' }}>
+                    {/* ESTADO AMEX (Operativo Interno) */}
+                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
                       <span
                         style={{
-                          padding: '3px 8px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          padding: '3px 9px',
                           borderRadius: '6px',
                           fontSize: '11px',
                           fontWeight: 800,
                           textTransform: 'uppercase',
                           background:
-                            pkg.estadoEntrega === 'EntregadoDomicilio' || pkg.estadoEntrega === 'RecogidoAlmacen'
+                            pkg.estadoAmex === 'recibido'
+                              ? '#e0f2fe'
+                              : pkg.estadoAmex === 'en_almacen'
+                              ? '#e0e7ff'
+                              : pkg.estadoAmex === 'listo_recojo'
+                              ? '#fef3c7'
+                              : pkg.estadoAmex === 'en_ruta'
+                              ? '#f3e8ff'
+                              : pkg.estadoAmex === 'entregado'
+                              ? '#dcfce7'
+                              : '#f1f5f9',
+                          color:
+                            pkg.estadoAmex === 'recibido'
+                              ? '#0369a1'
+                              : pkg.estadoAmex === 'en_almacen'
+                              ? '#3730a3'
+                              : pkg.estadoAmex === 'listo_recojo'
+                              ? '#92400e'
+                              : pkg.estadoAmex === 'en_ruta'
+                              ? '#6b21a8'
+                              : pkg.estadoAmex === 'entregado'
+                              ? '#15803d'
+                              : '#475569',
+                          border:
+                            pkg.estadoAmex === 'recibido'
+                              ? '1px solid #bae6fd'
+                              : pkg.estadoAmex === 'en_almacen'
+                              ? '1px solid #c7d2fe'
+                              : pkg.estadoAmex === 'listo_recojo'
+                              ? '1px solid #fde68a'
+                              : pkg.estadoAmex === 'en_ruta'
+                              ? '1px solid #e9d5ff'
+                              : pkg.estadoAmex === 'entregado'
+                              ? '1px solid #bbf7d0'
+                              : '1px solid #e2e8f0'
+                        }}
+                      >
+                        {pkg.estadoAmex === 'recibido'
+                          ? '📥 RECIBIDO'
+                          : pkg.estadoAmex === 'en_almacen'
+                          ? '📦 EN ALMACÉN'
+                          : pkg.estadoAmex === 'listo_recojo'
+                          ? '🏪 LISTO RECOJO'
+                          : pkg.estadoAmex === 'en_ruta'
+                          ? '🚚 EN RUTA'
+                          : pkg.estadoAmex === 'entregado'
+                          ? '✅ ENTREGADO'
+                          : (pkg.estadoAmex || 'RECIBIDO').toUpperCase()}
+                      </span>
+                    </td>
+
+                    {/* ESTADO TIB (Logística Externa) */}
+                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          background:
+                            pkg.estadoEntrega === 'EntregadoDomicilio' || pkg.estadoEntrega === 'RecogidoAlmacen' || pkg.estadoEntrega === 'Entregado'
                               ? '#dcfce7'
                               : pkg.estadoEntrega === 'EnRutaCarroAmex'
                               ? '#dbeafe'
-                              : '#f1f5f9',
+                              : '#f8fafc',
                           color:
-                            pkg.estadoEntrega === 'EntregadoDomicilio' || pkg.estadoEntrega === 'RecogidoAlmacen'
+                            pkg.estadoEntrega === 'EntregadoDomicilio' || pkg.estadoEntrega === 'RecogidoAlmacen' || pkg.estadoEntrega === 'Entregado'
                               ? '#15803d'
                               : pkg.estadoEntrega === 'EnRutaCarroAmex'
                               ? '#1d4ed8'
-                              : '#475569'
+                              : '#64748b',
+                          border: '1px solid #e2e8f0'
                         }}
                       >
                         {pkg.estadoEntrega === 'EnAlmacen'
@@ -245,7 +314,7 @@ export default function InventoryTable({
                           ? 'En Ruta'
                           : pkg.estadoEntrega === 'ListoParaRecojo'
                           ? 'Listo Recojo'
-                          : pkg.estadoEntrega === 'EntregadoDomicilio'
+                          : pkg.estadoEntrega === 'EntregadoDomicilio' || pkg.estadoEntrega === 'RecogidoAlmacen' || pkg.estadoEntrega === 'Entregado'
                           ? 'Entregado'
                           : pkg.estadoEntrega || 'En Almacén'}
                       </span>

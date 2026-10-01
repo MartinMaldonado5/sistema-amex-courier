@@ -37,6 +37,27 @@ export function exportToExcel(
   void writeXlsxFile(data, { sheet: safeSheetName, columns }).toFile(finalFilename);
 }
 
+export function mapEstadoAmexLabel(estado?: string | null): string {
+  if (!estado) return 'Recibido';
+  const norm = estado.trim().toLowerCase();
+  if (norm === 'recibido') return 'Recibido';
+  if (norm === 'en_almacen' || norm === 'enalmacen') return 'En Almacén';
+  if (norm === 'listo_recojo' || norm === 'listorecojo') return 'Listo para Recojo';
+  if (norm === 'en_ruta' || norm === 'enruta') return 'En Ruta';
+  if (norm === 'entregado') return 'Entregado';
+  return norm.charAt(0).toUpperCase() + norm.slice(1);
+}
+
+export function mapEstadoTibLabel(estado?: string | null): string {
+  if (!estado) return 'En Almacén';
+  const norm = estado.trim();
+  if (norm === 'EnAlmacen') return 'En Almacén';
+  if (norm === 'EnRutaCarroAmex') return 'En Ruta Carro Amex';
+  if (norm === 'ListoParaRecojo') return 'Listo para Recojo';
+  if (norm === 'Entregado' || norm === 'EntregadoDomicilio' || norm === 'RecogidoAlmacen') return 'Entregado';
+  return norm;
+}
+
 /**
  * Exportador profesional de Paquetes / Inventario a Excel (.xlsx)
  */
@@ -48,15 +69,8 @@ export function exportPaquetesToExcel(paquetes: Paquete[], filenamePrefix = 'Inv
     'Cliente': p.nombreConsignatario || '',
     'Tipo Paquete': p.tipoEmpaque || '',
     'Peso (Kg)': p.pesoKg && Number(p.pesoKg) > 0 ? Number(p.pesoKg) : '',
-    'Estado Entrega': p.estadoEntrega === 'EnAlmacen'
-      ? 'En Almacén'
-      : p.estadoEntrega === 'EnRutaCarroAmex'
-      ? 'En Ruta Carro Amex'
-      : p.estadoEntrega === 'ListoParaRecojo'
-      ? 'Listo para Recojo'
-      : p.estadoEntrega === 'Entregado'
-      ? 'Entregado'
-      : p.estadoEntrega,
+    'Estado AMEX': mapEstadoAmexLabel(p.estadoAmex),
+    'Estado TIB': mapEstadoTibLabel(p.estadoEntrega),
     'Posición WMS': p.posicionEstante || (p.anaquel && p.piso ? `${p.anaquel}-${p.piso}` : 'REC'),
     'Almacén Actual': p.ubicacionActual === 'Entregado'
       ? 'Entregado'

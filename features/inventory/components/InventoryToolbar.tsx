@@ -35,6 +35,10 @@ export interface InventoryToolbarProps {
   setFloorFilter: (s: string) => void;
   packageTypeFilter: string;
   setPackageTypeFilter: (s: string) => void;
+  statusFilter?: string;
+  setStatusFilter?: (s: string) => void;
+  statusAmexFilter?: string;
+  setStatusAmexFilter?: (s: string) => void;
   selectedIds: string[];
   setSelectedIds: React.Dispatch<React.SetStateAction<string[]>>;
   onOpenTransferModal: () => void;
@@ -67,6 +71,10 @@ export default function InventoryToolbar({
   setFloorFilter,
   packageTypeFilter,
   setPackageTypeFilter,
+  statusFilter,
+  setStatusFilter,
+  statusAmexFilter,
+  setStatusAmexFilter,
   selectedIds,
   setSelectedIds,
   onOpenTransferModal,
@@ -86,7 +94,9 @@ export default function InventoryToolbar({
     locationFilter !== 'ALL' ||
     shelfFilter !== 'ALL' ||
     floorFilter !== 'ALL' ||
-    packageTypeFilter !== 'ALL';
+    packageTypeFilter !== 'ALL' ||
+    (statusAmexFilter && statusAmexFilter !== 'ALL') ||
+    (statusFilter && statusFilter !== 'ALL');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -540,6 +550,57 @@ export default function InventoryToolbar({
               </select>
             </div>
 
+            {statusAmexFilter !== undefined && setStatusAmexFilter && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontWeight: 800, color: '#0369a1' }}>Estado AMEX:</span>
+                <select
+                  value={statusAmexFilter}
+                  onChange={e => setStatusAmexFilter(e.target.value)}
+                  style={{
+                    padding: '4px 8px',
+                    borderRadius: '6px',
+                    border: '1px solid #93c5fd',
+                    fontSize: '12px',
+                    background: '#f0f9ff',
+                    fontWeight: 700,
+                    color: '#0369a1'
+                  }}
+                >
+                  <option value="ALL">Todos los Estados AMEX</option>
+                  <option value="recibido">📥 Recibido</option>
+                  <option value="en_almacen">📦 En Almacén</option>
+                  <option value="listo_recojo">🏪 Listo Recojo</option>
+                  <option value="en_ruta">🚚 En Ruta</option>
+                  <option value="entregado">✅ Entregado</option>
+                </select>
+              </div>
+            )}
+
+            {statusFilter !== undefined && setStatusFilter && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontWeight: 800, color: '#475569' }}>Estado TIB:</span>
+                <select
+                  value={statusFilter}
+                  onChange={e => setStatusFilter(e.target.value)}
+                  style={{
+                    padding: '4px 8px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '12px',
+                    background: '#ffffff'
+                  }}
+                >
+                  <option value="ALL">Todos los Estados TIB</option>
+                  <option value="EnAlmacen">En Almacén</option>
+                  <option value="ListoParaRecojo">Listo Recojo</option>
+                  <option value="EnRutaCarroAmex">En Ruta Carro</option>
+                  <option value="EnRutaMotorizado">En Ruta Moto</option>
+                  <option value="EnRutaProvincia">En Ruta Provincia</option>
+                  <option value="Entregado">Entregado</option>
+                </select>
+              </div>
+            )}
+
             {hasActiveFilters && (
               <button
                 onClick={() => {
@@ -548,6 +609,8 @@ export default function InventoryToolbar({
                   setShelfFilter('ALL');
                   setFloorFilter('ALL');
                   setPackageTypeFilter('ALL');
+                  if (setStatusAmexFilter) setStatusAmexFilter('ALL');
+                  if (setStatusFilter) setStatusFilter('ALL');
                 }}
                 style={{
                   background: '#f1f5f9',

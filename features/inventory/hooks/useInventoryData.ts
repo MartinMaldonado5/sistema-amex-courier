@@ -5,6 +5,7 @@ import {
   Paquete,
   TipoUbicacion,
   TipoEstadoEntrega,
+  TipoEstadoAmex,
   EstanteriaPosicion,
   MovimientoKardex,
   AlmacenSede
@@ -38,6 +39,7 @@ export function useInventoryData({
   const [floorFilter, setFloorFilter] = useState<string>('ALL');
   const [packageTypeFilter, setPackageTypeFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [statusAmexFilter, setStatusAmexFilter] = useState<string>('ALL');
 
   // Paginación reactiva
   const [pageSize, setPageSize] = useState<number>(50);
@@ -66,6 +68,7 @@ export function useInventoryData({
   const [editingPosition, setEditingPosition] = useState<EstanteriaPosicion | null>(null);
   const [isBatchStatusModalOpen, setIsBatchStatusModalOpen] = useState(false);
   const [batchTargetStatus, setBatchTargetStatus] = useState<TipoEstadoEntrega>('EnAlmacen');
+  const [batchTargetStatusAmex, setBatchTargetStatusAmex] = useState<TipoEstadoAmex>('recibido');
   const [selectedThermalPkg, setSelectedThermalPkg] = useState<Paquete | null>(null);
   const [selectedPackageForAction, setSelectedPackageForAction] = useState<Paquete | null>(null);
 
@@ -180,7 +183,8 @@ export function useInventoryData({
         pos,
         p.numeroFactura,
         p.tipoEmpaque,
-        p.estadoEntrega
+        p.estadoEntrega,
+        p.estadoAmex
       ]);
 
       const matchesLocation = locationFilter === 'ALL' || p.ubicacionActual === locationFilter;
@@ -195,15 +199,24 @@ export function useInventoryData({
       const matchesFloor = floorFilter === 'ALL' ? true : pos.includes(floorFilter) || p.piso === floorFilter;
       const matchesType = packageTypeFilter === 'ALL' || p.tipoEmpaque === packageTypeFilter;
       const matchesStatus = statusFilter === 'ALL' || p.estadoEntrega === statusFilter;
+      const matchesStatusAmex = statusAmexFilter === 'ALL' || p.estadoAmex === statusAmexFilter;
 
-      return matchesSearch && matchesLocation && matchesShelf && matchesFloor && matchesType && matchesStatus;
+      return (
+        matchesSearch &&
+        matchesLocation &&
+        matchesShelf &&
+        matchesFloor &&
+        matchesType &&
+        matchesStatus &&
+        matchesStatusAmex
+      );
     });
-  }, [paquetes, searchTerm, locationFilter, shelfFilter, floorFilter, packageTypeFilter, statusFilter]);
+  }, [paquetes, searchTerm, locationFilter, shelfFilter, floorFilter, packageTypeFilter, statusFilter, statusAmexFilter]);
 
   // Resetear página al cambiar filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, locationFilter, shelfFilter, floorFilter, packageTypeFilter, statusFilter, pageSize]);
+  }, [searchTerm, locationFilter, shelfFilter, floorFilter, packageTypeFilter, statusFilter, statusAmexFilter, pageSize]);
 
   const totalPages = Math.max(1, Math.ceil(filteredPaquetes.length / pageSize));
   const paginatedPaquetes = useMemo(() => {
@@ -333,7 +346,8 @@ export function useInventoryData({
       piso: pis,
       posicionEstante: pos,
       pesoKg: Number(editFormData.pesoKg || 0),
-      valorDeclaradoUsd: editFormData.valorDeclaradoUsd !== undefined ? Number(editFormData.valorDeclaradoUsd) : (selectedPackageForAction.valorDeclaradoUsd || 0)
+      valorDeclaradoUsd: editFormData.valorDeclaradoUsd !== undefined ? Number(editFormData.valorDeclaradoUsd) : (selectedPackageForAction.valorDeclaradoUsd || 0),
+      estadoAmex: (editFormData.estadoAmex || selectedPackageForAction.estadoAmex || 'recibido') as TipoEstadoAmex
     };
 
     if (onUpdatePackage) {
@@ -365,14 +379,25 @@ export function useInventoryData({
     }
   };
 
-  // Cambio rápido de estado individual
+  // Cambio rápido de estado individual TIB
   const handleQuickStatusChange = async (pkg: Paquete, newStatus: TipoEstadoEntrega) => {
     try {
       await inventoryService.quickStatusChange(pkg, newStatus);
       const updated: Paquete = { ...pkg, estadoEntrega: newStatus };
       if (onUpdatePackage) onUpdatePackage(updated);
     } catch (err) {
-      console.error('Error actualizando estado:', err);
+      console.error('Error actualizando estado TIB:', err);
+    }
+  };
+
+  // Cambio rápido de estado operativo individual AMEX
+  const handleQuickStatusAmexChange = async (pkg: Paquete, newStatusAmex: TipoEstadoAmex) => {
+    try {
+      await inventoryService.quickStatusAmexChange(pkg, newStatusAmex);
+      const updated: Paquete = { ...pkg, estadoAmex: newStatusAmex };
+      if (onUpdatePackage) onUpdatePackage(updated);
+    } catch (err) {
+      console.error('Error actualizando estado AMEX:', err);
     }
   };
 
@@ -383,7 +408,8 @@ export function useInventoryData({
       const updatedList = await inventoryService.batchStatusChange(
         selectedIds,
         batchTargetStatus,
-        paquetes
+        paquetes,
+        batchTargetStatusAmex
       );
       if (onUpdatePackage) {
         updatedList.forEach(p => onUpdatePackage(p));
@@ -512,6 +538,8 @@ export function useInventoryData({
     setPackageTypeFilter,
     statusFilter,
     setStatusFilter,
+    statusAmexFilter,
+    setStatusAmexFilter,
 
     // Paginación
     pageSize,
@@ -570,6 +598,8 @@ export function useInventoryData({
     setIsBatchStatusModalOpen,
     batchTargetStatus,
     setBatchTargetStatus,
+    batchTargetStatusAmex,
+    setBatchTargetStatusAmex,
     handleBatchStatusChange,
     handleBatchDelete,
 
@@ -603,6 +633,7 @@ export function useInventoryData({
     // Acciones de paquetes
     handleDeletePackage,
     handleQuickStatusChange,
+    handleQuickStatusAmexChange,
     handleExportExcel,
     handleExportKardexExcel
   };

@@ -8,6 +8,7 @@ import {
   Paquete,
   ScannedLog,
   TipoEstadoEntrega,
+  TipoEstadoAmex,
   TipoMetodoEntrega,
   TipoUbicacion
 } from '@/types';
@@ -53,6 +54,7 @@ function mapPaquete(row: Record<string, unknown>): Paquete {
     posicionEstante: posicion,
     metodoEntrega: (row.metodo_entrega as TipoMetodoEntrega) || 'CarroAmexDomicilio',
     estadoEntrega: (row.estado_entrega as TipoEstadoEntrega) || 'EnAlmacen',
+    estadoAmex: (row.estado_amex as TipoEstadoAmex) || 'recibido',
     facturaPdfUrl: String(row.factura_pdf_url || ''),
     usuarioEmail: String(row.usuario_email || ''),
     creadoPor: row.creado_por ? String(row.creado_por) : undefined,

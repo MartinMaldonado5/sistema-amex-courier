@@ -140,6 +140,7 @@ export function useDashboardActions({
       posicionEstante: posicion,
       metodoEntrega: (newPkgForm.metodoEntrega || 'CarroAmexDomicilio') as TipoMetodoEntrega,
       estadoEntrega: 'EnAlmacen' as TipoEstadoEntrega,
+      estadoAmex: 'recibido',
       facturaPdfUrl: newPkgForm.facturaPdfUrl || '',
       usuarioEmail: currentUser?.email || '',
       creadoPor: currentUser?.id || undefined,
@@ -165,6 +166,8 @@ export function useDashboardActions({
         piso,
         posicion_estante: posicion,
         metodo_entrega: newPkgForm.metodoEntrega || 'CarroAmexDomicilio',
+        estado_entrega: 'EnAlmacen',
+        estado_amex: 'recibido',
         factura_pdf_url: newPkgForm.facturaPdfUrl || null,
         usuario_email: currentUser?.email || '',
         creado_por: currentUser?.id || null

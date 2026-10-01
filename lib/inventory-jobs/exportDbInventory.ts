@@ -66,6 +66,7 @@ export async function generateInventoryExcelBufferFromDb(
       tipo_empaque,
       peso_kg,
       estado_entrega,
+      estado_amex,
       anaquel,
       piso,
       posicion_estante,
@@ -102,7 +103,8 @@ export async function generateInventoryExcelBufferFromDb(
     { value: 'Cliente', fontWeight: 'bold' as const },
     { value: 'Tipo Paquete', fontWeight: 'bold' as const },
     { value: 'Peso (Kg)', fontWeight: 'bold' as const, align: 'right' as const },
-    { value: 'Estado Entrega', fontWeight: 'bold' as const },
+    { value: 'Estado AMEX', fontWeight: 'bold' as const },
+    { value: 'Estado TIB', fontWeight: 'bold' as const },
     { value: 'Posición WMS', fontWeight: 'bold' as const },
     { value: 'Almacén Actual', fontWeight: 'bold' as const },
     { value: 'Usuario que Ingresó (Email)', fontWeight: 'bold' as const },
@@ -140,6 +142,7 @@ export async function generateInventoryExcelBufferFromDb(
       pesoVal !== null
         ? { type: Number, value: pesoVal }
         : { type: String, value: '' },
+      { type: String, value: String(p.estado_amex || 'recibido').toUpperCase() },
       { type: String, value: mapEstadoLabel(p.estado_entrega) },
       { type: String, value: posicionWms },
       { type: String, value: almacen },

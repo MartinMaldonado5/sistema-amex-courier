@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Edit3 } from 'lucide-react';
-import { Paquete, TipoUbicacion } from '@/types';
+import { Paquete, TipoUbicacion, TipoEstadoEntrega, TipoEstadoAmex } from '@/types';
 
 export interface EditPackageModalProps {
   isOpen: boolean;
@@ -124,6 +124,40 @@ export default function EditPackageModal({
                 placeholder="Ej: A1-P1, A2-P3, REC"
                 className="form-control"
               />
+            </div>
+          </div>
+
+          <div className="wms-modal-grid-2">
+            <div className="form-group">
+              <label style={{ fontSize: '12px', fontWeight: 800, color: '#0369a1' }}>Estado AMEX (Operativo)</label>
+              <select
+                value={editFormData.estadoAmex || 'recibido'}
+                onChange={e => setEditFormData({ ...editFormData, estadoAmex: e.target.value as TipoEstadoAmex })}
+                className="form-control"
+                style={{ borderColor: '#93c5fd', background: '#f0f9ff', fontWeight: 700, color: '#0369a1' }}
+              >
+                <option value="recibido">📥 Recibido (Bodega Lince)</option>
+                <option value="en_almacen">📦 En Almacén (Estantería)</option>
+                <option value="listo_recojo">🏪 Listo Recojo en Tienda</option>
+                <option value="en_ruta">🚚 En Ruta (Reparto / Agencia)</option>
+                <option value="entregado">✅ Entregado al Cliente</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label style={{ fontSize: '12px', fontWeight: 800, color: '#475569' }}>Estado TIB (Reporte)</label>
+              <select
+                value={editFormData.estadoEntrega || 'EnAlmacen'}
+                onChange={e => setEditFormData({ ...editFormData, estadoEntrega: e.target.value as TipoEstadoEntrega })}
+                className="form-control"
+              >
+                <option value="EnAlmacen">En Almacén</option>
+                <option value="ListoParaRecojo">Listo para Recojo</option>
+                <option value="EnRutaCarroAmex">En Ruta Carro Amex</option>
+                <option value="EnRutaMotorizado">En Ruta Motorizado</option>
+                <option value="EnRutaProvincia">En Ruta Provincia</option>
+                <option value="Entregado">Entregado</option>
+              </select>
             </div>
           </div>
 

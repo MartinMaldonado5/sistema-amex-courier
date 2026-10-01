@@ -3,6 +3,7 @@ import {
   Paquete,
   TipoUbicacion,
   TipoEstadoEntrega,
+  TipoEstadoAmex,
   EstanteriaPosicion,
   MovimientoKardex,
   AlmacenSede
@@ -153,7 +154,8 @@ export const inventoryService = {
         piso: updated.piso,
         posicion_estante: updated.posicionEstante,
         metodo_entrega: updated.metodoEntrega,
-        estado_entrega: updated.estadoEntrega
+        estado_entrega: updated.estadoEntrega,
+        estado_amex: updated.estadoAmex || 'recibido'
       })
       .eq('id', updated.id);
   },
@@ -186,7 +188,7 @@ export const inventoryService = {
     });
   },
 
-  // Cambio rápido de estado individual
+  // Cambio rápido de estado individual TIB
   async quickStatusChange(pkg: Paquete, newStatus: TipoEstadoEntrega): Promise<void> {
     await supabase.from('paquetes').update({ estado_entrega: newStatus }).eq('id', pkg.id);
 
@@ -195,20 +197,42 @@ export const inventoryService = {
       codigo_paquete: pkg.numeroReciboBodega,
       consignatario: pkg.nombreConsignatario || 'Cliente AMEX',
       origen_descripcion: `AmexLince (${pkg.posicionEstante || 'REC'})`,
-      destino_descripcion: `Estado actualizado a: ${newStatus}`,
+      destino_descripcion: `Estado TIB actualizado a: ${newStatus}`,
       tipo_movimiento: newStatus === 'Entregado' ? 'ENTREGA' : 'ESTADO_CAMBIO',
       motivo: 'Ajuste operativo desde Almacén Central Lince',
       usuario_operador: 'Operador Logístico AMEX'
     });
   },
 
-  // Cambio de estado masivo en lote
+  // Cambio rápido de estado operativo individual AMEX
+  async quickStatusAmexChange(pkg: Paquete, newStatusAmex: TipoEstadoAmex): Promise<void> {
+    await supabase.from('paquetes').update({ estado_amex: newStatusAmex }).eq('id', pkg.id);
+
+    await supabase.from('movimientos_kardex').insert({
+      paquete_id: pkg.id,
+      codigo_paquete: pkg.numeroReciboBodega,
+      consignatario: pkg.nombreConsignatario || 'Cliente AMEX',
+      origen_descripcion: `AmexLince (${pkg.posicionEstante || 'REC'})`,
+      destino_descripcion: `Estado AMEX actualizado a: ${newStatusAmex}`,
+      tipo_movimiento: newStatusAmex === 'entregado' ? 'ENTREGA' : 'ESTADO_CAMBIO',
+      motivo: 'Ajuste de ciclo interno AMEX desde Almacén Central Lince',
+      usuario_operador: 'Operador Logístico AMEX'
+    });
+  },
+
+  // Cambio de estado masivo en lote (soporta Estado TIB y/o Estado AMEX)
   async batchStatusChange(
     selectedIds: string[],
     targetStatus: TipoEstadoEntrega,
-    paquetesList: Paquete[]
+    paquetesList: Paquete[],
+    targetStatusAmex?: TipoEstadoAmex
   ): Promise<Paquete[]> {
-    await supabase.from('paquetes').update({ estado_entrega: targetStatus }).in('id', selectedIds);
+    const updatePayload: Record<string, any> = { estado_entrega: targetStatus };
+    if (targetStatusAmex) {
+      updatePayload.estado_amex = targetStatusAmex;
+    }
+
+    await supabase.from('paquetes').update(updatePayload).in('id', selectedIds);
 
     const updatedList: Paquete[] = [];
     const kardexInserts = [];
@@ -216,7 +240,11 @@ export const inventoryService = {
     for (const id of selectedIds) {
       const pkg = paquetesList.find(p => p.id === id);
       if (pkg) {
-        const updated = { ...pkg, estadoEntrega: targetStatus };
+        const updated: Paquete = {
+          ...pkg,
+          estadoEntrega: targetStatus,
+          ...(targetStatusAmex ? { estadoAmex: targetStatusAmex } : {})
+        };
         updatedList.push(updated);
 
         kardexInserts.push({
@@ -224,8 +252,8 @@ export const inventoryService = {
           codigo_paquete: pkg.numeroReciboBodega,
           consignatario: pkg.nombreConsignatario || 'Cliente AMEX',
           origen_descripcion: `AmexLince (${pkg.posicionEstante || 'REC'})`,
-          destino_descripcion: `Estado en lote: ${targetStatus}`,
-          tipo_movimiento: targetStatus === 'Entregado' ? 'ENTREGA' : 'ESTADO_CAMBIO',
+          destino_descripcion: `Estado en lote: TIB=${targetStatus}${targetStatusAmex ? ` | AMEX=${targetStatusAmex}` : ''}`,
+          tipo_movimiento: targetStatus === 'Entregado' || targetStatusAmex === 'entregado' ? 'ENTREGA' : 'ESTADO_CAMBIO',
           motivo: 'Cambio masivo de estado desde Almacén Lince',
           usuario_operador: 'Operador Logístico AMEX'
         });
