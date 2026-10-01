@@ -1554,16 +1554,6 @@ export default function MobileScannerModal({
                 </div>
               )}
 
-              {/* Operador Responsable */}
-              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 10px', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px' }}>
-                <span style={{ color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <User className="w-3.5 h-3.5 text-slate-500" /> Operador:
-                </span>
-                <span style={{ fontWeight: 800, color: '#0f172a' }}>
-                  {formatOperatorName(currentUser)}
-                </span>
-              </div>
-
               {/* Botones de Confirmación y Cancelación */}
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
