@@ -226,10 +226,17 @@ class SoundSynthesizer {
     const cleanText = text.trim();
     if (!cleanText) return;
 
+    // Si el texto contiene un correo electrónico, extraer únicamente el alias/nombre para no pronunciar el correo
+    const speechSafeText = cleanText.replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, (email) => {
+      const alias = email.split('@')[0].replace(/[._-]/g, ' ').trim();
+      return alias;
+    }).trim();
+    if (!speechSafeText) return;
+
     try {
       window.speechSynthesis.cancel();
 
-      const utterance = new SpeechSynthesisUtterance(cleanText);
+      const utterance = new SpeechSynthesisUtterance(speechSafeText);
       utterance.lang = 'es-PE';
       utterance.rate = 1.08;
       utterance.pitch = 1.0;

@@ -52,6 +52,22 @@ interface ScannerTabProps {
   onRefreshData?: () => Promise<void> | void;
 }
 
+const formatOperatorName = (user?: { nombre?: string; email?: string } | null): string => {
+  if (!user) return 'Operador Logístico AMEX';
+  const rawName = user.nombre?.trim();
+  if (rawName && !rawName.includes('@')) {
+    return rawName;
+  }
+  const emailSource = (rawName && rawName.includes('@')) ? rawName : user.email;
+  if (emailSource && emailSource.includes('@')) {
+    const alias = emailSource.split('@')[0].replace(/[._-]/g, ' ').trim();
+    if (alias) {
+      return alias.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+  }
+  return 'Operador AMEX';
+};
+
 export default function ScannerTab({
   scannedLogs = [],
   paquetes = [],
@@ -230,7 +246,7 @@ export default function ScannerTab({
       return;
     }
 
-    const activeUserName = currentUser?.nombre || 'Operador Logístico AMEX';
+    const activeUserName = formatOperatorName(currentUser);
     const activeUserEmail = currentUser?.email || '';
     const activeUserId = currentUser?.id || null;
 
@@ -412,7 +428,7 @@ export default function ScannerTab({
         {currentUser && (
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '20px', padding: '4px 12px', fontSize: '12px', color: '#1e40af', fontWeight: 600 }}>
             <User className="w-3.5 h-3.5 text-blue-600" />
-            <span>Operador Activo: <strong>{currentUser.nombre || currentUser.email}</strong> {currentUser.email ? `(${currentUser.email})` : ''}</span>
+            <span>Operador Activo: <strong>{formatOperatorName(currentUser)}</strong></span>
           </div>
         )}
       </div>
@@ -806,14 +822,10 @@ export default function ScannerTab({
                             )}
                           </td>
                           <td style={{ padding: '8px 10px' }}>
-                            <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155' }}>
-                              {log.operadorNombre || currentUser?.nombre || 'Operador'}
+                            <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <User className="w-3 h-3 text-slate-400" />
+                              {log.operadorNombre || formatOperatorName(currentUser || { email: log.operadorEmail })}
                             </div>
-                            {(log.operadorEmail || currentUser?.email) && (
-                              <div style={{ fontSize: '10px', color: '#64748b' }}>
-                                {log.operadorEmail || currentUser?.email}
-                              </div>
-                            )}
                           </td>
                           <td style={{ padding: '8px 10px' }}>
                             {log.synced ? (

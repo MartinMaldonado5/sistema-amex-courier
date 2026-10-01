@@ -50,6 +50,22 @@ interface CameraDeviceOption {
   isPrimary?: boolean;
 }
 
+const formatOperatorName = (user?: { nombre?: string; email?: string } | null): string => {
+  if (!user) return 'Operador Logístico AMEX';
+  const rawName = user.nombre?.trim();
+  if (rawName && !rawName.includes('@')) {
+    return rawName;
+  }
+  const emailSource = (rawName && rawName.includes('@')) ? rawName : user.email;
+  if (emailSource && emailSource.includes('@')) {
+    const alias = emailSource.split('@')[0].replace(/[._-]/g, ' ').trim();
+    if (alias) {
+      return alias.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+  }
+  return 'Operador AMEX';
+};
+
 export default function MobileScannerModal({
   isOpen,
   onClose,
@@ -1250,7 +1266,7 @@ export default function MobileScannerModal({
                 }}
               >
                 <User style={{ width: '11px', height: '11px' }} />
-                <span>{currentUser.nombre || currentUser.email}</span>
+                <span>{formatOperatorName(currentUser)}</span>
               </div>
             )}
 
@@ -1544,7 +1560,7 @@ export default function MobileScannerModal({
                   <User className="w-3.5 h-3.5 text-slate-500" /> Operador:
                 </span>
                 <span style={{ fontWeight: 800, color: '#0f172a' }}>
-                  {currentUser?.nombre || 'Operador Logístico AMEX'} {currentUser?.email ? `(${currentUser.email})` : ''}
+                  {formatOperatorName(currentUser)}
                 </span>
               </div>
 
