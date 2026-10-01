@@ -32,9 +32,9 @@ export function useInventoryData({
   // Sub-pestañas: 'existencias' | 'movimientos' | 'matriz' | 'gestor'
   const [activeSubTab, setActiveSubTab] = useState<'existencias' | 'movimientos' | 'matriz' | 'gestor'>('existencias');
 
-  // Filtros de Existencias
+  // Filtros de Existencias (Limpios por defecto)
   const [searchTerm, setSearchTerm] = useState('');
-  const [locationFilter, setLocationFilter] = useState<string>('AmexLince');
+  const [locationFilter, setLocationFilter] = useState<string>('ALL');
   const [shelfFilter, setShelfFilter] = useState<string>('ALL');
   const [floorFilter, setFloorFilter] = useState<string>('ALL');
   const [packageTypeFilter, setPackageTypeFilter] = useState<string>('ALL');

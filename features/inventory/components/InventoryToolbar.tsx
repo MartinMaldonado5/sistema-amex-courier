@@ -488,9 +488,9 @@ export default function InventoryToolbar({
                   background: '#ffffff'
                 }}
               >
-                <option value="ALL">Todos los Bultos</option>
+                <option value="ALL">Todas las Sedes</option>
                 <option value="AmexLince">Almacén Central Lince</option>
-                <option value="Entregado">Entregados</option>
+                <option value="Entregado">Entregados / Salidas</option>
               </select>
             </div>
 
