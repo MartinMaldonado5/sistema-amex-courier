@@ -124,64 +124,29 @@ export default function Sidebar({
           {navItem('completar-inventario', 'fa-solid fa-cloud-arrow-up', '13. Completar Inventario')}
           {navItem('auditoria', 'fa-solid fa-shield-halved', '14. Auditoría & Gobernanza')}
           {navItem('admin-usuarios', 'fa-solid fa-user-gear', '15. Gestión de Usuarios')}
-
-          {/* OPCIÓN ADICIONAL EN LA LISTA: CERRAR SESIÓN */}
-          <div
-            onClick={handleLogoutClick}
-            role="button"
-            tabIndex={0}
-            style={{
-              borderRadius: '8px',
-              padding: '10px 14px',
-              fontSize: '13px',
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              background: 'rgba(239, 68, 68, 0.08)',
-              border: '1px solid rgba(239, 68, 68, 0.25)',
-              borderLeft: '3.5px solid #ef4444',
-              color: '#fca5a5',
-              marginTop: '8px',
-              marginBottom: '12px'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.22)';
-              e.currentTarget.style.color = '#ffffff';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)';
-              e.currentTarget.style.color = '#fca5a5';
-            }}
-            title="Cerrar sesión actual en el sistema"
-          >
-            <i className="fa-solid fa-right-from-bracket" style={{ width: '18px', textAlign: 'center', color: '#ef4444' }}></i>
-            <span>Cerrar Sesión</span>
-          </div>
         </div>
       </div>
 
-      {/* PIE FIJO DEL SIDEBAR: USUARIO ACTIVO Y BOTÓN DESTACADO DE CIERRE DE SESIÓN */}
+      {/* PIE FIJO DEL SIDEBAR: USUARIO ACTIVO Y ÚNICO BOTÓN DE CIERRE DE SESIÓN */}
       <div
         style={{
           borderTop: '1px solid rgba(255, 255, 255, 0.1)',
           background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 1) 100%)',
-          padding: '12px 10px',
+          padding: '12px 12px 24px 12px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '8px',
+          gap: '10px',
           flexShrink: 0,
-          boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.25)'
+          boxShadow: '0 -4px 14px rgba(0, 0, 0, 0.35)',
+          zIndex: 10
         }}
       >
         {/* Identidad del Operador */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '2px 4px' }}>
           <div
             style={{
-              width: '36px',
-              height: '36px',
+              width: '38px',
+              height: '38px',
               borderRadius: '50%',
               background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
               border: '1.5px solid #38bdf8',
@@ -198,17 +163,27 @@ export default function Sidebar({
             {(currentUser?.nombre || 'AMEX')[0]?.toUpperCase()}
           </div>
           <div style={{ overflow: 'hidden', flex: 1 }}>
-            <div style={{ fontSize: '12px', fontWeight: 800, color: '#f8fafc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {currentUser?.nombre || 'Operador Logístico'}
+            <div
+              style={{
+                fontSize: '12.5px',
+                fontWeight: 800,
+                color: '#f8fafc',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}
+              title={currentUser?.nombre || 'Administrador AMEX'}
+            >
+              {currentUser?.nombre || 'Administrador AMEX'}
             </div>
             <div style={{ fontSize: '10.5px', color: '#38bdf8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
               <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', display: 'inline-block' }}></span>
-              {currentUser?.rol || 'Operador Activo'}
+              {currentUser?.rol || 'Operador Logístico'}
             </div>
           </div>
         </div>
 
-        {/* Botón Principal Cerrar Sesión */}
+        {/* Único Botón de Cerrar Sesión */}
         <button
           onClick={handleLogoutClick}
           style={{
@@ -217,9 +192,9 @@ export default function Sidebar({
             alignItems: 'center',
             justifyContent: 'center',
             gap: '8px',
-            padding: '9px 14px',
+            padding: '10px 14px',
             borderRadius: '8px',
-            fontSize: '12px',
+            fontSize: '12.5px',
             fontWeight: 800,
             cursor: 'pointer',
             background: 'rgba(239, 68, 68, 0.15)',
