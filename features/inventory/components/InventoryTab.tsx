@@ -9,7 +9,6 @@ import InventoryStatsCards from './InventoryStatsCards';
 import InventoryToolbar from './InventoryToolbar';
 import InventoryTable from './InventoryTable';
 import KardexView from './KardexView';
-import ShelfMatrixGrid from './ShelfMatrixGrid';
 import GestorAlmacenView from './GestorAlmacenView';
 import TransferModal from '../modals/TransferModal';
 import EditPackageModal from '../modals/EditPackageModal';
@@ -82,14 +81,6 @@ export default function InventoryTab({
     // Estanterías
     posicionesList,
     shelfGroups,
-
-    // Filtros Mapa Anaqueles
-    shelfSearchTerm,
-    setShelfSearchTerm,
-    shelfZoneFilter,
-    setShelfZoneFilter,
-    shelfOccupancyFilter,
-    setShelfOccupancyFilter,
 
     // Selección múltiple
     selectedIds,
@@ -234,30 +225,6 @@ export default function InventoryTab({
         />
       )}
 
-      {/* VISTA 2: Mapa Visual de Anaqueles (Slotting Grid) */}
-      {activeSubTab === 'matriz' && (
-        <ShelfMatrixGrid
-          shelfGroups={shelfGroups}
-          paquetes={paquetes}
-          shelfSearchTerm={shelfSearchTerm}
-          setShelfSearchTerm={setShelfSearchTerm}
-          shelfZoneFilter={shelfZoneFilter}
-          setShelfZoneFilter={setShelfZoneFilter}
-          shelfOccupancyFilter={shelfOccupancyFilter}
-          setShelfOccupancyFilter={setShelfOccupancyFilter}
-          onOpenNewPositionModal={() => {
-            setNewPositionMode('batch');
-            setIsNewPositionModalOpen(true);
-          }}
-          onOpenTransferModal={openTransferModal}
-          onFilterShelf={(shelfCode, floorLevel) => {
-            setShelfFilter(shelfCode);
-            if (floorLevel) setFloorFilter(floorLevel);
-            setActiveSubTab('existencias');
-          }}
-          onEditPosition={setEditingPosition}
-        />
-      )}
 
       {/* VISTA 3: Configurar Anaqueles & Parámetros WMS */}
       {activeSubTab === 'gestor' && (

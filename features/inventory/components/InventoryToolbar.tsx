@@ -273,25 +273,6 @@ export default function InventoryToolbar({
         </button>
 
         <button
-          onClick={() => setActiveSubTab('matriz')}
-          className="wms-subtab-btn"
-          style={{
-            background: activeSubTab === 'matriz' ? '#4338ca' : '#f8fafc',
-            color: activeSubTab === 'matriz' ? '#ffffff' : '#475569',
-            border: activeSubTab === 'matriz' ? '1px solid #3730a3' : '1px solid #e2e8f0',
-            fontWeight: 800,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '8px 14px',
-            borderRadius: '8px',
-            cursor: 'pointer'
-          }}
-        >
-          <Layers className="w-4 h-4" /> 2. 🗺️ Mapa Visual de Anaqueles ({Object.keys(shelfGroups).length} Estantes)
-        </button>
-
-        <button
           onClick={() => setActiveSubTab('gestor')}
           className="wms-subtab-btn"
           style={{
@@ -307,7 +288,7 @@ export default function InventoryToolbar({
             cursor: 'pointer'
           }}
         >
-          <Settings className="w-4 h-4" /> 3. ⚙️ Configurar Anaqueles & Capacidad ({posicionesCount})
+          <Settings className="w-4 h-4" /> 2. ⚙️ Configurar Anaqueles & Capacidad ({posicionesCount})
         </button>
 
         <button
@@ -326,7 +307,7 @@ export default function InventoryToolbar({
             cursor: 'pointer'
           }}
         >
-          <Clock className="w-4 h-4" /> 4. 🔄 Kardex Movimientos ({kardexCount})
+          <Clock className="w-4 h-4" /> 3. 🔄 Kardex Movimientos ({kardexCount})
         </button>
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
