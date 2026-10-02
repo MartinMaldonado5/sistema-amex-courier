@@ -4,8 +4,9 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { RotuloSlotData } from '@/lib/rotulos/rotulos-pdf';
 import { DEFAULT_SLOTS, DEFAULT_REMITENTE, MAX_SHEETS, generarTextoBulto } from '../types';
 import { RotulosService } from '../services/rotulos.service';
+import { extractPrimerNombre } from '@/lib/auth/userUtils';
 
-export function useRotulosState() {
+export function useRotulosState(currentUser?: { nombre?: string; email?: string } | null) {
   const [slots, setSlots] = useState<RotuloSlotData[]>(DEFAULT_SLOTS);
   const [activeSlotId, setActiveSlotId] = useState<number>(1);
   const [currentSheet, setCurrentSheet] = useState<number>(1);
@@ -740,7 +741,8 @@ export function useRotulosState() {
   const handleDownloadPdf = async () => {
     try {
       setIsExportingPdf(true);
-      await RotulosService.generatePdf(slots, totalSheets);
+      const operadorNombre = extractPrimerNombre(currentUser?.nombre, currentUser?.email);
+      await RotulosService.generatePdf(slots, totalSheets, operadorNombre);
       showToast(`📄 ¡PDF A4 (${totalSheets} ${totalSheets === 1 ? 'hoja' : 'hojas'}) descargado exitosamente!`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al generar PDF';

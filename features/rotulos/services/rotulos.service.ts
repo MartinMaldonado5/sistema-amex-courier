@@ -111,7 +111,7 @@ export const RotulosService = {
   /**
    * Genera y descarga el archivo PDF físico en formato A4
    */
-  async generatePdf(slots: RotuloSlotData[], totalSheets: number): Promise<void> {
-    await generateRotulosA4Pdf(slots, `Rotulos_Agencias_${slots.length}x_${totalSheets}Hojas_A4`);
+  async generatePdf(slots: RotuloSlotData[], totalSheets: number, operadorNombre?: string): Promise<void> {
+    await generateRotulosA4Pdf(slots, `Rotulos_Agencias_${slots.length}x_${totalSheets}Hojas_A4`, operadorNombre);
   }
 };

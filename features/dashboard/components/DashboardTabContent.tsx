@@ -236,7 +236,7 @@ export default function DashboardTabContent({
         />
       )}
 
-      {activeTab === 'rotulos-a4' && <RotulosA4Tab clientes={clientes} />}
+      {activeTab === 'rotulos-a4' && <RotulosA4Tab clientes={clientes} currentUser={currentUser} />}
       {activeTab === 'boletas-shalom' && <BoletasShalomTab />}
 
       {activeTab === 'formato-entrega' && (

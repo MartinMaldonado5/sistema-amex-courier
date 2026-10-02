@@ -17,6 +17,8 @@ export interface RotuloSlotData {
   numeroRotulo?: number;
   siglas?: string;
   groupId?: string;
+  fechaImpresion?: string;
+  usuarioImpresion?: string;
 }
 
 export function sanitizePdfText(text: string | undefined | null): string {
@@ -56,7 +58,8 @@ async function getBase64ImageFromUrl(imageUrl: string): Promise<string | null> {
  */
 export async function generateRotulosA4Pdf(
   slots: RotuloSlotData[],
-  sheetTitle: string = 'Rotulos_Agencias_A4'
+  sheetTitle: string = 'Rotulos_Agencias_A4',
+  operadorNombre?: string
 ): Promise<void> {
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -144,7 +147,42 @@ export async function generateRotulosA4Pdf(
           obsFontSize -= 0.5;
           doc.setFontSize(obsFontSize);
         }
+        const obsWidth = doc.getTextWidth(obsText);
         doc.text(obsText, pageWidth - 12, yStart + 7.5, { align: 'right' });
+
+        // Estampa de Fecha y Hora de emisión (a la izquierda del badge de bultos)
+        const now = new Date();
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        const timestampText = slot.fechaImpresion || `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.2);
+        doc.setTextColor(51, 65, 85); // Slate-700
+        const timeWidth = doc.getTextWidth(timestampText);
+        const timeBoxX = pageWidth - 12 - obsWidth - 3.5 - timeWidth - 4;
+
+        // Pastilla sutil para la estampa
+        doc.setDrawColor(180, 195, 215);
+        doc.setFillColor(248, 250, 252);
+        doc.setLineWidth(0.2);
+        doc.roundedRect(timeBoxX, yStart + 2.5, timeWidth + 4, 5.6, 0.8, 0.8, 'FD');
+        doc.text(timestampText, timeBoxX + 2, yStart + 6.4);
+
+        // Estampa del usuario / operador que imprime (a la izquierda de la estampa de tiempo)
+        const userDisplayName = (slot.usuarioImpresion || operadorNombre || '').trim();
+        if (userDisplayName) {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(7.2);
+          doc.setTextColor(15, 23, 42); // Slate-900
+          const userWidth = doc.getTextWidth(userDisplayName);
+          const userBoxX = timeBoxX - 2.5 - userWidth - 4;
+
+          doc.setDrawColor(180, 195, 215);
+          doc.setFillColor(241, 245, 249);
+          doc.setLineWidth(0.2);
+          doc.roundedRect(userBoxX, yStart + 2.5, userWidth + 4, 5.6, 0.8, 0.8, 'FD');
+          doc.text(userDisplayName, userBoxX + 2, yStart + 6.4);
+        }
 
         // Siglas / Código de envío (alineado a la derecha junto al destinatario)
         if (slot.siglas?.trim()) {

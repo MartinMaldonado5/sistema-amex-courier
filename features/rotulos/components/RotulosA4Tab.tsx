@@ -20,10 +20,11 @@ export type { AgencyOption, RotuloSlotData };
 
 interface RotulosA4TabProps {
   clientes?: Cliente[];
+  currentUser?: { nombre?: string; email?: string } | null;
 }
 
-export default function RotulosA4Tab({ clientes = [] }: RotulosA4TabProps) {
-  const state = useRotulosState();
+export default function RotulosA4Tab({ clientes = [], currentUser }: RotulosA4TabProps) {
+  const state = useRotulosState(currentUser);
 
   return (
     <div className="rotulos-module-wrapper">
@@ -112,6 +113,7 @@ export default function RotulosA4Tab({ clientes = [] }: RotulosA4TabProps) {
           handleAddNewSheet={state.handleAddNewSheet}
           handleDeleteCurrentSheet={state.handleDeleteCurrentSheet}
           slotsAiData={state.slotsAiData}
+          currentUser={currentUser}
         />
       </div>
     </div>

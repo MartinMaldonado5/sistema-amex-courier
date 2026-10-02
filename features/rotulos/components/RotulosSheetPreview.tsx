@@ -3,6 +3,8 @@
 import React from 'react';
 import { RotuloSlotData } from '@/lib/rotulos/rotulos-pdf';
 import { MAX_SHEETS, getAgencyClass, generarTextoBulto } from '../types';
+import { extractPrimerNombre } from '@/lib/auth/userUtils';
+import { supabase } from '@/lib/supabase/client';
 
 interface RotulosSheetPreviewProps {
   slots: RotuloSlotData[];
@@ -16,6 +18,7 @@ interface RotulosSheetPreviewProps {
   handleAddNewSheet: () => void;
   handleDeleteCurrentSheet: () => void;
   slotsAiData?: Record<number, { text: string; image: string | null }>;
+  currentUser?: { nombre?: string; email?: string } | null;
 }
 
 export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
@@ -29,8 +32,46 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
   handleSelectSheet,
   handleAddNewSheet,
   handleDeleteCurrentSheet,
-  slotsAiData
+  slotsAiData,
+  currentUser
 }) => {
+  // Identificación del usuario actual (primer nombre)
+  const [sessionUser, setSessionUser] = React.useState<{ nombre?: string; email?: string } | null>(currentUser || null);
+
+  React.useEffect(() => {
+    if (currentUser?.nombre || currentUser?.email) {
+      setSessionUser(currentUser);
+      return;
+    }
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) {
+        const meta = data.user.user_metadata || {};
+        setSessionUser({
+          nombre: (meta.nombre_completo as string) || (meta.nombre as string) || '',
+          email: data.user.email || ''
+        });
+      }
+    });
+  }, [currentUser]);
+
+  const primerNombre = extractPrimerNombre(sessionUser?.nombre, sessionUser?.email);
+
+  // Estampa de fecha y hora en vivo para visualización e impresión exacta
+  const [liveTimestamp, setLiveTimestamp] = React.useState<string>('');
+
+  React.useEffect(() => {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const getFormatted = () => {
+      const now = new Date();
+      return `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    };
+    setLiveTimestamp(getFormatted());
+    const interval = setInterval(() => {
+      setLiveTimestamp(getFormatted());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const renderStrip = (slot: RotuloSlotData, isInteractive = true) => {
     const hasData = Boolean(slot.nombre || slot.dni || slot.celular || slot.destino);
     const agencyClass = getAgencyClass(slot.agencia);
@@ -75,10 +116,20 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
                   </span>
                 )}
               </div>
-              <span className="strip-bulto-badge">
-                <i className="fa-solid fa-box-archive" style={{ marginRight: '5px' }}></i>
-                {(slot.observacion?.trim() || generarTextoBulto(slot.numeroRotulo || 1, slot.totalRotulos || 1, slot.totalCajas || '1')).toUpperCase()}
-              </span>
+              <div className="strip-header-right">
+                <span className="strip-user-badge" title={`Operador: ${primerNombre}`}>
+                  <i className="fa-solid fa-user" style={{ marginRight: '4px', fontSize: '0.62rem', opacity: 0.85 }}></i>
+                  {primerNombre}
+                </span>
+                <span className="strip-timestamp-badge" title="Fecha y hora de emisión">
+                  <i className="fa-regular fa-clock" style={{ marginRight: '4px' }}></i>
+                  {slot.fechaImpresion || liveTimestamp || '00/00/0000 00:00:00'}
+                </span>
+                <span className="strip-bulto-badge">
+                  <i className="fa-solid fa-box-archive" style={{ marginRight: '5px' }}></i>
+                  {(slot.observacion?.trim() || generarTextoBulto(slot.numeroRotulo || 1, slot.totalRotulos || 1, slot.totalCajas || '1')).toUpperCase()}
+                </span>
+              </div>
             </div>
 
             <div className="strip-destinatario-row">

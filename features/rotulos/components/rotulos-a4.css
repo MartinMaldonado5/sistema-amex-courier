@@ -2588,6 +2588,44 @@
   50% { opacity: 0.85; transform: scale(0.97); }
 }
 
+.strip-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.strip-user-badge {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: capitalize;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.strip-timestamp-badge {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  font-family: var(--font-mono, monospace), system-ui;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
 .strip-bulto-badge {
   background: #f1f5f9;
   border: 1px solid #cbd5e1;
@@ -3083,6 +3121,46 @@
     font-weight: 900 !important;
     color: #000000 !important;
     letter-spacing: 0.5px !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .strip-header-right {
+    display: flex !important;
+    align-items: center !important;
+    gap: 2mm !important;
+  }
+
+  .strip-user-badge {
+    border: 0.6pt solid #94a3b8 !important;
+    font-size: 7.2pt !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    background: #f8fafc !important;
+    padding: 1.0mm 2.2mm !important;
+    border-radius: 3px !important;
+    box-shadow: none !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    text-transform: capitalize !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .strip-timestamp-badge {
+    border: 0.6pt solid #94a3b8 !important;
+    font-size: 7.2pt !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    background: #f8fafc !important;
+    padding: 1.0mm 2.2mm !important;
+    border-radius: 3px !important;
+    box-shadow: none !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    font-family: monospace, system-ui !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
