@@ -143,7 +143,6 @@ export const inventoryService = {
         numero_recibo_bodega: updated.numeroReciboBodega,
         tracking_usa: updated.trackingUsa,
         tipo_empaque: updated.tipoEmpaque,
-        numero_factura: updated.numeroFactura,
         dni_consignatario: updated.dniConsignatario,
         nombre_consignatario: updated.nombreConsignatario,
         descripcion: updated.descripcion,

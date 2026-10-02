@@ -755,19 +755,16 @@ export type Database = {
           actualizado_en: string | null
           anaquel: string | null
           cliente_id: string | null
-          codigo_casillero: string | null
           creado_en: string | null
           descripcion: string | null
           dni_consignatario: string | null
           eliminado_en: string | null
           eliminado_por: string | null
           estado_entrega: string | null
-          factura_pdf_url: string | null
           id: string
           metodo_entrega: string | null
           motivo_eliminacion: string | null
           nombre_consignatario: string | null
-          numero_factura: string | null
           numero_recibo_bodega: string
           peso_kg: number | null
           piso: string | null
@@ -781,19 +778,16 @@ export type Database = {
           actualizado_en?: string | null
           anaquel?: string | null
           cliente_id?: string | null
-          codigo_casillero?: string | null
           creado_en?: string | null
           descripcion?: string | null
           dni_consignatario?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
           estado_entrega?: string | null
-          factura_pdf_url?: string | null
           id?: string
           metodo_entrega?: string | null
           motivo_eliminacion?: string | null
           nombre_consignatario?: string | null
-          numero_factura?: string | null
           numero_recibo_bodega: string
           peso_kg?: number | null
           piso?: string | null
@@ -807,19 +801,16 @@ export type Database = {
           actualizado_en?: string | null
           anaquel?: string | null
           cliente_id?: string | null
-          codigo_casillero?: string | null
           creado_en?: string | null
           descripcion?: string | null
           dni_consignatario?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
           estado_entrega?: string | null
-          factura_pdf_url?: string | null
           id?: string
           metodo_entrega?: string | null
           motivo_eliminacion?: string | null
           nombre_consignatario?: string | null
-          numero_factura?: string | null
           numero_recibo_bodega?: string
           peso_kg?: number | null
           piso?: string | null

@@ -42,7 +42,7 @@ function mapPaquete(row: Record<string, unknown>): Paquete {
     numeroReciboBodega: String(row.numero_recibo_bodega || ''),
     trackingUsa: String(row.tracking_usa || ''),
     tipoEmpaque: String(row.tipo_empaque || ''),
-    numeroFactura: String(row.numero_factura || ''),
+    numeroFactura: '',
     dniConsignatario: String(row.dni_consignatario || ''),
     nombreConsignatario: String(row.nombre_consignatario || ''),
     descripcion: String(row.descripcion || ''),
@@ -55,7 +55,7 @@ function mapPaquete(row: Record<string, unknown>): Paquete {
     metodoEntrega: (row.metodo_entrega as TipoMetodoEntrega) || 'CarroAmexDomicilio',
     estadoEntrega: (row.estado_entrega as TipoEstadoEntrega) || 'EnAlmacen',
     estadoAmex: (row.estado_amex as TipoEstadoAmex) || 'recibido',
-    facturaPdfUrl: String(row.factura_pdf_url || ''),
+    facturaPdfUrl: '',
     usuarioEmail: String(row.usuario_email || ''),
     creadoPor: row.creado_por ? String(row.creado_por) : undefined,
     creadoEn: String(row.creado_en || '')

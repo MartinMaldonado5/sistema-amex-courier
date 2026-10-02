@@ -155,7 +155,6 @@ export function useDashboardActions({
         numero_recibo_bodega: wr,
         tracking_usa: tracking || null,
         tipo_empaque: newPkgForm.tipoEmpaque || 'CAJA',
-        numero_factura: newPkgForm.numeroFactura?.trim() || null,
         dni_consignatario: newPkgForm.dniConsignatario?.trim() || null,
         nombre_consignatario: nombre,
         descripcion: newPkgForm.descripcion?.trim() || 'MERCANCÍA GENERAL',
@@ -168,7 +167,6 @@ export function useDashboardActions({
         metodo_entrega: newPkgForm.metodoEntrega || 'CarroAmexDomicilio',
         estado_entrega: 'EnAlmacen',
         estado_amex: 'recibido',
-        factura_pdf_url: newPkgForm.facturaPdfUrl || null,
         usuario_email: currentUser?.email || '',
         creado_por: currentUser?.id || null
       }).select('id').maybeSingle();
