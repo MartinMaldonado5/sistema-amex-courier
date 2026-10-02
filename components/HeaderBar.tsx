@@ -59,7 +59,7 @@ export default function HeaderBar({
           }}
         >
           <i className="fa-solid fa-boxes-stacked" style={{ color: '#38bdf8' }}></i>
-          AMEX COURIER
+          Sistema Amex Courier
         </span>
       </div>
     </header>
