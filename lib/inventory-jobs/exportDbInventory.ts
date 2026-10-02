@@ -104,7 +104,7 @@ export async function generateInventoryExcelBufferFromDb(
     { value: 'Tipo Paquete', fontWeight: 'bold' as const },
     { value: 'Peso (Kg)', fontWeight: 'bold' as const, align: 'right' as const },
     { value: 'Estado AMEX', fontWeight: 'bold' as const },
-    { value: 'Estado TIB', fontWeight: 'bold' as const },
+    { value: 'Estado Entrega', fontWeight: 'bold' as const },
     { value: 'Posición WMS', fontWeight: 'bold' as const },
     { value: 'Almacén Actual', fontWeight: 'bold' as const },
     { value: 'Usuario que Ingresó (Email)', fontWeight: 'bold' as const },

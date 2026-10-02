@@ -24,6 +24,7 @@ interface ParsedRow {
   tipoEmpaque: string;
   pesoKg: number | null;
   estadoEntrega: string;
+  estadoAmex?: string;
   posicionWms: string;
 }
 
@@ -38,9 +39,18 @@ function normalizeKey(str: string): string {
 
 function mapEstadoEntrega(rawEstado: string, currentUbicacion?: string): string {
   const norm = rawEstado.trim().toUpperCase();
-  if (norm.includes('ENTREGADO')) return 'Entregado';
-  if (norm.includes('RUTA') || norm.includes('REPARTO')) return 'EnRutaCarroAmex';
-  if (norm.includes('RECOJO') || norm.includes('LISTO')) return 'ListoParaRecojo';
+  if (norm.includes('ENTREGADO') || norm.includes('RECOGIDO')) return 'Entregado';
+  if (
+    norm.includes('RUTA') ||
+    norm.includes('REPARTO') ||
+    norm.includes('ENVIADO') ||
+    norm.includes('TRANSITO') ||
+    norm.includes('DESPACHADO')
+  ) {
+    return 'EnRutaCarroAmex';
+  }
+  if (norm.includes('RECOJO') || norm.includes('LISTO') || norm.includes('OFICINA')) return 'ListoParaRecojo';
+  if (norm.includes('ALMACEN') || norm.includes('RECIBIDO')) return 'EnAlmacen';
   if (currentUbicacion === 'Entregado') return 'Entregado';
   return 'EnAlmacen';
 }
@@ -90,13 +100,26 @@ export async function syncCompletedExcelToDatabase(
 
     // Mapear encabezados
     const headerRow: string[] = (rows[0] || []).map((h) => normalizeKey(String(h || '')));
+
+    // Priorizar columna de estado TIB / Entrega explícita (evitando capturar 'Estado AMEX')
+    let estadoTibIdx = headerRow.findIndex((h) => h === 'ESTADOTIB' || h === 'ESTADOENTREGA' || h === 'ESTADODEENTREGA');
+    if (estadoTibIdx === -1) {
+      estadoTibIdx = headerRow.findIndex((h) => (h.includes('TIB') || h.includes('ENTREGA')) && !h.includes('AMEX'));
+    }
+    if (estadoTibIdx === -1) {
+      estadoTibIdx = headerRow.findIndex((h) => h.includes('ESTADO') && !h.includes('AMEX'));
+    }
+
+    const estadoAmexIdx = headerRow.findIndex((h) => h.includes('AMEX'));
+
     const colIndex = {
       wr: headerRow.findIndex((h) => h === 'WR' || h === 'GUIAWR' || h === 'GUIA'),
       tracking: headerRow.findIndex((h) => h.includes('TRACKING')),
       cliente: headerRow.findIndex((h) => h.includes('CLIENTE') || h.includes('CONSIGNATARIO')),
       tipoEmpaque: headerRow.findIndex((h) => h.includes('TIPO') || h.includes('EMPAQUE') || h.includes('PAQUETE')),
       peso: headerRow.findIndex((h) => h.includes('PESO')),
-      estado: headerRow.findIndex((h) => h.includes('ESTADO')),
+      estado: estadoTibIdx,
+      estadoAmex: estadoAmexIdx,
       posicion: headerRow.findIndex((h) => h.includes('POSICION') || h.includes('ESTANTE') || h.includes('WMS'))
     };
 
@@ -121,6 +144,7 @@ export async function syncCompletedExcelToDatabase(
       }
 
       const rawEstado = colIndex.estado !== -1 ? String(r[colIndex.estado] || '').trim() : '';
+      const rawEstadoAmex = colIndex.estadoAmex !== -1 ? String(r[colIndex.estadoAmex] || '').trim() : '';
       const rawPosicion = colIndex.posicion !== -1 ? String(r[colIndex.posicion] || '').trim() : 'REC-P1';
 
       parsedRows.push({
@@ -130,6 +154,7 @@ export async function syncCompletedExcelToDatabase(
         tipoEmpaque: rawTipo,
         pesoKg,
         estadoEntrega: rawEstado,
+        estadoAmex: rawEstadoAmex,
         posicionWms: rawPosicion
       });
     }
@@ -198,6 +223,7 @@ export async function syncCompletedExcelToDatabase(
             tipo_empaque: item.tipoEmpaque || existing.tipo_empaque || 'CAJA',
             peso_kg: item.pesoKg !== null ? item.pesoKg : existing.peso_kg,
             estado_entrega: mappedEstado || existing.estado_entrega,
+            ubicacion_actual: mappedEstado === 'Entregado' ? 'Entregado' : (existing.ubicacion_actual || 'AmexLince'),
             actualizado_en: nowIso,
             eliminado_en: null,
           },
@@ -217,8 +243,8 @@ export async function syncCompletedExcelToDatabase(
             nombre_consignatario: item.cliente,
             peso_kg: item.pesoKg,
             estado_entrega: mappedEstado,
-            estado_amex: 'recibido',
-            ubicacion_actual: 'AmexLince',
+            estado_amex: mappedEstado === 'Entregado' ? 'entregado' : (item.estadoAmex?.toLowerCase() || 'recibido'),
+            ubicacion_actual: mappedEstado === 'Entregado' ? 'Entregado' : 'AmexLince',
             anaquel: ana,
             piso: pis,
             posicion_estante: item.posicionWms || 'REC-P1',

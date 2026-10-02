@@ -414,9 +414,9 @@ internal static class Program
                 if ((name == "PESOKG" || name == "PESOKGS" || name == "PESOFISICOKG") && !columns.ContainsKey("PESO"))
                     columns.Add("PESO", column);
 
-                if ((name == "ESTADO" || name == "ESTADODEENTREGA") && !columns.ContainsKey("ESTADOENTREGA"))
+                if ((name == "ESTADO" || name == "ESTADODEENTREGA" || name == "ESTADOENTREGA" || name == "ESTADOTIB" || name == "ESTADODETIB") && !columns.ContainsKey("ESTADOENTREGA"))
                     columns.Add("ESTADOENTREGA", column);
-                if ((name == "ESTADOENTREGA" || name == "ESTADODEENTREGA") && !columns.ContainsKey("ESTADO"))
+                if ((name == "ESTADOENTREGA" || name == "ESTADODEENTREGA" || name == "ESTADO" || name == "ESTADOTIB" || name == "ESTADODETIB") && !columns.ContainsKey("ESTADO"))
                     columns.Add("ESTADO", column);
             }
         }

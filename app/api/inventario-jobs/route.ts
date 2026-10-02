@@ -158,8 +158,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Notificación proactiva push al worker para despertar de inmediato sin esperar el intervalo de polling
-    const workerUrl = process.env.INVENTORY_WORKER_URL || process.env.RENDER_WORKER_URL;
+    const vpsHost = process.env.VPS_HOST || '2.25.89.222';
+    const workerPort = process.env.WORKER_PORT || '10000';
+    const workerUrl = process.env.INVENTORY_WORKER_URL || process.env.WORKER_URL || process.env.RENDER_WORKER_URL || `http://${vpsHost}:${workerPort}`;
     if (workerUrl) {
       void fetch(`${workerUrl.replace(/\/+$/, '')}/trigger-job`, {
         method: 'POST',
