@@ -1,4 +1,4 @@
-import writeXlsxFile, { type SheetData, type Row } from 'write-excel-file/browser';
+import writeXlsxFile, { type SheetData, type Row, type Sheet } from 'write-excel-file/browser';
 import type { FilaResultadoCobro } from '@/app/api/cobros/cruzar-planilla/route';
 
 export type { FilaResultadoCobro };
@@ -51,7 +51,8 @@ export function obtenerInfoFecha(fechaRef?: string) {
   const mesStr = String(fecha.getMonth() + 1).padStart(2, '0');
   const anioStr = String(fecha.getFullYear());
 
-  const tituloCobros = `COBROS REALIZADOS DEL DIA ${diaNombre} ${diaStr}-${mesStr}-${anioStr} KMMQ`;
+  // Título sin la terminación KMMQ
+  const tituloCobros = `COBROS REALIZADOS DEL DIA ${diaNombre} ${diaStr}-${mesStr}-${anioStr}`;
   const nombreHojaCobro = `COBRO ${diaStr}.${mesStr}`;
 
   return { fecha, diaNombre, diaStr, mesStr, anioStr, tituloCobros, nombreHojaCobro };
@@ -69,12 +70,12 @@ export function obtenerInfoFecha(fechaRef?: string) {
  * 2. Hoja "Plantilla Cobros" (ej. "COBRO 22.09" o "COBRO 24.09"):
  *    - Formato TAL CUAL como el archivo oficial de Cobros 22 Septiembre.
  *    - SOLO incluye los WRs que están solos y NO están agrupados varios en una celda (los agrupados los gestiona manualmente el operador).
- *    - Agrupado por cliente con encabezados azul amex (#4472C4) y texto blanco.
- *    - Columna ENVIADO combinada verticalmente por cada bloque de cliente.
+ *    - Agrupado por cliente con encabezados azul amex (#4472C4) y texto blanco: NOMBRE | PESO | PRECIO $ | wr.
+ *    - Sin columna "ENVIADO" al inicio.
  *    - Nombre del cliente combinado verticalmente por los paquetes que le pertenecen.
- *    - Fórmulas de cálculo de precio dinámico (+C{fila}*tarifa) y formato de moneda ($#,##0.00).
- *    - Fila TOTAL por cliente con fórmula =SUM(...) y separación limpia.
- *    - Fila TOTAL GENERAL al final de la planilla sumando los totales de cada cliente.
+ *    - Columna "PRECIO $" vacía (sin cálculo automático, libre para que el operador lo llene manualmente).
+ *    - Fila TOTAL por cliente y separación limpia de 1 fila en blanco.
+ *    - Título centrado sin sufijo KMMQ.
  */
 export async function exportarPlanillaCobros(
   filas: FilaResultadoCobro[],
@@ -197,6 +198,7 @@ export async function exportarPlanillaCobros(
   // =========================================================================
   // HOJA 2: "Plantilla Cobros" (TAL CUAL como archivo COBRO 22.09)
   // SOLO incluye los WRs que están solos (filasSimples) agrupados por cliente.
+  // Sin columna ENVIADO. Sin cálculo de precio (libre para operador). Título sin KMMQ.
   // =========================================================================
   const gruposPorCliente = new Map<string, FilaResultadoCobro[]>();
   for (const it of filasSimples) {
@@ -212,11 +214,11 @@ export async function exportarPlanillaCobros(
   );
 
   const dataCobros: SheetData = [
-    // Fila 1: Título general centrado con 5 columnas combinadas
+    // Fila 1: Título general centrado con 4 columnas combinadas (sin KMMQ)
     [
       {
         value: tituloCobros,
-        columnSpan: 5,
+        columnSpan: 4,
         fontWeight: 'bold' as const,
         fontSize: 13,
         align: 'center' as const,
@@ -226,36 +228,16 @@ export async function exportarPlanillaCobros(
       null,
       null,
       null,
-      null,
     ],
   ];
-
-  const filasTotalesClientes: number[] = [];
 
   for (const clienteNombre of clientesOrdenados) {
     const items = gruposPorCliente.get(clienteNombre) || [];
     const n = items.length;
     if (n === 0) continue;
 
-    // Fila header (1) + n items + Fila TOTAL (1) = n + 2 filas
-    const rowSpanColA = n + 2;
-
-    // Determinar tarifa asignada al cliente o usar la estándar de mercado ($7.50 / kg)
-    const tarifaInfo = opciones?.getTarifaCliente
-      ? opciones.getTarifaCliente(clienteNombre)
-      : { tarifa: 7.5, personalizada: false };
-    const tarifa = tarifaInfo.tarifa > 0 ? tarifaInfo.tarifa : 7.5;
-
-    // Fila cabecera del cliente
+    // Fila cabecera del cliente (4 columnas: NOMBRE | PESO | PRECIO $ | wr)
     dataCobros.push([
-      {
-        value: 'ENVIADO',
-        rowSpan: rowSpanColA,
-        align: 'center' as const,
-        alignVertical: 'center' as const,
-        borderColor: '#000000',
-        borderStyle: 'thin' as const,
-      },
       {
         value: 'NOMBRE',
         fontWeight: 'bold' as const,
@@ -299,19 +281,14 @@ export async function exportarPlanillaCobros(
       },
     ]);
 
-    const startItemRow = dataCobros.length + 1; // 1-indexed Excel row
-
     // Filas de datos para cada WR individual
     for (let i = 0; i < n; i++) {
       const it = items[i];
-      const currentRow = dataCobros.length + 1;
-      const formulaPrecio = `+C${currentRow}*${tarifa}`;
       const pesoNum = typeof it.pesoTotal === 'number' && it.pesoTotal > 0
         ? it.pesoTotal
         : (parseFloat(it.pesoFormateado || '0') || 0);
 
       dataCobros.push([
-        null, // Col A cubierto por rowSpan ENVIADO
         i === 0
           ? {
               value: clienteNombre,
@@ -321,7 +298,7 @@ export async function exportarPlanillaCobros(
               borderColor: '#000000',
               borderStyle: 'thin' as const,
             }
-          : null, // Col B cubierto por rowSpan NOMBRE
+          : null, // Col A cubierto por rowSpan NOMBRE
         {
           value: pesoNum,
           type: Number,
@@ -331,12 +308,8 @@ export async function exportarPlanillaCobros(
           borderColor: '#000000',
           borderStyle: 'thin' as const,
         },
+        // PRECIO $: Vacío sin cálculo para que el operador lo llene manualmente
         {
-          value: formulaPrecio,
-          type: 'Formula',
-          format: '$#,##0.00',
-          align: 'right' as const,
-          alignVertical: 'center' as const,
           borderColor: '#000000',
           borderStyle: 'thin' as const,
         },
@@ -351,15 +324,8 @@ export async function exportarPlanillaCobros(
       ]);
     }
 
-    const endItemRow = dataCobros.length;
-
-    // Fila TOTAL del cliente
-    const totalRowIndex = dataCobros.length + 1;
-    filasTotalesClientes.push(totalRowIndex);
-
-    const formulaTotal = `SUM(D${startItemRow}:D${endItemRow})`;
+    // Fila TOTAL del cliente (Columna PRECIO $ vacía para que el operador la sume/llene manualmente)
     dataCobros.push([
-      null, // Col A cubierto por rowSpan ENVIADO
       {
         value: 'TOTAL',
         fontWeight: 'bold' as const,
@@ -373,58 +339,14 @@ export async function exportarPlanillaCobros(
         borderStyle: 'thin' as const,
       },
       {
-        value: formulaTotal,
-        type: 'Formula',
-        format: '$#,##0.00',
-        fontWeight: 'bold' as const,
-        align: 'right' as const,
-        alignVertical: 'center' as const,
         borderColor: '#000000',
         borderStyle: 'thin' as const,
       },
-      {
-        borderColor: '#000000',
-        borderStyle: 'thin' as const,
-      },
+      null,
     ]);
 
     // Fila en blanco de separación entre clientes
     dataCobros.push([]);
-  }
-
-  // Fila TOTAL GENERAL al final de la planilla
-  if (filasTotalesClientes.length > 0) {
-    dataCobros.push([]);
-    const formulaGeneral = filasTotalesClientes.map((r) => `D${r}`).join('+');
-    dataCobros.push([
-      null,
-      {
-        value: 'TOTAL GENERAL',
-        fontWeight: 'bold' as const,
-        align: 'right' as const,
-        alignVertical: 'center' as const,
-        borderColor: '#000000',
-        borderStyle: 'thin' as const,
-      },
-      {
-        borderColor: '#000000',
-        borderStyle: 'thin' as const,
-      },
-      {
-        value: formulaGeneral,
-        type: 'Formula',
-        format: '$#,##0.00',
-        fontWeight: 'bold' as const,
-        align: 'right' as const,
-        alignVertical: 'center' as const,
-        borderColor: '#000000',
-        borderStyle: 'thin' as const,
-      },
-      {
-        borderColor: '#000000',
-        borderStyle: 'thin' as const,
-      },
-    ]);
   }
 
   // =========================================================================
@@ -448,7 +370,6 @@ export async function exportarPlanillaCobros(
       sheet: nombreHojaCobro.slice(0, 31),
       data: dataCobros,
       columns: [
-        { width: 14 }, // ENVIADO
         { width: 44 }, // NOMBRE
         { width: 14 }, // PESO
         { width: 16 }, // PRECIO $

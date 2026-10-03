@@ -1,7 +1,7 @@
 # Graph Report - sistema-amex-courier  (2026-10-03)
 
 ## Corpus Check
-- 304 files · ~290,559 words
+- 304 files · ~290,344 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `703e2b55`
+- Built from commit: `868b8389`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
