@@ -70,10 +70,11 @@ export function obtenerInfoFecha(fechaRef?: string) {
  * 2. Hoja "Plantilla Cobros" (ej. "COBRO 22.09" o "COBRO 24.09"):
  *    - Formato TAL CUAL como el archivo oficial de Cobros 22 Septiembre.
  *    - SOLO incluye los WRs que están solos y NO están agrupados varios en una celda (los agrupados los gestiona manualmente el operador).
- *    - Agrupado por cliente con encabezados azul amex (#4472C4) y texto blanco: NOMBRE | PESO | PRECIO $ | wr.
- *    - Sin columna "ENVIADO" al inicio.
+ *    - Columna A libre (vacía, margen para operador).
+ *    - Agrupado por cliente con encabezados azul amex (#4472C4) y texto blanco: NOMBRE (B) | PESO (C) | PRECIO $ (D) | wr (E) | TRACKING (F).
  *    - Nombre del cliente combinado verticalmente por los paquetes que le pertenecen.
  *    - Columna "PRECIO $" vacía (sin cálculo automático, libre para que el operador lo llene manualmente).
+ *    - Columna F con TRACKING al costado derecho del WR.
  *    - Fila TOTAL por cliente y separación limpia de 1 fila en blanco.
  *    - Título centrado sin sufijo KMMQ.
  */
@@ -198,7 +199,8 @@ export async function exportarPlanillaCobros(
   // =========================================================================
   // HOJA 2: "Plantilla Cobros" (TAL CUAL como archivo COBRO 22.09)
   // SOLO incluye los WRs que están solos (filasSimples) agrupados por cliente.
-  // Sin columna ENVIADO. Sin cálculo de precio (libre para operador). Título sin KMMQ.
+  // Columna A libre. Columna B: NOMBRE, C: PESO, D: PRECIO $, E: wr, F: TRACKING.
+  // Sin cálculo de precio (libre para operador). Título sin KMMQ.
   // =========================================================================
   const gruposPorCliente = new Map<string, FilaResultadoCobro[]>();
   for (const it of filasSimples) {
@@ -214,17 +216,19 @@ export async function exportarPlanillaCobros(
   );
 
   const dataCobros: SheetData = [
-    // Fila 1: Título general centrado con 4 columnas combinadas (sin KMMQ)
+    // Fila 1: Columna A libre, Título general centrado sobre las 5 columnas B..F (sin KMMQ)
     [
+      null, // Columna A libre
       {
         value: tituloCobros,
-        columnSpan: 4,
+        columnSpan: 5,
         fontWeight: 'bold' as const,
         fontSize: 13,
         align: 'center' as const,
         alignVertical: 'center' as const,
         height: 26,
       },
+      null,
       null,
       null,
       null,
@@ -236,8 +240,9 @@ export async function exportarPlanillaCobros(
     const n = items.length;
     if (n === 0) continue;
 
-    // Fila cabecera del cliente (4 columnas: NOMBRE | PESO | PRECIO $ | wr)
+    // Fila cabecera del cliente (Col A libre | B: NOMBRE | C: PESO | D: PRECIO $ | E: wr | F: TRACKING)
     dataCobros.push([
+      null, // Columna A libre
       {
         value: 'NOMBRE',
         fontWeight: 'bold' as const,
@@ -279,6 +284,16 @@ export async function exportarPlanillaCobros(
         borderColor: '#000000',
         borderStyle: 'thin' as const,
       },
+      {
+        value: 'TRACKING',
+        fontWeight: 'bold' as const,
+        backgroundColor: '#4472C4',
+        textColor: '#ffffff',
+        align: 'center' as const,
+        alignVertical: 'center' as const,
+        borderColor: '#000000',
+        borderStyle: 'thin' as const,
+      },
     ]);
 
     // Filas de datos para cada WR individual
@@ -289,6 +304,7 @@ export async function exportarPlanillaCobros(
         : (parseFloat(it.pesoFormateado || '0') || 0);
 
       dataCobros.push([
+        null, // Columna A libre
         i === 0
           ? {
               value: clienteNombre,
@@ -298,7 +314,7 @@ export async function exportarPlanillaCobros(
               borderColor: '#000000',
               borderStyle: 'thin' as const,
             }
-          : null, // Col A cubierto por rowSpan NOMBRE
+          : null, // Col B cubierto por rowSpan NOMBRE
         {
           value: pesoNum,
           type: Number,
@@ -321,11 +337,20 @@ export async function exportarPlanillaCobros(
           borderColor: '#000000',
           borderStyle: 'thin' as const,
         },
+        {
+          value: it.tracking || '',
+          type: String,
+          align: 'center' as const,
+          alignVertical: 'center' as const,
+          borderColor: '#000000',
+          borderStyle: 'thin' as const,
+        },
       ]);
     }
 
     // Fila TOTAL del cliente (Columna PRECIO $ vacía para que el operador la sume/llene manualmente)
     dataCobros.push([
+      null, // Columna A libre
       {
         value: 'TOTAL',
         fontWeight: 'bold' as const,
@@ -342,7 +367,8 @@ export async function exportarPlanillaCobros(
         borderColor: '#000000',
         borderStyle: 'thin' as const,
       },
-      null,
+      null, // Col E (wr)
+      null, // Col F (TRACKING)
     ]);
 
     // Fila en blanco de separación entre clientes
@@ -370,10 +396,12 @@ export async function exportarPlanillaCobros(
       sheet: nombreHojaCobro.slice(0, 31),
       data: dataCobros,
       columns: [
-        { width: 44 }, // NOMBRE
-        { width: 14 }, // PESO
-        { width: 16 }, // PRECIO $
-        { width: 26 }, // wr
+        { width: 14 }, // A: Libre / Vacía
+        { width: 44 }, // B: NOMBRE
+        { width: 14 }, // C: PESO
+        { width: 16 }, // D: PRECIO $
+        { width: 26 }, // E: wr
+        { width: 34 }, // F: TRACKING
       ],
     },
   ];

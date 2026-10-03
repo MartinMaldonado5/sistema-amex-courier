@@ -4079,7 +4079,7 @@
       "label": "exportarPlanillaCobros()",
       "file_type": "code",
       "source_file": "features/cobros/services/planilla-exporter.ts",
-      "source_location": "L80",
+      "source_location": "L81",
       "_callable": true,
       "_origin": "ast",
       "id": "features_cobros_services_planilla_exporter_exportarplanillacobros",
@@ -29231,7 +29231,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "features/cobros/services/planilla-exporter.ts",
-      "source_location": "L80",
+      "source_location": "L81",
       "weight": 1.0,
       "_origin": "ast",
       "source": "features_cobros_services_planilla_exporter",
@@ -29265,7 +29265,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "features/cobros/services/planilla-exporter.ts",
-      "source_location": "L98",
+      "source_location": "L99",
       "weight": 1.0,
       "_origin": "ast",
       "source": "features_cobros_services_planilla_exporter_exportarplanillacobros",
@@ -29277,7 +29277,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "features/cobros/services/planilla-exporter.ts",
-      "source_location": "L89",
+      "source_location": "L90",
       "weight": 1.0,
       "_origin": "ast",
       "source": "features_cobros_services_planilla_exporter_exportarplanillacobros",
@@ -53457,5 +53457,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "868b8389f9adfd5f8eba709eadd21c3b4d8a2b8d"
+  "built_at_commit": "b75c42bdf3f81629b4c905f0c4004365c61fb2de"
 }
