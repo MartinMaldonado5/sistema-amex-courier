@@ -78,11 +78,11 @@ export function obtenerInfoFecha(fechaRef?: string) {
  *    - Fila TOTAL por cliente y separación limpia de 1 fila en blanco.
  *    - Título centrado sin sufijo KMMQ.
  */
-export async function exportarPlanillaCobros(
+export function generarHojasPlanillaCobros(
   filas: FilaResultadoCobro[],
   nombreArchivo = `PLANILLA COBROS ${new Date().toISOString().slice(0, 10)}.xlsx`,
   opciones?: OpcionesExportarPlanilla
-): Promise<void> {
+) {
   if (filas.length === 0) {
     throw new Error('No hay filas para exportar la planilla.');
   }
@@ -410,5 +410,23 @@ export async function exportarPlanillaCobros(
     ? nombreArchivo
     : `${nombreArchivo}.xlsx`;
 
-  await writeXlsxFile(sheets).toFile(nombreFinal);
+  return { sheets, nombreFinal, nombreHojaCobro, dataCruce, dataCobros };
+}
+
+/**
+ * Descarga en el navegador o genera el archivo Excel con ambas hojas
+ */
+export async function exportarPlanillaCobros(
+  filas: FilaResultadoCobro[],
+  nombreArchivo = `PLANILLA COBROS ${new Date().toISOString().slice(0, 10)}.xlsx`,
+  opciones?: OpcionesExportarPlanilla
+): Promise<void> {
+  const { sheets, nombreFinal } = generarHojasPlanillaCobros(filas, nombreArchivo, opciones);
+
+  if (typeof window !== 'undefined') {
+    await writeXlsxFile(sheets).toFile(nombreFinal);
+  } else {
+    const { default: writeXlsxFileNode } = await import('write-excel-file/node');
+    await writeXlsxFileNode(sheets).toFile(nombreFinal);
+  }
 }
