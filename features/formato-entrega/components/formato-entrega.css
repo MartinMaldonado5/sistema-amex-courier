@@ -484,26 +484,83 @@
   display: flex;
   margin-bottom: 26px;
   box-sizing: border-box;
+  transition: all 0.2s ease-in-out;
+}
+
+.acta-packages-box.acta-box-dense {
+  min-height: 260px;
 }
 
 .acta-packages-col-left {
-  flex: 1;
+  flex: 1.2;
   padding: 22px 28px;
+  display: flex;
+  align-items: center;
 }
 
-/* Códigos de paquetes en UNA SOLA COLUMNA vertical idéntica al original */
+.acta-packages-box.acta-box-dense .acta-packages-col-left {
+  flex: 3.5;
+  padding: 16px 20px;
+  align-items: flex-start;
+}
+
+/* Grillas adaptativas según cantidad de paquetes (1 a 100) */
 .acta-codes-grid {
+  width: 100%;
+}
+
+.acta-codes-grid.acta-cols-1 {
   display: flex;
   flex-direction: column;
   gap: 7px;
 }
+.acta-codes-grid.acta-cols-1 .acta-pkg-code {
+  font-size: 1.05rem;
+}
+
+.acta-codes-grid.acta-cols-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px 16px;
+}
+.acta-codes-grid.acta-cols-2 .acta-pkg-code {
+  font-size: 0.94rem;
+}
+
+.acta-codes-grid.acta-cols-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px 10px;
+}
+.acta-codes-grid.acta-cols-3 .acta-pkg-code {
+  font-size: 0.82rem;
+}
+
+.acta-codes-grid.acta-cols-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 3.5px 8px;
+}
+.acta-codes-grid.acta-cols-4 .acta-pkg-code {
+  font-size: 0.72rem;
+}
+
+.acta-codes-grid.acta-cols-5 {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 2.5px 6px;
+}
+.acta-codes-grid.acta-cols-5 .acta-pkg-code {
+  font-size: 0.67rem;
+  letter-spacing: -0.2px;
+}
 
 .acta-pkg-code {
   font-family: 'Courier New', 'Consolas', monospace;
-  font-size: 1.05rem;
   font-weight: 700;
   color: #0f172a;
   letter-spacing: 0.4px;
+  white-space: nowrap;
 }
 
 .acta-empty-placeholder {
@@ -513,11 +570,16 @@
 }
 
 .acta-packages-col-right {
-  flex: 1;
+  flex: 0.8;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
+}
+
+.acta-packages-box.acta-box-dense .acta-packages-col-right {
+  flex: 1;
+  padding: 12px;
 }
 
 .acta-packages-count-badge {
@@ -528,6 +590,11 @@
   text-transform: uppercase;
   color: #0f172a;
   letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.acta-packages-box.acta-box-dense .acta-packages-count-badge {
+  font-size: 1.15rem;
 }
 
 /* 3. Cláusula de Cargo */

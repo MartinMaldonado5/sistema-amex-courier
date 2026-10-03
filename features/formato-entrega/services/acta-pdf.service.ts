@@ -122,51 +122,93 @@ export async function generateActaEntregaPdf(data: ActaEntregaData, filename?: s
 
   currentY += (tableFields.length * rowHeight) + 12;
 
-  // 3. Recuadro Central de Paquetes
+  // 3. Recuadro Central de Paquetes (Adaptativo de 1 a 100 códigos)
   const validPkgs = (data.paquetes || []).map(p => sanitizeText(p)).filter(Boolean);
   const pkgCount = validPkgs.length;
 
-  // Altura dinámica según cantidad de paquetes, mínimo 65 mm
+  let numCols = 1;
+  let fontSize = 11;
+  let lineHeight = 6.8;
+  let colWidth = 65;
+  let badgeXPercent = 0.58;
+  let badgeFontSize = 13;
+
+  if (pkgCount > 80) {
+    numCols = 5;
+    fontSize = 6.8;
+    lineHeight = 3.6;
+    colWidth = 26.5;
+    badgeXPercent = 0.77;
+    badgeFontSize = 10;
+  } else if (pkgCount > 54) {
+    numCols = 4;
+    fontSize = 7.4;
+    lineHeight = 3.8;
+    colWidth = 28.5;
+    badgeXPercent = 0.74;
+    badgeFontSize = 11;
+  } else if (pkgCount > 28) {
+    numCols = 3;
+    fontSize = 8.4;
+    lineHeight = 4.4;
+    colWidth = 34;
+    badgeXPercent = 0.68;
+    badgeFontSize = 11.5;
+  } else if (pkgCount > 12) {
+    numCols = 2;
+    fontSize = 9.5;
+    lineHeight = 5.2;
+    colWidth = 42;
+    badgeXPercent = 0.62;
+    badgeFontSize = 12;
+  }
+
+  const rowsPerCol = Math.ceil(pkgCount / numCols);
   const minBoxHeight = 65;
-  const calculatedHeight = Math.max(minBoxHeight, (pkgCount * 7.2) + 18);
-  const boxHeight = Math.min(calculatedHeight, 105);
+  const calculatedHeight = Math.max(minBoxHeight, (rowsPerCol * lineHeight) + 14);
+  const boxHeight = Math.min(calculatedHeight, 95);
 
   // Borde negro formal continuo
   doc.setDrawColor(15, 23, 42); // slate-900
   doc.setLineWidth(0.8);
   doc.rect(marginX, currentY, contentWidth, boxHeight, 'S');
 
-  // Columna Izquierda: Códigos de Recibo en una sola columna vertical
+  // Códigos de paquetes distribuidos en columnas
   doc.setFont('courier', 'bold');
-  doc.setFontSize(11);
+  doc.setFontSize(fontSize);
   doc.setTextColor(15, 23, 42);
 
-  const pkgStartY = currentY + 10;
-  const lineHeight = 6.8;
+  const pkgStartY = currentY + (numCols > 2 ? 8 : 10);
+  const startX = marginX + 6;
 
   validPkgs.forEach((pkgCode, idx) => {
-    if (idx < 13) {
-      doc.text(pkgCode, marginX + 8, pkgStartY + (idx * lineHeight));
+    const colIndex = Math.floor(idx / rowsPerCol);
+    const rowIndex = idx % rowsPerCol;
+    const xPos = startX + (colIndex * colWidth);
+    const yPos = pkgStartY + (rowIndex * lineHeight);
+
+    if (yPos <= currentY + boxHeight - 2) {
+      doc.text(pkgCode, xPos, yPos);
     }
   });
 
   // Centro / Derecha: Conteo destacado de Paquetes
   const countLabel = `${pkgCount} ${pkgCount === 1 ? 'PAQUETE' : 'PAQUETES'}`;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
+  doc.setFontSize(badgeFontSize);
   doc.setTextColor(15, 23, 42);
 
-  const countX = marginX + (contentWidth * 0.58);
+  const countX = marginX + (contentWidth * badgeXPercent);
   const countY = currentY + (boxHeight / 2) + 1;
   doc.text(countLabel, countX, countY);
 
-  // Subrayado del conteo como en el documento original
+  // Subrayado del conteo
   const textWidth = doc.getTextWidth(countLabel);
   doc.setDrawColor(15, 23, 42);
   doc.setLineWidth(0.6);
   doc.line(countX, countY + 1.2, countX + textWidth, countY + 1.2);
 
-  currentY += boxHeight + 12;
+  currentY += boxHeight + 11;
 
   // 4. Cláusula de Cargo (Centrado horizontal)
   const tagText = 'CARGO: ';

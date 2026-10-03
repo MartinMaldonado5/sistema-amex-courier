@@ -118,20 +118,31 @@ export function useFormatoEntrega(paquetesAlmacen: Paquete[] = []) {
     }
 
     const codes = matches.map(m => m.numeroReciboBodega).filter(Boolean);
-    setFormData(prev => ({
-      ...prev,
-      paquetes: Array.from(new Set([...prev.paquetes, ...codes]))
-    }));
-
-    showToast(`Se añadieron ${codes.length} paquetes desde el inventario.`);
+    setFormData(prev => {
+      const combined = Array.from(new Set([...prev.paquetes, ...codes]));
+      const limited = combined.slice(0, 100);
+      if (combined.length > 100) {
+        showToast(`Se añadieron ${limited.length} paquetes (límite máximo de 100 alcanzado).`);
+      } else {
+        showToast(`Se añadieron ${codes.length} paquetes desde el inventario.`);
+      }
+      return {
+        ...prev,
+        paquetes: limited
+      };
+    });
   }, [formData.destinatario, paquetesAlmacen, showToast]);
 
-  // Agregar un paquete individualmente
+  // Agregar un paquete individualmente (hasta 100 máx)
   const handleAddSinglePackage = useCallback(() => {
     const code = singlePackageInput.trim().toUpperCase();
     if (!code) return;
 
     setFormData(prev => {
+      if (prev.paquetes.length >= 100) {
+        showToast('Límite alcanzado: máximo 100 paquetes permitidos por acta.');
+        return prev;
+      }
       if (prev.paquetes.includes(code)) {
         showToast(`El código "${code}" ya está en la lista.`);
         return prev;
@@ -145,7 +156,7 @@ export function useFormatoEntrega(paquetesAlmacen: Paquete[] = []) {
     setSinglePackageInput('');
   }, [singlePackageInput, showToast]);
 
-  // Pegado masivo de códigos WR / Trackings
+  // Pegado masivo de códigos WR / Trackings (hasta 100 paquetes)
   const handleProcessPasteText = useCallback(() => {
     if (!rawPasteText.trim()) return;
 
@@ -163,6 +174,16 @@ export function useFormatoEntrega(paquetesAlmacen: Paquete[] = []) {
     setFormData(prev => {
       // Eliminar duplicados manteniendo orden
       const combined = Array.from(new Set([...prev.paquetes, ...extracted]));
+      if (combined.length > 100) {
+        const sliced = combined.slice(0, 100);
+        showToast(`Se agregaron 100 paquetes (límite máximo alcanzado, ${combined.length - 100} excedentes omitidos).`);
+        return {
+          ...prev,
+          paquetes: sliced
+        };
+      }
+
+      showToast(`Se agregaron ${extracted.length} códigos de paquetes (${combined.length} en total).`);
       return {
         ...prev,
         paquetes: combined
@@ -170,7 +191,6 @@ export function useFormatoEntrega(paquetesAlmacen: Paquete[] = []) {
     });
 
     setRawPasteText('');
-    showToast(`Se agregaron ${extracted.length} códigos de paquetes.`);
   }, [rawPasteText, showToast]);
 
   // Eliminar un paquete de la lista

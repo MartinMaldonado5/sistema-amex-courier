@@ -19,6 +19,18 @@ export default function ActaDocumentPreview({ data }: ActaDocumentPreviewProps) 
       ? '/images/logo-amex-badge.jpg'
       : '/images/logo-amex-clean.png';
 
+  const gridColumnsClass = pkgCount <= 12
+    ? 'acta-cols-1'
+    : pkgCount <= 28
+      ? 'acta-cols-2'
+      : pkgCount <= 54
+        ? 'acta-cols-3'
+        : pkgCount <= 80
+          ? 'acta-cols-4'
+          : 'acta-cols-5';
+
+  const boxDensityClass = pkgCount > 30 ? 'acta-box-dense' : '';
+
   return (
     <div className="acta-document-container" id="acta-print-area">
       <div className="acta-a4-sheet">
@@ -57,13 +69,13 @@ export default function ActaDocumentPreview({ data }: ActaDocumentPreviewProps) 
           </tbody>
         </table>
 
-        {/* 2. Recuadro Central de Paquetes */}
-        <div className="acta-packages-box">
+        {/* 2. Recuadro Central de Paquetes (Adaptativo de 1 a 100 códigos) */}
+        <div className={`acta-packages-box ${boxDensityClass}`}>
           <div className="acta-packages-col-left">
             {validPkgs.length > 0 ? (
-              <div className="acta-codes-grid">
+              <div className={`acta-codes-grid ${gridColumnsClass}`}>
                 {validPkgs.map((code, idx) => (
-                  <div key={`${code}-${idx}`} className="acta-pkg-code">
+                  <div key={`${code}-${idx}`} className="acta-pkg-code" title={`Paquete #${idx + 1}: ${code}`}>
                     {code}
                   </div>
                 ))}

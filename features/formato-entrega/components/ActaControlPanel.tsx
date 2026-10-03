@@ -247,33 +247,39 @@ export default function ActaControlPanel({
             <h3 className="acta-card-title" style={{ margin: 0 }}>
               <i className="fa-solid fa-boxes-stacked"></i> 2. Códigos de Paquetes
             </h3>
-            <span className="acta-counter-pill">
-              {validPkgsCount} {validPkgsCount === 1 ? 'paquete' : 'paquetes'}
+            <span className={`acta-counter-pill ${validPkgsCount >= 100 ? 'is-max' : ''}`} style={validPkgsCount >= 100 ? { background: '#fef2f2', color: '#dc2626', borderColor: '#fca5a5' } : {}}>
+              {validPkgsCount} / 100 {validPkgsCount === 1 ? 'paquete' : 'paquetes'}
             </span>
           </div>
 
           {/* Pegado Masivo Rápido */}
           <div className="acta-field-group">
-            <label className="acta-label">
-              Pegado rápido multilínea (Códigos WR o Trackings)
+            <label className="acta-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Pegado rápido multilínea (Códigos WR o Trackings)</span>
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>Hasta 100 paquetes</span>
             </label>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
               <textarea
                 className="acta-textarea"
-                rows={2}
+                rows={4}
                 value={rawPasteText}
                 onChange={e => onSetRawPasteText(e.target.value)}
-                placeholder="Pega aquí múltiples códigos WR (separados por renglones)..."
+                placeholder="Pega aquí múltiples códigos WR (hasta 100 paquetes, uno por renglón o separados por comas/espacios)..."
               />
               <button
                 type="button"
                 className="acta-btn-secondary"
                 onClick={onProcessPasteText}
-                style={{ height: '58px', minWidth: '95px' }}
-                disabled={!rawPasteText.trim()}
+                style={{ height: '94px', minWidth: '95px' }}
+                disabled={!rawPasteText.trim() || validPkgsCount >= 100}
+                title={validPkgsCount >= 100 ? 'Límite de 100 paquetes alcanzado' : 'Procesar lista pegada'}
               >
                 <i className="fa-solid fa-paste"></i> Agregar
               </button>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
+              <span>Puedes copiar directamente columnas completas desde Excel o Google Sheets.</span>
+              <span>Capacidad: {validPkgsCount}/100</span>
             </div>
           </div>
 
@@ -292,13 +298,14 @@ export default function ActaControlPanel({
                     onAddSinglePackage();
                   }
                 }}
-                placeholder="Ej. WR000459980"
+                disabled={validPkgsCount >= 100}
+                placeholder={validPkgsCount >= 100 ? 'Límite de 100 paquetes alcanzado' : 'Ej. WR000459980'}
               />
               <button
                 type="button"
                 className="acta-btn-secondary"
                 onClick={onAddSinglePackage}
-                disabled={!singlePackageInput.trim()}
+                disabled={!singlePackageInput.trim() || validPkgsCount >= 100}
               >
                 <i className="fa-solid fa-plus"></i> Añadir
               </button>

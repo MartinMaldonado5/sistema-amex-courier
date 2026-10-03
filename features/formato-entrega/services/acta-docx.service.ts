@@ -105,20 +105,102 @@ export async function generateActaEntregaDocx(data: ActaEntregaData, filename?: 
     ]
   });
 
-  // 2. Recuadro Central de Paquetes
-  const packageParagraphs = validPkgs.map(
-    (code) =>
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: code,
-            bold: true,
-            font: 'Courier New',
-            size: 21
+  // 2. Recuadro Central de Paquetes (Adaptativo de 1 a 100 códigos)
+  let numDocxCols = 1;
+  let codeFontSize = 21;
+  let leftCellWidth = 55;
+  let rightCellWidth = 45;
+
+  if (pkgCount > 80) {
+    numDocxCols = 5;
+    codeFontSize = 13;
+    leftCellWidth = 76;
+    rightCellWidth = 24;
+  } else if (pkgCount > 54) {
+    numDocxCols = 4;
+    codeFontSize = 14;
+    leftCellWidth = 72;
+    rightCellWidth = 28;
+  } else if (pkgCount > 28) {
+    numDocxCols = 3;
+    codeFontSize = 16;
+    leftCellWidth = 68;
+    rightCellWidth = 32;
+  } else if (pkgCount > 12) {
+    numDocxCols = 2;
+    codeFontSize = 18;
+    leftCellWidth = 62;
+    rightCellWidth = 38;
+  }
+
+  let packageContentChildren: (Paragraph | Table)[] = [];
+
+  if (pkgCount === 0) {
+    packageContentChildren = [new Paragraph({ text: '[Sin paquetes agregados]' })];
+  } else if (numDocxCols === 1) {
+    packageContentChildren = validPkgs.map(
+      (code) =>
+        new Paragraph({
+          spacing: { before: 20, after: 20 },
+          children: [
+            new TextRun({
+              text: code,
+              bold: true,
+              font: 'Courier New',
+              size: codeFontSize
+            })
+          ]
+        })
+    );
+  } else {
+    // Distribuir en tabla interna sin bordes de numDocxCols columnas
+    const rowsPerCol = Math.ceil(pkgCount / numDocxCols);
+    const innerRows: TableRow[] = [];
+    const noneBorder = { style: BorderStyle.NONE, size: 0, color: 'auto' };
+
+    for (let r = 0; r < rowsPerCol; r++) {
+      const cells: TableCell[] = [];
+      for (let c = 0; c < numDocxCols; c++) {
+        const itemIdx = (c * rowsPerCol) + r;
+        const codeText = itemIdx < pkgCount ? validPkgs[itemIdx] : '';
+        cells.push(
+          new TableCell({
+            borders: { top: noneBorder, bottom: noneBorder, left: noneBorder, right: noneBorder },
+            width: { size: Math.floor(100 / numDocxCols), type: WidthType.PERCENTAGE },
+            children: [
+              new Paragraph({
+                spacing: { before: 15, after: 15 },
+                children: [
+                  new TextRun({
+                    text: codeText,
+                    bold: true,
+                    font: 'Courier New',
+                    size: codeFontSize
+                  })
+                ]
+              })
+            ]
           })
-        ]
-      })
-  );
+        );
+      }
+      innerRows.push(new TableRow({ children: cells }));
+    }
+
+    const innerGridTable = new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      borders: {
+        top: noneBorder,
+        bottom: noneBorder,
+        left: noneBorder,
+        right: noneBorder,
+        insideHorizontal: noneBorder,
+        insideVertical: noneBorder
+      },
+      rows: innerRows
+    });
+
+    packageContentChildren = [innerGridTable];
+  }
 
   const packagesBox = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -132,11 +214,11 @@ export async function generateActaEntregaDocx(data: ActaEntregaData, filename?: 
       new TableRow({
         children: [
           new TableCell({
-            width: { size: 55, type: WidthType.PERCENTAGE },
-            children: packageParagraphs.length > 0 ? packageParagraphs : [new Paragraph({ text: '' })]
+            width: { size: leftCellWidth, type: WidthType.PERCENTAGE },
+            children: packageContentChildren
           }),
           new TableCell({
-            width: { size: 45, type: WidthType.PERCENTAGE },
+            width: { size: rightCellWidth, type: WidthType.PERCENTAGE },
             verticalAlign: 'center',
             children: [
               new Paragraph({
@@ -147,7 +229,7 @@ export async function generateActaEntregaDocx(data: ActaEntregaData, filename?: 
                     bold: true,
                     underline: { type: UnderlineType.SINGLE },
                     font: 'Calibri',
-                    size: 24
+                    size: pkgCount > 50 ? 20 : 24
                   })
                 ]
               })
