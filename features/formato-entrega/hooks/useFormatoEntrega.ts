@@ -143,10 +143,6 @@ export function useFormatoEntrega(paquetesAlmacen: Paquete[] = []) {
         showToast('Límite alcanzado: máximo 100 paquetes permitidos por acta.');
         return prev;
       }
-      if (prev.paquetes.includes(code)) {
-        showToast(`El código "${code}" ya está en la lista.`);
-        return prev;
-      }
       return {
         ...prev,
         paquetes: [...prev.paquetes, code]
@@ -156,7 +152,7 @@ export function useFormatoEntrega(paquetesAlmacen: Paquete[] = []) {
     setSinglePackageInput('');
   }, [singlePackageInput, showToast]);
 
-  // Pegado masivo de códigos WR / Trackings (hasta 100 paquetes)
+  // Pegado masivo de códigos WR / Trackings (hasta 100 paquetes, permite duplicados multulto)
   const handleProcessPasteText = useCallback(() => {
     if (!rawPasteText.trim()) return;
 
@@ -171,9 +167,16 @@ export function useFormatoEntrega(paquetesAlmacen: Paquete[] = []) {
       return;
     }
 
+    // Detectar si hay códigos repetidos en el bloque pegado para informar con total precisión
+    const counts = new Map<string, number>();
+    extracted.forEach(c => counts.set(c, (counts.get(c) || 0) + 1));
+    const repeated = Array.from(counts.entries())
+      .filter(([_, count]) => count > 1)
+      .map(([code, count]) => `${code} (${count}x)`);
+
     setFormData(prev => {
-      // Eliminar duplicados manteniendo orden
-      const combined = Array.from(new Set([...prev.paquetes, ...extracted]));
+      // Permitir todos los paquetes pegados (soporta bultos múltiples con la misma guía)
+      const combined = [...prev.paquetes, ...extracted];
       if (combined.length > 100) {
         const sliced = combined.slice(0, 100);
         showToast(`Se agregaron 100 paquetes (límite máximo alcanzado, ${combined.length - 100} excedentes omitidos).`);
@@ -183,7 +186,12 @@ export function useFormatoEntrega(paquetesAlmacen: Paquete[] = []) {
         };
       }
 
-      showToast(`Se agregaron ${extracted.length} códigos de paquetes (${combined.length} en total).`);
+      if (repeated.length > 0) {
+        showToast(`Se agregaron los ${extracted.length} paquetes (atención: ${repeated.join(', ')} vienen repetidos en el Excel).`);
+      } else {
+        showToast(`Se agregaron ${extracted.length} códigos de paquetes (${combined.length} en total).`);
+      }
+
       return {
         ...prev,
         paquetes: combined
@@ -192,6 +200,23 @@ export function useFormatoEntrega(paquetesAlmacen: Paquete[] = []) {
 
     setRawPasteText('');
   }, [rawPasteText, showToast]);
+
+  // Eliminar duplicados si el usuario desea unificar códigos repetidos
+  const handleDeduplicatePackages = useCallback(() => {
+    setFormData(prev => {
+      const unique = Array.from(new Set(prev.paquetes));
+      const removed = prev.paquetes.length - unique.length;
+      if (removed > 0) {
+        showToast(`Se unificaron ${removed} códigos duplicados.`);
+      } else {
+        showToast('No hay códigos duplicados en la lista.');
+      }
+      return {
+        ...prev,
+        paquetes: unique
+      };
+    });
+  }, [showToast]);
 
   // Eliminar un paquete de la lista
   const handleRemovePackage = useCallback((index: number) => {
@@ -307,6 +332,7 @@ export function useFormatoEntrega(paquetesAlmacen: Paquete[] = []) {
     handleProcessPasteText,
     handleRemovePackage,
     handleClearPackages,
+    handleDeduplicatePackages,
     handleResetForm,
     handleRestoreFromHistorial,
     handleDeleteHistorialItem,

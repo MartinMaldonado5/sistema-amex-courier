@@ -21,6 +21,7 @@ interface ActaControlPanelProps {
   onProcessPasteText: () => void;
   onRemovePackage: (index: number) => void;
   onClearPackages: () => void;
+  onDeduplicatePackages?: () => void;
   onResetForm: () => void;
   onPrint: () => void;
   onExportPdf: () => void;
@@ -47,6 +48,7 @@ export default function ActaControlPanel({
   onProcessPasteText,
   onRemovePackage,
   onClearPackages,
+  onDeduplicatePackages,
   onResetForm,
   onPrint,
   onExportPdf,
@@ -57,6 +59,18 @@ export default function ActaControlPanel({
 }: ActaControlPanelProps) {
   const [clientSearch, setClientSearch] = useState('');
   const [showClientSuggestions, setShowClientSuggestions] = useState(false);
+
+  // Conteo de paquetes duplicados si existen en la lista
+  const duplicateCount = useMemo(() => {
+    const seen = new Set<string>();
+    let count = 0;
+    formData.paquetes.forEach(code => {
+      const trimmed = code.trim();
+      if (seen.has(trimmed)) count++;
+      else seen.add(trimmed);
+    });
+    return count;
+  }, [formData.paquetes]);
 
   // Filtrado de clientes para autocompletar
   const filteredClientes = useMemo(() => {
@@ -249,6 +263,11 @@ export default function ActaControlPanel({
             </h3>
             <span className={`acta-counter-pill ${validPkgsCount >= 100 ? 'is-max' : ''}`} style={validPkgsCount >= 100 ? { background: '#fef2f2', color: '#dc2626', borderColor: '#fca5a5' } : {}}>
               {validPkgsCount} / 100 {validPkgsCount === 1 ? 'paquete' : 'paquetes'}
+              {duplicateCount > 0 && (
+                <span style={{ marginLeft: '6px', color: '#b45309', fontWeight: 700 }} title="Existen códigos repetidos en la lista (común en envíos con varios bultos bajo la misma guía)">
+                  ({duplicateCount} {duplicateCount === 1 ? 'repetido' : 'repetidos'})
+                </span>
+              )}
             </span>
           </div>
 
@@ -329,14 +348,27 @@ export default function ActaControlPanel({
             ))}
 
             {formData.paquetes.length > 0 && (
-              <button
-                type="button"
-                className="acta-btn-clear-chips"
-                onClick={onClearPackages}
-                title="Limpiar todos los paquetes"
-              >
-                Vaciar lista
-              </button>
+              <div style={{ display: 'flex', gap: '8px', width: '100%', marginTop: '8px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="acta-btn-clear-chips"
+                  onClick={onClearPackages}
+                  title="Limpiar todos los paquetes"
+                >
+                  Vaciar lista
+                </button>
+                {duplicateCount > 0 && onDeduplicatePackages && (
+                  <button
+                    type="button"
+                    className="acta-btn-clear-chips"
+                    style={{ borderColor: '#f59e0b', color: '#b45309', background: '#fffbeb' }}
+                    onClick={onDeduplicatePackages}
+                    title="Eliminar códigos repetidos y conservar solo códigos únicos"
+                  >
+                    <i className="fa-solid fa-filter"></i> Quitar repetidos ({duplicateCount})
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>

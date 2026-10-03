@@ -34,6 +34,7 @@ export default function FormatoEntregaTab({
     handleProcessPasteText,
     handleRemovePackage,
     handleClearPackages,
+    handleDeduplicatePackages,
     handleResetForm,
     handleRestoreFromHistorial,
     handleDeleteHistorialItem,
@@ -89,6 +90,7 @@ export default function FormatoEntregaTab({
           onProcessPasteText={handleProcessPasteText}
           onRemovePackage={handleRemovePackage}
           onClearPackages={handleClearPackages}
+          onDeduplicatePackages={handleDeduplicatePackages}
           onResetForm={handleResetForm}
           onPrint={handlePrint}
           onExportPdf={handleExportPdf}
