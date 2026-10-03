@@ -268,8 +268,9 @@ export async function generateActaEntregaDocx(data: ActaEntregaData, filename?: 
 
           new Paragraph({ spacing: { before: 200, after: 120 } }),
 
-          // Cláusula de Cargo
+          // Cláusula de Cargo (Centrado)
           new Paragraph({
+            alignment: AlignmentType.CENTER,
             spacing: { after: 60 },
             children: [
               new TextRun({ text: 'CARGO: ', bold: true, font: 'Calibri', size: 19 }),
@@ -282,10 +283,11 @@ export async function generateActaEntregaDocx(data: ActaEntregaData, filename?: 
             ]
           }),
           new Paragraph({
+            alignment: AlignmentType.CENTER,
             spacing: { after: 240 },
             children: [
               new TextRun({
-                text: '               Anteriormente en buen estado y conforme a lo descrito.',
+                text: 'Anteriormente en buen estado y conforme a lo descrito.',
                 underline: { type: UnderlineType.SINGLE },
                 font: 'Calibri',
                 size: 19

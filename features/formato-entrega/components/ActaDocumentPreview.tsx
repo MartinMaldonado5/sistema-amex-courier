@@ -84,12 +84,16 @@ export default function ActaDocumentPreview({ data }: ActaDocumentPreviewProps) 
 
         {/* 3. Cláusula de Cargo y Conformidad */}
         <div className="acta-cargo-clause">
-          <span className="acta-cargo-tag">CARGO: </span>
-          <span className="acta-cargo-underlined">
-            Certifico que he recibido el(los) paquete(s) indicado(s)
-          </span>
-          <div className="acta-cargo-underlined-indented">
-            Anteriormente en buen estado y conforme a lo descrito.
+          <div className="acta-cargo-line-1">
+            <span className="acta-cargo-tag">CARGO: </span>
+            <span className="acta-cargo-underlined">
+              Certifico que he recibido el(los) paquete(s) indicado(s)
+            </span>
+          </div>
+          <div className="acta-cargo-line-2">
+            <span className="acta-cargo-underlined">
+              Anteriormente en buen estado y conforme a lo descrito.
+            </span>
           </div>
         </div>
 

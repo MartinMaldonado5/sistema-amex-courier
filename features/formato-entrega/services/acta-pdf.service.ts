@@ -168,27 +168,39 @@ export async function generateActaEntregaPdf(data: ActaEntregaData, filename?: s
 
   currentY += boxHeight + 12;
 
-  // 4. Cláusula de Cargo
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9.5);
-  doc.setTextColor(15, 23, 42);
-  doc.text('CARGO:', marginX + 16, currentY);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9.5);
+  // 4. Cláusula de Cargo (Centrado horizontal)
+  const tagText = 'CARGO: ';
   const cargoLine1 = 'Certifico que he recibido el(los) paquete(s) indicado(s)';
   const cargoLine2 = 'Anteriormente en buen estado y conforme a lo descrito.';
 
-  doc.text(cargoLine1, marginX + 32, currentY);
-  // Subrayado de línea 1
-  const line1Width = doc.getTextWidth(cargoLine1);
-  doc.line(marginX + 32, currentY + 0.8, marginX + 32 + line1Width, currentY + 0.8);
+  doc.setFontSize(9.5);
+  doc.setFont('helvetica', 'bold');
+  const tagWidth = doc.getTextWidth(tagText);
 
-  currentY += 5.5;
-  doc.text(cargoLine2, marginX + 32, currentY);
-  // Subrayado de línea 2
+  doc.setFont('helvetica', 'normal');
+  const line1TextWidth = doc.getTextWidth(cargoLine1);
+  const totalLine1Width = tagWidth + line1TextWidth;
   const line2Width = doc.getTextWidth(cargoLine2);
-  doc.line(marginX + 32, currentY + 0.8, marginX + 32 + line2Width, currentY + 0.8);
+
+  const centerX = marginX + (contentWidth / 2);
+  const line1StartX = centerX - (totalLine1Width / 2);
+  const line2StartX = centerX - (line2Width / 2);
+
+  // Línea 1 centrada: CARGO: [texto subrayado]
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(15, 23, 42);
+  doc.text(tagText, line1StartX, currentY);
+
+  doc.setFont('helvetica', 'normal');
+  doc.text(cargoLine1, line1StartX + tagWidth, currentY);
+  // Subrayado de línea 1
+  doc.line(line1StartX + tagWidth, currentY + 0.8, line1StartX + totalLine1Width, currentY + 0.8);
+
+  // Línea 2 centrada: [texto subrayado]
+  currentY += 5.5;
+  doc.text(cargoLine2, line2StartX, currentY);
+  // Subrayado de línea 2
+  doc.line(line2StartX, currentY + 0.8, line2StartX + line2Width, currentY + 0.8);
 
   currentY += 14;
 

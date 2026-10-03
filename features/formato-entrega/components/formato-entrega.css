@@ -536,7 +536,19 @@
   line-height: 1.65;
   color: #0f172a;
   margin-bottom: 28px;
-  padding-left: 10px;
+  text-align: center;
+  width: 100%;
+}
+
+.acta-cargo-line-1 {
+  display: block;
+  text-align: center;
+}
+
+.acta-cargo-line-2 {
+  display: block;
+  text-align: center;
+  margin-top: 4px;
 }
 
 .acta-cargo-tag {
@@ -546,14 +558,7 @@
 
 .acta-cargo-underlined {
   text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.acta-cargo-underlined-indented {
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  padding-left: 68px;
-  margin-top: 3px;
+  text-underline-offset: 2.5px;
 }
 
 /* 4. Tabla Recibido Por con Renglones Amplios para Escritura Manual */
