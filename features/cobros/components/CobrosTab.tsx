@@ -217,7 +217,7 @@ export default function CobrosTab({
 
       {/* 4. VISTA PRINCIPAL DE OPERACIONES DE COBRO */}
       {vista === 'armar-planilla' ? (
-        <ArmarPlanillaTab />
+        <ArmarPlanillaTab getTarifaCliente={getTarifaCliente} />
       ) : (
       <CobrosDailySheetView
         lotes={lotesFiltrados}

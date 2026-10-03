@@ -27,7 +27,11 @@ interface FuenteTibOpcion {
 type Fase = 'idle' | 'cruzando' | 'listo';
 type FiltroEstado = 'todos' | 'multi' | 'sin-match';
 
-export default function ArmarPlanillaTab() {
+interface ArmarPlanillaTabProps {
+  getTarifaCliente?: (clienteNombre: string) => { tarifa: number; personalizada: boolean };
+}
+
+export default function ArmarPlanillaTab({ getTarifaCliente }: ArmarPlanillaTabProps = {}) {
   const [fuentes, setFuentes] = useState<FuenteTibOpcion[]>([]);
   const [selectedEnviadoKey, setSelectedEnviadoKey] = useState<string>('');
   const [cargandoFuentes, setCargandoFuentes] = useState(true);
@@ -133,7 +137,10 @@ export default function ArmarPlanillaTab() {
       setError('');
       setDescargando(true);
       const base = (instructivo?.fileName || 'embarque').replace(/\.xlsx$/i, '');
-      await exportarPlanillaCobros(filas, `PLANILLA COBROS ${base}.xlsx`);
+      await exportarPlanillaCobros(filas, `PLANILLA COBROS ${base}.xlsx`, {
+        getTarifaCliente,
+        fechaReferencia: instructivo?.fileName,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo generar la planilla Excel.');
     } finally {
@@ -551,9 +558,10 @@ export default function ArmarPlanillaTab() {
                 opacity: descargando ? 0.6 : 1,
                 boxShadow: '0 2px 8px rgba(22, 163, 74, 0.3)',
               }}
+              title="Genera un libro con 2 hojas: 1. Cruce Planilla (todos los paquetes) y 2. Plantilla Cobros (formato oficial Cobro 22 Septiembre con solo WRs individuales)"
             >
               <Download style={{ width: '16px', height: '16px' }} />
-              {descargando ? 'Generando Excel…' : 'Descargar Planilla Excel (.xlsx)'}
+              {descargando ? 'Generando Excel (2 Hojas)…' : 'Descargar Planilla Excel (2 Hojas)'}
             </button>
           </div>
 
