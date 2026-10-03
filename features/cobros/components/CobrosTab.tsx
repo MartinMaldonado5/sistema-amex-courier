@@ -11,10 +11,11 @@ import { useCobrosOperaciones } from '../hooks/useCobrosOperaciones';
 import { VoucherViewerModal } from '../modals/VoucherViewerModal';
 import { CobrosDailySheetView } from './CobrosDailySheetView';
 import { CobrosExcelImporterModal } from './CobrosExcelImporterModal';
-import type { CobrosTabProps, CobroVoucher } from '../types';
+import ArmarPlanillaTab from './ArmarPlanillaTab';
+import type { CobrosTabProps, CobroVoucher, CobrosSubtab } from '../types';
 
 export type { CobroVoucher };
-export type { CobrosTabProps };
+export type { CobrosTabProps, CobrosSubtab };
 
 export default function CobrosTab({
   paquetes = [],
@@ -24,6 +25,7 @@ export default function CobrosTab({
   filterClienteInicial
 }: CobrosTabProps) {
   const [isImporterOpen, setIsImporterOpen] = useState(false);
+  const [vista, setVista] = useState<CobrosSubtab>('diario');
 
   // Hook de Operaciones de Cobros Diarios
   const {
@@ -185,7 +187,38 @@ export default function CobrosTab({
         </div>
       </div>
 
-      {/* 3. VISTA PRINCIPAL DE OPERACIONES DE COBRO */}
+      {/* 3. SUB-PESTAÑAS: HOJA DIARIA / ARMAR PLANILLA */}
+      <div style={{ display: 'flex', gap: '8px' }}>
+        {(
+          [
+            { key: 'diario', label: 'Hoja diaria' },
+            { key: 'armar-planilla', label: 'Armar planilla' },
+          ] as Array<{ key: CobrosSubtab; label: string }>
+        ).map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setVista(t.key)}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '999px',
+              fontSize: '12.5px',
+              fontWeight: 800,
+              cursor: 'pointer',
+              border: vista === t.key ? '1px solid #059669' : '1px solid #cbd5e1',
+              background: vista === t.key ? '#ecfdf5' : '#fff',
+              color: vista === t.key ? '#047857' : '#475569',
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* 4. VISTA PRINCIPAL DE OPERACIONES DE COBRO */}
+      {vista === 'armar-planilla' ? (
+        <ArmarPlanillaTab />
+      ) : (
       <CobrosDailySheetView
         lotes={lotesFiltrados}
         availableFechas={availableFechas}
@@ -209,6 +242,7 @@ export default function CobrosTab({
         onNavigateToClientes360={onNavigateToClientes360}
         getTarifaCliente={getTarifaCliente}
       />
+      )}
 
       {/* MODAL GLOBAL: IMPORTADOR EXCEL */}
       <CobrosExcelImporterModal

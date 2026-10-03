@@ -28,6 +28,7 @@ const os = require('node:os');
 const crypto = require('node:crypto');
 const { spawn } = require('node:child_process');
 const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
+const XLSX = require('xlsx');
 
 // ---------------------------------------------------------------- config
 
@@ -326,6 +327,7 @@ async function getOrSyncCachedTibFile(tipo, r2Key, originalName) {
   const tempPath = `${filePath}.download.${Date.now()}`;
   await downloadFromR2(r2Key, tempPath);
   await fsp.rename(tempPath, filePath);
+  tibLookupCache.delete(tipo);
   await writeTibMeta(tipo, {
     tipo,
     r2_key: r2Key,
@@ -334,6 +336,218 @@ async function getOrSyncCachedTibFile(tipo, r2Key, originalName) {
   });
   console.log(`[worker] [CACHE GUARDADO ✅] ${tipo} guardado con éxito en disco VPS: ${filePath}`);
   return { filePath, hit: false };
+}
+
+// ---------------------------------------------------- motor cobros (cruce TIB)
+
+const tibLookupCache = new Map(); // tipo -> { mtime, map, totalRows, durationMs, updatedAt }
+
+function extractWrsFromCell(rawWr) {
+  if (!rawWr) return [];
+  const s = String(rawWr).trim();
+  const matches = s.match(/WR\d{5,12}/gi);
+  if (matches && matches.length > 0) {
+    return Array.from(new Set(matches.map((w) => w.toUpperCase())));
+  }
+  return s
+    .split(/[\s,;/|-]+/)
+    .map((t) => t.trim().toUpperCase())
+    .filter((t) => t.length >= 3);
+}
+
+function getOrBuildTibLookup(tipo = 'sent') {
+  const filePath = getTibCacheFilePath(tipo);
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+  const stat = fs.statSync(filePath);
+  const mtime = stat.mtimeMs;
+  const cached = tibLookupCache.get(tipo);
+  if (cached && cached.mtime === mtime) {
+    return cached;
+  }
+
+  console.log(`[worker] [INDEXANDO TIB ⚡] Cargando y construyendo índice en memoria para ${tipo}...`);
+  const t0 = Date.now();
+  const wb = XLSX.readFile(filePath, { dense: true, cellFormula: false, cellHTML: false, cellText: false });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+  const headerRow = rows[0] || [];
+  const colWr = headerRow.findIndex((h) => /WR/i.test(String(h)));
+  const colTrack = headerRow.findIndex((h) => /TRACK/i.test(String(h)));
+  const colCli = headerRow.findIndex((h) => /CLIENTE/i.test(String(h)));
+  const colTipo = headerRow.findIndex((h) => /TIPO/i.test(String(h)));
+  const colPeso = headerRow.findIndex((h) => /PESO/i.test(String(h)));
+  const colEstado = headerRow.findIndex((h) => /ESTADO/i.test(String(h)));
+  const colFecha = headerRow.findIndex((h) => /MODIFICADO|REGISTRADO|FECHA/i.test(String(h)));
+
+  const map = new Map();
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r) continue;
+    const wrVal = r[colWr >= 0 ? colWr : 0];
+    if (!wrVal) continue;
+    const wrKey = String(wrVal).toUpperCase().trim();
+    if (!wrKey) continue;
+
+    const rawPeso = colPeso >= 0 ? r[colPeso] : null;
+    let numPeso = null;
+    if (typeof rawPeso === 'number') {
+      numPeso = Math.round(rawPeso * 100) / 100;
+    } else if (rawPeso) {
+      const p = parseFloat(String(rawPeso).replace(',', '.'));
+      if (!isNaN(p)) numPeso = Math.round(p * 100) / 100;
+    }
+
+    map.set(wrKey, {
+      wr: wrKey,
+      tracking: colTrack >= 0 && r[colTrack] ? String(r[colTrack]).trim() : '',
+      cliente: colCli >= 0 && r[colCli] ? String(r[colCli]).trim() : '',
+      tipo: colTipo >= 0 && r[colTipo] ? String(r[colTipo]).trim() : 'CAJA',
+      peso: numPeso,
+      estado: colEstado >= 0 && r[colEstado] ? String(r[colEstado]).trim() : '',
+      fecha: colFecha >= 0 && r[colFecha] ? String(r[colFecha]).trim() : '',
+      fuente: tipo,
+    });
+  }
+
+  const durationMs = Date.now() - t0;
+  console.log(`[worker] [INDEXADO COMPLETADO ✅] ${tipo}: ${map.size} WRs indexados de ${rows.length} filas en ${durationMs}ms`);
+  const record = { mtime, map, totalRows: rows.length, durationMs, updatedAt: new Date().toISOString() };
+  tibLookupCache.set(tipo, record);
+  return record;
+}
+
+function cruzarFilasCobros(filas = [], options = {}) {
+  const fuente = options.fuente || 'sent';
+  const includeFallbacks = options.includeFallbacks !== false;
+
+  const primaryRecord = getOrBuildTibLookup(fuente);
+  const primaryMap = primaryRecord ? primaryRecord.map : new Map();
+
+  let fallbackDelivered = null;
+  let fallbackReceived = null;
+
+  let countFull = 0;
+  let countPartial = 0;
+  let countNone = 0;
+
+  const filasCruzadas = filas.map((fila, index) => {
+    const rawWr = fila.rawWr || fila.wr || '';
+    const wrs = Array.isArray(fila.wrs) && fila.wrs.length > 0
+      ? fila.wrs.map((w) => String(w).toUpperCase().trim())
+      : extractWrsFromCell(rawWr);
+
+    const delimiter = fila.delimiter || ' - ';
+    const detalles = [];
+
+    for (const w of wrs) {
+      let hit = primaryMap.get(w);
+      if (!hit && includeFallbacks && fuente === 'sent') {
+        if (!fallbackDelivered) {
+          const rec = getOrBuildTibLookup('delivered');
+          fallbackDelivered = rec ? rec.map : new Map();
+        }
+        hit = fallbackDelivered.get(w);
+        if (!hit) {
+          if (!fallbackReceived) {
+            const rec = getOrBuildTibLookup('received');
+            fallbackReceived = rec ? rec.map : new Map();
+          }
+          hit = fallbackReceived.get(w);
+        }
+      }
+
+      if (hit) {
+        detalles.push({
+          wr: w,
+          tracking: hit.tracking || '',
+          cliente: hit.cliente || '',
+          tipo: hit.tipo || 'CAJA',
+          peso: hit.peso,
+          estado: hit.estado || '',
+          encontrado: true,
+          fuente: hit.fuente,
+        });
+      } else {
+        detalles.push({
+          wr: w,
+          tracking: '',
+          cliente: '',
+          tipo: 'CAJA',
+          peso: null,
+          estado: 'NO ENCONTRADO',
+          encontrado: false,
+          fuente: null,
+        });
+      }
+    }
+
+    const wrsEncontrados = detalles.filter((d) => d.encontrado).length;
+    const totalWrsFila = wrs.length;
+    const encontrado = totalWrsFila > 0 && wrsEncontrados === totalWrsFila;
+    const matchParcial = wrsEncontrados > 0 && wrsEncontrados < totalWrsFila;
+
+    if (encontrado) countFull++;
+    else if (matchParcial) countPartial++;
+    else countNone++;
+
+    // Formatear pesos con el delimitador: ej "3.98 - 2.22"
+    const pesoFormateado = detalles.length > 0
+      ? detalles.map((d) => (d.peso != null ? d.peso.toFixed(2) : '?')).join(delimiter)
+      : '';
+
+    // Suma numérica acumulada
+    const pesoTotal = detalles.length > 0
+      ? Math.round(detalles.reduce((acc, d) => acc + (d.peso || 0), 0) * 100) / 100
+      : null;
+
+    // Trackings combinados con el delimitador: ej "YCE78A3 - YCE78A6"
+    const tracking = detalles.length > 0
+      ? detalles.map((d) => d.tracking || '-').join(delimiter)
+      : '';
+
+    // Nombres de cliente por cada WR (concatenados con el delimitador para multi-WR: ej "CLIENTE 1 - CLIENTE 2")
+    const nombresClientes = detalles.map(
+      (d) => d.cliente || fila.cliente || fila.consignatario || fila.consignado || 'SIN NOMBRE'
+    );
+    const clienteFinal = wrs.length > 1
+      ? nombresClientes.join(delimiter)
+      : (nombresClientes[0] || fila.cliente || fila.consignatario || '');
+
+    return {
+      ...fila,
+      filaOriginal: fila.filaOriginal ?? (index + 2),
+      // REGLA CRUCIAL: El WR de la fila conserva exactamente la cadena original (agrupada)
+      wr: rawWr,
+      rawWr: rawWr,
+      wrs,
+      esMultiWr: wrs.length > 1,
+      delimiter,
+      cliente: clienteFinal,
+      pesoFormateado,
+      pesoTotal,
+      tracking,
+      tipo: detalles.find((d) => d.tipo)?.tipo || fila.tipo || 'CAJA',
+      encontrado,
+      matchParcial,
+      wrsEncontrados,
+      totalWrsFila,
+      detalles,
+    };
+  });
+
+  return {
+    filasCruzadas,
+    countFull,
+    countPartial,
+    countNone,
+    totalFilas: filas.length,
+    fuenteUsada: fuente,
+    primaryRows: primaryRecord?.totalRows || 0,
+    primaryWrs: primaryRecord?.map?.size || 0,
+  };
 }
 
 // ------------------------------------------------------------- processor
@@ -629,6 +843,57 @@ const server = http.createServer((req, res) => {
     }));
     res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': resp.length });
     res.end(resp);
+    return;
+  }
+
+  // Endpoint de cruce de cobros (Planilla de Cobros): POST /cruzar-cobros
+  if (req.method === 'POST' && (parsedUrl.pathname === '/cruzar-cobros' || parsedUrl.pathname === '/api/cruzar-cobros')) {
+    let bodyText = '';
+    req.on('data', (chunk) => { bodyText += chunk; });
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(bodyText || '{}');
+        const filas = payload.filas || [];
+        const fuente = payload.fuente || 'sent';
+
+        if (!Array.isArray(filas) || filas.length === 0) {
+          const errResp = Buffer.from(JSON.stringify({ error: 'Se requiere un arreglo de "filas" no vacío.' }));
+          res.writeHead(400, { 'Content-Type': 'application/json', 'Content-Length': errResp.length });
+          res.end(errResp);
+          return;
+        }
+
+        const tStart = Date.now();
+        console.log(`[worker] Petición /cruzar-cobros recibida con ${filas.length} filas (fuente: ${fuente})`);
+
+        const resultado = cruzarFilasCobros(filas, { fuente, includeFallbacks: payload.includeFallbacks !== false });
+        const duracionMs = Date.now() - tStart;
+
+        console.log(`[worker] Cruce completado en ${duracionMs}ms. Coincidencias: ${resultado.countFull}/${filas.length}`);
+
+        const resp = Buffer.from(JSON.stringify({
+          ok: true,
+          totalFilas: resultado.totalFilas,
+          coincidenciasCompletas: resultado.countFull,
+          coincidenciasParciales: resultado.countPartial,
+          sinCoincidencia: resultado.countNone,
+          duracionMs,
+          fuenteUsada: resultado.fuenteUsada,
+          tibRows: resultado.primaryRows,
+          tibWrs: resultado.primaryWrs,
+          filasCruzadas: resultado.filasCruzadas,
+          time: new Date().toISOString(),
+        }));
+
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': resp.length });
+        res.end(resp);
+      } catch (err) {
+        console.error(`[worker] Error en /cruzar-cobros: ${err.message}`);
+        const errResp = Buffer.from(JSON.stringify({ error: err.message }));
+        res.writeHead(500, { 'Content-Type': 'application/json', 'Content-Length': errResp.length });
+        res.end(errResp);
+      }
+    });
     return;
   }
 

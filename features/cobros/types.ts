@@ -41,7 +41,7 @@ export interface CobrosMetrics {
 
 export * from './types/cobros-models';
 
-export type CobrosSubtab = 'diario' | 'clientes360' | 'importar' | 'vouchers' | 'todos' | 'nuevo' | 'pendientes' | 'validados';
+export type CobrosSubtab = 'diario' | 'armar-planilla' | 'clientes360' | 'importar' | 'vouchers' | 'todos' | 'nuevo' | 'pendientes' | 'validados';
 
 export interface CobrosTabProps {
   paquetes: Paquete[];
