@@ -316,12 +316,12 @@ export function useDashboardMetrics({
   const shelfStats: ShelfCapacityStat[] = useMemo(() => {
     // A1
     const a1Count = paquetesLince.filter(p => (p.posicionEstante || p.anaquel || '').startsWith('A1')).length;
-    const a1Cap = 120; // 3 pisos x 40
+    const a1Cap = 160; // 4 pisos x 40
     const a1Pct = Math.min(100, Math.round((a1Count / a1Cap) * 100));
 
     // A2
     const a2Count = paquetesLince.filter(p => (p.posicionEstante || p.anaquel || '').startsWith('A2')).length;
-    const a2Cap = 120;
+    const a2Cap = 160; // 4 pisos x 40
     const a2Pct = Math.min(100, Math.round((a2Count / a2Cap) * 100));
 
     // Mesa Recepción (REC)
@@ -342,7 +342,7 @@ export function useDashboardMetrics({
     return [
       {
         code: 'A1',
-        name: 'Anaquel Principal A1 (P1 · P2 · P3)',
+        name: 'Anaquel Principal A1 (P1 · P2 · P3 · P4)',
         zone: 'Almacenaje en Custodia',
         count: a1Count,
         capacity: a1Cap,
@@ -352,7 +352,7 @@ export function useDashboardMetrics({
       },
       {
         code: 'A2',
-        name: 'Anaquel Secundario A2 (P1 · P2 · P3)',
+        name: 'Anaquel Secundario A2 (P1 · P2 · P3 · P4)',
         zone: 'Almacenaje en Custodia',
         count: a2Count,
         capacity: a2Cap,

@@ -39,8 +39,8 @@ export interface Paquete {
   valorDeclaradoUsd: number;
   ubicacionActual: TipoUbicacion;
   anaquel?: 'A1' | 'A2' | 'RECEPCION' | 'DESPACHO' | string;
-  piso?: 'P1' | 'P2' | 'P3' | string;
-  posicionEstante?: string;          // Ej: A1-P1, A1-P2, A1-P3, A2-P1, A2-P2, A2-P3
+  piso?: 'P1' | 'P2' | 'P3' | 'P4' | string;
+  posicionEstante?: string;          // Ej: A1-P1, A1-P2, A1-P3, A1-P4, A2-P1, A2-P2, A2-P3, A2-P4
   metodoEntrega: TipoMetodoEntrega;
   estadoEntrega: TipoEstadoEntrega;  // Estado TIB
   estadoAmex: TipoEstadoAmex;        // Estado Operativo AMEX (por defecto 'recibido' al escanear)

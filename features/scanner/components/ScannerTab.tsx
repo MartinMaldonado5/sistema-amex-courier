@@ -108,16 +108,18 @@ export default function ScannerTab({
     }
   }, []);
 
-  // Conteo de paquetes por Anaquel y Pisos
+  // Conteo de paquetes por Anaquel y Pisos (4 Pisos por Anaquel)
   const a1_P1 = paquetes.filter(p => (p.posicionEstante === 'A1-P1' || (p.anaquel === 'A1' && p.piso === 'P1'))).length;
   const a1_P2 = paquetes.filter(p => (p.posicionEstante === 'A1-P2' || (p.anaquel === 'A1' && p.piso === 'P2'))).length;
   const a1_P3 = paquetes.filter(p => (p.posicionEstante === 'A1-P3' || (p.anaquel === 'A1' && p.piso === 'P3'))).length;
-  const totalA1 = a1_P1 + a1_P2 + a1_P3;
+  const a1_P4 = paquetes.filter(p => (p.posicionEstante === 'A1-P4' || (p.anaquel === 'A1' && p.piso === 'P4'))).length;
+  const totalA1 = a1_P1 + a1_P2 + a1_P3 + a1_P4;
 
   const a2_P1 = paquetes.filter(p => (p.posicionEstante === 'A2-P1' || (p.anaquel === 'A2' && p.piso === 'P1'))).length;
   const a2_P2 = paquetes.filter(p => (p.posicionEstante === 'A2-P2' || (p.anaquel === 'A2' && p.piso === 'P2'))).length;
   const a2_P3 = paquetes.filter(p => (p.posicionEstante === 'A2-P3' || (p.anaquel === 'A2' && p.piso === 'P3'))).length;
-  const totalA2 = a2_P1 + a2_P2 + a2_P3;
+  const a2_P4 = paquetes.filter(p => (p.posicionEstante === 'A2-P4' || (p.anaquel === 'A2' && p.piso === 'P4'))).length;
+  const totalA2 = a2_P1 + a2_P2 + a2_P3 + a2_P4;
 
   // Filtrado de lecturas
   const pendingLogs = useMemo(() => scannedLogs.filter(l => !l.synced), [scannedLogs]);
@@ -1111,10 +1113,10 @@ export default function ScannerTab({
                     onChange={e => setEditingLog({ ...editingLog, piso: e.target.value })}
                     className="form-control"
                   >
-                    <option value="P1">P1 (Inferior)</option>
-                    <option value="P2">P2 (Medio)</option>
-                    <option value="P3">P3 (Superior)</option>
-                    <option value="P4">P4 (Especial)</option>
+                    <option value="P1">P1 (Piso 1 · Inferior)</option>
+                    <option value="P2">P2 (Piso 2 · Medio)</option>
+                    <option value="P3">P3 (Piso 3 · Medio Alto)</option>
+                    <option value="P4">P4 (Piso 4 · Superior)</option>
                   </select>
                 </div>
               </div>

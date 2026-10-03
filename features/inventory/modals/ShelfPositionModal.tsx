@@ -241,8 +241,8 @@ export default function ShelfPositionModal({
                 >
                   <option value="P1">P1 (Inferior)</option>
                   <option value="P2">P2 (Medio)</option>
-                  <option value="P3">P3 (Superior)</option>
-                  <option value="P4">P4 (Especial)</option>
+                  <option value="P3">P3 (Medio Alto)</option>
+                  <option value="P4">P4 (Superior)</option>
                   <option value="P5">P5 (Altillo)</option>
                 </select>
               </div>

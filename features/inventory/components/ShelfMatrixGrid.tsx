@@ -335,8 +335,10 @@ export default function ShelfMatrixGrid({
                         (p.anaquel === shelfCode && p.piso === posItem.nivelPiso)
                     );
                     const floorLabel =
-                      posItem.nivelPiso === 'P3'
-                        ? 'Piso 3 (Superior)'
+                      posItem.nivelPiso === 'P4'
+                        ? 'Piso 4 (Superior)'
+                        : posItem.nivelPiso === 'P3'
+                        ? 'Piso 3 (Medio Alto)'
                         : posItem.nivelPiso === 'P2'
                         ? 'Piso 2 (Medio)'
                         : posItem.nivelPiso === 'P1'

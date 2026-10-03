@@ -85,9 +85,9 @@ export default function MobileScannerModal({
   // 🎯 Flujo de Trabajo Logístico (Workflows de Operación)
   const [workflowMode, setWorkflowMode] = useState<'slotting' | 'lookup' | 'delivery' | 'general'>('slotting');
 
-  // 📍 Selector Fijo de Anaqueles (2 Anaqueles × 3 Pisos)
+  // 📍 Selector Fijo de Anaqueles (2 Anaqueles × 4 Pisos)
   const [selectedAnaquel, setSelectedAnaquel] = useState<'A1' | 'A2' | 'REC' | 'DSP'>('A1');
-  const [selectedPiso, setSelectedPiso] = useState<'P1' | 'P2' | 'P3'>('P1');
+  const [selectedPiso, setSelectedPiso] = useState<'P1' | 'P2' | 'P3' | 'P4'>('P1');
 
   // Refs de Estado en Tiempo Real (Resuelven el Stale Closure en el bucle de cámara)
   const selectedAnaquelRef = useRef(selectedAnaquel);
@@ -121,7 +121,7 @@ export default function MobileScannerModal({
     workflow: 'slotting' | 'lookup' | 'delivery' | 'general';
     location: string;
     anaquel: 'A1' | 'A2' | 'REC' | 'DSP';
-    piso: 'P1' | 'P2' | 'P3';
+    piso: 'P1' | 'P2' | 'P3' | 'P4';
     pkg?: Paquete;
     cli?: Cliente;
     detectedAt: number;
@@ -1013,12 +1013,12 @@ export default function MobileScannerModal({
 
             <div>
               <label style={{ fontSize: '10.5px', fontWeight: 700, color: '#3b82f6', display: 'block', marginBottom: '2px' }}>
-                Piso (3 Niveles):
+                Piso (4 Niveles):
               </label>
               <select
                 value={selectedPiso}
                 onChange={e => {
-                  const val = e.target.value as 'P1' | 'P2' | 'P3';
+                  const val = e.target.value as 'P1' | 'P2' | 'P3' | 'P4';
                   setSelectedPiso(val);
                   selectedPisoRef.current = val;
                 }}
@@ -1037,7 +1037,8 @@ export default function MobileScannerModal({
               >
                 <option value="P1">⬇️ Piso 1 (Inferior)</option>
                 <option value="P2">↔️ Piso 2 (Medio)</option>
-                <option value="P3">⬆️ Piso 3 (Superior)</option>
+                <option value="P3">↗️ Piso 3 (Medio Alto)</option>
+                <option value="P4">⬆️ Piso 4 (Superior)</option>
               </select>
             </div>
           </div>
@@ -1531,7 +1532,7 @@ export default function MobileScannerModal({
                     <select
                       value={pendingConfirmation.piso}
                       onChange={e => {
-                        const val = e.target.value as 'P1' | 'P2' | 'P3';
+                        const val = e.target.value as 'P1' | 'P2' | 'P3' | 'P4';
                         setPendingConfirmation(prev => prev ? { ...prev, piso: val, location: `${prev.anaquel}-${val}` } : null);
                       }}
                       style={{
@@ -1548,7 +1549,8 @@ export default function MobileScannerModal({
                     >
                       <option value="P1">⬇️ Piso 1</option>
                       <option value="P2">↔️ Piso 2</option>
-                      <option value="P3">⬆️ Piso 3</option>
+                      <option value="P3">↗️ Piso 3</option>
+                      <option value="P4">⬆️ Piso 4</option>
                     </select>
                   </div>
                 </div>

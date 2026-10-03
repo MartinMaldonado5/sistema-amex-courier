@@ -280,11 +280,13 @@ export function useInventoryData({
             { id: '1', almacenId: 'LIN', codigoEstante: 'A1', nivelPiso: 'P1', codigoPosicion: 'A1-P1', zonaTipo: 'ALMACENAJE', capacidadMaxPaquetes: 40, pesoMaxKg: 150 },
             { id: '2', almacenId: 'LIN', codigoEstante: 'A1', nivelPiso: 'P2', codigoPosicion: 'A1-P2', zonaTipo: 'ALMACENAJE', capacidadMaxPaquetes: 40, pesoMaxKg: 120 },
             { id: '3', almacenId: 'LIN', codigoEstante: 'A1', nivelPiso: 'P3', codigoPosicion: 'A1-P3', zonaTipo: 'ALMACENAJE', capacidadMaxPaquetes: 40, pesoMaxKg: 80 },
-            { id: '4', almacenId: 'LIN', codigoEstante: 'A2', nivelPiso: 'P1', codigoPosicion: 'A2-P1', zonaTipo: 'ALMACENAJE', capacidadMaxPaquetes: 40, pesoMaxKg: 150 },
-            { id: '5', almacenId: 'LIN', codigoEstante: 'A2', nivelPiso: 'P2', codigoPosicion: 'A2-P2', zonaTipo: 'ALMACENAJE', capacidadMaxPaquetes: 40, pesoMaxKg: 120 },
-            { id: '6', almacenId: 'LIN', codigoEstante: 'A2', nivelPiso: 'P3', codigoPosicion: 'A2-P3', zonaTipo: 'ALMACENAJE', capacidadMaxPaquetes: 40, pesoMaxKg: 80 },
-            { id: '7', almacenId: 'LIN', codigoEstante: 'REC', nivelPiso: 'P1', codigoPosicion: 'REC', zonaTipo: 'RECEPCION', capacidadMaxPaquetes: 100, pesoMaxKg: 500 },
-            { id: '8', almacenId: 'LIN', codigoEstante: 'DSP', nivelPiso: 'P1', codigoPosicion: 'DSP', zonaTipo: 'DESPACHO', capacidadMaxPaquetes: 100, pesoMaxKg: 500 }
+            { id: '4', almacenId: 'LIN', codigoEstante: 'A1', nivelPiso: 'P4', codigoPosicion: 'A1-P4', zonaTipo: 'ALMACENAJE', capacidadMaxPaquetes: 40, pesoMaxKg: 80 },
+            { id: '5', almacenId: 'LIN', codigoEstante: 'A2', nivelPiso: 'P1', codigoPosicion: 'A2-P1', zonaTipo: 'ALMACENAJE', capacidadMaxPaquetes: 40, pesoMaxKg: 150 },
+            { id: '6', almacenId: 'LIN', codigoEstante: 'A2', nivelPiso: 'P2', codigoPosicion: 'A2-P2', zonaTipo: 'ALMACENAJE', capacidadMaxPaquetes: 40, pesoMaxKg: 120 },
+            { id: '7', almacenId: 'LIN', codigoEstante: 'A2', nivelPiso: 'P3', codigoPosicion: 'A2-P3', zonaTipo: 'ALMACENAJE', capacidadMaxPaquetes: 40, pesoMaxKg: 80 },
+            { id: '8', almacenId: 'LIN', codigoEstante: 'A2', nivelPiso: 'P4', codigoPosicion: 'A2-P4', zonaTipo: 'ALMACENAJE', capacidadMaxPaquetes: 40, pesoMaxKg: 80 },
+            { id: '9', almacenId: 'LIN', codigoEstante: 'REC', nivelPiso: 'P1', codigoPosicion: 'REC', zonaTipo: 'RECEPCION', capacidadMaxPaquetes: 100, pesoMaxKg: 500 },
+            { id: '10', almacenId: 'LIN', codigoEstante: 'DSP', nivelPiso: 'P1', codigoPosicion: 'DSP', zonaTipo: 'DESPACHO', capacidadMaxPaquetes: 100, pesoMaxKg: 500 }
           ];
 
     effectivePosiciones.forEach(pos => {

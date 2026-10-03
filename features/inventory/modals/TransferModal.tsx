@@ -95,8 +95,8 @@ export default function TransferModal({
               >
                 <option value="P1">Piso 1 (Inferior)</option>
                 <option value="P2">Piso 2 (Medio)</option>
-                <option value="P3">Piso 3 (Superior)</option>
-                <option value="P4">Piso 4 (Especial)</option>
+                <option value="P3">Piso 3 (Medio Alto)</option>
+                <option value="P4">Piso 4 (Superior)</option>
               </select>
             </div>
           </div>

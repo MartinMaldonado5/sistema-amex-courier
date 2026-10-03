@@ -515,10 +515,10 @@ export default function InventoryToolbar({
                 }}
               >
                 <option value="ALL">Todos los Pisos</option>
-                <option value="P1">P1 (Inferior)</option>
-                <option value="P2">P2 (Medio)</option>
-                <option value="P3">P3 (Superior)</option>
-                <option value="P4">P4 (Especial)</option>
+                <option value="P1">P1 (Piso 1 · Inferior)</option>
+                <option value="P2">P2 (Piso 2 · Medio)</option>
+                <option value="P3">P3 (Piso 3 · Medio Alto)</option>
+                <option value="P4">P4 (Piso 4 · Superior)</option>
               </select>
             </div>
 

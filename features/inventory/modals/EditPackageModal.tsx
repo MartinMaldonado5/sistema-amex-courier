@@ -121,7 +121,7 @@ export default function EditPackageModal({
                 type="text"
                 value={editFormData.posicionEstante || 'A1-P1'}
                 onChange={e => setEditFormData({ ...editFormData, posicionEstante: e.target.value })}
-                placeholder="Ej: A1-P1, A2-P3, REC"
+                placeholder="Ej: A1-P1, A1-P4, A2-P4, REC"
                 className="form-control"
               />
             </div>

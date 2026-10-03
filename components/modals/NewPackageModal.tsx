@@ -93,9 +93,11 @@ export default function NewPackageModal({
     { code: 'A1-P1', label: 'Anaquel 1 · Piso 1 (Pesado)', ana: 'A1', pis: 'P1' },
     { code: 'A1-P2', label: 'Anaquel 1 · Piso 2 (Medio)', ana: 'A1', pis: 'P2' },
     { code: 'A1-P3', label: 'Anaquel 1 · Piso 3 (Ligero)', ana: 'A1', pis: 'P3' },
+    { code: 'A1-P4', label: 'Anaquel 1 · Piso 4 (Superior)', ana: 'A1', pis: 'P4' },
     { code: 'A2-P1', label: 'Anaquel 2 · Piso 1 (Pesado)', ana: 'A2', pis: 'P1' },
     { code: 'A2-P2', label: 'Anaquel 2 · Piso 2 (Medio)', ana: 'A2', pis: 'P2' },
     { code: 'A2-P3', label: 'Anaquel 2 · Piso 3 (Ligero)', ana: 'A2', pis: 'P3' },
+    { code: 'A2-P4', label: 'Anaquel 2 · Piso 4 (Superior)', ana: 'A2', pis: 'P4' },
     { code: 'REC', label: 'Mesa de Recepción Rápida', ana: 'REC', pis: 'P1' },
     { code: 'DSP', label: 'Zona Despacho Inmediato', ana: 'DSP', pis: 'P1' }
   ];
