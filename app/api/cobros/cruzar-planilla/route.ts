@@ -218,7 +218,7 @@ export async function POST(req: NextRequest) {
             fuente: body.fuente || 'sent',
             includeFallbacks: true,
           }),
-          signal: AbortSignal.timeout(20000),
+          signal: AbortSignal.timeout(45000),
         });
 
         if (vpsRes.ok) {
