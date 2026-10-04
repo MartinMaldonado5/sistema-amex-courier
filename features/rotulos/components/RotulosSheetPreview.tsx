@@ -19,6 +19,9 @@ interface RotulosSheetPreviewProps {
   handleDeleteCurrentSheet: () => void;
   slotsAiData?: Record<number, { text: string; image: string | null }>;
   currentUser?: { nombre?: string; email?: string } | null;
+  handlePrintDirect?: () => void;
+  handleDownloadPdf?: () => void;
+  isExportingPdf?: boolean;
 }
 
 export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
@@ -33,7 +36,10 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
   handleAddNewSheet,
   handleDeleteCurrentSheet,
   slotsAiData,
-  currentUser
+  currentUser,
+  handlePrintDirect,
+  handleDownloadPdf,
+  isExportingPdf
 }) => {
   // Identificación del usuario actual (primer nombre)
   const [sessionUser, setSessionUser] = React.useState<{ nombre?: string; email?: string } | null>(currentUser || null);
@@ -196,9 +202,10 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
 
   return (
     <div className="rotulos-preview-container">
-      {/* 1. Barra Superior de Navegación y Gestión de Hojas (Cambio de hoja, añadir y eliminar) */}
+      {/* 1. Barra Superior de Navegación y Gestión de Hojas (Compacta y Unificada) */}
       <div className="preview-sheet-navigator preview-sheet-top-bar">
         <div className="sheet-nav-primary-row">
+          {/* Pestañas de Hojas */}
           <div className="sheet-tabs-list">
             {Array.from({ length: totalSheets }, (_, i) => {
               const sheetNum = i + 1;
@@ -212,7 +219,7 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
                   type="button"
                   className={`sheet-tab-btn ${isActive ? 'active' : ''}`}
                   onClick={() => handleSelectSheet(sheetNum)}
-                  title={`Ver Hoja ${sheetNum} (${filledCount}/5 con datos)`}
+                  title={`Ver Hoja ${sheetNum} (${filledCount}/5 completados)`}
                 >
                   <i className={isActive ? 'fa-solid fa-file-lines' : 'fa-regular fa-file'}></i>
                   <span className="sheet-tab-name">Hoja {sheetNum}</span>
@@ -231,28 +238,47 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
                 title="Agregar una nueva hoja A4 (+5 rótulos)"
               >
                 <i className="fa-solid fa-plus"></i>
-                <span>Nueva Hoja</span>
+                <span>Hoja</span>
               </button>
             )}
           </div>
 
+          {/* Acciones Directas en la Vista Previa */}
           <div className="sheet-nav-actions">
-            <span className="sheet-nav-total-pill">
-              <i className="fa-solid fa-layer-group"></i>
-              <span>
-                Hoja <strong>{currentSheet} de {totalSheets}</strong> ({slots.length} rótulos)
-              </span>
-            </span>
-
             {totalSheets > 1 && (
               <button
                 type="button"
-                className="btn-delete-current-sheet"
+                className="btn-sheet-action delete"
                 onClick={handleDeleteCurrentSheet}
-                title={`Eliminar la Hoja #${currentSheet} que estás visualizando`}
+                title={`Eliminar Hoja #${currentSheet}`}
               >
                 <i className="fa-solid fa-trash-can"></i>
-                <span>Eliminar Hoja {currentSheet}</span>
+                <span className="hide-on-mobile">Borrar H{currentSheet}</span>
+              </button>
+            )}
+
+            {handleDownloadPdf && (
+              <button
+                type="button"
+                className="btn-sheet-action pdf"
+                onClick={handleDownloadPdf}
+                disabled={isExportingPdf}
+                title="Descargar PDF de los rótulos"
+              >
+                <i className="fa-solid fa-file-pdf"></i>
+                <span>{isExportingPdf ? 'Exportando...' : 'PDF'}</span>
+              </button>
+            )}
+
+            {handlePrintDirect && (
+              <button
+                type="button"
+                className="btn-sheet-action print-primary"
+                onClick={handlePrintDirect}
+                title="Imprimir directamente a escala real A4 (Ctrl + P)"
+              >
+                <i className="fa-solid fa-print"></i>
+                <span>Imprimir A4</span>
               </button>
             )}
           </div>

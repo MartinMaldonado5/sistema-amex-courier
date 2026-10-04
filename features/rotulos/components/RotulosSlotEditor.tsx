@@ -204,70 +204,9 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
 
   return (
     <div className="rotulos-editor-card">
-      {/* Cabecera del editor */}
-      <div className="slot-editor-header">
-        <div className="slot-badge-title">
-          <div className="slot-sheet-pill">
-            <i className="fa-solid fa-file-lines"></i>
-            <span>Hoja {activeSheetNum} de {totalSheets}</span>
-          </div>
-          <div className="slot-number-pill">
-            <i className="fa-solid fa-pen-to-square"></i>
-            <span>Hoja {activeSheetNum} • Espacio #{((activeSlot.id - 1) % 5) + 1}</span>
-          </div>
-        </div>
-
-        <div className="slot-header-actions" style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-          {/* Botón Deshacer (Undo) */}
-          {handleUndo && (
-            <button
-              type="button"
-              className="btn-clear-slot-header"
-              onClick={handleUndo}
-              disabled={!canUndo}
-              style={{
-                opacity: canUndo ? 1 : 0.45,
-                cursor: canUndo ? 'pointer' : 'not-allowed',
-                background: canUndo ? 'rgba(245, 158, 11, 0.15)' : undefined,
-                color: canUndo ? '#fbbf24' : undefined,
-                borderColor: canUndo ? 'rgba(245, 158, 11, 0.4)' : undefined
-              }}
-              title="Deshacer última acción (Ctrl + Z)"
-            >
-              <i className="fa-solid fa-arrow-rotate-left"></i>
-              <span>Deshacer</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            className="btn-smart-copy"
-            onClick={handleSmartCopyToNextFreeSlot}
-            title="Copiar este rótulo en el siguiente espacio libre (omite ocupados y crea hoja si es necesario)"
-          >
-            <i className="fa-solid fa-bolt-lightning"></i>
-            <span>Copiar en siguiente espacio</span>
-          </button>
-
-          <button
-            type="button"
-            className="btn-clear-slot-header"
-            onClick={handleClearActiveSlot}
-            title={`Limpiar datos de Hoja ${activeSheetNum} — Espacio #${((activeSlot.id - 1) % 5) + 1}`}
-          >
-            <i className="fa-solid fa-eraser"></i>
-            <span>Limpiar</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Selector Rápido de Rótulos de la Hoja Actual */}
-      <div className="slot-quick-selector">
-        <span className="slot-quick-label">
-          <i className="fa-solid fa-list-ol"></i>
-          <span>Espacios Hoja {currentSheet}:</span>
-        </span>
-        <div className="slot-quick-btns-row">
+      {/* 1. Barra Superior del Editor: Selector de Espacios (1-5) + Acciones Rápidas Unificadas */}
+      <div className="rotulos-editor-top-bar">
+        <div className="slot-segmented-control" title={`Espacios de la Hoja ${activeSheetNum} de ${totalSheets}`}>
           {currentSheetSlots.map((s) => {
             const isSelected = s.id === activeSlotId;
             const hasData = Boolean(s.nombre?.trim() || s.destino?.trim());
@@ -277,23 +216,58 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
               <button
                 key={s.id}
                 type="button"
-                className={`slot-quick-pill ${isSelected ? 'active' : ''} ${hasData ? 'has-data' : ''} ${hasAiData ? 'has-ai' : ''}`}
+                className={`slot-segmented-btn ${isSelected ? 'active' : ''} ${hasData ? 'has-data' : ''} ${hasAiData ? 'has-ai' : ''}`}
                 onClick={() => {
                   setActiveSlotId(s.id);
                   playSound('click');
                 }}
-                title={`Hoja ${currentSheet} — Espacio #${inSheetNum} ${hasData ? `(${s.nombre || 'Con datos'})` : '(Vacío)'}${hasAiData ? ' • Con datos de AMEXito IA pendientes' : ''}`}
+                title={`Hoja ${currentSheet} • Espacio #${inSheetNum} ${hasData ? `(${s.nombre || 'Con datos'})` : '(Vacío)'}${hasAiData ? ' • AMEXito IA listo' : ''}`}
               >
-                <span className="slot-quick-num">#{inSheetNum}</span>
-                {hasAiData && <span className="slot-ai-pill-icon" title="Tiene datos de IA pendientes">🤖</span>}
-                <span className={`slot-status-dot ${hasData ? 'filled' : 'empty'}`}></span>
+                <span className="slot-btn-num">#{inSheetNum}</span>
+                {hasAiData && <span className="slot-ai-mini">🤖</span>}
+                <span className={`slot-dot ${hasData ? 'filled' : ''}`}></span>
               </button>
             );
           })}
         </div>
+
+        <div className="slot-top-actions">
+          {handleUndo && (
+            <button
+              type="button"
+              className="btn-slot-action undo"
+              onClick={handleUndo}
+              disabled={!canUndo}
+              title="Deshacer (Ctrl + Z)"
+            >
+              <i className="fa-solid fa-arrow-rotate-left"></i>
+              <span className="btn-action-text">Deshacer</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="btn-slot-action clear"
+            onClick={handleClearActiveSlot}
+            title={`Limpiar espacio #${((activeSlot.id - 1) % 5) + 1}`}
+          >
+            <i className="fa-solid fa-eraser"></i>
+            <span className="btn-action-text">Limpiar</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn-slot-action smart-copy"
+            onClick={handleSmartCopyToNextFreeSlot}
+            title="Copiar datos al siguiente espacio libre"
+          >
+            <i className="fa-solid fa-bolt-lightning"></i>
+            <span>Copiar siguiente</span>
+          </button>
+        </div>
       </div>
 
-      {/* Barra superior de 3 columnas */}
+      {/* 2. Barra de Herramientas: IA + Agencia + Acciones */}
       <RotulosToolbar
         activeSlot={activeSlot}
         updateActiveSlot={updateActiveSlot}
@@ -345,29 +319,12 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
         </div>
       )}
 
-      {/* Formulario de Entrada */}
+      {/* 3. Formulario de Entrada en Grid Compacto (Cero Scroll) */}
       <div className="rotulo-form">
-        {/* Remitente Oficial Fijo (No Modificable) */}
-        <div className="rotulo-field-group">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-            <label className="rotulo-label" style={{ marginBottom: 0 }}>Remitente Oficial:</label>
-            <span style={{ fontSize: '0.70rem', fontWeight: 700, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <i className="fa-solid fa-lock"></i> Fijo por defecto (No modificable)
-            </span>
-          </div>
-          <div className="rotulo-fixed-remitente-box">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <i className="fa-solid fa-building-shield" style={{ color: '#38bdf8', fontSize: '0.95rem' }}></i>
-              <span className="rotulo-fixed-remitente-name">AMEX COURIER PERÚ</span>
-            </div>
-            <span className="rotulo-fixed-remitente-badge">PREDETERMINADO</span>
-          </div>
-        </div>
-
-        {/* Destinatario con Autocompletado desde Directorio de Clientes */}
+        {/* Fila 1: Destinatario con Autocompletado (Ancho Completo) */}
         <div className="rotulo-field-group" ref={clientDropdownRef} style={{ position: 'relative' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label className="rotulo-label">Nombre(s) y Apellidos del Destinatario:</label>
+            <label className="rotulo-label">Destinatario:</label>
             {clientes && clientes.length > 0 && (
               <span
                 style={{
@@ -475,154 +432,143 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
           )}
         </div>
 
-        {/* DNI con indicador y validación reactiva */}
-        <div className="rotulo-field-group">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label className="rotulo-label">DNI / RUC / CE:</label>
-            <span
-              style={{
-                fontSize: '0.70rem',
-                fontWeight: 700,
-                color: dniBadgeColor
+        {/* Fila 2: Grid 2 Columnas: DNI y Celular */}
+        <div className="rotulo-grid-2col">
+          <div className="rotulo-field-group">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label className="rotulo-label">DNI / RUC / CE:</label>
+              <span style={{ fontSize: '0.70rem', fontWeight: 700, color: dniBadgeColor }}>
+                {dniBadgeText}
+              </span>
+            </div>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={11}
+              className="rotulo-input rotulo-input-dni"
+              placeholder="8 (DNI) u 11 (RUC)"
+              value={activeSlot.dni}
+              onChange={(e) => {
+                const onlyNums = e.target.value.replace(/\D/g, '').slice(0, 11);
+                updateActiveSlot({ dni: onlyNums });
               }}
-            >
-              {dniBadgeText}
-            </span>
+            />
           </div>
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={11}
-            className="rotulo-input rotulo-input-dni"
-            placeholder="8 dígitos (DNI) u 11 dígitos (RUC)"
-            value={activeSlot.dni}
-            onChange={(e) => {
-              const onlyNums = e.target.value.replace(/\D/g, '').slice(0, 11);
-              updateActiveSlot({ dni: onlyNums });
-            }}
-          />
+
+          <div className="rotulo-field-group">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label className="rotulo-label">Celular / Teléfono:</label>
+              <span style={{ fontSize: '0.70rem', fontWeight: 700, color: celBadgeColor }}>
+                {celBadgeText}
+              </span>
+            </div>
+            <input
+              type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={9}
+              className="rotulo-input rotulo-input-cel"
+              placeholder="9 dígitos (inicia en 9)"
+              value={activeSlot.celular}
+              onChange={(e) => {
+                const onlyNums = e.target.value.replace(/\D/g, '').slice(0, 9);
+                updateActiveSlot({ celular: onlyNums });
+              }}
+            />
+          </div>
         </div>
 
-        {/* Celular con indicador y validación reactiva */}
-        <div className="rotulo-field-group">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label className="rotulo-label">Celular / Teléfono:</label>
-            <span
-              style={{
-                fontSize: '0.70rem',
-                fontWeight: 700,
-                color: celBadgeColor
-              }}
-            >
-              {celBadgeText}
-            </span>
+        {/* Fila 3: Grid 2 Columnas: Destino y Siglas */}
+        <div className="rotulo-grid-2col">
+          <div className="rotulo-field-group">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label className="rotulo-label">Ciudad / Destino:</label>
+              <span
+                style={{
+                  fontSize: '0.70rem',
+                  fontWeight: 700,
+                  color: (activeSlot.destino?.length || 0) >= 105 ? '#f87171' : '#94a3b8'
+                }}
+              >
+                {activeSlot.destino?.length || 0}/110
+              </span>
+            </div>
+            <input
+              type="text"
+              className="rotulo-input"
+              maxLength={110}
+              placeholder="Agencia o ciudad de destino..."
+              value={activeSlot.destino}
+              onChange={(e) => updateActiveSlot({ destino: e.target.value.toUpperCase() })}
+            />
           </div>
-          <input
-            type="tel"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={9}
-            className="rotulo-input rotulo-input-cel"
-            placeholder="9 dígitos (iniciando en 9)"
-            value={activeSlot.celular}
-            onChange={(e) => {
-              const onlyNums = e.target.value.replace(/\D/g, '').slice(0, 9);
-              updateActiveSlot({ celular: onlyNums });
-            }}
-          />
+
+          <div className="rotulo-field-group">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label className="rotulo-label">Siglas / Código:</label>
+              <span style={{ fontSize: '0.70rem', color: '#64748b' }}>Opcional</span>
+            </div>
+            <input
+              type="text"
+              className="rotulo-input rotulo-input-siglas"
+              placeholder="Ej: CE150, CP68"
+              value={activeSlot.siglas || ''}
+              onChange={(e) => updateActiveSlot({ siglas: e.target.value.toUpperCase() })}
+            />
+          </div>
         </div>
 
-        {/* Destino y Agencia de Entrega */}
-        <div className="rotulo-field-group">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label className="rotulo-label">Destino / Agencia de Entrega:</label>
-            <span
-              style={{
-                fontSize: '0.70rem',
-                fontWeight: 700,
-                color: (activeSlot.destino?.length || 0) >= 105 ? '#f87171' : '#94a3b8'
-              }}
-            >
-              {activeSlot.destino?.length || 0} / 110 car.
-            </span>
-          </div>
-          <input
-            type="text"
-            className="rotulo-input"
-            maxLength={110}
-            placeholder=""
-            value={activeSlot.destino}
-            onChange={(e) => updateActiveSlot({ destino: e.target.value.toUpperCase() })}
-          />
-        </div>
-
-        {/* Control Logístico de Bultos y Total de Cajas */}
-        <div className="rotulo-embalaje-card">
-          <div className="embalaje-card-header">
-            <span className="embalaje-card-title">
-              <i className="fa-solid fa-boxes-packing"></i>
-              <span>Bultos y Total de Cajas</span>
-            </span>
-          </div>
-
-          <div className="rotulo-row-3">
-            <div className="rotulo-field-group">
-              <label className="rotulo-label" title="Cantidad de rótulos">Cant. Rótulos:</label>
+        {/* Fila 4: Bultos y Cajas en Formato Compacto */}
+        <div className="rotulo-embalaje-card-compact">
+          <div className="rotulo-grid-2col" style={{ marginBottom: 0 }}>
+            <div className="rotulo-field-group" style={{ marginBottom: 0 }}>
+              <label className="rotulo-label" style={{ fontSize: '0.75rem' }}>Cant. Rótulos:</label>
               <input
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                className="rotulo-input"
-                placeholder=""
+                className="rotulo-input rotulo-input-sm"
                 value={totalRotulos}
                 onKeyDown={handleNumericKeyDown}
                 onChange={(e) => handleTotalRotulosChange(e.target.value)}
                 onBlur={handleTotalRotulosBlur}
                 onPaste={handleNumericPaste}
-                title="Cantidad de rótulos del pedido (solo números). Al poner 2 o 3 se duplican automáticamente en los espacios libres"
+                title="Cantidad de rótulos (solo números)"
               />
             </div>
 
-            <div className="rotulo-field-group">
-              <label className="rotulo-label" title="Total de cajas">Total Cajas:</label>
+            <div className="rotulo-field-group" style={{ marginBottom: 0 }}>
+              <label className="rotulo-label" style={{ fontSize: '0.75rem' }}>Total Cajas:</label>
               <input
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                className="rotulo-input"
-                placeholder=""
+                className="rotulo-input rotulo-input-sm"
                 value={totalCajas}
                 onKeyDown={handleNumericKeyDown}
                 onChange={(e) => handleTotalCajasChange(e.target.value)}
                 onBlur={handleTotalCajasBlur}
                 onPaste={handleNumericPaste}
-                title="Cantidad total de cajas enviadas por el cliente (solo números)"
-              />
-            </div>
-
-            <div className="rotulo-field-group">
-              <label className="rotulo-label" title="Siglas identificadoras o clave del envío (ej: CE150, CP 68)">
-                Siglas / Código:
-              </label>
-              <input
-                type="text"
-                className="rotulo-input rotulo-input-siglas"
-                placeholder="EJ: CE150"
-                value={activeSlot.siglas || ''}
-                onChange={(e) => updateActiveSlot({ siglas: e.target.value.toUpperCase() })}
-                title="Siglas identificadoras o clave del envío (ej: CE150, CP 68)"
+                title="Cantidad total de cajas enviadas"
               />
             </div>
           </div>
 
-          <div className="embalaje-preview-bar">
-            <span className="embalaje-preview-label">Formato rótulo #{activeSlot.id}:</span>
+          <div className="embalaje-preview-bar-compact">
+            <i className="fa-solid fa-box-archive" style={{ color: '#38bdf8' }}></i>
+            <span className="embalaje-preview-label">Formato:</span>
             <strong className="embalaje-preview-value">
               {generarTextoBulto(activeSlot.numeroRotulo || 1, Number(totalRotulos) || 1, totalCajas || '1')}
               {activeSlot.siglas?.trim() ? ` • [${activeSlot.siglas.trim().toUpperCase()}]` : ''}
             </strong>
           </div>
+        </div>
+
+        {/* Pie Sutil: Remitente Predeterminado (Informativo, 0 estorbo) */}
+        <div className="rotulo-fixed-remitente-micro">
+          <i className="fa-solid fa-shield-halved" style={{ color: '#38bdf8' }}></i>
+          <span>Remitente: <strong>AMEX COURIER PERÚ</strong> (automático)</span>
         </div>
       </div>
     </div>
