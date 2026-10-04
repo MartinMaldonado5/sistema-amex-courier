@@ -8,9 +8,7 @@ on:
     paths:
       - 'Dockerfile'
       - '.dockerignore'
-      - 'Automatizador_Inventario_AMEX_WhatsApp/processor/**'
-      - 'Automatizador_Inventario_AMEX_WhatsApp/worker/**'
-      - 'Automatizador_Inventario_AMEX_WhatsApp/assets/**'
+      - 'worker/**'
       - '.github/workflows/worker-docker-build.yml'
   workflow_dispatch:
 

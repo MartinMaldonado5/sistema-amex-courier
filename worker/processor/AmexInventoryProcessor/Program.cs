@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Xml;
@@ -36,17 +37,40 @@ internal static class Program
     private sealed record UnmatchedRecord(string Wr, int Row);
     private enum CellKind { Blank, Text, Number, Boolean, Error }
 
+    private sealed class CachedSourceData
+    {
+        public Dictionary<string, SourceRecord> Lookup { get; } = new(StringComparer.Ordinal);
+        public long SourceRows { get; set; }
+        public long DuplicateRows { get; set; }
+        public Dictionary<string, int> DuplicateCounts { get; } = new(StringComparer.Ordinal);
+        public List<WorkbookValidation> Validations { get; } = new(4);
+        public Dictionary<string, long> FileMtimes { get; } = new(StringComparer.Ordinal);
+        public DateTime LastWarmup { get; set; }
+    }
+
+    private static readonly object CacheLock = new();
+    private static CachedSourceData GlobalCache = new();
+
     private static int Main(string[] args)
     {
+        if (args.Length > 0 && (args[0] == "--daemon" || args[0] == "--server"))
+        {
+            int port = 10001;
+            if (args.Length > 1 && int.TryParse(args[1], out int p)) port = p;
+            RunDaemon(port);
+            return 0;
+        }
+
         if (args.Length != 6)
         {
             Console.Error.WriteLine("Uso: AmexInventoryProcessor <inventario.xlsx> <entregado.xlsx> <enviado.xlsx> <recibido.xlsx> <salida.xlsx> <sin-coincidencia.csv>");
+            Console.Error.WriteLine("O bien: AmexInventoryProcessor --daemon [puerto]");
             return 2;
         }
 
         try
         {
-            Run(args);
+            RunCli(args);
             return 0;
         }
         catch (Exception ex)
@@ -56,12 +80,133 @@ internal static class Program
         }
     }
 
-    private static void Run(string[] args)
+    private static void RunCli(string[] args)
     {
         string inventoryPath = Path.GetFullPath(args[0]);
         string[] sourcePaths = args.Skip(1).Take(3).Select(Path.GetFullPath).ToArray();
         string outputPath = Path.GetFullPath(args[4]);
         string unmatchedCsvPath = Path.GetFullPath(args[5]);
+
+        var report = ProcessInventory(inventoryPath, sourcePaths, outputPath, unmatchedCsvPath, ReportProgress);
+        Console.Out.WriteLine(JsonSerializer.Serialize(report, JsonOptions));
+    }
+
+    private static CachedSourceData WarmUpSources(string[] sourcePaths, Action<string, string>? onStage = null)
+    {
+        lock (CacheLock)
+        {
+            bool dirty = false;
+            foreach (var p in sourcePaths)
+            {
+                if (!File.Exists(p)) continue;
+                long curTicks = File.GetLastWriteTimeUtc(p).Ticks;
+                if (!GlobalCache.FileMtimes.TryGetValue(p, out long savedTicks) || savedTicks != curTicks)
+                {
+                    dirty = true;
+                    break;
+                }
+            }
+
+            if (!dirty && GlobalCache.Lookup.Count > 0)
+            {
+                return GlobalCache;
+            }
+
+            var newCache = new CachedSourceData();
+            string[] sourceStageIds = ["reading-delivered", "reading-sent", "reading-received"];
+
+            for (int fileIndex = 0; fileIndex < sourcePaths.Length; fileIndex++)
+            {
+                string sourcePath = sourcePaths[fileIndex];
+                if (!File.Exists(sourcePath)) continue;
+
+                string stageId = fileIndex < sourceStageIds.Length ? sourceStageIds[fileIndex] : "reading-source";
+                onStage?.Invoke(stageId, $"Buscando encabezados y leyendo {Path.GetFileName(sourcePath)}.");
+
+                ValidateXlsxContainer(sourcePath);
+                using SpreadsheetDocument document = SpreadsheetDocument.Open(sourcePath, false);
+                WorkbookPart workbookPart = document.WorkbookPart ?? throw new InvalidDataException("The source workbook has no workbook part.");
+                WorksheetInfo firstWorksheet = FirstWorksheetInfo(workbookPart);
+                WorksheetPart worksheetPart = firstWorksheet.Part;
+                List<string> sharedStrings = ReadSharedStrings(workbookPart.SharedStringTablePart);
+                HeaderInfo? headers = null;
+                WorkbookValidation? validation = null;
+                int[] selectedSourceColumns = [];
+                int firstUsedRow = 0;
+                long scannedRows = 0;
+
+                foreach (XElement row in ReadRows(worksheetPart))
+                {
+                    scannedRows++;
+                    int rowNumber = RowNumber(row);
+                    if (firstUsedRow == 0 && row.Elements(MainNs + "c").Any())
+                        firstUsedRow = rowNumber;
+                    if (headers is null)
+                    {
+                        if (firstUsedRow > 0 && rowNumber > firstUsedRow + 24)
+                            throw new InvalidDataException($"No se encontraron los encabezados requeridos en '{Path.GetFileName(sourcePath)}'.");
+                        headers = TryFindHeaders(row, SourceHeaders, sharedStrings);
+                        if (headers is null) continue;
+                        selectedSourceColumns = SourceHeaders
+                            .Select(header => headers.Columns[header])
+                            .Concat(headers.Columns.ContainsKey("MODIFICADO") ? [headers.Columns["MODIFICADO"]] : [])
+                            .ToArray();
+                        validation = CreateValidation(sourcePath, firstWorksheet.Name, headers, SourceHeaders, includeModified: true);
+                        newCache.Validations.Add(validation);
+                        continue;
+                    }
+
+                    if (rowNumber <= headers.Row) continue;
+
+                    Dictionary<int, CellData> values = ReadRowValues(row, sharedStrings, selectedSourceColumns);
+                    string? key = GetKey(values, headers.Columns["WR"]);
+                    if (key is null) continue;
+
+                    newCache.SourceRows++;
+                    double modified = headers.Columns.TryGetValue("MODIFICADO", out int modifiedColumn)
+                        && values.TryGetValue(modifiedColumn, out CellData? modifiedValue)
+                            ? DateRank(modifiedValue)
+                            : 0d;
+
+                    var record = new SourceRecord(
+                        GetValue(values, headers.Columns["TRACKING"]),
+                        GetValue(values, headers.Columns["CLIENTE"]),
+                        GetValue(values, headers.Columns["TIPOPAQUETE"]),
+                        GetValue(values, headers.Columns["PESO"]),
+                        GetValue(values, headers.Columns["ESTADO"]),
+                        modified,
+                        Path.GetFileName(sourcePath));
+
+                    if (newCache.Lookup.TryGetValue(key, out SourceRecord? previous))
+                    {
+                        newCache.DuplicateRows++;
+                        newCache.DuplicateCounts[key] = newCache.DuplicateCounts.GetValueOrDefault(key) + 1;
+                        if (modified > previous.Modified)
+                            newCache.Lookup[key] = record;
+                    }
+                    else
+                    {
+                        newCache.Lookup.Add(key, record);
+                    }
+                }
+
+                newCache.FileMtimes[sourcePath] = File.GetLastWriteTimeUtc(sourcePath).Ticks;
+                onStage?.Invoke(stageId, $"{Path.GetFileName(sourcePath)}: {scannedRows:N0} filas recorridas.");
+            }
+
+            newCache.LastWarmup = DateTime.UtcNow;
+            GlobalCache = newCache;
+            return GlobalCache;
+        }
+    }
+
+    private static object ProcessInventory(
+        string inventoryPath,
+        string[] sourcePaths,
+        string outputPath,
+        string unmatchedCsvPath,
+        Action<string, string, long?, WorkbookValidation?>? onProgress = null)
+    {
         if (string.Equals(inventoryPath, outputPath, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("The output path cannot overwrite the selected inventory.");
 
@@ -79,7 +224,7 @@ internal static class Program
                 stageDurations[activeStage] = Math.Round(stageWatch.Elapsed.TotalSeconds, 2);
             activeStage = stage;
             stageWatch.Restart();
-            ReportProgress(stage, message);
+            onProgress?.Invoke(stage, message, null, null);
         }
 
         void FinishStage()
@@ -91,106 +236,12 @@ internal static class Program
             }
         }
 
-        BeginStage("validating", "Validando la estructura de los cuatro archivos Excel.");
+        BeginStage("validating", "Validando la estructura del inventario y fuentes.");
         ValidateXlsxContainer(inventoryPath);
-        foreach (string sourcePath in sourcePaths)
-            ValidateXlsxContainer(sourcePath);
 
-        var readWatch = new Stopwatch();
-        var lookup = new Dictionary<string, SourceRecord>(StringComparer.Ordinal);
-        long sourceRows = 0;
-        long duplicateRows = 0;
-        var duplicateCounts = new Dictionary<string, int>(StringComparer.Ordinal);
-        string[] sourceStageIds = ["reading-delivered", "reading-sent", "reading-received"];
-
-        for (int fileIndex = 0; fileIndex < sourcePaths.Length; fileIndex++)
-        {
-            string sourcePath = sourcePaths[fileIndex];
-            string sourceStage = sourceStageIds[fileIndex];
-            BeginStage(sourceStage, $"Buscando encabezados y leyendo {Path.GetFileName(sourcePath)}.");
-            using SpreadsheetDocument document = SpreadsheetDocument.Open(sourcePath, false);
-            WorkbookPart workbookPart = document.WorkbookPart ?? throw new InvalidDataException("The source workbook has no workbook part.");
-            WorksheetInfo firstWorksheet = FirstWorksheetInfo(workbookPart);
-            WorksheetPart worksheetPart = firstWorksheet.Part;
-            List<string> sharedStrings = ReadSharedStrings(workbookPart.SharedStringTablePart);
-            HeaderInfo? headers = null;
-            WorkbookValidation? validation = null;
-            int[] selectedSourceColumns = [];
-            int firstUsedRow = 0;
-            long scannedRows = 0;
-
-            readWatch.Start();
-            foreach (XElement row in ReadRows(worksheetPart))
-            {
-                scannedRows++;
-                if (scannedRows % 10_000 == 0)
-                    ReportProgress(sourceStage, $"Leyendo {Path.GetFileName(sourcePath)}: {scannedRows:N0} filas recorridas.", scannedRows, validation);
-                int rowNumber = RowNumber(row);
-                if (firstUsedRow == 0 && row.Elements(MainNs + "c").Any())
-                    firstUsedRow = rowNumber;
-                if (headers is null)
-                {
-                    if (firstUsedRow > 0 && rowNumber > firstUsedRow + 24)
-                        throw new InvalidDataException($"No se encontraron los encabezados requeridos en '{Path.GetFileName(sourcePath)}'.");
-                    headers = TryFindHeaders(row, SourceHeaders, sharedStrings);
-                    if (headers is null)
-                        continue;
-                    selectedSourceColumns = SourceHeaders
-                        .Select(header => headers.Columns[header])
-                        .Concat(headers.Columns.ContainsKey("MODIFICADO") ? [headers.Columns["MODIFICADO"]] : [])
-                        .ToArray();
-                    validation = CreateValidation(sourcePath, firstWorksheet.Name, headers, SourceHeaders, includeModified: true);
-                    inputValidations.Add(validation);
-                    ReportProgress(
-                        sourceStage,
-                        $"Hoja '{firstWorksheet.Name}': encabezados encontrados en fila {headers.Row}; leyendo filas.",
-                        scannedRows,
-                        validation);
-                    continue;
-                }
-
-                if (rowNumber <= headers.Row)
-                    continue;
-
-                Dictionary<int, CellData> values = ReadRowValues(row, sharedStrings, selectedSourceColumns);
-                string? key = GetKey(values, headers.Columns["WR"]);
-                if (key is null)
-                    continue;
-
-                sourceRows++;
-                double modified = headers.Columns.TryGetValue("MODIFICADO", out int modifiedColumn)
-                    && values.TryGetValue(modifiedColumn, out CellData? modifiedValue)
-                        ? DateRank(modifiedValue)
-                        : 0d;
-
-                var record = new SourceRecord(
-                    GetValue(values, headers.Columns["TRACKING"]),
-                    GetValue(values, headers.Columns["CLIENTE"]),
-                    GetValue(values, headers.Columns["TIPOPAQUETE"]),
-                    GetValue(values, headers.Columns["PESO"]),
-                    GetValue(values, headers.Columns["ESTADO"]),
-                    modified,
-                    Path.GetFileName(sourcePath));
-
-                if (lookup.TryGetValue(key, out SourceRecord? previous))
-                {
-                    duplicateRows++;
-                    duplicateCounts[key] = duplicateCounts.GetValueOrDefault(key) + 1;
-                    if (modified > previous.Modified)
-                        lookup[key] = record;
-                }
-                else
-                {
-                    lookup.Add(key, record);
-                }
-
-            }
-
-            if (headers is null)
-                throw new InvalidDataException($"No se encontraron los encabezados requeridos en '{Path.GetFileName(sourcePath)}'.");
-            ReportProgress(sourceStage, $"{Path.GetFileName(sourcePath)}: {scannedRows:N0} filas recorridas.", scannedRows, validation);
-            readWatch.Stop();
-        }
+        // Precalentamiento de fuentes TIB (0ms si el cache ya está en RAM y no hubo cambios)
+        CachedSourceData cache = WarmUpSources(sourcePaths, (st, msg) => BeginStage(st, msg));
+        inputValidations.AddRange(cache.Validations);
 
         BeginStage("validating-inventory", "Buscando la hoja y las columnas del inventario.");
         using (SpreadsheetDocument inventoryDocument = SpreadsheetDocument.Open(inventoryPath, false))
@@ -202,11 +253,8 @@ internal static class Program
             HeaderInfo headers = FindHeaders(worksheetPart, InventoryHeaders, sharedStrings, Path.GetFileName(inventoryPath));
             WorkbookValidation inventoryValidation = CreateValidation(inventoryPath, firstWorksheet.Name, headers, InventoryHeaders);
             inputValidations.Add(inventoryValidation);
-            ReportProgress(
-                "validating-inventory",
-                $"Hoja '{firstWorksheet.Name}': encabezados encontrados en fila {headers.Row}.",
-                0,
-                inventoryValidation);
+            onProgress?.Invoke("validating-inventory", $"Hoja '{firstWorksheet.Name}': encabezados encontrados en fila {headers.Row}.", 0, inventoryValidation);
+
             BeginStage("matching", "Cruzando los WR y completando las filas del inventario.");
 
             string outputDirectory = Path.GetDirectoryName(outputPath) ?? Directory.GetCurrentDirectory();
@@ -226,10 +274,10 @@ internal static class Program
                     entryName,
                     headers,
                     sharedStrings,
-                    lookup,
+                    cache.Lookup,
                     workingCsvPath,
-                    rows => ReportProgress("matching", $"Cruzando el inventario: {rows:N0} filas recorridas.", rows));
-                ReportProgress("matching", $"Cruce listo: {counts.Matched:N0} coincidencias y {counts.Unmatched:N0} sin coincidencia.", counts.Total);
+                    rows => onProgress?.Invoke("matching", $"Cruzando el inventario: {rows:N0} filas recorridas.", rows, null));
+                onProgress?.Invoke("matching", $"Cruce listo: {counts.Matched:N0} coincidencias y {counts.Unmatched:N0} sin coincidencia.", counts.Total, null);
                 BeginStage("verifying", "Verificando y guardando el Excel completado.");
                 using (SpreadsheetDocument check = SpreadsheetDocument.Open(workingOutputPath, false))
                     _ = FirstWorksheet(check.WorkbookPart ?? throw new InvalidDataException("The generated workbook has no workbook part."));
@@ -246,22 +294,22 @@ internal static class Program
             totalWatch.Stop();
             double cpuSeconds = Math.Round((currentProcess.TotalProcessorTime - cpuAtStart).TotalSeconds, 2);
             double peakWorkingSetMb = Math.Round(currentProcess.PeakWorkingSet64 / (1024d * 1024d), 1);
-            var duplicateDetails = duplicateCounts
+            var duplicateDetails = cache.DuplicateCounts
                 .OrderBy(pair => pair.Key, StringComparer.Ordinal)
                 .Take(DuplicateSampleLimit)
-                .Select(pair => new { wr = pair.Key, rows = pair.Value + 1, chosenSource = lookup[pair.Key].Source })
+                .Select(pair => new { wr = pair.Key, rows = pair.Value + 1, chosenSource = cache.Lookup.TryGetValue(pair.Key, out var rec) ? rec.Source : "" })
                 .ToArray();
 
-            var report = new
+            return new
             {
                 ok = true,
                 totalInventory = counts.Total,
                 matched = counts.Matched,
                 unmatchedCount = counts.Unmatched,
                 unmatchedSample = counts.UnmatchedSample,
-                sourceRows,
-                uniqueWR = lookup.Count,
-                duplicateRows,
+                sourceRows = cache.SourceRows,
+                uniqueWR = cache.Lookup.Count,
+                duplicateRows = cache.DuplicateRows,
                 duplicateWRs = duplicateDetails,
                 inputValidations,
                 stageSeconds = stageDurations,
@@ -269,7 +317,162 @@ internal static class Program
                 cpuSeconds,
                 peakWorkingSetMb,
             };
-            Console.Out.WriteLine(JsonSerializer.Serialize(report, JsonOptions));
+        }
+    }
+
+    private static void RunDaemon(int port)
+    {
+        string prefix = $"http://127.0.0.1:{port}/";
+        using var listener = new HttpListener();
+        listener.Prefixes.Add(prefix);
+        listener.Start();
+        Console.WriteLine($"[daemon] AmexInventoryProcessor Daemon escuchando en {prefix}");
+
+        string[] defaultSources = [
+            "/app/cache/tib-active/delivered.xlsx",
+            "/app/cache/tib-active/sent.xlsx",
+            "/app/cache/tib-active/received.xlsx"
+        ];
+        if (defaultSources.Any(File.Exists))
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    Console.WriteLine("[daemon-boot] Iniciando precalentamiento automático de fuentes...");
+                    var sw = Stopwatch.StartNew();
+                    WarmUpSources(defaultSources.Where(File.Exists).ToArray(), (st, msg) => Console.WriteLine($"[daemon-warmup] {st}: {msg}"));
+                    Console.WriteLine($"[daemon-boot] Precalentamiento completado en {sw.ElapsedMilliseconds}ms. {GlobalCache.Lookup.Count:N0} WRs listos en RAM.");
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"[daemon-boot-error] {ex.Message}");
+                }
+            });
+        }
+
+        while (listener.IsListening)
+        {
+            try
+            {
+                var context = listener.GetContext();
+                ThreadPool.QueueUserWorkItem(_ => HandleDaemonRequest(context));
+            }
+            catch (Exception) when (!listener.IsListening)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[daemon-error] {ex.Message}");
+            }
+        }
+    }
+
+    private sealed record ProcessRequest(string? InventoryPath, string[]? SourcePaths, string? OutputPath, string? UnmatchedCsvPath);
+    private sealed record WarmupRequest(string[]? SourcePaths);
+
+    private static void HandleDaemonRequest(HttpListenerContext context)
+    {
+        var req = context.Request;
+        var res = context.Response;
+        res.Headers.Add("Access-Control-Allow-Origin", "*");
+
+        try
+        {
+            if (req.HttpMethod == "OPTIONS")
+            {
+                res.StatusCode = 204;
+                res.Close();
+                return;
+            }
+
+            string path = req.Url?.AbsolutePath ?? "/";
+
+            if (req.HttpMethod == "GET" && path == "/health")
+            {
+                var health = new
+                {
+                    ok = true,
+                    status = "daemon_online",
+                    isWarm = GlobalCache.Lookup.Count > 0,
+                    totalWrs = GlobalCache.Lookup.Count,
+                    totalSourceRows = GlobalCache.SourceRows,
+                    lastWarmup = GlobalCache.LastWarmup,
+                };
+                SendDaemonJson(res, 200, health);
+                return;
+            }
+
+            if (req.HttpMethod == "POST" && path == "/warmup")
+            {
+                using var reader = new StreamReader(req.InputStream, Encoding.UTF8);
+                string body = reader.ReadToEnd();
+                var parsed = string.IsNullOrWhiteSpace(body) ? null : JsonSerializer.Deserialize<WarmupRequest>(body, JsonOptions);
+                string[] sources = parsed?.SourcePaths ?? [
+                    "/app/cache/tib-active/delivered.xlsx",
+                    "/app/cache/tib-active/sent.xlsx",
+                    "/app/cache/tib-active/received.xlsx"
+                ];
+
+                var sw = Stopwatch.StartNew();
+                var cache = WarmUpSources(sources.Where(File.Exists).ToArray());
+                var resp = new
+                {
+                    ok = true,
+                    status = "warm",
+                    totalWrs = cache.Lookup.Count,
+                    sourceRows = cache.SourceRows,
+                    elapsedMs = sw.ElapsedMilliseconds,
+                };
+                SendDaemonJson(res, 200, resp);
+                return;
+            }
+
+            if (req.HttpMethod == "POST" && path == "/process")
+            {
+                using var reader = new StreamReader(req.InputStream, Encoding.UTF8);
+                string body = reader.ReadToEnd();
+                var pReq = JsonSerializer.Deserialize<ProcessRequest>(body, JsonOptions)
+                    ?? throw new InvalidOperationException("Cuerpo de petición inválido.");
+
+                if (string.IsNullOrWhiteSpace(pReq.InventoryPath) || string.IsNullOrWhiteSpace(pReq.OutputPath))
+                    throw new InvalidOperationException("InventoryPath y OutputPath son requeridos.");
+
+                var result = ProcessInventory(
+                    pReq.InventoryPath,
+                    pReq.SourcePaths ?? [],
+                    pReq.OutputPath,
+                    pReq.UnmatchedCsvPath ?? (pReq.OutputPath + ".unmatched.csv"));
+
+                SendDaemonJson(res, 200, result);
+                return;
+            }
+
+            SendDaemonJson(res, 404, new { ok = false, error = "Ruta no encontrada" });
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[daemon-request-error] {ex.Message}");
+            SendDaemonJson(res, 500, new { ok = false, error = ex.Message });
+        }
+    }
+
+    private static void SendDaemonJson(HttpListenerResponse response, int statusCode, object data)
+    {
+        try
+        {
+            byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(data, JsonOptions);
+            response.StatusCode = statusCode;
+            response.ContentType = "application/json; charset=utf-8";
+            response.ContentLength64 = bytes.Length;
+            using Stream output = response.OutputStream;
+            output.Write(bytes, 0, bytes.Length);
+        }
+        catch { }
+        finally
+        {
+            try { response.Close(); } catch { }
         }
     }
 

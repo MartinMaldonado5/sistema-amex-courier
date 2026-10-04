@@ -344,6 +344,7 @@ async function getOrSyncCachedTibFile(tipo, r2Key, originalName) {
     try {
       console.log(`[worker] [AUTO-WARMUP 🚀] Sincronización completada. Precalentando índice en RAM para ${tipo}...`);
       getOrBuildTibLookup(tipo);
+      notifyProcessorDaemonWarmup();
     } catch (warmErr) {
       console.warn(`[worker] [AUTO-WARMUP ⚠️] Error en precalentamiento para ${tipo}:`, warmErr.message);
     }
@@ -436,6 +437,9 @@ function getOrBuildTibLookup(tipo = 'sent') {
  * Se invoca al iniciar o reiniciar el contenedor amex-worker para garantizar CERO COLD-START.
  */
 async function bootWarmUpTibIndices() {
+  // Asegurar que el daemon residente en RAM de C# esté activo
+  startProcessorDaemon();
+
   console.log('[worker] [BOOT-WARMUP 🚀] Verificando archivos TIB en disco para precalentamiento de RAM...');
   for (const tipo of ['sent', 'delivered', 'received']) {
     try {
@@ -448,6 +452,11 @@ async function bootWarmUpTibIndices() {
       console.warn(`[worker] [BOOT-WARMUP ⚠️] No se pudo precalentar ${tipo}:`, err.message);
     }
   }
+
+  // Notificar al daemon C# para que cargue los 3 archivos en su RAM
+  setTimeout(() => {
+    notifyProcessorDaemonWarmup();
+  }, 1000);
 }
 
 function cruzarFilasCobros(filas = [], options = {}) {
@@ -581,9 +590,127 @@ function cruzarFilasCobros(filas = [], options = {}) {
   };
 }
 
-// ------------------------------------------------------------- processor
+// ------------------------------------------------------------- processor daemon & cli
 
-function runProcessor(args, onProgress) {
+const PROCESSOR_PORT = process.env.PROCESSOR_PORT || 10001;
+const DAEMON_URL = `http://127.0.0.1:${PROCESSOR_PORT}`;
+let daemonProcess = null;
+let daemonReady = false;
+
+function startProcessorDaemon() {
+  if (daemonProcess && !daemonProcess.killed) return;
+  console.log(`[worker] [DAEMON 🚀] Iniciando AmexInventoryProcessor en modo daemon (puerto ${PROCESSOR_PORT})...`);
+  try {
+    daemonProcess = spawn(PROCESSOR, ['--daemon', String(PROCESSOR_PORT)], {
+      windowsHide: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    daemonProcess.stdout.setEncoding('utf8');
+    daemonProcess.stderr.setEncoding('utf8');
+
+    daemonProcess.stdout.on('data', (data) => {
+      for (const line of data.split('\n')) {
+        const trimmed = line.trim();
+        if (trimmed) console.log(`[daemon] ${trimmed}`);
+      }
+    });
+
+    daemonProcess.stderr.on('data', (data) => {
+      for (const line of data.split('\n')) {
+        const trimmed = line.trim();
+        if (trimmed) console.warn(`[daemon] ${trimmed}`);
+      }
+    });
+
+    daemonProcess.on('error', (err) => {
+      console.warn(`[daemon] Error al iniciar daemon C#: ${err.message}`);
+      daemonProcess = null;
+      daemonReady = false;
+    });
+
+    daemonProcess.on('exit', (code, signal) => {
+      console.warn(`[daemon] Proceso daemon C# finalizó (code=${code}, signal=${signal}).`);
+      daemonProcess = null;
+      daemonReady = false;
+    });
+  } catch (err) {
+    console.warn(`[daemon] No se pudo lanzar el daemon C#: ${err.message}`);
+  }
+}
+
+async function checkProcessorDaemonReady(retries = 2) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(`${DAEMON_URL}/health`, { signal: AbortSignal.timeout(1000) });
+      if (res.ok) {
+        daemonReady = true;
+        return true;
+      }
+    } catch {
+      if (i < retries - 1) await new Promise((r) => setTimeout(r, 200));
+    }
+  }
+  return false;
+}
+
+function notifyProcessorDaemonWarmup() {
+  fetch(`${DAEMON_URL}/warmup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sourcePaths: [
+        getTibCacheFilePath('delivered'),
+        getTibCacheFilePath('sent'),
+        getTibCacheFilePath('received'),
+      ],
+    }),
+    signal: AbortSignal.timeout(60000),
+  }).catch((err) => {
+    console.warn('[worker] Aviso warmup daemon C#:', err.message);
+  });
+}
+
+async function runProcessor(args, onProgress) {
+  // 1. Intentar ejecución ultra-rápida en memoria RAM vía Daemon C# (Zero Cold-Start)
+  try {
+    const isReady = await checkProcessorDaemonReady(2);
+    if (isReady) {
+      console.log('[worker] [DAEMON ⚡] Procesando inventario directamente en RAM (Zero Cold-Start)...');
+      if (typeof onProgress === 'function') {
+        onProgress({ stage: 'matching', message: 'Cruzando inventario directamente en memoria RAM...' });
+      }
+      const t0 = Date.now();
+      const res = await fetch(`${DAEMON_URL}/process`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          inventoryPath: args[0],
+          sourcePaths: args.slice(1, 4),
+          outputPath: args[4],
+          unmatchedCsvPath: args[5],
+        }),
+        signal: AbortSignal.timeout(PROCESS_TIMEOUT_MS),
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        if (result && result.ok) {
+          const duration = Date.now() - t0;
+          console.log(`[worker] [DAEMON COMPLETADO ⚡] Inventario procesado en RAM en ${duration}ms! (coincidencias: ${result.matched}/${result.totalInventory})`);
+          return result;
+        }
+      }
+    }
+  } catch (daemonErr) {
+    console.warn(`[worker] [DAEMON FALLBACK ⚠️] Falló llamada a daemon C# (${daemonErr.message}). Usando CLI tradicional...`);
+  }
+
+  // 2. Fallback garantizado: ejecución CLI spawn tradicional
+  return runProcessorCli(args, onProgress);
+}
+
+function runProcessorCli(args, onProgress) {
   return new Promise((resolve, reject) => {
     const child = spawn(PROCESSOR, args, { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '';
@@ -810,7 +937,7 @@ function readCgroup() {
   return info;
 }
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -915,6 +1042,43 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Endpoint de precalentamiento para Inventario (C# Daemon): GET/POST /prewarm-inventario
+  if (parsedUrl.pathname === '/prewarm-inventario') {
+    try {
+      const isReady = await checkProcessorDaemonReady(1);
+      if (!isReady) {
+        startProcessorDaemon();
+      }
+      const warmRes = await fetch(`${DAEMON_URL}/warmup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sourcePaths: [
+            getTibCacheFilePath('delivered'),
+            getTibCacheFilePath('sent'),
+            getTibCacheFilePath('received'),
+          ],
+        }),
+        signal: AbortSignal.timeout(60000),
+      });
+
+      if (warmRes.ok) {
+        const warmData = await warmRes.json();
+        const respBody = Buffer.from(JSON.stringify(warmData));
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': respBody.length });
+        res.end(respBody);
+        return;
+      }
+    } catch (err) {
+      console.warn('[worker] Error en /prewarm-inventario:', err.message);
+    }
+
+    const fallbackResp = Buffer.from(JSON.stringify({ ok: false, message: 'Daemon no respondió a tiempo.' }));
+    res.writeHead(500, { 'Content-Type': 'application/json', 'Content-Length': fallbackResp.length });
+    res.end(fallbackResp);
+    return;
+  }
+
   // Endpoint para despertar al worker inmediatamente: POST /trigger-job
   if (req.method === 'POST' && parsedUrl.pathname === '/trigger-job') {
     triggerImmediatePoll();
@@ -1008,6 +1172,7 @@ const server = http.createServer((req, res) => {
     } : { isWarm: false };
   }
 
+  const daemonAlive = await checkProcessorDaemonReady(1);
   const uptimeSeconds = Math.round((Date.now() - workerStartTime) / 1000);
 
   const body = Buffer.from(JSON.stringify({
@@ -1018,6 +1183,8 @@ const server = http.createServer((req, res) => {
     jobsProcessed: telemetry.jobsProcessed,
     lastJobTime: telemetry.lastJobTime,
     processor: fs.existsSync(PROCESSOR) ? 'openxml' : 'missing',
+    processorDaemon: daemonAlive ? 'online' : 'offline',
+    processorDaemonPid: daemonProcess ? daemonProcess.pid : null,
     nodeRssMB: Math.round(mem.rss / 1024 / 1024),
     nodeHeapUsedMB: Math.round(mem.heapUsed / 1024 / 1024),
     tibCacheDir: TIB_CACHE_DIR,
