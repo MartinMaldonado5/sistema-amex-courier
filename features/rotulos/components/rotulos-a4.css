@@ -2393,10 +2393,10 @@
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  background: #080d1a;
+  background: #ffffff;
   border: none;
   border-radius: 0;
-  padding: 14px 18px 28px 18px;
+  padding: 0;
   margin: 0;
   box-shadow: none;
   box-sizing: border-box;
@@ -2411,16 +2411,16 @@
 }
 
 .rotulos-preview-container::-webkit-scrollbar-track {
-  background: #080d1a;
+  background: #f1f5f9;
 }
 
 .rotulos-preview-container::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.18);
+  background: #cbd5e1;
   border-radius: 4px;
 }
 
 .rotulos-preview-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(56, 189, 248, 0.4);
+  background: #94a3b8;
 }
 
 /* Hoja A4 física en pantalla (adaptativa, nítida y sin recorte de texto) */
@@ -2437,18 +2437,19 @@
   user-select: none;
 }
 
-/* Estilo exclusivo de la hoja en pantalla: sombra elegante y altura natural */
+/* Estilo exclusivo de la hoja en pantalla: ocupa el 100% lateral sin marco ni caja trasera */
 .rotulos-a4-sheet.screen-only-sheet {
-  max-width: 860px;
-  margin: 0 auto;
-  border-radius: 8px;
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
   overflow: visible;
   height: auto;
   min-height: auto;
   transform-origin: top center;
-  transition: transform 0.2s ease;
+  transition: none;
 }
 
 /* Cada franja individual de 5.94 cm (1/5 de la hoja A4) */
@@ -2468,14 +2469,17 @@
 
 .screen-only-sheet .rotulo-strip-preview {
   flex: 0 0 auto;
+  width: 100%;
+  box-sizing: border-box;
   height: auto;
   min-height: 154px;
-  padding: 14px 22px;
+  padding: 16px 30px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 8px;
   overflow: visible;
+  border-bottom: 1.5px dashed #cbd5e1;
 }
 
 .rotulo-strip-preview:last-child {
@@ -2498,7 +2502,7 @@
 .cut-guide-indicator {
   position: absolute;
   bottom: -9px;
-  left: 12px;
+  left: 24px;
   font-size: 0.62rem;
   font-weight: 800;
   color: #64748b;
