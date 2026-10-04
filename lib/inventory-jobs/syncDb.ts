@@ -40,17 +40,11 @@ function normalizeKey(str: string): string {
 function mapEstadoEntrega(rawEstado: string, currentUbicacion?: string): string {
   const norm = rawEstado.trim().toUpperCase();
   if (norm.includes('ENTREGADO') || norm.includes('RECOGIDO')) return 'Entregado';
-  if (
-    norm.includes('RUTA') ||
-    norm.includes('REPARTO') ||
-    norm.includes('ENVIADO') ||
-    norm.includes('TRANSITO') ||
-    norm.includes('DESPACHADO')
-  ) {
-    return 'EnRutaCarroAmex';
-  }
+  if (norm.includes('ENVIADO') || norm.includes('DESPACHADO')) return 'Enviado';
+  if (norm.includes('RECIBIDO')) return 'Recibido';
+  if (norm.includes('RUTA') || norm.includes('REPARTO') || norm.includes('TRANSITO')) return 'EnRutaCarroAmex';
   if (norm.includes('RECOJO') || norm.includes('LISTO') || norm.includes('OFICINA')) return 'ListoParaRecojo';
-  if (norm.includes('ALMACEN') || norm.includes('RECIBIDO')) return 'EnAlmacen';
+  if (norm.includes('ALMACEN')) return 'EnAlmacen';
   if (currentUbicacion === 'Entregado') return 'Entregado';
   return 'EnAlmacen';
 }

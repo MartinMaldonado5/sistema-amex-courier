@@ -2,7 +2,7 @@
 
 export type TipoUbicacion = 'AmexLince' | 'Entregado';
 export type TipoMetodoEntrega = 'RecojoLince' | 'CarroAmexDomicilio' | 'AgenciaProvincia';
-export type TipoEstadoEntrega = 'EnAlmacen' | 'EnRutaCarroAmex' | 'EntregadoDomicilio' | 'RecogidoAlmacen' | 'ListoParaRecojo' | 'Entregado';
+export type TipoEstadoEntrega = 'EnAlmacen' | 'Enviado' | 'Recibido' | 'EnRutaCarroAmex' | 'EntregadoDomicilio' | 'RecogidoAlmacen' | 'ListoParaRecojo' | 'Entregado' | string;
 export type TipoEstadoAmex = 'recibido' | 'en_almacen' | 'listo_recojo' | 'en_ruta' | 'entregado' | string;
 export type TipoMonedaPago = 'PEN' | 'USD';
 

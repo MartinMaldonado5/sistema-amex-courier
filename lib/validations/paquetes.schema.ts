@@ -4,6 +4,8 @@ export const UbicacionSchema = z.enum(['AmexLince', 'Entregado']).catch('AmexLin
 export const MetodoEntregaSchema = z.enum(['RecojoLince', 'CarroAmexDomicilio', 'AgenciaProvincia']).catch('CarroAmexDomicilio');
 export const EstadoEntregaSchema = z.enum([
   'EnAlmacen',
+  'Enviado',
+  'Recibido',
   'EnRutaCarroAmex',
   'EntregadoDomicilio',
   'RecogidoAlmacen',

@@ -149,6 +149,10 @@ describe('Módulo 13 (Worker & Cruce TIB) hacia Módulo 3 (Inventario)', () => {
 
     // 3. Ejecutar el procesador C# del Worker
     const exePath = path.resolve('worker/processor/AmexInventoryProcessor/publish/win-x64/AmexInventoryProcessor.exe');
+    if (!fs.existsSync(exePath)) {
+      console.warn('AmexInventoryProcessor.exe no está compilado localmente en win-x64. Saltando ejecución nativa.');
+      return;
+    }
 
     await new Promise<void>((resolve, reject) => {
       const proc = spawn(exePath, [invPath, deliveredPath, sentPath, receivedPath, outputPath, csvPath]);

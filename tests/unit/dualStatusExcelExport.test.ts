@@ -33,6 +33,10 @@ describe('Dual Status Label Formatting & Mapping', () => {
     });
 
     it('maps all standard Estado TIB keys accurately', () => {
+      expect(mapEstadoTibLabel('Enviado')).toBe('Enviado');
+      expect(mapEstadoTibLabel('enviado')).toBe('Enviado');
+      expect(mapEstadoTibLabel('Recibido')).toBe('Recibido');
+      expect(mapEstadoTibLabel('recibido')).toBe('Recibido');
       expect(mapEstadoTibLabel('EnAlmacen')).toBe('En Almacén');
       expect(mapEstadoTibLabel('EnRutaCarroAmex')).toBe('En Ruta Carro Amex');
       expect(mapEstadoTibLabel('ListoParaRecojo')).toBe('Listo para Recojo');

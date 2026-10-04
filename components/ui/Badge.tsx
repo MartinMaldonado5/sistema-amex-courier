@@ -31,10 +31,10 @@ function getVariantFromStatus(status?: string): NonNullable<BadgeProps['variant'
   if (!status) return 'slate';
   const s = status.toUpperCase().trim();
 
-  if (s === 'ENALMACEN' || s === 'EN ALMACEN' || s === 'ENTREGADO' || s === 'ENTREGADODOMICILIO' || s === 'RECOGIDOALMACEN' || s === 'ENCONTRADO' || s === 'ESCANEADO') {
+  if (s === 'ENALMACEN' || s === 'EN ALMACEN' || s === 'ENTREGADO' || s === 'ENTREGADODOMICILIO' || s === 'RECOGIDOALMACEN' || s === 'ENCONTRADO' || s === 'ESCANEADO' || s === 'RECIBIDO') {
     return 'green';
   }
-  if (s === 'ENRUTACARROAMEX' || s === 'EN RUTA' || s === 'EN_TRANSITO' || s === 'TRANSITO') {
+  if (s === 'ENVIADO' || s === 'ENRUTACARROAMEX' || s === 'EN RUTA' || s === 'EN_TRANSITO' || s === 'TRANSITO') {
     return 'blue';
   }
   if (s === 'LISTOPARARECOJO' || s === 'PENDIENTE') {

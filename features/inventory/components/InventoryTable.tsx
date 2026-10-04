@@ -299,19 +299,27 @@ export default function InventoryTable({
                           background:
                             pkg.estadoEntrega === 'EntregadoDomicilio' || pkg.estadoEntrega === 'RecogidoAlmacen' || pkg.estadoEntrega === 'Entregado'
                               ? '#dcfce7'
-                              : pkg.estadoEntrega === 'EnRutaCarroAmex'
+                              : pkg.estadoEntrega === 'Enviado' || pkg.estadoEntrega === 'EnRutaCarroAmex'
                               ? '#dbeafe'
+                              : pkg.estadoEntrega === 'Recibido'
+                              ? '#e0f2fe'
                               : '#f8fafc',
                           color:
                             pkg.estadoEntrega === 'EntregadoDomicilio' || pkg.estadoEntrega === 'RecogidoAlmacen' || pkg.estadoEntrega === 'Entregado'
                               ? '#15803d'
-                              : pkg.estadoEntrega === 'EnRutaCarroAmex'
+                              : pkg.estadoEntrega === 'Enviado' || pkg.estadoEntrega === 'EnRutaCarroAmex'
                               ? '#1d4ed8'
+                              : pkg.estadoEntrega === 'Recibido'
+                              ? '#0284c7'
                               : '#64748b',
                           border: '1px solid #e2e8f0'
                         }}
                       >
-                        {pkg.estadoEntrega === 'EnAlmacen'
+                        {pkg.estadoEntrega === 'Enviado'
+                          ? 'Enviado'
+                          : pkg.estadoEntrega === 'Recibido'
+                          ? 'Recibido'
+                          : pkg.estadoEntrega === 'EnAlmacen'
                           ? 'En Almacén'
                           : pkg.estadoEntrega === 'EnRutaCarroAmex'
                           ? 'En Ruta'

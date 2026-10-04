@@ -15,6 +15,8 @@ export interface GeneratedInventory {
 function mapEstadoLabel(estado?: string | null): string {
   if (!estado) return 'En Almacén';
   const norm = estado.trim();
+  if (norm.toLowerCase() === 'enviado' || norm === 'Enviado') return 'Enviado';
+  if (norm.toLowerCase() === 'recibido' || norm === 'Recibido') return 'Recibido';
   if (norm === 'EnAlmacen') return 'En Almacén';
   if (norm === 'EnRutaCarroAmex') return 'En Ruta Carro Amex';
   if (norm === 'ListoParaRecojo') return 'Listo para Recojo';

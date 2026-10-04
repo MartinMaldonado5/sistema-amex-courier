@@ -583,6 +583,8 @@ export default function InventoryToolbar({
                   }}
                 >
                   <option value="ALL">Todos los Estados TIB</option>
+                  <option value="Enviado">Enviado</option>
+                  <option value="Recibido">Recibido</option>
                   <option value="EnAlmacen">En Almacén</option>
                   <option value="ListoParaRecojo">Listo Recojo</option>
                   <option value="EnRutaCarroAmex">En Ruta Carro</option>
