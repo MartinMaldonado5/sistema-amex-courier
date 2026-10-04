@@ -152,10 +152,7 @@ export const RotulosSheetDropdown: React.FC<RotulosSheetDropdownProps> = ({
               <button
                 type="button"
                 className="sheet-dropdown-action-btn add-btn"
-                onClick={() => {
-                  handleAddNewSheet();
-                  setIsOpen(false);
-                }}
+                onClick={handleAddNewSheet}
                 title="Añadir una nueva hoja A4 vacía"
               >
                 <i className="fa-solid fa-plus"></i>
@@ -167,10 +164,7 @@ export const RotulosSheetDropdown: React.FC<RotulosSheetDropdownProps> = ({
               <button
                 type="button"
                 className="sheet-dropdown-action-btn delete-btn"
-                onClick={() => {
-                  handleDeleteCurrentSheet();
-                  setIsOpen(false);
-                }}
+                onClick={handleDeleteCurrentSheet}
                 title={`Eliminar Hoja #${currentSheet}`}
               >
                 <i className="fa-solid fa-trash-can"></i>
