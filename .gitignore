@@ -42,9 +42,10 @@ logs/
 Thumbs.db
 desktop.ini
 
-# Environment / Secrets
+# Environment / Secrets & Vercel
 .env*
 !.env.example
+.vercel/
 certificates/
 askpass.bat
 
