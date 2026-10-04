@@ -2,16 +2,24 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { RotuloSlotData } from '@/lib/rotulos/rotulos-pdf';
-import { DEFAULT_SLOTS, DEFAULT_REMITENTE, MAX_SHEETS, generarTextoBulto } from '../types';
+import { DEFAULT_SLOTS, DEFAULT_REMITENTE, MAX_SHEETS, generarTextoBulto, type CloudSyncStatus, type RotuloHistorialItem } from '../types';
 import { RotulosService } from '../services/rotulos.service';
 import { extractPrimerNombre } from '@/lib/auth/userUtils';
 
-export function useRotulosState(currentUser?: { nombre?: string; email?: string } | null) {
+export function useRotulosState(currentUser?: { nombre?: string; email?: string; id?: string } | null) {
   const [slots, setSlots] = useState<RotuloSlotData[]>(DEFAULT_SLOTS);
   const [activeSlotId, setActiveSlotId] = useState<number>(1);
   const [currentSheet, setCurrentSheet] = useState<number>(1);
   const [isExportingPdf, setIsExportingPdf] = useState<boolean>(false);
   const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
+
+  // Estado de sincronización en la nube (Cloud Sync)
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<CloudSyncStatus>('synced');
+  const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Historial de impresiones y conteo de hoy
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState<boolean>(false);
+  const [todayPrintedCount, setTodayPrintedCount] = useState<number>(0);
 
   // Historial para Deshacer (Undo / Ctrl + Z)
   const [history, setHistory] = useState<RotuloSlotData[][]>([]);
@@ -150,15 +158,51 @@ export function useRotulosState(currentUser?: { nombre?: string; email?: string 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleUndo, history.length]);
 
-  // Cargar slots guardados
-  useEffect(() => {
-    const loaded = RotulosService.loadSlotsFromStorage();
-    if (loaded) {
-      setSlots(loaded);
-      if (loaded[0]?.totalRotulos) setTotalRotulos(String(loaded[0].totalRotulos));
-      if (loaded[0]?.totalCajas) setTotalCajas(String(loaded[0].totalCajas));
+  // Consultar conteo de rótulos impresos hoy
+  const fetchTodayCount = useCallback(async () => {
+    try {
+      const history = await RotulosService.fetchPrintHistory({ fecha: 'hoy', limit: 200 });
+      setTodayPrintedCount(history.length);
+    } catch {
+      // Ignorar error no crítico
     }
   }, []);
+
+  // Cargar slots guardados (Prioridad: Supabase Nube -> Fallback: localStorage)
+  useEffect(() => {
+    let isMounted = true;
+    async function loadInitialData() {
+      fetchTodayCount();
+
+      if (currentUser?.email) {
+        setCloudSyncStatus('saving');
+        const cloudDraft = await RotulosService.loadDraftFromCloud(currentUser.email);
+        if (isMounted && cloudDraft && Array.isArray(cloudDraft.slots) && cloudDraft.slots.length >= 5) {
+          setSlots(cloudDraft.slots);
+          setCurrentSheet(Math.min(currentSheet, cloudDraft.totalHojas));
+          if (cloudDraft.slots[0]?.totalRotulos) setTotalRotulos(String(cloudDraft.slots[0].totalRotulos));
+          if (cloudDraft.slots[0]?.totalCajas) setTotalCajas(String(cloudDraft.slots[0].totalCajas));
+          setCloudSyncStatus('synced');
+          RotulosService.saveSlotsToStorage(cloudDraft.slots);
+          return;
+        }
+      }
+
+      // Si no hay borrador en la nube o no está autenticado, cargar de localStorage
+      const loaded = RotulosService.loadSlotsFromStorage();
+      if (isMounted && loaded) {
+        setSlots(loaded);
+        if (loaded[0]?.totalRotulos) setTotalRotulos(String(loaded[0].totalRotulos));
+        if (loaded[0]?.totalCajas) setTotalCajas(String(loaded[0].totalCajas));
+      }
+      if (isMounted) setCloudSyncStatus('synced');
+    }
+
+    loadInitialData();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser?.email, fetchTodayCount]);
 
   // Sincronizar controles numéricos SOLO cuando cambia el slot activo (elimina bucle y pisado al escribir)
   useEffect(() => {
@@ -195,6 +239,24 @@ export function useRotulosState(currentUser?: { nombre?: string; email?: string 
     }
     setSlots(newSlots);
     RotulosService.saveSlotsToStorage(newSlots);
+
+    // Guardado en tiempo real en la nube (Cloud Sync debounced a 1.5s)
+    if (currentUser?.email) {
+      setCloudSyncStatus('saving');
+      if (autosaveTimerRef.current) {
+        clearTimeout(autosaveTimerRef.current);
+      }
+      autosaveTimerRef.current = setTimeout(async () => {
+        const totalHojas = Math.max(1, Math.ceil(newSlots.length / 5));
+        const ok = await RotulosService.saveDraftToCloud({
+          slots: newSlots,
+          totalHojas,
+          userEmail: currentUser.email!,
+          userId: currentUser?.id
+        });
+        setCloudSyncStatus(ok ? 'synced' : 'error');
+      }, 1500);
+    }
   };
 
   const totalSheets = Math.max(1, Math.ceil(slots.length / 5));
@@ -735,6 +797,20 @@ export function useRotulosState(currentUser?: { nombre?: string; email?: string 
   };
 
   const handlePrintDirect = () => {
+    // Registrar evento de impresión en Supabase
+    RotulosService.recordPrintEvent({
+      slots,
+      tipoAccion: 'IMPRESION_DIRECTA',
+      currentUser
+    })
+      .then((res) => {
+        if (res.success && res.count > 0) {
+          fetchTodayCount();
+          showToast(`🖨️ ${res.count} ${res.count === 1 ? 'rótulo registrado' : 'rótulos registrados'} en historial`);
+        }
+      })
+      .catch((err) => console.warn('Error registrando impresión:', err));
+
     window.print();
   };
 
@@ -742,8 +818,22 @@ export function useRotulosState(currentUser?: { nombre?: string; email?: string 
     try {
       setIsExportingPdf(true);
       const operadorNombre = extractPrimerNombre(currentUser?.nombre, currentUser?.email);
+
+      // Registrar evento en Supabase en paralelo
+      RotulosService.recordPrintEvent({
+        slots,
+        tipoAccion: 'DESCARGA_PDF',
+        currentUser
+      })
+        .then((res) => {
+          if (res.success && res.count > 0) {
+            fetchTodayCount();
+          }
+        })
+        .catch((err) => console.warn('Error registrando descarga PDF:', err));
+
       await RotulosService.generatePdf(slots, totalSheets, operadorNombre);
-      showToast(`📄 ¡PDF A4 (${totalSheets} ${totalSheets === 1 ? 'hoja' : 'hojas'}) descargado exitosamente!`);
+      showToast(`📄 ¡PDF A4 (${totalSheets} ${totalSheets === 1 ? 'hoja' : 'hojas'}) descargado y registrado en historial!`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al generar PDF';
       showToast(`❌ ${msg}`);
@@ -751,6 +841,28 @@ export function useRotulosState(currentUser?: { nombre?: string; email?: string 
       setIsExportingPdf(false);
     }
   };
+
+  // Cargar datos desde el historial hacia el editor activo
+  const handleLoadFromHistory = useCallback((item: RotuloHistorialItem) => {
+    const snap = item.slotSnapshot;
+    updateActiveSlot({
+      nombre: snap?.nombre || item.destinatarioNombre || '',
+      dni: snap?.dni || item.destinatarioDni || '',
+      celular: snap?.celular || item.destinatarioTelefono || '',
+      agencia: snap?.agencia || item.agencia || '',
+      agenciaOtra: snap?.agenciaOtra || item.agenciaOtra || '',
+      destino: snap?.destino || item.destino || '',
+      siglas: snap?.siglas || item.siglas || '',
+      totalRotulos: item.cantidadRotulos || 1,
+      totalCajas: item.totalCajas || '1',
+      observacion: snap?.observacion || item.observacion || ''
+    });
+    setTotalRotulos(String(item.cantidadRotulos || 1));
+    setTotalCajas(String(item.totalCajas || '1'));
+    playSound('complete');
+    showToast(`⚡ Rótulo de "${item.destinatarioNombre}" cargado al espacio #${activeSlotId}`);
+    setIsHistoryModalOpen(false);
+  }, [activeSlotId, playSound, showToast, updateActiveSlot]);
 
   const handlePasteCapture = (e: React.ClipboardEvent<HTMLTextAreaElement | HTMLDivElement>) => {
     setIsAiCardExpanded(true);
@@ -955,6 +1067,13 @@ export function useRotulosState(currentUser?: { nombre?: string; email?: string 
     // Deshacer
     canUndo,
     handleUndo,
+    // Sincronización en la nube e Historial
+    cloudSyncStatus,
+    isHistoryModalOpen,
+    setIsHistoryModalOpen,
+    todayPrintedCount,
+    fetchTodayCount,
+    handleLoadFromHistory,
     // AI
     slotsAiData,
     aiInputText,

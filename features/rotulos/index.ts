@@ -5,4 +5,5 @@ export * from './components/AmexitoAiRotulosPanel';
 export * from './components/RotulosToolbar';
 export * from './components/RotulosSlotEditor';
 export * from './components/RotulosSheetPreview';
+export * from './components/RotulosHistoryModal';
 export { default as RotulosA4Tab } from './components/RotulosA4Tab';

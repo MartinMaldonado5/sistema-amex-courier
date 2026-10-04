@@ -58,6 +58,8 @@ interface RotulosSlotEditorProps {
   handleTotalCajasBlur: () => void;
   handleNumericKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   handleNumericPaste: (e: React.ClipboardEvent<HTMLInputElement>) => void;
+  onOpenHistory?: () => void;
+  todayPrintedCount?: number;
 }
 
 export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
@@ -106,7 +108,9 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
   handleTotalCajasChange,
   handleTotalCajasBlur,
   handleNumericKeyDown,
-  handleNumericPaste
+  handleNumericPaste,
+  onOpenHistory,
+  todayPrintedCount = 0
 }) => {
   // Estado para autocompletado de directorio de clientes
   const [isClientSuggestionsOpen, setIsClientSuggestionsOpen] = useState(false);
@@ -322,6 +326,8 @@ export const RotulosSlotEditor: React.FC<RotulosSlotEditorProps> = ({
         handleClearAll={handleClearAll}
         canUndo={canUndo}
         handleUndo={handleUndo}
+        onOpenHistory={onOpenHistory}
+        todayPrintedCount={todayPrintedCount}
       />
 
       {/* Banner si seleccionó 'OTRA' agencia personalizada */}

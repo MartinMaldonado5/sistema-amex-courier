@@ -911,8 +911,8 @@
     "semantic_hash": "2317b298c01fad54dab70a2b3fe5a918"
   },
   "features/rotulos/components/RotulosA4Tab.tsx": {
-    "mtime": 1790997729.055824,
-    "ast_hash": "e873a61a35efee3f1c963e6533a66663",
+    "mtime": 1791139447.5672114,
+    "ast_hash": "bf79a7b89102099bdab540bd659bf3d0",
     "semantic_hash": ""
   },
   "features/rotulos/components/RotulosSheetPreview.tsx": {
@@ -921,34 +921,34 @@
     "semantic_hash": ""
   },
   "features/rotulos/components/RotulosSlotEditor.tsx": {
-    "mtime": 1790997729.060881,
-    "ast_hash": "d9c39ceb03cd04cf35a2c48eff7aa83b",
-    "semantic_hash": "d9c39ceb03cd04cf35a2c48eff7aa83b"
+    "mtime": 1791139425.2388752,
+    "ast_hash": "86493196a1db3dfd10b44733f37814c6",
+    "semantic_hash": ""
   },
   "features/rotulos/components/RotulosToolbar.tsx": {
-    "mtime": 1790997729.0622387,
-    "ast_hash": "9605746a1ac254faedee5695dfce2998",
-    "semantic_hash": "9605746a1ac254faedee5695dfce2998"
+    "mtime": 1791139404.2179418,
+    "ast_hash": "131042ddf10c6db07eccda1856df2f04",
+    "semantic_hash": ""
   },
   "features/rotulos/hooks/useRotulosState.ts": {
-    "mtime": 1790997729.0663226,
-    "ast_hash": "e5994e0766f285b47480d4c207c5529f",
+    "mtime": 1791139276.4621606,
+    "ast_hash": "3b056d3cddcaa16382b373eb7c9ef57f",
     "semantic_hash": ""
   },
   "features/rotulos/index.ts": {
-    "mtime": 1790562668.728753,
-    "ast_hash": "6a0f237435b84cef82c213392f33005c",
+    "mtime": 1791139319.449785,
+    "ast_hash": "8ccf1740d1bfcbbbf2a25c462157aa4e",
     "semantic_hash": ""
   },
   "features/rotulos/services/rotulos.service.ts": {
-    "mtime": 1790997729.0705228,
-    "ast_hash": "c71abb872aaf0b8ff7a64470dbf04461",
+    "mtime": 1791139195.528916,
+    "ast_hash": "e8c47ac5c7b458dc42aa1806f2e6d25b",
     "semantic_hash": ""
   },
   "features/rotulos/types.ts": {
-    "mtime": 1790227996.8894062,
-    "ast_hash": "c982eef9ab671d790fb5c17aeab6b0eb",
-    "semantic_hash": "c982eef9ab671d790fb5c17aeab6b0eb"
+    "mtime": 1791139168.2087872,
+    "ast_hash": "d8cc01a67e3cb53371d44b5b3836475b",
+    "semantic_hash": ""
   },
   "features/scanner/components/ScannerTab.tsx": {
     "mtime": 1790997729.0750442,
@@ -1559,6 +1559,16 @@
   "scripts/vps-build-processor.ps1": {
     "mtime": 1791084014.413666,
     "ast_hash": "a295bbb7b1d1c1e691ce5294e2874427",
+    "semantic_hash": ""
+  },
+  "features/rotulos/components/RotulosHistoryModal.tsx": {
+    "mtime": 1791139304.9116611,
+    "ast_hash": "7f66ef4b44a24d4116b34170d272ad15",
+    "semantic_hash": ""
+  },
+  "tests/unit/rotulosHistory.test.ts": {
+    "mtime": 1791139538.070216,
+    "ast_hash": "e52c49d67b9e058ac805fcdb8de335a5",
     "semantic_hash": ""
   }
 }

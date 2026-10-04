@@ -5,6 +5,7 @@ import './rotulos-a4.css';
 import { useRotulosState } from '../hooks/useRotulosState';
 import { RotulosSlotEditor } from './RotulosSlotEditor';
 import { RotulosSheetPreview } from './RotulosSheetPreview';
+import { RotulosHistoryModal } from './RotulosHistoryModal';
 import {
   generarTextoBulto,
   MAX_SHEETS,
@@ -20,7 +21,7 @@ export type { AgencyOption, RotuloSlotData };
 
 interface RotulosA4TabProps {
   clientes?: Cliente[];
-  currentUser?: { nombre?: string; email?: string } | null;
+  currentUser?: { nombre?: string; email?: string; rol?: string; id?: string } | null;
 }
 
 export default function RotulosA4Tab({ clientes = [], currentUser }: RotulosA4TabProps) {
@@ -49,6 +50,76 @@ export default function RotulosA4Tab({ clientes = [], currentUser }: RotulosA4Ta
           {state.feedbackToast}
         </div>
       )}
+
+      {/* Barra Superior del Módulo: Título, Cloud Sync y Botón Historial */}
+      <div className="rotulos-header-banner">
+        <div className="rotulos-header-title-box">
+          <div className="rotulos-header-icon-badge">
+            <i className="fa-solid fa-tags"></i>
+          </div>
+          <div>
+            <h1 className="rotulos-header-title">Módulo 8: Rótulos A4 de Agencias</h1>
+            <p className="rotulos-header-subtitle">
+              Generador dinámico para Shalom, Olva Courier, Cruz del Sur y agencias nacionales
+            </p>
+          </div>
+        </div>
+
+        <div className="rotulos-header-actions-box">
+          {/* Indicador de sincronización en tiempo real en la nube */}
+          <div
+            className={`rotulo-cloud-sync-pill status-${state.cloudSyncStatus}`}
+            title={
+              state.cloudSyncStatus === 'saving'
+                ? 'Sincronizando cambios con Supabase...'
+                : state.cloudSyncStatus === 'synced'
+                ? 'Borrador respaldado en la nube en tiempo real'
+                : 'Trabajando en modo local'
+            }
+          >
+            {state.cloudSyncStatus === 'saving' && (
+              <>
+                <i className="fa-solid fa-arrows-rotate fa-spin"></i>
+                <span>Sincronizando...</span>
+              </>
+            )}
+            {state.cloudSyncStatus === 'synced' && (
+              <>
+                <i className="fa-solid fa-cloud-arrow-up"></i>
+                <span>Nube al día</span>
+              </>
+            )}
+            {state.cloudSyncStatus === 'error' && (
+              <>
+                <i className="fa-solid fa-triangle-exclamation"></i>
+                <span>Error nube</span>
+              </>
+            )}
+            {state.cloudSyncStatus === 'offline' && (
+              <>
+                <i className="fa-solid fa-hard-drive"></i>
+                <span>Borrador local</span>
+              </>
+            )}
+          </div>
+
+          {/* Botón Destacado: Historial de Rótulos */}
+          <button
+            type="button"
+            className="btn-rotulo-history-trigger"
+            onClick={() => state.setIsHistoryModalOpen(true)}
+            title="Abrir historial de impresiones y reimpresión rápida"
+          >
+            <i className="fa-solid fa-clock-rotate-left"></i>
+            <span>Historial</span>
+            {state.todayPrintedCount > 0 && (
+              <span className="history-trigger-badge" title={`${state.todayPrintedCount} rótulos impresos hoy`}>
+                {state.todayPrintedCount} hoy
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
 
       {/* Grid de Trabajo: Editor Lateral + Vista Previa A4 */}
       <div className="rotulos-workspace-grid">
@@ -99,6 +170,8 @@ export default function RotulosA4Tab({ clientes = [], currentUser }: RotulosA4Ta
           handleTotalCajasBlur={state.handleTotalCajasBlur}
           handleNumericKeyDown={state.handleNumericKeyDown}
           handleNumericPaste={state.handleNumericPaste}
+          onOpenHistory={() => state.setIsHistoryModalOpen(true)}
+          todayPrintedCount={state.todayPrintedCount}
         />
 
         <RotulosSheetPreview
@@ -116,6 +189,14 @@ export default function RotulosA4Tab({ clientes = [], currentUser }: RotulosA4Ta
           currentUser={currentUser}
         />
       </div>
+
+      {/* Modal de Historial de Rótulos */}
+      <RotulosHistoryModal
+        isOpen={state.isHistoryModalOpen}
+        onClose={() => state.setIsHistoryModalOpen(false)}
+        onLoadIntoEditor={state.handleLoadFromHistory}
+        currentUser={currentUser}
+      />
     </div>
   );
 }

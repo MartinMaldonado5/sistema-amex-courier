@@ -155,3 +155,30 @@ export function getAgencyClass(agencia?: string): string {
     default: return 'otra';
   }
 }
+
+export type CloudSyncStatus = 'synced' | 'saving' | 'offline' | 'error';
+
+export interface RotuloHistorialItem {
+  id: string;
+  loteImpresionId: string;
+  tipoAccion: 'IMPRESION_DIRECTA' | 'DESCARGA_PDF';
+  operadorNombre?: string;
+  operadorEmail?: string;
+  operadorId?: string;
+  agencia: string;
+  agenciaOtra?: string;
+  destinatarioNombre: string;
+  destinatarioDni?: string;
+  destinatarioTelefono?: string;
+  destino?: string;
+  remitente?: string;
+  cantidadRotulos: number;
+  totalCajas: string;
+  numeroRotulo: number;
+  siglas?: string;
+  observacion?: string;
+  hojaNumero: number;
+  slotPosicion: number;
+  slotSnapshot?: Partial<RotuloSlotData>;
+  creadoEn: string;
+}

@@ -40,6 +40,8 @@ interface RotulosToolbarProps {
   handleClearAll: () => void;
   canUndo?: boolean;
   handleUndo?: () => void;
+  onOpenHistory?: () => void;
+  todayPrintedCount?: number;
 }
 
 export const RotulosToolbar: React.FC<RotulosToolbarProps> = ({
@@ -73,7 +75,9 @@ export const RotulosToolbar: React.FC<RotulosToolbarProps> = ({
   handleClearCurrentSheet,
   handleClearAll,
   canUndo = false,
-  handleUndo
+  handleUndo,
+  onOpenHistory,
+  todayPrintedCount = 0
 }) => {
   return (
     <div className="rotulo-top-toolbar-3col">
@@ -218,6 +222,25 @@ export const RotulosToolbar: React.FC<RotulosToolbarProps> = ({
                     <i className="fa-solid fa-arrow-rotate-left"></i>
                   </div>
                   <span className="master-action-name">Deshacer (Ctrl + Z)</span>
+                </button>
+              )}
+
+              {onOpenHistory && (
+                <button
+                  type="button"
+                  className="master-action-item history-item"
+                  onClick={() => {
+                    setIsMasterActionsOpen(false);
+                    onOpenHistory();
+                  }}
+                  title="Ver historial de rótulos impresos y auditoría corporativa"
+                >
+                  <div className="master-action-icon-box" style={{ background: '#0284c7', color: '#fff' }}>
+                    <i className="fa-solid fa-clock-rotate-left"></i>
+                  </div>
+                  <span className="master-action-name">
+                    Historial {todayPrintedCount > 0 ? `(${todayPrintedCount} hoy)` : ''}
+                  </span>
                 </button>
               )}
 
