@@ -549,7 +549,6 @@ export function useRotulosState(currentUser?: { nombre?: string; email?: string;
     setCurrentSheet(newSheetNum);
     setActiveSlotId(startId);
     playSound('complete');
-    showToast(`📄 Hoja #${newSheetNum} agregada (Espacios #${startId} al #${startId + 4}).`);
   };
 
   const handleDeleteCurrentSheet = () => {
@@ -604,7 +603,6 @@ export function useRotulosState(currentUser?: { nombre?: string; email?: string;
     });
 
     playSound('click');
-    showToast(`🗑️ Hoja #${deletedSheetNum} eliminada. Visualizando Hoja #${newCurrentSheet} de ${newTotalSheets}.`);
   };
 
   const handleClearActiveSlot = () => {
