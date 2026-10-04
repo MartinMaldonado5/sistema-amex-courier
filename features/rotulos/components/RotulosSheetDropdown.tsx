@@ -77,19 +77,6 @@ export const RotulosSheetDropdown: React.FC<RotulosSheetDropdownProps> = ({
         <i className={`fa-solid fa-chevron-down sheet-dropdown-chevron ${isOpen ? 'open' : ''}`}></i>
       </button>
 
-      {/* Botón Directo + Hoja en Cabecera */}
-      {totalSheets < MAX_SHEETS && (
-        <button
-          type="button"
-          className="btn-rotulo-add-sheet-header"
-          onClick={handleAddNewSheet}
-          title="Agregar nueva hoja A4 (+5 rótulos)"
-        >
-          <i className="fa-solid fa-plus"></i>
-          <span>Hoja</span>
-        </button>
-      )}
-
       {/* Menú Desplegable Vertical */}
       {isOpen && (
         <div className="rotulo-sheet-dropdown-menu">
