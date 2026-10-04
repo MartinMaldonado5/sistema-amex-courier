@@ -65,8 +65,8 @@
     "semantic_hash": ""
   },
   "app/api/inventario-tib/route.ts": {
-    "mtime": 1790997728.930203,
-    "ast_hash": "084606b9a743bbeb5b015868d7d1121f",
+    "mtime": 1791140263.7833898,
+    "ast_hash": "6da451fe4d3dd4a951f333318ec7c755",
     "semantic_hash": ""
   },
   "app/api/shalom-boletas/[id]/route.ts": {
@@ -110,8 +110,8 @@
     "semantic_hash": ""
   },
   "components/Sidebar.tsx": {
-    "mtime": 1790997728.957649,
-    "ast_hash": "7a8afe19c9a72a17c2a9e69a7ebd1bbb",
+    "mtime": 1791154072.289778,
+    "ast_hash": "594448ac9884f6de675a7b4793d13176",
     "semantic_hash": ""
   },
   "components/modals/NewClientModal.tsx": {
@@ -155,8 +155,8 @@
     "semantic_hash": "ce3de8dad74fc9126883b04a486a8962"
   },
   "components/scanner/MobileScannerModal.tsx": {
-    "mtime": 1790997728.9632483,
-    "ast_hash": "567cd39e85bc83ea5c49cdcd48ce1d6a",
+    "mtime": 1791154138.33198,
+    "ast_hash": "8e8aa09f9e53fb33180ff2c203c70f42",
     "semantic_hash": ""
   },
   "components/tabs/AdminUsersTab.tsx": {
@@ -506,8 +506,8 @@
     "semantic_hash": ""
   },
   "features/dashboard/components/DashboardTabContent.tsx": {
-    "mtime": 1790997728.9954374,
-    "ast_hash": "4fa0d2b6aaec18b30aaf6f7518e9c518",
+    "mtime": 1791154157.1808946,
+    "ast_hash": "e009334c3bcf06a91ca6bc5cbade826c",
     "semantic_hash": ""
   },
   "features/dashboard/components/ExecutiveKpiGrid.tsx": {
@@ -541,8 +541,8 @@
     "semantic_hash": ""
   },
   "features/dashboard/hooks/useDashboardNavigation.ts": {
-    "mtime": 1790549338.1592572,
-    "ast_hash": "c15f9ebcf6d998ff96c3fc0399d3f270",
+    "mtime": 1791153968.5254989,
+    "ast_hash": "1c23354f3d55569fae9b019506f937db",
     "semantic_hash": ""
   },
   "features/dashboard/hooks/useDashboardSession.ts": {
@@ -911,18 +911,18 @@
     "semantic_hash": "2317b298c01fad54dab70a2b3fe5a918"
   },
   "features/rotulos/components/RotulosA4Tab.tsx": {
-    "mtime": 1791139447.5672114,
-    "ast_hash": "bf79a7b89102099bdab540bd659bf3d0",
+    "mtime": 1791149621.9786046,
+    "ast_hash": "455d6f8c4728e7f02fa718ca08ac45e8",
     "semantic_hash": ""
   },
   "features/rotulos/components/RotulosSheetPreview.tsx": {
-    "mtime": 1790997729.0578802,
-    "ast_hash": "4f0b06ae1a3853f732b71dc104ed7964",
+    "mtime": 1791149552.4501605,
+    "ast_hash": "3e9cb621456ce927a8ddc2633bd8f66c",
     "semantic_hash": ""
   },
   "features/rotulos/components/RotulosSlotEditor.tsx": {
-    "mtime": 1791139425.2388752,
-    "ast_hash": "86493196a1db3dfd10b44733f37814c6",
+    "mtime": 1791143123.3536603,
+    "ast_hash": "595fb8ce937d783f765ed0a5a9a6d77c",
     "semantic_hash": ""
   },
   "features/rotulos/components/RotulosToolbar.tsx": {
@@ -931,13 +931,13 @@
     "semantic_hash": ""
   },
   "features/rotulos/hooks/useRotulosState.ts": {
-    "mtime": 1791139276.4621606,
-    "ast_hash": "3b056d3cddcaa16382b373eb7c9ef57f",
+    "mtime": 1791150311.2513225,
+    "ast_hash": "0d81c0b0003ec8d6551d743eecf25328",
     "semantic_hash": ""
   },
   "features/rotulos/index.ts": {
-    "mtime": 1791139319.449785,
-    "ast_hash": "8ccf1740d1bfcbbbf2a25c462157aa4e",
+    "mtime": 1791149566.6514282,
+    "ast_hash": "8beeda40cd9ab21e5186894cd12f0e26",
     "semantic_hash": ""
   },
   "features/rotulos/services/rotulos.service.ts": {
@@ -951,8 +951,8 @@
     "semantic_hash": ""
   },
   "features/scanner/components/ScannerTab.tsx": {
-    "mtime": 1790997729.0750442,
-    "ast_hash": "20727d611c3ad98a5b7a0c8ad6d218c1",
+    "mtime": 1791154368.2657087,
+    "ast_hash": "2930bf46d2915589b07c78bb563772ac",
     "semantic_hash": ""
   },
   "features/scanner/index.ts": {
@@ -1021,8 +1021,8 @@
     "semantic_hash": ""
   },
   "lib/navigation/routes.ts": {
-    "mtime": 1790549431.930359,
-    "ast_hash": "a648cc8451a28e3afb863d255816bfb7",
+    "mtime": 1791154035.0636644,
+    "ast_hash": "1a56304d81449c45e411de7d7d80dfbc",
     "semantic_hash": ""
   },
   "lib/openai/analyzer.ts": {
@@ -1056,9 +1056,9 @@
     "semantic_hash": ""
   },
   "lib/supabase/client.ts": {
-    "mtime": 1790546818.062866,
-    "ast_hash": "f20cbcbe4af2a0e806ffca7766b26d8c",
-    "semantic_hash": "f20cbcbe4af2a0e806ffca7766b26d8c"
+    "mtime": 1791140323.3469782,
+    "ast_hash": "8f9918c8a98dba26bda1a7d169d9a95a",
+    "semantic_hash": ""
   },
   "lib/supabase/server.ts": {
     "mtime": 1788587337.1961038,
@@ -1076,7 +1076,7 @@
     "semantic_hash": "251bbc2cbda7fdcf91cfa9cb3e42f173"
   },
   "next-env.d.ts": {
-    "mtime": 1791082049.7803862,
+    "mtime": 1791154739.2597842,
     "ast_hash": "0e4a65e8b2b9aa3ed0f8957b9406bd41",
     "semantic_hash": "0e4a65e8b2b9aa3ed0f8957b9406bd41"
   },
@@ -1187,8 +1187,8 @@
     "semantic_hash": ""
   },
   "app/api/paquetes/route.ts": {
-    "mtime": 1791129863.0744674,
-    "ast_hash": "4b7490fab1510d9d1a14e83321f0bae2",
+    "mtime": 1791140275.8959534,
+    "ast_hash": "62c094b641a28c87a2e5054d4af6d84d",
     "semantic_hash": ""
   },
   "components/ui/Table.tsx": {
@@ -1327,8 +1327,8 @@
     "semantic_hash": ""
   },
   ".github/workflows/ci.yml": {
-    "mtime": 1790997728.9046576,
-    "ast_hash": "ce07770681d07d08cf4df176d29145a1",
+    "mtime": 1791140347.463071,
+    "ast_hash": "731d89b83e433c5c3f2cd079dddf294a",
     "semantic_hash": ""
   },
   ".github/workflows/worker-container-test.yml": {
@@ -1567,8 +1567,13 @@
     "semantic_hash": ""
   },
   "tests/unit/rotulosHistory.test.ts": {
-    "mtime": 1791139538.070216,
-    "ast_hash": "e52c49d67b9e058ac805fcdb8de335a5",
+    "mtime": 1791140300.595625,
+    "ast_hash": "490f04c3d624319a46eeb2bff8dcbb3a",
+    "semantic_hash": ""
+  },
+  "features/rotulos/components/RotulosSheetDropdown.tsx": {
+    "mtime": 1791150947.3724215,
+    "ast_hash": "e5c460826ea02e09648242c2d4391f45",
     "semantic_hash": ""
   }
 }
