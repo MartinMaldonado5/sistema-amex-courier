@@ -14,9 +14,6 @@ interface RotulosSheetPreviewProps {
   activeSlotId: number;
   setActiveSlotId: (id: number) => void;
   setCurrentSheet: (sheet: number) => void;
-  handleSelectSheet: (sheet: number) => void;
-  handleAddNewSheet: () => void;
-  handleDeleteCurrentSheet: () => void;
   slotsAiData?: Record<number, { text: string; image: string | null }>;
   currentUser?: { nombre?: string; email?: string } | null;
 }
@@ -29,9 +26,6 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
   activeSlotId,
   setActiveSlotId,
   setCurrentSheet,
-  handleSelectSheet,
-  handleAddNewSheet,
-  handleDeleteCurrentSheet,
   slotsAiData,
   currentUser
 }) => {
@@ -196,65 +190,7 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
 
   return (
     <div className="rotulos-preview-container">
-      {/* 1. Barra Superior de Navegación y Gestión de Hojas (Compacta y Unificada) */}
-      <div className="preview-sheet-navigator preview-sheet-top-bar">
-        <div className="sheet-nav-primary-row">
-          {/* Pestañas de Hojas */}
-          <div className="sheet-tabs-list">
-            {Array.from({ length: totalSheets }, (_, i) => {
-              const sheetNum = i + 1;
-              const sheetSlots = slots.slice(i * 5, (i + 1) * 5);
-              const filledCount = sheetSlots.filter((s) => Boolean(s.nombre?.trim() || s.destino?.trim())).length;
-              const isActive = sheetNum === currentSheet;
-
-              return (
-                <button
-                  key={sheetNum}
-                  type="button"
-                  className={`sheet-tab-btn ${isActive ? 'active' : ''}`}
-                  onClick={() => handleSelectSheet(sheetNum)}
-                  title={`Ver Hoja ${sheetNum} (${filledCount}/5 completados)`}
-                >
-                  <i className={isActive ? 'fa-solid fa-file-lines' : 'fa-regular fa-file'}></i>
-                  <span className="sheet-tab-name">Hoja {sheetNum}</span>
-                  <span className={`sheet-tab-pill ${filledCount === 5 ? 'full' : filledCount > 0 ? 'partial' : 'empty'}`}>
-                    {filledCount}/5
-                  </span>
-                </button>
-              );
-            })}
-
-            {totalSheets < MAX_SHEETS && (
-              <button
-                type="button"
-                className="btn-add-sheet"
-                onClick={handleAddNewSheet}
-                title="Agregar una nueva hoja A4 (+5 rótulos)"
-              >
-                <i className="fa-solid fa-plus"></i>
-                <span>Hoja</span>
-              </button>
-            )}
-          </div>
-
-          {/* Acciones de Hoja en la Vista Previa */}
-          {totalSheets > 1 && (
-            <div className="sheet-nav-actions">
-              <button
-                type="button"
-                className="btn-sheet-action delete"
-                onClick={handleDeleteCurrentSheet}
-                title={`Eliminar Hoja #${currentSheet}`}
-              >
-                <i className="fa-solid fa-trash-can"></i>
-                <span className="hide-on-mobile">Borrar H{currentSheet}</span>
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 2. Hoja A4 en Pantalla */}
+      {/* 1. Hoja A4 en Pantalla */}
       <div className="rotulos-a4-sheet screen-only-sheet">
         {currentSheetSlots.map((slot) => renderStrip(slot, true))}
       </div>

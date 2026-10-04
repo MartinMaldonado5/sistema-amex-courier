@@ -5,6 +5,7 @@ import './rotulos-a4.css';
 import { useRotulosState } from '../hooks/useRotulosState';
 import { RotulosSlotEditor } from './RotulosSlotEditor';
 import { RotulosSheetPreview } from './RotulosSheetPreview';
+import { RotulosSheetDropdown } from './RotulosSheetDropdown';
 import { RotulosHistoryModal } from './RotulosHistoryModal';
 import {
   generarTextoBulto,
@@ -119,6 +120,16 @@ export default function RotulosA4Tab({ clientes = [], currentUser }: RotulosA4Ta
               </span>
             )}
           </button>
+
+          {/* Selector Desplegable Vertical de Hoja + Añadir Hoja */}
+          <RotulosSheetDropdown
+            currentSheet={state.currentSheet}
+            totalSheets={state.totalSheets}
+            slots={state.slots}
+            handleSelectSheet={state.handleSelectSheet}
+            handleAddNewSheet={state.handleAddNewSheet}
+            handleDeleteCurrentSheet={state.handleDeleteCurrentSheet}
+          />
         </div>
       </div>
 
@@ -183,9 +194,6 @@ export default function RotulosA4Tab({ clientes = [], currentUser }: RotulosA4Ta
           activeSlotId={state.activeSlotId}
           setActiveSlotId={state.setActiveSlotId}
           setCurrentSheet={state.setCurrentSheet}
-          handleSelectSheet={state.handleSelectSheet}
-          handleAddNewSheet={state.handleAddNewSheet}
-          handleDeleteCurrentSheet={state.handleDeleteCurrentSheet}
           slotsAiData={state.slotsAiData}
           currentUser={currentUser}
         />
