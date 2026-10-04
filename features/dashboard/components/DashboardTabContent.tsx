@@ -214,8 +214,21 @@ export default function DashboardTabContent({
         />
       )}
 
-      {activeTab === 'mobile-scanner' && (
+      {(activeTab === 'mobile-scanner' ||
+        activeTab === 'scanner-slotting' ||
+        activeTab === 'scanner-lookup' ||
+        activeTab === 'scanner-delivery') && (
         <ScannerTab
+          activeSubmodule={
+            activeTab === 'scanner-lookup'
+              ? 'lookup'
+              : activeTab === 'scanner-delivery'
+                ? 'delivery'
+                : 'slotting'
+          }
+          onChangeSubmodule={(sub: 'slotting' | 'lookup' | 'delivery') => {
+            onNavigateTab(`scanner-${sub}`);
+          }}
           scannedLogs={scannedLogs}
           paquetes={paquetes}
           clientes={clientes}

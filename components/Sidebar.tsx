@@ -19,6 +19,15 @@ export default function Sidebar({
   currentUser,
   onLogout
 }: SidebarProps) {
+  const isScannerActive = activeTab === 'mobile-scanner' || activeTab.startsWith('scanner-');
+  const [isScannerOpen, setIsScannerOpen] = React.useState(isScannerActive);
+
+  React.useEffect(() => {
+    if (isScannerActive) {
+      setIsScannerOpen(true);
+    }
+  }, [isScannerActive]);
+
   const handleLogoutClick = () => {
     if (typeof window !== 'undefined' && window.confirm('¿Estás seguro de que deseas cerrar tu sesión en el sistema?')) {
       onLogout?.();
@@ -50,6 +59,45 @@ export default function Sidebar({
       >
         <i className={icon} style={{ width: '18px', textAlign: 'center', color: isActive ? '#38bdf8' : '#94a3b8' }}></i>
         <span>{label}</span>
+      </div>
+    );
+  };
+
+  const navSubItem = (tab: string, icon: string, label: string, accentColor: string) => {
+    const isSubActive = activeTab === tab || (tab === 'scanner-slotting' && activeTab === 'mobile-scanner');
+    return (
+      <div
+        key={tab}
+        className={`nav-sub-item ${isSubActive ? 'active' : ''}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelectTab(tab);
+        }}
+        role="button"
+        tabIndex={0}
+        style={{
+          borderRadius: '6px',
+          padding: '7px 10px',
+          fontSize: '12px',
+          fontWeight: isSubActive ? 800 : 600,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          cursor: 'pointer',
+          transition: 'all 0.15s ease',
+          background: isSubActive ? 'rgba(56, 189, 248, 0.16)' : 'transparent',
+          borderLeft: isSubActive ? `3px solid ${accentColor}` : '3px solid transparent',
+          color: isSubActive ? '#ffffff' : '#94a3b8'
+        }}
+        onMouseEnter={(e) => {
+          if (!isSubActive) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+        }}
+        onMouseLeave={(e) => {
+          if (!isSubActive) e.currentTarget.style.background = 'transparent';
+        }}
+      >
+        <i className={icon} style={{ width: '15px', textAlign: 'center', color: isSubActive ? accentColor : '#64748b', fontSize: '11px' }}></i>
+        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
       </div>
     );
   };
@@ -114,7 +162,68 @@ export default function Sidebar({
           {navItem('mm-lince', 'fa-solid fa-boxes-stacked', '3. Inventario')}
           {navItem('fico-cobros', 'fa-solid fa-receipt', '4. Cobros')}
           {navItem('directorio-clientes', 'fa-solid fa-users', '5. Directorio de Clientes')}
-          {navItem('mobile-scanner', 'fa-solid fa-barcode', '6. Escáner de Códigos')}
+          {/* MÓDULO 6: ESCÁNER DE CÓDIGOS CON SUBMÓDULOS DESPLEGABLES */}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div
+              className={`nav-item ${isScannerActive ? 'active' : ''}`}
+              onClick={() => {
+                if (!isScannerActive) {
+                  onSelectTab('scanner-slotting');
+                  setIsScannerOpen(true);
+                } else {
+                  setIsScannerOpen(prev => !prev);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              style={{
+                borderRadius: '8px',
+                padding: '10px 14px',
+                fontSize: '13px',
+                fontWeight: isScannerActive ? 800 : 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                background: isScannerActive ? 'linear-gradient(90deg, rgba(37, 99, 235, 0.25) 0%, rgba(37, 99, 235, 0.1) 100%)' : 'transparent',
+                borderLeft: isScannerActive ? '3.5px solid #38bdf8' : '3.5px solid transparent',
+                color: isScannerActive ? '#ffffff' : '#cbd5e1'
+              }}
+            >
+              <i className="fa-solid fa-barcode" style={{ width: '18px', textAlign: 'center', color: isScannerActive ? '#38bdf8' : '#94a3b8' }}></i>
+              <span style={{ flex: 1 }}>6. Escáner de Códigos</span>
+              <i
+                className="fa-solid fa-chevron-down"
+                style={{
+                  fontSize: '10.5px',
+                  color: isScannerActive ? '#38bdf8' : '#64748b',
+                  transition: 'transform 0.2s ease',
+                  transform: isScannerOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+                }}
+              />
+            </div>
+
+            {/* Submódulos Desplegables Verticales */}
+            {isScannerOpen && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px',
+                  paddingLeft: '12px',
+                  marginTop: '3px',
+                  marginBottom: '4px',
+                  borderLeft: '2px solid rgba(56, 189, 248, 0.3)',
+                  marginLeft: '20px'
+                }}
+              >
+                {navSubItem('scanner-slotting', 'fa-solid fa-layer-group', '6.1 📦 Asignar Anaquel', '#38bdf8')}
+                {navSubItem('scanner-lookup', 'fa-solid fa-magnifying-glass-location', '6.2 🔍 Localizar 360°', '#4ade80')}
+                {navSubItem('scanner-delivery', 'fa-solid fa-truck-fast', '6.3 🚚 Despachar', '#c084fc')}
+              </div>
+            )}
+          </div>
           {navItem('dni-matrix', 'fa-solid fa-id-card', '7. Procesador de DNI')}
           {navItem('rotulos-a4', 'fa-solid fa-tags', '8. Rótulos Agencias')}
           {navItem('boletas-shalom', 'fa-solid fa-receipt', '9. Boletas Shalom')}

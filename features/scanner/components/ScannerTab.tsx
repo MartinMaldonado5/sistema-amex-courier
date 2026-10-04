@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import {
   Barcode,
@@ -28,7 +28,13 @@ import {
   ArrowRight,
   ShieldCheck,
   X,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Truck,
+  Phone,
+  DollarSign,
+  AlertCircle,
+  PackageCheck,
+  ArrowUpRight
 } from 'lucide-react';
 import { exportScannerLogsToExcel } from '@/lib/excelExport';
 import { matchesFuzzySearch } from '@/lib/fuzzySearch';
@@ -50,6 +56,8 @@ interface ScannerTabProps {
   onSlotPackage?: (code: string, location: string) => void;
   onUpdateLogs?: React.Dispatch<React.SetStateAction<ScannedLog[]>>;
   onRefreshData?: () => Promise<void> | void;
+  activeSubmodule?: 'slotting' | 'lookup' | 'delivery';
+  onChangeSubmodule?: (submodule: 'slotting' | 'lookup' | 'delivery') => void;
 }
 
 const formatOperatorName = (user?: { nombre?: string; email?: string } | null): string => {
@@ -76,15 +84,50 @@ export default function ScannerTab({
   onConfirm,
   onSlotPackage,
   onUpdateLogs,
-  onRefreshData
+  onRefreshData,
+  activeSubmodule = 'slotting',
+  onChangeSubmodule
 }: ScannerTabProps) {
+  // Estado local para permitir navegación interna o externa por submódulos
+  const [internalSubmodule, setInternalSubmodule] = useState<'slotting' | 'lookup' | 'delivery'>(activeSubmodule);
+
+  useEffect(() => {
+    if (activeSubmodule) {
+      setInternalSubmodule(activeSubmodule);
+    }
+  }, [activeSubmodule]);
+
+  const currentSub = activeSubmodule || internalSubmodule;
+
+  const handleSelectSubmodule = (sub: 'slotting' | 'lookup' | 'delivery') => {
+    setInternalSubmodule(sub);
+    if (onChangeSubmodule) {
+      onChangeSubmodule(sub);
+    }
+  };
+
+  // Estados comunes de filtrado y búsqueda
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'SYNCED'>('ALL');
   const [liveSearchQuery, setLiveSearchQuery] = useState('');
+  const [selectedPackage360, setSelectedPackage360] = useState<Paquete | null>(null);
   const [copiedNotification, setCopiedNotification] = useState(false);
   const [syncNotification, setSyncNotification] = useState<string | null>(null);
 
-  // Selección múltiple para decisión de subida
+  // Estados de Despacho (Submódulo 6.3)
+  const [dispatchType, setDispatchType] = useState<'AMEX' | 'SHALOM' | 'OLVA' | 'TIENDA'>('AMEX');
+  const [dispatchDriverNotes, setDispatchDriverNotes] = useState('');
+  const [dispatchedSessionLogs, setDispatchedSessionLogs] = useState<Array<{
+    id: string;
+    code: string;
+    consignatario: string;
+    dispatchType: string;
+    time: string;
+    operator: string;
+    pkg?: Paquete;
+  }>>([]);
+
+  // Selección múltiple para decisión de subida a Master
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   // Modales de Confirmación y Edición
@@ -94,7 +137,7 @@ export default function ScannerTab({
   const [editingLog, setEditingLog] = useState<ScannedLog | null>(null);
   const [isOnline, setIsOnline] = useState<boolean>(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       setIsOnline(navigator.onLine);
       const onOn = () => setIsOnline(true);
@@ -108,18 +151,20 @@ export default function ScannerTab({
     }
   }, []);
 
-  // Conteo de paquetes por Anaquel y Pisos (4 Pisos por Anaquel)
-  const a1_P1 = paquetes.filter(p => (p.posicionEstante === 'A1-P1' || (p.anaquel === 'A1' && p.piso === 'P1'))).length;
-  const a1_P2 = paquetes.filter(p => (p.posicionEstante === 'A1-P2' || (p.anaquel === 'A1' && p.piso === 'P2'))).length;
-  const a1_P3 = paquetes.filter(p => (p.posicionEstante === 'A1-P3' || (p.anaquel === 'A1' && p.piso === 'P3'))).length;
-  const a1_P4 = paquetes.filter(p => (p.posicionEstante === 'A1-P4' || (p.anaquel === 'A1' && p.piso === 'P4'))).length;
+  // Métricas de Anaqueles y Pisos (4 Pisos por Anaquel)
+  const a1_P1 = useMemo(() => paquetes.filter(p => (p.posicionEstante === 'A1-P1' || (p.anaquel === 'A1' && p.piso === 'P1'))).length, [paquetes]);
+  const a1_P2 = useMemo(() => paquetes.filter(p => (p.posicionEstante === 'A1-P2' || (p.anaquel === 'A1' && p.piso === 'P2'))).length, [paquetes]);
+  const a1_P3 = useMemo(() => paquetes.filter(p => (p.posicionEstante === 'A1-P3' || (p.anaquel === 'A1' && p.piso === 'P3'))).length, [paquetes]);
+  const a1_P4 = useMemo(() => paquetes.filter(p => (p.posicionEstante === 'A1-P4' || (p.anaquel === 'A1' && p.piso === 'P4'))).length, [paquetes]);
   const totalA1 = a1_P1 + a1_P2 + a1_P3 + a1_P4;
 
-  const a2_P1 = paquetes.filter(p => (p.posicionEstante === 'A2-P1' || (p.anaquel === 'A2' && p.piso === 'P1'))).length;
-  const a2_P2 = paquetes.filter(p => (p.posicionEstante === 'A2-P2' || (p.anaquel === 'A2' && p.piso === 'P2'))).length;
-  const a2_P3 = paquetes.filter(p => (p.posicionEstante === 'A2-P3' || (p.anaquel === 'A2' && p.piso === 'P3'))).length;
-  const a2_P4 = paquetes.filter(p => (p.posicionEstante === 'A2-P4' || (p.anaquel === 'A2' && p.piso === 'P4'))).length;
+  const a2_P1 = useMemo(() => paquetes.filter(p => (p.posicionEstante === 'A2-P1' || (p.anaquel === 'A2' && p.piso === 'P1'))).length, [paquetes]);
+  const a2_P2 = useMemo(() => paquetes.filter(p => (p.posicionEstante === 'A2-P2' || (p.anaquel === 'A2' && p.piso === 'P2'))).length, [paquetes]);
+  const a2_P3 = useMemo(() => paquetes.filter(p => (p.posicionEstante === 'A2-P3' || (p.anaquel === 'A2' && p.piso === 'P3'))).length, [paquetes]);
+  const a2_P4 = useMemo(() => paquetes.filter(p => (p.posicionEstante === 'A2-P4' || (p.anaquel === 'A2' && p.piso === 'P4'))).length, [paquetes]);
   const totalA2 = a2_P1 + a2_P2 + a2_P3 + a2_P4;
+
+  const sinUbicarCount = useMemo(() => paquetes.filter(p => !p.posicionEstante || p.posicionEstante.includes('REC') || p.posicionEstante.includes('MESA')).length, [paquetes]);
 
   // Filtrado de lecturas
   const pendingLogs = useMemo(() => scannedLogs.filter(l => !l.synced), [scannedLogs]);
@@ -230,15 +275,13 @@ export default function ScannerTab({
     exportScannerLogsToExcel(scannedLogs, 'Lecturas_Escaneo_AMEX');
   };
 
-  // 🚀 SUBIDA CONFIRMADA A SUPABASE MASTER (Optimización Batch Ultrarrápida + Checkpointing Resiliente)
+  // Subida Confirmada a Supabase Master
   const handleExecuteMasterSync = async () => {
-    // 0. Validar conexión a internet
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       alert('Sin conexión a Internet. Las lecturas permanecen guardadas y seguras en tu dispositivo. Vuelve a intentarlo al recuperar la señal.');
       return;
     }
 
-    // Determinar qué logs se van a subir: si hay seleccionados, solo los seleccionados; si no, todos los pendientes
     const targetLogs = selectedIds.length > 0
       ? scannedLogs.filter(l => selectedIds.includes(l.id))
       : pendingLogs;
@@ -255,35 +298,31 @@ export default function ScannerTab({
     setIsSyncing(true);
     setSyncProgress({ current: 0, total: targetLogs.length });
 
-    // Protección de ciclo de vida: advertir si el usuario intenta cerrar la ventana/pestaña
     const preventClose = (e: BeforeUnloadEvent) => {
       e.preventDefault();
       e.returnValue = 'Hay una sincronización en curso. ¿Estás seguro de salir?';
     };
     window.addEventListener('beforeunload', preventClose);
 
-    // Evitar suspensión de pantalla en móviles (Screen Wake Lock API)
     let wakeLockSentinel: { release: () => Promise<void> } | null = null;
     if (typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
       try {
         wakeLockSentinel = await (navigator as unknown as { wakeLock: { request: (type: string) => Promise<{ release: () => Promise<void> }> } }).wakeLock.request('screen');
       } catch {
-        // WakeLock no soportado o bloqueado por permisos, continuar sin interrupción
+        // Ignored
       }
     }
 
-    const CHUNK_SIZE = 30; // Tamaño óptimo por bloque HTTP
+    const CHUNK_SIZE = 30;
     let totalUpdated = 0;
     let totalInserted = 0;
     let totalSynced = 0;
     let currentLogsState = [...scannedLogs];
 
     try {
-      // Obtener token de sesión Supabase si está disponible
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData?.session?.access_token || '';
 
-      // Dividir en bloques para evitar sobrecargar memoria o timeouts de red móvil
       for (let i = 0; i < targetLogs.length; i += CHUNK_SIZE) {
         const chunk = targetLogs.slice(i, i + CHUNK_SIZE);
 
@@ -305,7 +344,6 @@ export default function ScannerTab({
           operadorId: activeUserId || undefined,
         };
 
-        // Función de envío con reintentos exponenciales para resistir caídas momentáneas de red
         let chunkResponse: { success: boolean; syncedIds: string[]; updatedCount: number; insertedCount: number; message?: string } | null = null;
         let lastError: unknown = null;
 
@@ -327,11 +365,10 @@ export default function ScannerTab({
             }
 
             chunkResponse = await res.json();
-            break; // Éxito
+            break;
           } catch (err) {
             lastError = err;
             if (attempt < 3) {
-              // Espera incremental (1s, 2s) antes de reintentar
               await new Promise(r => setTimeout(r, attempt * 1000));
             }
           }
@@ -341,10 +378,6 @@ export default function ScannerTab({
           throw lastError || new Error('No se pudo sincronizar el bloque tras 3 reintentos.');
         }
 
-        // 🛡️ CHECKPOINTING PROGRESIVO INMEDIATO:
-        // Guardar de inmediato en localStorage y memoria los items confirmados de este bloque.
-        // Si el usuario sale de la app o se apaga el teléfono en el siguiente bloque,
-        // ESTOS ITEMS YA QUEDARON 100% REGISTRADOS Y NO SE PERDERÁN.
         const syncedIdsSet = new Set(chunkResponse.syncedIds || chunk.map(c => c.id));
         currentLogsState = currentLogsState.map(l =>
           syncedIdsSet.has(l.id)
@@ -361,7 +394,6 @@ export default function ScannerTab({
         setSyncProgress({ current: totalSynced, total: targetLogs.length });
       }
 
-      // Finalización exitosa
       setSelectedIds([]);
       setIsConfirmSyncModalOpen(false);
 
@@ -384,17 +416,53 @@ export default function ScannerTab({
         try {
           await wakeLockSentinel.release();
         } catch {
-          // Silent
+          // Ignored
         }
       }
       setIsSyncing(false);
     }
   };
 
-  // Sincronizar un único item individualmente
   const handleSyncSingleLog = async (log: ScannedLog) => {
     setSelectedIds([log.id]);
     setIsConfirmSyncModalOpen(true);
+  };
+
+  // Interceptar confirmaciones de escáner según el submódulo activo
+  const handleScannerConfirm = (
+    code: string,
+    format: string,
+    extra?: { mode: string; location?: string; anaquel?: string; piso?: string; pkg?: Paquete; cli?: Cliente }
+  ) => {
+    onConfirm(code, format, extra);
+
+    // Si estamos en 6.2 Localizar 360, seleccionar inmediatamente la ficha del paquete
+    if (currentSub === 'lookup' && extra?.pkg) {
+      setSelectedPackage360(extra.pkg);
+    }
+
+    // Si estamos en 6.3 Despachar, registrar en la lista de despacho de la sesión
+    if (currentSub === 'delivery') {
+      const foundPkg = extra?.pkg || paquetes.find(p => p.numeroReciboBodega.toUpperCase() === code.toUpperCase() || p.trackingUsa.toUpperCase() === code.toUpperCase());
+      const newDispatchItem = {
+        id: `dsp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        code: code,
+        consignatario: foundPkg?.nombreConsignatario || 'Cliente AMEX',
+        dispatchType: dispatchType === 'AMEX' ? '🚐 Reparto AMEX' : dispatchType === 'SHALOM' ? '📦 Shalom Express' : dispatchType === 'OLVA' ? '🚚 Olva Courier' : '🏢 Retiro en Tienda',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        operator: formatOperatorName(currentUser),
+        pkg: foundPkg
+      };
+      setDispatchedSessionLogs(prev => [newDispatchItem, ...prev]);
+
+      // Alerta sonora según estado de pago del paquete
+      const pkgDebt = (foundPkg as unknown as { saldoPendiente?: number })?.saldoPendiente;
+      if (typeof pkgDebt === 'number' && pkgDebt > 0) {
+        soundEffects.playNotFound();
+      } else {
+        soundEffects.playSuccess();
+      }
+    }
   };
 
   // Búsqueda 360° en vivo
@@ -421,11 +489,47 @@ export default function ScannerTab({
     };
   }, [liveSearchQuery, paquetes, clientes]);
 
+  const activePackageIn360 = selectedPackage360 || lookupMatch?.pkg;
+
+  const matchingClientFor360 = useMemo(() => {
+    if (!activePackageIn360) return null;
+    return clientes.find(c =>
+      (activePackageIn360.dniConsignatario && c.documentoIdentidad === activePackageIn360.dniConsignatario) ||
+      (activePackageIn360.nombreConsignatario && c.nombre.toUpperCase() === activePackageIn360.nombreConsignatario.toUpperCase())
+    ) || lookupMatch?.cli || null;
+  }, [activePackageIn360, clientes, lookupMatch]);
+
+  const activeConsigneePhone = matchingClientFor360?.telefono || '';
+  const activePkgDebt = (activePackageIn360 as unknown as { saldoPendiente?: number })?.saldoPendiente;
+
+  // Lista de paquetes filtrados para el catálogo rápido en 6.2 Localizar 360°
+  const catalog360List = useMemo(() => {
+    if (!liveSearchQuery.trim()) {
+      return paquetes.slice(0, 15);
+    }
+    return paquetes.filter(p =>
+      matchesFuzzySearch(liveSearchQuery, [
+        p.numeroReciboBodega,
+        p.trackingUsa,
+        p.nombreConsignatario,
+        p.dniConsignatario,
+        p.posicionEstante
+      ])
+    ).slice(0, 20);
+  }, [paquetes, liveSearchQuery]);
+
   return (
     <div style={{ width: '100%', maxWidth: '100%', margin: 0, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '16px', boxSizing: 'border-box' }}>
+      
+      {/* ENCABEZADO Y BREADCRUMB CON SUBMÓDULO */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
         <div className="sap-breadcrumb" style={{ margin: 0 }}>
-          <span>Operaciones y Almacenes</span> / <span>Escáner de Códigos, Búsqueda 360° & Slotting WMS</span>
+          <span>Operaciones y Almacenes</span> / <span>6. Escáner de Códigos</span> /{' '}
+          <strong style={{ color: currentSub === 'slotting' ? '#2563eb' : currentSub === 'lookup' ? '#16a34a' : '#9333ea' }}>
+            {currentSub === 'slotting' && '6.1 📦 Asignar Anaquel (Slotting WMS)'}
+            {currentSub === 'lookup' && '6.2 🔍 Localizar 360° & Auditoría'}
+            {currentSub === 'delivery' && '6.3 🚚 Despachar & Reparto'}
+          </strong>
         </div>
         {currentUser && (
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '20px', padding: '4px 12px', fontSize: '12px', color: '#1e40af', fontWeight: 600 }}>
@@ -435,7 +539,87 @@ export default function ScannerTab({
         )}
       </div>
 
-      {/* Notificación flotante de sincronización */}
+      {/* BARRA DE NAVEGACIÓN SUPERIOR DE SUBMÓDULOS (SINCRONIZADA CON EL MENÚ DEL SIDEBAR) */}
+      <div
+        style={{
+          display: 'flex',
+          gap: '8px',
+          flexWrap: 'wrap',
+          background: '#ffffff',
+          border: '1.5px solid #e2e8f0',
+          borderRadius: '12px',
+          padding: '8px 12px',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+        }}
+      >
+        <button
+          onClick={() => handleSelectSubmodule('slotting')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            fontSize: '12.5px',
+            fontWeight: currentSub === 'slotting' ? 800 : 600,
+            cursor: 'pointer',
+            background: currentSub === 'slotting' ? 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)' : '#f8fafc',
+            color: currentSub === 'slotting' ? '#ffffff' : '#334155',
+            border: currentSub === 'slotting' ? '1.5px solid #1e40af' : '1px solid #cbd5e1',
+            boxShadow: currentSub === 'slotting' ? '0 2px 8px rgba(37,99,235,0.3)' : 'none',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <Layers className="w-4 h-4" />
+          <span>6.1 📦 Asignar Anaquel</span>
+        </button>
+
+        <button
+          onClick={() => handleSelectSubmodule('lookup')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            fontSize: '12.5px',
+            fontWeight: currentSub === 'lookup' ? 800 : 600,
+            cursor: 'pointer',
+            background: currentSub === 'lookup' ? 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)' : '#f8fafc',
+            color: currentSub === 'lookup' ? '#ffffff' : '#334155',
+            border: currentSub === 'lookup' ? '1.5px solid #166534' : '1px solid #cbd5e1',
+            boxShadow: currentSub === 'lookup' ? '0 2px 8px rgba(22,163,74,0.3)' : 'none',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <Search className="w-4 h-4" />
+          <span>6.2 🔍 Localizar 360°</span>
+        </button>
+
+        <button
+          onClick={() => handleSelectSubmodule('delivery')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            fontSize: '12.5px',
+            fontWeight: currentSub === 'delivery' ? 800 : 600,
+            cursor: 'pointer',
+            background: currentSub === 'delivery' ? 'linear-gradient(135deg, #9333ea 0%, #7e22ce 100%)' : '#f8fafc',
+            color: currentSub === 'delivery' ? '#ffffff' : '#334155',
+            border: currentSub === 'delivery' ? '1.5px solid #6b21a8' : '1px solid #cbd5e1',
+            boxShadow: currentSub === 'delivery' ? '0 2px 8px rgba(147,51,234,0.3)' : 'none',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <Truck className="w-4 h-4" />
+          <span>6.3 🚚 Despachar</span>
+        </button>
+      </div>
+
+      {/* NOTIFICACIÓN FLOTANTE */}
       {syncNotification && (
         <div style={{ background: '#dcfce7', border: '1px solid #86efac', color: '#166534', padding: '12px 16px', borderRadius: '10px', fontWeight: 800, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(22,163,74,0.15)' }}>
           <CheckCircle2 className="w-5 h-5 text-green-600" />
@@ -443,476 +627,454 @@ export default function ScannerTab({
         </div>
       )}
 
-      {/* Alerta de Modo Fuera de Línea */}
+      {/* ALERTA FUERA DE LÍNEA */}
       {!isOnline && (
         <div style={{ background: '#fef3c7', border: '1px solid #fcd34d', color: '#92400e', padding: '10px 14px', borderRadius: '10px', fontWeight: 700, fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 6px rgba(180,83,9,0.1)' }}>
           <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-          <span>📡 <strong>Modo Fuera de Línea:</strong> Sin conexión a Internet detectada. Tus lecturas se guardan localmente en tu equipo con total seguridad. Podrás sincronizarlas a la base de datos master cuando vuelva la red.</span>
+          <span>📡 <strong>Modo Fuera de Línea:</strong> Sin conexión a Internet detectada. Tus lecturas se guardan localmente en tu equipo con total seguridad.</span>
         </div>
       )}
 
-      {/* Grid Principal: Lado Izquierdo (Visor Escáner) / Lado Derecho (Búsqueda 360° + Anaqueles + Bandeja de Subida) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '16px', alignItems: 'start' }}>
+      {/* ========================================================================= */}
+      {/* 📦 SUBMÓDULO 6.1: ASIGNAR ANAQUEL (SLOTTING WMS) */}
+      {/* ========================================================================= */}
+      {currentSub === 'slotting' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '16px', alignItems: 'start' }}>
+          
+          {/* LADO IZQUIERDO: VISOR DE CÁMARA CONFIGURADO EN MODO SLOTTING */}
+          <div>
+            <MobileScannerModal
+              isOpen={true}
+              isInline={true}
+              paquetes={paquetes}
+              clientes={clientes}
+              currentUser={currentUser}
+              onClose={() => {}}
+              onConfirm={handleScannerConfirm}
+              onSlotPackage={onSlotPackage}
+              activeWorkflowMode="slotting"
+              hideWorkflowSelector={true}
+            />
+          </div>
 
-        {/* LADO IZQUIERDO: VISOR DE CÁMARA Y DETECCIÓN */}
-        <div>
-          <MobileScannerModal
-            isOpen={true}
-            isInline={true}
-            paquetes={paquetes}
-            clientes={clientes}
-            currentUser={currentUser}
-            onClose={() => {}}
-            onConfirm={onConfirm}
-            onSlotPackage={onSlotPackage}
-          />
-        </div>
+          {/* LADO DERECHO: MATRIZ DE OCUPACIÓN DE ANAQUELES + BANDEJA DE SUBIDA A MASTER */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            
+            {/* MATRIZ VISUAL DE OCUPACIÓN DE ANAQUELES (A1 & A2) */}
+            <div style={{ background: '#ffffff', border: '1.5px solid #bfdbfe', borderRadius: '12px', padding: '14px', boxShadow: '0 2px 8px rgba(37,99,235,0.06)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e40af', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Layers className="w-4 h-4 text-blue-600" /> Capacidad y Ocupación en Anaqueles Físicos
+                </span>
+                <span style={{ fontSize: '11px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '2px 8px', borderRadius: '6px', fontWeight: 800 }}>
+                  2 Anaqueles × 4 Pisos
+                </span>
+              </div>
 
-        {/* LADO DERECHO: BÚSQUEDA 360°, OCUPACIÓN Y BANDEJA DE CONFIRMACIÓN */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                {/* Anaquel 1 (A1) */}
+                <div style={{ background: '#f8fafc', border: '1.5px solid #93c5fd', borderRadius: '10px', padding: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ fontWeight: 900, fontSize: '12px', color: '#1e40af' }}>🟦 Anaquel 1 (A1)</span>
+                    <span style={{ fontSize: '11.5px', fontWeight: 900, background: '#dbeafe', color: '#1e40af', padding: '1px 6px', borderRadius: '4px' }}>
+                      {totalA1} paq.
+                    </span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', textAlign: 'center', fontSize: '10.5px' }}>
+                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 2px' }}>
+                      <span style={{ color: '#64748b', display: 'block', fontSize: '9px' }}>P1</span>
+                      <strong style={{ color: '#0f172a' }}>{a1_P1}</strong>
+                    </div>
+                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 2px' }}>
+                      <span style={{ color: '#64748b', display: 'block', fontSize: '9px' }}>P2</span>
+                      <strong style={{ color: '#0f172a' }}>{a1_P2}</strong>
+                    </div>
+                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 2px' }}>
+                      <span style={{ color: '#64748b', display: 'block', fontSize: '9px' }}>P3</span>
+                      <strong style={{ color: '#0f172a' }}>{a1_P3}</strong>
+                    </div>
+                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 2px' }}>
+                      <span style={{ color: '#64748b', display: 'block', fontSize: '9px' }}>P4</span>
+                      <strong style={{ color: '#0f172a' }}>{a1_P4}</strong>
+                    </div>
+                  </div>
+                </div>
 
-          {/* BARRA DE BÚSQUEDA 360° EN VIVO */}
-          <div style={{ background: '#ffffff', border: '1.5px solid #3b82f6', borderRadius: '12px', padding: '14px', boxShadow: '0 2px 8px rgba(37,99,235,0.08)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e40af', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Search className="w-4 h-4 text-blue-600" /> Búsqueda 360° y Localizador en Base de Datos
-              </span>
-              <span style={{ fontSize: '11px', background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: '999px', fontWeight: 800 }}>
-                En Vivo
-              </span>
+                {/* Anaquel 2 (A2) */}
+                <div style={{ background: '#f8fafc', border: '1.5px solid #86efac', borderRadius: '10px', padding: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ fontWeight: 900, fontSize: '12px', color: '#15803d' }}>🟩 Anaquel 2 (A2)</span>
+                    <span style={{ fontSize: '11.5px', fontWeight: 900, background: '#dcfce7', color: '#166534', padding: '1px 6px', borderRadius: '4px' }}>
+                      {totalA2} paq.
+                    </span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', textAlign: 'center', fontSize: '10.5px' }}>
+                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 2px' }}>
+                      <span style={{ color: '#64748b', display: 'block', fontSize: '9px' }}>P1</span>
+                      <strong style={{ color: '#0f172a' }}>{a2_P1}</strong>
+                    </div>
+                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 2px' }}>
+                      <span style={{ color: '#64748b', display: 'block', fontSize: '9px' }}>P2</span>
+                      <strong style={{ color: '#0f172a' }}>{a2_P2}</strong>
+                    </div>
+                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 2px' }}>
+                      <span style={{ color: '#64748b', display: 'block', fontSize: '9px' }}>P3</span>
+                      <strong style={{ color: '#0f172a' }}>{a2_P3}</strong>
+                    </div>
+                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 2px' }}>
+                      <span style={{ color: '#64748b', display: 'block', fontSize: '9px' }}>P4</span>
+                      <strong style={{ color: '#0f172a' }}>{a2_P4}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div style={{ position: 'relative' }}>
-              <Search style={{ position: 'absolute', left: '10px', top: '10px', width: '16px', height: '16px', color: '#94a3b8' }} />
-              <input
-                type="text"
-                placeholder="Ingresa o pega Guía WR#, Tracking USA o DNI..."
-                value={liveSearchQuery}
-                onChange={e => setLiveSearchQuery(e.target.value)}
+            {/* KPI RIBBON DE COLA LOCAL Y LECTURAS */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
+              <div
+                onClick={() => setStatusFilter('PENDING')}
                 style={{
-                  width: '100%',
-                  padding: '8px 12px 8px 34px',
-                  borderRadius: '8px',
-                  border: '1.5px solid #93c5fd',
-                  fontSize: '13px',
-                  background: '#f8fafc',
-                  outline: 'none'
+                  background: statusFilter === 'PENDING' ? '#fef3c7' : '#ffffff',
+                  border: statusFilter === 'PENDING' ? '2px solid #f59e0b' : '1px solid #e2e8f0',
+                  borderRadius: '10px',
+                  padding: '10px',
+                  cursor: 'pointer',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
                 }}
-              />
-            </div>
-
-            {/* Resultado de Búsqueda 360° */}
-            {lookupMatch && (
-              <div style={{ marginTop: '12px', background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '10px', padding: '12px' }}>
-                {lookupMatch.pkg ? (
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                      <div>
-                        <span style={{ fontFamily: 'JetBrains Mono', fontSize: '14px', fontWeight: 900, color: '#15803d' }}>
-                          {lookupMatch.pkg.numeroReciboBodega}
-                        </span>
-                        <div style={{ fontSize: '11px', color: '#64748b', fontFamily: 'monospace' }}>
-                          Tracking: {lookupMatch.pkg.trackingUsa}
-                        </div>
-                      </div>
-
-                      <span
-                        style={{
-                          fontSize: '12px',
-                          fontWeight: 900,
-                          padding: '3px 10px',
-                          borderRadius: '6px',
-                          fontFamily: 'monospace',
-                          background: '#15803d',
-                          color: '#ffffff'
-                        }}
-                      >
-                        {lookupMatch.pkg.posicionEstante || `${lookupMatch.pkg.anaquel || 'A1'}-${lookupMatch.pkg.piso || 'P1'}`}
-                      </span>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '11.5px', marginBottom: '8px' }}>
-                      <div>
-                        <span style={{ color: '#64748b' }}>Consignatario:</span>{' '}
-                        <strong>{lookupMatch.pkg.nombreConsignatario || 'Cliente'}</strong>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ fontSize: '12px', color: '#64748b' }}>
-                    No se encontró ningún paquete con el código <strong>&quot;{lookupMatch.query}&quot;</strong>.
-                  </div>
-                )}
+              >
+                <div style={{ fontSize: '10px', fontWeight: 800, color: '#b45309', textTransform: 'uppercase' }}>
+                  🟡 Cola Local (Pendientes)
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: 900, color: '#92400e', marginTop: '2px' }}>
+                  {pendingLogs.length} <span style={{ fontSize: '11px', fontWeight: 700 }}>lecturas</span>
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* KPI RIBBON DE COLA LOCAL Y LECTURAS */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
-            <div
-              onClick={() => setStatusFilter('PENDING')}
-              style={{
-                background: statusFilter === 'PENDING' ? '#fef3c7' : '#ffffff',
-                border: statusFilter === 'PENDING' ? '2px solid #f59e0b' : '1px solid #e2e8f0',
-                borderRadius: '10px',
-                padding: '10px',
-                cursor: 'pointer',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
-              }}
-            >
-              <div style={{ fontSize: '10px', fontWeight: 800, color: '#b45309', textTransform: 'uppercase' }}>
-                🟡 Cola Local (Pendientes)
+              <div
+                onClick={() => setStatusFilter('SYNCED')}
+                style={{
+                  background: statusFilter === 'SYNCED' ? '#dcfce7' : '#ffffff',
+                  border: statusFilter === 'SYNCED' ? '2px solid #16a34a' : '1px solid #e2e8f0',
+                  borderRadius: '10px',
+                  padding: '10px',
+                  cursor: 'pointer',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+                }}
+              >
+                <div style={{ fontSize: '10px', fontWeight: 800, color: '#15803d', textTransform: 'uppercase' }}>
+                  🟢 Sincronizados Master
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: 900, color: '#166534', marginTop: '2px' }}>
+                  {syncedLogs.length} <span style={{ fontSize: '11px', fontWeight: 700 }}>guardados</span>
+                </div>
               </div>
-              <div style={{ fontSize: '18px', fontWeight: 900, color: '#92400e', marginTop: '2px' }}>
-                {pendingLogs.length} <span style={{ fontSize: '11px', fontWeight: 700 }}>lecturas</span>
+
+              <div
+                onClick={() => setStatusFilter('ALL')}
+                style={{
+                  background: statusFilter === 'ALL' ? '#eff6ff' : '#ffffff',
+                  border: statusFilter === 'ALL' ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                  borderRadius: '10px',
+                  padding: '10px',
+                  cursor: 'pointer',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+                }}
+              >
+                <div style={{ fontSize: '10px', fontWeight: 800, color: '#1e40af', textTransform: 'uppercase' }}>
+                  📦 Total en Sesión
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: 900, color: '#1e3a8a', marginTop: '2px' }}>
+                  {scannedLogs.length} <span style={{ fontSize: '11px', fontWeight: 700 }}>totales</span>
+                </div>
               </div>
             </div>
 
-            <div
-              onClick={() => setStatusFilter('SYNCED')}
-              style={{
-                background: statusFilter === 'SYNCED' ? '#dcfce7' : '#ffffff',
-                border: statusFilter === 'SYNCED' ? '2px solid #16a34a' : '1px solid #e2e8f0',
-                borderRadius: '10px',
-                padding: '10px',
-                cursor: 'pointer',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
-              }}
-            >
-              <div style={{ fontSize: '10px', fontWeight: 800, color: '#15803d', textTransform: 'uppercase' }}>
-                🟢 Sincronizados Master
-              </div>
-              <div style={{ fontSize: '18px', fontWeight: 900, color: '#166534', marginTop: '2px' }}>
-                {syncedLogs.length} <span style={{ fontSize: '11px', fontWeight: 700 }}>guardados</span>
-              </div>
-            </div>
+            {/* BANDEJA DE CONTROL & AUDITORÍA DE LECTURAS LOCALES */}
+            <div className="card-panel">
+              <div className="panel-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Barcode className="w-4 h-4 text-blue-600" /> Cola de Lecturas & Confirmación Master
+                  </h3>
+                  <span className="panel-count">{filteredLogs.length}</span>
+                </div>
 
-            <div
-              onClick={() => setStatusFilter('ALL')}
-              style={{
-                background: statusFilter === 'ALL' ? '#eff6ff' : '#ffffff',
-                border: statusFilter === 'ALL' ? '2px solid #2563eb' : '1px solid #e2e8f0',
-                borderRadius: '10px',
-                padding: '10px',
-                cursor: 'pointer',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
-              }}
-            >
-              <div style={{ fontSize: '10px', fontWeight: 800, color: '#1e40af', textTransform: 'uppercase' }}>
-                📦 Total en Sesión
-              </div>
-              <div style={{ fontSize: '18px', fontWeight: 900, color: '#1e3a8a', marginTop: '2px' }}>
-                {scannedLogs.length} <span style={{ fontSize: '11px', fontWeight: 700 }}>totales</span>
-              </div>
-            </div>
-          </div>
-
-          {/* BANDEJA DE CONTROL & AUDITORÍA DE LECTURAS LOCALES */}
-          <div className="card-panel">
-            <div className="panel-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ margin: 0, fontSize: '14.5px', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Barcode className="w-4 h-4 text-blue-600" /> Cola de Lecturas & Confirmación Master
-                </h3>
-                <span className="panel-count">{filteredLogs.length}</span>
-              </div>
-
-              {/* Botón de Sincronización Master */}
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <button
-                  onClick={() => setIsConfirmSyncModalOpen(true)}
-                  disabled={isSyncing || (selectedIds.length === 0 && pendingLogs.length === 0)}
-                  className="btn btn-primary"
-                  style={{
-                    height: '34px',
-                    padding: '0 12px',
-                    fontSize: '12px',
-                    borderRadius: '8px',
-                    fontWeight: 800,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: (selectedIds.length > 0 || pendingLogs.length > 0) ? '#16a34a' : '#94a3b8',
-                    border: 'none',
-                    boxShadow: (selectedIds.length > 0 || pendingLogs.length > 0) ? '0 2px 8px rgba(22,163,74,0.35)' : 'none'
-                  }}
-                  title="Confirmar y subir a base de datos master"
-                >
-                  <UploadCloud className="w-4 h-4" />
-                  Subir a BD Master ({selectedIds.length > 0 ? selectedIds.length : pendingLogs.length})
-                </button>
-
-                {selectedIds.length > 0 && (
+                {/* Acciones de la Bandeja */}
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
                   <button
-                    onClick={handleDeleteSelected}
-                    className="btn"
-                    style={{ height: '34px', padding: '0 8px', fontSize: '11.5px', borderRadius: '8px', background: '#fee2e2', color: '#dc2626', border: '1px solid #fecaca', fontWeight: 700 }}
-                    title="Descartar lecturas seleccionadas"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-
-                <button
-                  onClick={handleCopyAll}
-                  className="btn btn-secondary"
-                  style={{ height: '34px', padding: '0 8px', fontSize: '11.5px', borderRadius: '8px', fontWeight: 700 }}
-                  title="Copiar lista de códigos"
-                >
-                  <Copy className="w-3.5 h-3.5" /> {copiedNotification ? '¡Copiado!' : 'Copiar'}
-                </button>
-
-                <button
-                  onClick={handleExportExcel}
-                  className="btn btn-secondary"
-                  style={{ height: '34px', padding: '0 8px', fontSize: '11.5px', borderRadius: '8px', fontWeight: 700, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534' }}
-                  title="Exportar cola de lecturas a Excel (.xlsx)"
-                >
-                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" /> Excel (.xlsx)
-                </button>
-
-                {onRefreshData && (
-                  <button
-                    onClick={onRefreshData}
-                    className="btn btn-secondary"
-                    style={{ height: '34px', padding: '0 8px', fontSize: '11.5px', borderRadius: '8px', fontWeight: 700, background: '#ffffff', border: '1px solid #cbd5e1', color: '#0f172a' }}
-                    title="Sincronizar base de datos con lector"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5 text-blue-600" /> Actualizar
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Barra de Filtros y Selección Rápida */}
-            <div style={{ padding: '0 16px 10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button
-                  onClick={handleSelectAllFiltered}
-                  style={{
-                    background: '#f1f5f9',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '6px',
-                    padding: '4px 8px',
-                    fontSize: '11.5px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    color: '#334155'
-                  }}
-                >
-                  {selectedIds.length > 0 && selectedIds.length === filteredLogs.length ? (
-                    <CheckSquare className="w-3.5 h-3.5 text-blue-600" />
-                  ) : (
-                    <Square className="w-3.5 h-3.5 text-slate-400" />
-                  )}
-                  {selectedIds.length === filteredLogs.length && filteredLogs.length > 0 ? 'Deseleccionar Todos' : 'Seleccionar Todos'}
-                </button>
-
-                {pendingLogs.length > 0 && (
-                  <button
-                    onClick={handleSelectOnlyPending}
+                    onClick={() => setIsConfirmSyncModalOpen(true)}
+                    disabled={isSyncing || (selectedIds.length === 0 && pendingLogs.length === 0)}
+                    className="btn btn-primary"
                     style={{
-                      background: '#fef3c7',
-                      border: '1px solid #fde68a',
+                      height: '34px',
+                      padding: '0 12px',
+                      fontSize: '12px',
+                      borderRadius: '8px',
+                      fontWeight: 800,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: (selectedIds.length > 0 || pendingLogs.length > 0) ? '#16a34a' : '#94a3b8',
+                      border: 'none',
+                      boxShadow: (selectedIds.length > 0 || pendingLogs.length > 0) ? '0 2px 8px rgba(22,163,74,0.35)' : 'none'
+                    }}
+                    title="Confirmar y subir a base de datos master"
+                  >
+                    <UploadCloud className="w-4 h-4" />
+                    Subir a BD Master ({selectedIds.length > 0 ? selectedIds.length : pendingLogs.length})
+                  </button>
+
+                  {selectedIds.length > 0 && (
+                    <button
+                      onClick={handleDeleteSelected}
+                      className="btn"
+                      style={{ height: '34px', padding: '0 8px', fontSize: '11.5px', borderRadius: '8px', background: '#fee2e2', color: '#dc2626', border: '1px solid #fecaca', fontWeight: 700 }}
+                      title="Descartar lecturas seleccionadas"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+
+                  <button
+                    onClick={handleCopyAll}
+                    className="btn btn-secondary"
+                    style={{ height: '34px', padding: '0 8px', fontSize: '11.5px', borderRadius: '8px', fontWeight: 700 }}
+                    title="Copiar lista de códigos"
+                  >
+                    <Copy className="w-3.5 h-3.5" /> {copiedNotification ? '¡Copiado!' : 'Copiar'}
+                  </button>
+
+                  <button
+                    onClick={handleExportExcel}
+                    className="btn btn-secondary"
+                    style={{ height: '34px', padding: '0 8px', fontSize: '11.5px', borderRadius: '8px', fontWeight: 700, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534' }}
+                    title="Exportar cola de lecturas a Excel (.xlsx)"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" /> Excel (.xlsx)
+                  </button>
+
+                  {onRefreshData && (
+                    <button
+                      onClick={onRefreshData}
+                      className="btn btn-secondary"
+                      style={{ height: '34px', padding: '0 8px', fontSize: '11.5px', borderRadius: '8px', fontWeight: 700, background: '#ffffff', border: '1px solid #cbd5e1', color: '#0f172a' }}
+                      title="Sincronizar base de datos con lector"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 text-blue-600" /> Actualizar
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Filtros rápidos y buscador */}
+              <div style={{ padding: '0 16px 10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    onClick={handleSelectAllFiltered}
+                    style={{
+                      background: '#f1f5f9',
+                      border: '1px solid #cbd5e1',
                       borderRadius: '6px',
                       padding: '4px 8px',
                       fontSize: '11.5px',
-                      fontWeight: 800,
+                      fontWeight: 700,
                       cursor: 'pointer',
-                      color: '#92400e'
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      color: '#334155'
                     }}
                   >
-                    Seleccionar Solo Pendientes ({pendingLogs.length})
+                    {selectedIds.length > 0 && selectedIds.length === filteredLogs.length ? (
+                      <CheckSquare className="w-3.5 h-3.5 text-blue-600" />
+                    ) : (
+                      <Square className="w-3.5 h-3.5 text-slate-400" />
+                    )}
+                    {selectedIds.length === filteredLogs.length && filteredLogs.length > 0 ? 'Deseleccionar Todos' : 'Seleccionar Todos'}
                   </button>
-                )}
+
+                  {pendingLogs.length > 0 && (
+                    <button
+                      onClick={handleSelectOnlyPending}
+                      style={{
+                        background: '#fef3c7',
+                        border: '1px solid #fde68a',
+                        borderRadius: '6px',
+                        padding: '4px 8px',
+                        fontSize: '11.5px',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        color: '#92400e'
+                      }}
+                    >
+                      Seleccionar Solo Pendientes ({pendingLogs.length})
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ position: 'relative', flex: '1 1 180px', maxWidth: '280px' }}>
+                  <Search className="w-3.5 h-3.5 text-slate-400" style={{ position: 'absolute', left: '8px', top: '9px' }} />
+                  <input
+                    type="text"
+                    placeholder="Buscar en lecturas..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    style={{
+                      width: '100%',
+                      height: '30px',
+                      paddingLeft: '28px',
+                      paddingRight: '8px',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '11.5px',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
               </div>
 
-              {/* Buscador interno */}
-              <div style={{ position: 'relative', flex: '1 1 180px', maxWidth: '280px' }}>
-                <Search className="w-3.5 h-3.5 text-slate-400" style={{ position: 'absolute', left: '8px', top: '9px' }} />
-                <input
-                  type="text"
-                  placeholder="Buscar en lecturas..."
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '30px',
-                    paddingLeft: '28px',
-                    paddingRight: '8px',
-                    borderRadius: '6px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '11.5px',
-                    outline: 'none'
-                  }}
-                />
-              </div>
-            </div>
+              {/* TABLA DE LECTURAS LOCALES */}
+              {filteredLogs.length > 0 ? (
+                <div className="table-responsive" style={{ maxHeight: '380px', overflowY: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 800 }}>
+                        <th style={{ width: '36px', padding: '8px 10px', textAlign: 'center' }}>✓</th>
+                        <th style={{ padding: '8px 10px' }}>Código / WR</th>
+                        <th style={{ padding: '8px 10px' }}>Ubicación Asignada</th>
+                        <th style={{ padding: '8px 10px' }}>Operador</th>
+                        <th style={{ padding: '8px 10px' }}>Estado BD</th>
+                        <th style={{ padding: '8px 10px' }}>Hora</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'center' }}>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredLogs.map(log => {
+                        const isSelected = selectedIds.includes(log.id);
+                        const isA1 = log.location?.startsWith('A1');
+                        const isA2 = log.location?.startsWith('A2');
 
-            {/* TABLA DE LECTURAS LOCALES */}
-            {filteredLogs.length > 0 ? (
-              <div className="table-responsive" style={{ maxHeight: '380px', overflowY: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                  <thead>
-                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 800 }}>
-                      <th style={{ width: '36px', padding: '8px 10px', textAlign: 'center' }}>✓</th>
-                      <th style={{ padding: '8px 10px' }}>Código / WR</th>
-                      <th style={{ padding: '8px 10px' }}>Ubicación Asignada</th>
-                      <th style={{ padding: '8px 10px' }}>Operador</th>
-                      <th style={{ padding: '8px 10px' }}>Estado BD</th>
-                      <th style={{ padding: '8px 10px' }}>Hora</th>
-                      <th style={{ padding: '8px 10px', textAlign: 'center' }}>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredLogs.map(log => {
-                      const isSelected = selectedIds.includes(log.id);
-                      const isA1 = log.location?.startsWith('A1');
-                      const isA2 = log.location?.startsWith('A2');
-
-                      return (
-                        <tr
-                          key={log.id}
-                          style={{
-                            borderBottom: '1px solid #f1f5f9',
-                            background: isSelected ? '#eff6ff' : '#ffffff',
-                            transition: 'background 0.15s ease'
-                          }}
-                        >
-                          <td style={{ textAlign: 'center', padding: '8px 10px' }}>
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => handleToggleSelect(log.id)}
-                            />
-                          </td>
-                          <td style={{ padding: '8px 10px' }}>
-                            <div style={{ fontFamily: 'JetBrains Mono', fontWeight: 800, color: '#0f172a' }}>
-                              {log.code}
-                            </div>
-                            {log.nombreConsignatario && (
-                              <div style={{ fontSize: '10.5px', color: '#64748b' }}>
-                                {log.nombreConsignatario}
+                        return (
+                          <tr
+                            key={log.id}
+                            style={{
+                              borderBottom: '1px solid #f1f5f9',
+                              background: isSelected ? '#eff6ff' : '#ffffff',
+                              transition: 'background 0.15s ease'
+                            }}
+                          >
+                            <td style={{ textAlign: 'center', padding: '8px 10px' }}>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => handleToggleSelect(log.id)}
+                              />
+                            </td>
+                            <td style={{ padding: '8px 10px' }}>
+                              <div style={{ fontFamily: 'JetBrains Mono', fontWeight: 800, color: '#0f172a' }}>
+                                {log.code}
                               </div>
-                            )}
-                          </td>
-                          <td style={{ padding: '8px 10px' }}>
-                            {log.location ? (
-                              <span
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  padding: '2px 7px',
-                                  borderRadius: '5px',
-                                  fontSize: '11px',
-                                  fontWeight: 800,
-                                  fontFamily: 'JetBrains Mono, monospace',
-                                  background: isA1 ? '#dbeafe' : isA2 ? '#dcfce7' : '#fef3c7',
-                                  color: isA1 ? '#1e40af' : isA2 ? '#166534' : '#92400e',
-                                  border: `1px solid ${isA1 ? '#93c5fd' : isA2 ? '#86efac' : '#fde68a'}`
-                                }}
-                              >
-                                <Layers className="w-3 h-3" />
-                                {log.location}
-                              </span>
-                            ) : (
-                              <span style={{ color: '#94a3b8', fontSize: '11px' }}>Recepción General</span>
-                            )}
-                          </td>
-                          <td style={{ padding: '8px 10px' }}>
-                            <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <User className="w-3 h-3 text-slate-400" />
-                              {log.operadorNombre || formatOperatorName(currentUser || { email: log.operadorEmail })}
-                            </div>
-                          </td>
-                          <td style={{ padding: '8px 10px' }}>
-                            {log.synced ? (
-                              <span
-                                style={{
-                                  fontSize: '10.5px',
-                                  fontWeight: 800,
-                                  color: '#16a34a',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '3px',
-                                  background: '#dcfce7',
-                                  padding: '2px 6px',
-                                  borderRadius: '4px'
-                                }}
-                                title={log.syncedAt ? `Confirmado en Supabase a las ${new Date(log.syncedAt).toLocaleTimeString()}` : 'Confirmado en Supabase'}
-                              >
-                                <CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> Sincronizado Master
-                              </span>
-                            ) : isSyncing && (selectedIds.length === 0 || selectedIds.includes(log.id)) ? (
-                              <span
-                                style={{
-                                  fontSize: '10.5px',
-                                  fontWeight: 800,
-                                  color: '#2563eb',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '3px',
-                                  background: '#dbeafe',
-                                  padding: '2px 6px',
-                                  borderRadius: '4px'
-                                }}
-                              >
-                                <RefreshCw className="w-3.5 h-3.5 text-blue-600 animate-spin" /> Subiendo lote...
-                              </span>
-                            ) : (
-                              <span
-                                style={{
-                                  fontSize: '10.5px',
-                                  fontWeight: 800,
-                                  color: '#b45309',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '3px',
-                                  background: '#fef3c7',
-                                  padding: '2px 6px',
-                                  borderRadius: '4px'
-                                }}
-                              >
-                                <Clock className="w-3.5 h-3.5 text-amber-600" /> Borrador Local
-                              </span>
-                            )}
-                          </td>
-                          <td style={{ padding: '8px 10px', fontSize: '11px', color: '#64748b', fontFamily: 'monospace' }}>
-                            {log.time}
-                          </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                            <div style={{ display: 'inline-flex', gap: '4px' }}>
-                              <button
-                                onClick={() => setEditingLog(log)}
-                                title="Editar ubicación o código antes de sincronizar"
-                                style={{
-                                  background: '#f8fafc',
-                                  border: '1px solid #cbd5e1',
-                                  color: '#334155',
-                                  width: '28px',
-                                  height: '28px',
-                                  borderRadius: '6px',
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center'
-                                }}
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                              </button>
-
-                              {!log.synced && (
-                                <button
-                                  onClick={() => handleSyncSingleLog(log)}
-                                  title="Subir solo este paquete a la base de datos master"
+                              {log.nombreConsignatario && (
+                                <div style={{ fontSize: '10.5px', color: '#64748b' }}>
+                                  {log.nombreConsignatario}
+                                </div>
+                              )}
+                            </td>
+                            <td style={{ padding: '8px 10px' }}>
+                              {log.location ? (
+                                <span
                                   style={{
-                                    background: '#f0fdf4',
-                                    border: '1px solid #86efac',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    padding: '2px 7px',
+                                    borderRadius: '5px',
+                                    fontSize: '11px',
+                                    fontWeight: 800,
+                                    fontFamily: 'JetBrains Mono, monospace',
+                                    background: isA1 ? '#dbeafe' : isA2 ? '#dcfce7' : '#fef3c7',
+                                    color: isA1 ? '#1e40af' : isA2 ? '#166534' : '#92400e',
+                                    border: `1px solid ${isA1 ? '#93c5fd' : isA2 ? '#86efac' : '#fde68a'}`
+                                  }}
+                                >
+                                  <Layers className="w-3 h-3" />
+                                  {log.location}
+                                </span>
+                              ) : (
+                                <span style={{ color: '#94a3b8', fontSize: '11px' }}>Recepción General</span>
+                              )}
+                            </td>
+                            <td style={{ padding: '8px 10px' }}>
+                              <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <User className="w-3 h-3 text-slate-400" />
+                                {log.operadorNombre || formatOperatorName(currentUser || { email: log.operadorEmail })}
+                              </div>
+                            </td>
+                            <td style={{ padding: '8px 10px' }}>
+                              {log.synced ? (
+                                <span
+                                  style={{
+                                    fontSize: '10.5px',
+                                    fontWeight: 800,
                                     color: '#16a34a',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px',
+                                    background: '#dcfce7',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px'
+                                  }}
+                                  title={log.syncedAt ? `Confirmado en Supabase a las ${new Date(log.syncedAt).toLocaleTimeString()}` : 'Confirmado en Supabase'}
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> Sincronizado Master
+                                </span>
+                              ) : isSyncing && (selectedIds.length === 0 || selectedIds.includes(log.id)) ? (
+                                <span
+                                  style={{
+                                    fontSize: '10.5px',
+                                    fontWeight: 800,
+                                    color: '#2563eb',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px',
+                                    background: '#dbeafe',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px'
+                                  }}
+                                >
+                                  <RefreshCw className="w-3.5 h-3.5 text-blue-600 animate-spin" /> Subiendo lote...
+                                </span>
+                              ) : (
+                                <span
+                                  style={{
+                                    fontSize: '10.5px',
+                                    fontWeight: 800,
+                                    color: '#b45309',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px',
+                                    background: '#fef3c7',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px'
+                                  }}
+                                >
+                                  <Clock className="w-3.5 h-3.5 text-amber-600" /> Borrador Local
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ padding: '8px 10px', fontSize: '11px', color: '#64748b', fontFamily: 'monospace' }}>
+                              {log.time}
+                            </td>
+                            <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                              <div style={{ display: 'inline-flex', gap: '4px' }}>
+                                <button
+                                  onClick={() => setEditingLog(log)}
+                                  title="Editar ubicación o código antes de sincronizar"
+                                  style={{
+                                    background: '#f8fafc',
+                                    border: '1px solid #cbd5e1',
+                                    color: '#334155',
                                     width: '28px',
                                     height: '28px',
                                     borderRadius: '6px',
@@ -922,56 +1084,588 @@ export default function ScannerTab({
                                     justifyContent: 'center'
                                   }}
                                 >
-                                  <UploadCloud className="w-3.5 h-3.5" />
+                                  <Edit3 className="w-3.5 h-3.5" />
                                 </button>
-                              )}
 
-                              <button
-                                onClick={() => handleDeleteLog(log.id)}
-                                title="Descartar de la cola local"
-                                style={{
-                                  background: '#fef2f2',
-                                  border: '1px solid #fecaca',
-                                  color: '#dc2626',
-                                  width: '28px',
-                                  height: '28px',
-                                  borderRadius: '6px',
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center'
-                                }}
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div style={{ padding: '36px 20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
-                <Barcode style={{ width: '36px', height: '36px', margin: '0 auto 10px auto', color: '#cbd5e1' }} />
-                {scannedLogs.length === 0 ? (
-                  <>
-                    <p style={{ fontWeight: 700, color: '#475569', margin: 0 }}>Sin lecturas en cola</p>
-                    <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
-                      Escanea o escribe guías WR con la cámara. Se guardarán en tu navegador para que las revises antes de subirlas.
+                                {!log.synced && (
+                                  <button
+                                    onClick={() => handleSyncSingleLog(log)}
+                                    title="Subir solo este paquete a la base de datos master"
+                                    style={{
+                                      background: '#f0fdf4',
+                                      border: '1px solid #86efac',
+                                      color: '#16a34a',
+                                      width: '28px',
+                                      height: '28px',
+                                      borderRadius: '6px',
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
+                                    }}
+                                  >
+                                    <UploadCloud className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+
+                                <button
+                                  onClick={() => handleDeleteLog(log.id)}
+                                  title="Descartar de la cola local"
+                                  style={{
+                                    background: '#fef2f2',
+                                    border: '1px solid #fecaca',
+                                    color: '#dc2626',
+                                    width: '28px',
+                                    height: '28px',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div style={{ padding: '36px 20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
+                  <Barcode style={{ width: '36px', height: '36px', margin: '0 auto 10px auto', color: '#cbd5e1' }} />
+                  {scannedLogs.length === 0 ? (
+                    <>
+                      <p style={{ fontWeight: 700, color: '#475569', margin: 0 }}>Sin lecturas en cola</p>
+                      <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
+                        Escanea o escribe guías WR con la cámara. Se guardarán en tu navegador para que las revises antes de subirlas.
+                      </p>
+                    </>
+                  ) : (
+                    <p style={{ fontWeight: 600, color: '#64748b', margin: 0 }}>
+                      No se encontraron registros con los filtros seleccionados.
                     </p>
-                  </>
-                ) : (
-                  <p style={{ fontWeight: 600, color: '#64748b', margin: 0 }}>
-                    No se encontraron registros con los filtros seleccionados.
-                  </p>
-                )}
-              </div>
-            )}
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 🔍 SUBMÓDULO 6.2: LOCALIZAR 360° & AUDITORÍA */}
+      {/* ========================================================================= */}
+      {currentSub === 'lookup' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          
+          {/* BARRA DE BÚSQUEDA HERO 360° */}
+          <div style={{ background: '#ffffff', border: '1.5px solid #16a34a', borderRadius: '12px', padding: '16px', boxShadow: '0 4px 14px rgba(22,163,74,0.08)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <span style={{ fontSize: '14px', fontWeight: 800, color: '#15803d', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Search className="w-5 h-5 text-green-600" /> Búsqueda 360° & Localizador en Almacén
+              </span>
+              <span style={{ fontSize: '11px', background: '#dcfce7', color: '#166534', padding: '3px 10px', borderRadius: '999px', fontWeight: 800 }}>
+                Instantáneo & Sin Modificar BD
+              </span>
+            </div>
+
+            <div style={{ position: 'relative' }}>
+              <Search style={{ position: 'absolute', left: '12px', top: '12px', width: '18px', height: '18px', color: '#15803d' }} />
+              <input
+                type="text"
+                placeholder="Ingresa o pega Guía WR#, Tracking USA, DNI o Nombre de Consignatario..."
+                value={liveSearchQuery}
+                onChange={e => {
+                  setLiveSearchQuery(e.target.value);
+                  if (selectedPackage360) setSelectedPackage360(null);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '10px 38px 10px 38px',
+                  borderRadius: '10px',
+                  border: '2px solid #86efac',
+                  fontSize: '14px',
+                  background: '#f0fdf4',
+                  outline: 'none',
+                  fontWeight: 600,
+                  color: '#0f172a'
+                }}
+              />
+              {liveSearchQuery && (
+                <button
+                  onClick={() => {
+                    setLiveSearchQuery('');
+                    setSelectedPackage360(null);
+                  }}
+                  style={{ position: 'absolute', right: '12px', top: '10px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '16px', fontWeight: 700 }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* GRID PRINCIPAL: LECTOR ÓPTICO (IZQ) Y FICHA DETALLADA 360° (DER) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '16px', alignItems: 'start' }}>
+            
+            {/* LADO IZQUIERDO: VISOR DE CÁMARA EN MODO CONSULTA (LOOKUP) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <MobileScannerModal
+                isOpen={true}
+                isInline={true}
+                paquetes={paquetes}
+                clientes={clientes}
+                currentUser={currentUser}
+                onClose={() => {}}
+                onConfirm={handleScannerConfirm}
+                onSlotPackage={onSlotPackage}
+                activeWorkflowMode="lookup"
+                hideWorkflowSelector={true}
+              />
+
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '10px 12px', fontSize: '11.5px', color: '#64748b' }}>
+                <span style={{ fontWeight: 800, color: '#334155' }}>💡 Tip de Operación 360°:</span> Apunta con la cámara a cualquier guía para cargar automáticamente su ficha completa con ubicación física, datos de contacto y estado de pago sin alterar el inventario.
+              </div>
+            </div>
+
+            {/* LADO DERECHO: GRAN FICHA 360° DEL PAQUETE / CLIENTE */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {activePackageIn360 ? (
+                <div style={{ background: '#ffffff', border: '2px solid #86efac', borderRadius: '14px', padding: '16px', boxShadow: '0 4px 16px rgba(22,163,74,0.1)' }}>
+                  
+                  {/* Encabezado con Ubicación Física Destacada */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '14px' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
+                        Guía de Entrada AMEX
+                      </div>
+                      <div style={{ fontFamily: 'JetBrains Mono', fontSize: '20px', fontWeight: 900, color: '#15803d' }}>
+                        {activePackageIn360.numeroReciboBodega}
+                      </div>
+                      <div style={{ fontSize: '11.5px', color: '#64748b', fontFamily: 'monospace', marginTop: '2px' }}>
+                        Tracking USA: <strong>{activePackageIn360.trackingUsa}</strong>
+                      </div>
+                    </div>
+
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '2px' }}>
+                        Ubicación Física en Almacén:
+                      </div>
+                      <span
+                        style={{
+                          fontSize: '15px',
+                          fontWeight: 900,
+                          padding: '6px 14px',
+                          borderRadius: '8px',
+                          fontFamily: 'JetBrains Mono, monospace',
+                          background: activePackageIn360.posicionEstante?.startsWith('A1') ? '#2563eb' : activePackageIn360.posicionEstante?.startsWith('A2') ? '#16a34a' : '#d97706',
+                          color: '#ffffff',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                        }}
+                      >
+                        <MapPin className="w-4 h-4" />
+                        {activePackageIn360.posicionEstante || `${activePackageIn360.anaquel || 'A1'}-${activePackageIn360.piso || 'P1'}`}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Datos del Consignatario & Contacto Rápido WhatsApp */}
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px', marginBottom: '12px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 800, color: '#334155', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                      <User className="w-4 h-4 text-blue-600" /> Información del Consignatario
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', fontSize: '12px' }}>
+                      <div>
+                        <span style={{ color: '#64748b', fontSize: '11px', display: 'block' }}>Nombre Completo:</span>
+                        <strong style={{ color: '#0f172a' }}>{activePackageIn360.nombreConsignatario || 'Sin nombre'}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748b', fontSize: '11px', display: 'block' }}>DNI / Documento:</span>
+                        <strong style={{ color: '#0f172a', fontFamily: 'monospace' }}>{activePackageIn360.dniConsignatario || 'N/A'}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748b', fontSize: '11px', display: 'block' }}>Teléfono:</span>
+                        <strong style={{ color: '#0f172a' }}>{activeConsigneePhone || 'N/A'}</strong>
+                      </div>
+                    </div>
+
+                    {/* Botón WhatsApp Directo */}
+                    {activeConsigneePhone && (
+                      <div style={{ marginTop: '10px' }}>
+                        <a
+                          href={`https://wa.me/51${activeConsigneePhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${activePackageIn360.nombreConsignatario || 'Cliente'}, le saludamos de AMEX Courier. Le informamos que su paquete con Guía ${activePackageIn360.numeroReciboBodega} ya se encuentra clasificado y disponible en nuestro almacén.`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: '#22c55e',
+                            color: '#ffffff',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            fontSize: '11.5px',
+                            fontWeight: 800,
+                            textDecoration: 'none',
+                            boxShadow: '0 2px 6px rgba(34,197,94,0.3)'
+                          }}
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" /> Enviar Mensaje por WhatsApp
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Estado de Pago y Especificaciones */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+                    <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '10px' }}>
+                      <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#166534', display: 'block', textTransform: 'uppercase' }}>
+                        Estado de Pago
+                      </span>
+                      <div style={{ marginTop: '4px', fontSize: '13px', fontWeight: 900, color: typeof activePkgDebt === 'number' && activePkgDebt > 0 ? '#dc2626' : '#15803d' }}>
+                        {typeof activePkgDebt === 'number' && activePkgDebt > 0 ? (
+                          `⚠️ Pendiente de Pago: S/ ${activePkgDebt}`
+                        ) : (
+                          '✓ Pagado / Sin Deuda'
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', padding: '10px' }}>
+                      <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#1e40af', display: 'block', textTransform: 'uppercase' }}>
+                        Peso & Medidas
+                      </span>
+                      <div style={{ marginTop: '4px', fontSize: '13px', fontWeight: 900, color: '#1e3a8a' }}>
+                        {activePackageIn360.pesoKg ? `${activePackageIn360.pesoKg} kg` : '0.50 kg'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Acciones Rápidas */}
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => handleSelectSubmodule('slotting')}
+                      className="btn btn-primary"
+                      style={{ height: '34px', fontSize: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      <Layers className="w-4 h-4" /> Reasignar a Otro Anaquel
+                    </button>
+
+                    <button
+                      onClick={() => handleSelectSubmodule('delivery')}
+                      className="btn btn-secondary"
+                      style={{ height: '34px', fontSize: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px', background: '#faf5ff', border: '1px solid #d8b4fe', color: '#7e22ce' }}
+                    >
+                      <Truck className="w-4 h-4" /> Despachar este Paquete
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Catálogo interactivo de paquetes si aún no ha seleccionado ninguno */
+                <div style={{ background: '#ffffff', border: '1.5px solid #e2e8f0', borderRadius: '14px', padding: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#0f172a' }}>
+                      📋 Catálogo de Ubicaciones en Almacén ({catalog360List.length} mostrados)
+                    </span>
+                    <span style={{ fontSize: '11px', color: '#64748b' }}>Selecciona uno para ver su ficha 360°</span>
+                  </div>
+
+                  <div style={{ maxHeight: '420px', overflowY: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                      <thead>
+                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 800 }}>
+                          <th style={{ padding: '8px 10px', textAlign: 'left' }}>Guía WR#</th>
+                          <th style={{ padding: '8px 10px', textAlign: 'left' }}>Consignatario</th>
+                          <th style={{ padding: '8px 10px', textAlign: 'left' }}>Ubicación</th>
+                          <th style={{ padding: '8px 10px', textAlign: 'center' }}>Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {catalog360List.map(pkg => (
+                          <tr
+                            key={pkg.id || pkg.numeroReciboBodega}
+                            style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }}
+                            onClick={() => setSelectedPackage360(pkg)}
+                          >
+                            <td style={{ padding: '8px 10px', fontFamily: 'JetBrains Mono', fontWeight: 800, color: '#1e40af' }}>
+                              {pkg.numeroReciboBodega}
+                            </td>
+                            <td style={{ padding: '8px 10px', color: '#334155' }}>
+                              {pkg.nombreConsignatario || 'Cliente AMEX'}
+                            </td>
+                            <td style={{ padding: '8px 10px' }}>
+                              <span
+                                style={{
+                                  fontSize: '11px',
+                                  fontWeight: 800,
+                                  fontFamily: 'monospace',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  background: pkg.posicionEstante?.startsWith('A1') ? '#dbeafe' : pkg.posicionEstante?.startsWith('A2') ? '#dcfce7' : '#fef3c7',
+                                  color: pkg.posicionEstante?.startsWith('A1') ? '#1e40af' : pkg.posicionEstante?.startsWith('A2') ? '#166534' : '#92400e'
+                                }}
+                              >
+                                {pkg.posicionEstante || 'REC'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedPackage360(pkg);
+                                }}
+                                style={{
+                                  background: '#f0fdf4',
+                                  border: '1px solid #86efac',
+                                  color: '#16a34a',
+                                  padding: '3px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '11px',
+                                  fontWeight: 800,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Ver 360° ➔
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 🚚 SUBMÓDULO 6.3: DESPACHAR & REPARTO */}
+      {/* ========================================================================= */}
+      {currentSub === 'delivery' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          
+          {/* SELECTOR DE MODALIDAD DE DESPACHO */}
+          <div style={{ background: '#ffffff', border: '1.5px solid #d8b4fe', borderRadius: '12px', padding: '14px', boxShadow: '0 2px 8px rgba(147,51,234,0.06)' }}>
+            <div style={{ fontSize: '13px', fontWeight: 800, color: '#7e22ce', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+              <Truck className="w-4 h-4 text-purple-600" /> Modalidad y Destino de Salida Activo
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px' }}>
+              <div
+                onClick={() => setDispatchType('AMEX')}
+                style={{
+                  background: dispatchType === 'AMEX' ? '#eff6ff' : '#f8fafc',
+                  border: dispatchType === 'AMEX' ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '10px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <span style={{ fontSize: '18px' }}>🚐</span>
+                <div>
+                  <div style={{ fontSize: '12px', fontWeight: 800, color: dispatchType === 'AMEX' ? '#1e40af' : '#334155' }}>
+                    Reparto AMEX
+                  </div>
+                  <div style={{ fontSize: '10.5px', color: '#64748b' }}>Motorizado / Móvil Lima</div>
+                </div>
+              </div>
+
+              <div
+                onClick={() => setDispatchType('SHALOM')}
+                style={{
+                  background: dispatchType === 'SHALOM' ? '#fef2f2' : '#f8fafc',
+                  border: dispatchType === 'SHALOM' ? '2px solid #ef4444' : '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '10px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <span style={{ fontSize: '18px' }}>📦</span>
+                <div>
+                  <div style={{ fontSize: '12px', fontWeight: 800, color: dispatchType === 'SHALOM' ? '#991b1b' : '#334155' }}>
+                    Shalom Express
+                  </div>
+                  <div style={{ fontSize: '10.5px', color: '#64748b' }}>Agencia Provincia</div>
+                </div>
+              </div>
+
+              <div
+                onClick={() => setDispatchType('OLVA')}
+                style={{
+                  background: dispatchType === 'OLVA' ? '#fffbeb' : '#f8fafc',
+                  border: dispatchType === 'OLVA' ? '2px solid #f59e0b' : '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '10px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <span style={{ fontSize: '18px' }}>🚚</span>
+                <div>
+                  <div style={{ fontSize: '12px', fontWeight: 800, color: dispatchType === 'OLVA' ? '#92400e' : '#334155' }}>
+                    Olva Courier
+                  </div>
+                  <div style={{ fontSize: '10.5px', color: '#64748b' }}>Agencia / Domicilio</div>
+                </div>
+              </div>
+
+              <div
+                onClick={() => setDispatchType('TIENDA')}
+                style={{
+                  background: dispatchType === 'TIENDA' ? '#f0fdf4' : '#f8fafc',
+                  border: dispatchType === 'TIENDA' ? '2px solid #16a34a' : '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '10px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <span style={{ fontSize: '18px' }}>🏢</span>
+                <div>
+                  <div style={{ fontSize: '12px', fontWeight: 800, color: dispatchType === 'TIENDA' ? '#166534' : '#334155' }}>
+                    Entrega en Almacén
+                  </div>
+                  <div style={{ fontSize: '10.5px', color: '#64748b' }}>Retiro en Tienda / Mostrador</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* GRID PRINCIPAL: LECTOR DE SALIDA (IZQ) Y MANIFIESTO DE DESPACHO (DER) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '16px', alignItems: 'start' }}>
+            
+            {/* LADO IZQUIERDO: VISOR DE CÁMARA CONFIGURADO EN MODO DESPACHO */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <MobileScannerModal
+                isOpen={true}
+                isInline={true}
+                paquetes={paquetes}
+                clientes={clientes}
+                currentUser={currentUser}
+                onClose={() => {}}
+                onConfirm={handleScannerConfirm}
+                onSlotPackage={onSlotPackage}
+                activeWorkflowMode="delivery"
+                hideWorkflowSelector={true}
+              />
+
+              {/* CARD DE SEGURIDAD CONTRA ENTREGAS CON DEUDA */}
+              <div style={{ background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: '10px', padding: '12px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                <ShieldCheck className="w-5 h-5 text-red-600 shrink-0" style={{ marginTop: '2px' }} />
+                <div style={{ fontSize: '12px', color: '#991b1b', lineHeight: '1.4' }}>
+                  <strong>Control Estricto de Deudas:</strong> Si el paquete escaneado tiene saldo pendiente en el Módulo de Cobros, el sistema emitirá una alerta sonora de bloqueo para prevenir entregas no autorizadas.
+                </div>
+              </div>
+            </div>
+
+            {/* LADO DERECHO: MANIFIESTO DE DESPACHO EN SESIÓN */}
+            <div className="card-panel">
+              <div className="panel-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Truck className="w-4 h-4 text-purple-600" /> Manifiesto de Salidas & Despachos Hoy
+                  </h3>
+                  <span className="panel-count">{dispatchedSessionLogs.length}</span>
+                </div>
+
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {dispatchedSessionLogs.length > 0 && (
+                    <button
+                      onClick={() => {
+                        const exportData = dispatchedSessionLogs.map(d => ({
+                          id: d.id,
+                          code: d.code,
+                          format: 'CODE_128',
+                          time: d.time,
+                          timestamp: Date.now(),
+                          location: d.dispatchType,
+                          workflow: 'delivery' as const,
+                          nombreConsignatario: d.consignatario,
+                          operadorNombre: d.operator,
+                          synced: true
+                        }));
+                        exportScannerLogsToExcel(exportData, `Manifiesto_Despacho_${dispatchType}`);
+                      }}
+                      className="btn btn-secondary"
+                      style={{ height: '32px', fontSize: '11.5px', fontWeight: 700, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534' }}
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" /> Exportar Manifiesto
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* TABLA DE DESPACHOS REGISTRADOS */}
+              {dispatchedSessionLogs.length > 0 ? (
+                <div className="table-responsive" style={{ maxHeight: '380px', overflowY: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 800 }}>
+                        <th style={{ padding: '8px 10px', textAlign: 'left' }}>Guía WR#</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'left' }}>Consignatario</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'left' }}>Destino / Courier</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'left' }}>Hora</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'left' }}>Operador</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dispatchedSessionLogs.map(item => (
+                        <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '8px 10px', fontFamily: 'JetBrains Mono', fontWeight: 800, color: '#7e22ce' }}>
+                            {item.code}
+                          </td>
+                          <td style={{ padding: '8px 10px', color: '#0f172a', fontWeight: 600 }}>
+                            {item.consignatario}
+                          </td>
+                          <td style={{ padding: '8px 10px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 800, background: '#faf5ff', color: '#7e22ce', border: '1px solid #d8b4fe', padding: '2px 7px', borderRadius: '4px' }}>
+                              {item.dispatchType}
+                            </span>
+                          </td>
+                          <td style={{ padding: '8px 10px', color: '#64748b', fontFamily: 'monospace' }}>
+                            {item.time}
+                          </td>
+                          <td style={{ padding: '8px 10px', color: '#334155', fontSize: '11.5px' }}>
+                            {item.operator}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div style={{ padding: '36px 20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
+                  <Truck style={{ width: '36px', height: '36px', margin: '0 auto 10px auto', color: '#cbd5e1' }} />
+                  <p style={{ fontWeight: 700, color: '#475569', margin: 0 }}>Sin despachos registrados en esta sesión</p>
+                  <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
+                    Escanea los paquetes que salen a reparto o se entregan en mostrador para incluirlos en el manifiesto.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 🚀 MODAL DE CONFIRMACIÓN FINAL PARA SUBIR A SUPABASE MASTER */}
       {isConfirmSyncModalOpen && (

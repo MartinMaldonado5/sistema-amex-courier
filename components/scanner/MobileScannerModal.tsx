@@ -42,6 +42,8 @@ interface MobileScannerModalProps {
   clientes?: Cliente[];
   currentUser?: { nombre: string; email: string; rol?: string } | null;
   onSlotPackage?: (code: string, location: string) => void;
+  activeWorkflowMode?: 'slotting' | 'lookup' | 'delivery' | 'general';
+  hideWorkflowSelector?: boolean;
 }
 
 interface CameraDeviceOption {
@@ -74,7 +76,9 @@ export default function MobileScannerModal({
   paquetes = [],
   clientes = [],
   currentUser,
-  onSlotPackage
+  onSlotPackage,
+  activeWorkflowMode,
+  hideWorkflowSelector = false
 }: MobileScannerModalProps) {
   // Estado general
   const [isScanning, setIsScanning] = useState(false);
@@ -83,7 +87,15 @@ export default function MobileScannerModal({
   const [scanMode, setScanMode] = useState<'burst' | 'manual'>('burst');
 
   // 🎯 Flujo de Trabajo Logístico (Workflows de Operación)
-  const [workflowMode, setWorkflowMode] = useState<'slotting' | 'lookup' | 'delivery' | 'general'>('slotting');
+  const [workflowMode, setWorkflowMode] = useState<'slotting' | 'lookup' | 'delivery' | 'general'>(
+    activeWorkflowMode || 'slotting'
+  );
+
+  useEffect(() => {
+    if (activeWorkflowMode) {
+      setWorkflowMode(activeWorkflowMode);
+    }
+  }, [activeWorkflowMode]);
 
   // 📍 Selector Fijo de Anaqueles (2 Anaqueles × 4 Pisos)
   const [selectedAnaquel, setSelectedAnaquel] = useState<'A1' | 'A2' | 'REC' | 'DSP'>('A1');
@@ -905,46 +917,48 @@ export default function MobileScannerModal({
       </div>
 
       {/* 🎯 SELECTOR DE MODO OPERATIVO (WORKFLOWS) */}
-      <div className="scanner-workflow-selector">
-        <button
-          onClick={() => setWorkflowMode('slotting')}
-          className="scanner-workflow-btn"
-          style={{
-            background: workflowMode === 'slotting' ? '#2563eb' : '#ffffff',
-            color: workflowMode === 'slotting' ? '#ffffff' : '#334155',
-            border: workflowMode === 'slotting' ? '1.5px solid #1d4ed8' : '1px solid #cbd5e1',
-            boxShadow: workflowMode === 'slotting' ? '0 2px 8px rgba(37,99,235,0.35)' : 'none'
-          }}
-        >
-          <Layers className="w-4 h-4" /> 📦 Asignar Anaquel
-        </button>
+      {!hideWorkflowSelector && (
+        <div className="scanner-workflow-selector">
+          <button
+            onClick={() => setWorkflowMode('slotting')}
+            className="scanner-workflow-btn"
+            style={{
+              background: workflowMode === 'slotting' ? '#2563eb' : '#ffffff',
+              color: workflowMode === 'slotting' ? '#ffffff' : '#334155',
+              border: workflowMode === 'slotting' ? '1.5px solid #1d4ed8' : '1px solid #cbd5e1',
+              boxShadow: workflowMode === 'slotting' ? '0 2px 8px rgba(37,99,235,0.35)' : 'none'
+            }}
+          >
+            <Layers className="w-4 h-4" /> 📦 Asignar Anaquel
+          </button>
 
-        <button
-          onClick={() => setWorkflowMode('lookup')}
-          className="scanner-workflow-btn"
-          style={{
-            background: workflowMode === 'lookup' ? '#16a34a' : '#ffffff',
-            color: workflowMode === 'lookup' ? '#ffffff' : '#334155',
-            border: workflowMode === 'lookup' ? '1.5px solid #15803d' : '1px solid #cbd5e1',
-            boxShadow: workflowMode === 'lookup' ? '0 2px 8px rgba(22,163,74,0.35)' : 'none'
-          }}
-        >
-          <Search className="w-4 h-4" /> 🔍 Localizar 360°
-        </button>
+          <button
+            onClick={() => setWorkflowMode('lookup')}
+            className="scanner-workflow-btn"
+            style={{
+              background: workflowMode === 'lookup' ? '#16a34a' : '#ffffff',
+              color: workflowMode === 'lookup' ? '#ffffff' : '#334155',
+              border: workflowMode === 'lookup' ? '1.5px solid #15803d' : '1px solid #cbd5e1',
+              boxShadow: workflowMode === 'lookup' ? '0 2px 8px rgba(22,163,74,0.35)' : 'none'
+            }}
+          >
+            <Search className="w-4 h-4" /> 🔍 Localizar 360°
+          </button>
 
-        <button
-          onClick={() => setWorkflowMode('delivery')}
-          className="scanner-workflow-btn"
-          style={{
-            background: workflowMode === 'delivery' ? '#9333ea' : '#ffffff',
-            color: workflowMode === 'delivery' ? '#ffffff' : '#334155',
-            border: workflowMode === 'delivery' ? '1.5px solid #7e22ce' : '1px solid #cbd5e1',
-            boxShadow: workflowMode === 'delivery' ? '0 2px 8px rgba(147,51,234,0.35)' : 'none'
-          }}
-        >
-          <Truck className="w-4 h-4" /> 🚚 Despachar
-        </button>
-      </div>
+          <button
+            onClick={() => setWorkflowMode('delivery')}
+            className="scanner-workflow-btn"
+            style={{
+              background: workflowMode === 'delivery' ? '#9333ea' : '#ffffff',
+              color: workflowMode === 'delivery' ? '#ffffff' : '#334155',
+              border: workflowMode === 'delivery' ? '1.5px solid #7e22ce' : '1px solid #cbd5e1',
+              boxShadow: workflowMode === 'delivery' ? '0 2px 8px rgba(147,51,234,0.35)' : 'none'
+            }}
+          >
+            <Truck className="w-4 h-4" /> 🚚 Despachar
+          </button>
+        </div>
+      )}
 
       {/* 🔹 MÉTODO 1: PANEL SELECTOR FIJO DE ANAQUEL Y PISO (2 ANAQUELES × 3 PISOS EN TIEMPO REAL) */}
       {workflowMode === 'slotting' && (
