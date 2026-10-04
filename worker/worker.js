@@ -306,6 +306,8 @@ async function writeTibMeta(tipo, meta) {
   await fsp.writeFile(metaPath, JSON.stringify(meta, null, 2), 'utf8');
 }
 
+const tibLookupCache = new Map(); // tipo -> { mtime, map, totalRows, durationMs, updatedAt }
+
 /**
  * Obtiene el archivo TIB directamente desde el disco local del VPS.
  * Si no existe o la versión cambió (clave R2 distinta), lo descarga de Cloudflare R2
@@ -335,12 +337,22 @@ async function getOrSyncCachedTibFile(tipo, r2Key, originalName) {
     updated_at: new Date().toISOString(),
   });
   console.log(`[worker] [CACHE GUARDADO ✅] ${tipo} guardado con éxito en disco VPS: ${filePath}`);
+
+  // Precalentamiento inmediato en RAM (eager warm-up):
+  // Construye el índice de WRs en segundo plano para que el primer cruce tome 2ms en lugar de 24s.
+  setTimeout(() => {
+    try {
+      console.log(`[worker] [AUTO-WARMUP 🚀] Sincronización completada. Precalentando índice en RAM para ${tipo}...`);
+      getOrBuildTibLookup(tipo);
+    } catch (warmErr) {
+      console.warn(`[worker] [AUTO-WARMUP ⚠️] Error en precalentamiento para ${tipo}:`, warmErr.message);
+    }
+  }, 50);
+
   return { filePath, hit: false };
 }
 
 // ---------------------------------------------------- motor cobros (cruce TIB)
-
-const tibLookupCache = new Map(); // tipo -> { mtime, map, totalRows, durationMs, updatedAt }
 
 function extractWrsFromCell(rawWr) {
   if (!rawWr) return [];
@@ -417,6 +429,25 @@ function getOrBuildTibLookup(tipo = 'sent') {
   const record = { mtime, map, totalRows: rows.length, durationMs, updatedAt: new Date().toISOString() };
   tibLookupCache.set(tipo, record);
   return record;
+}
+
+/**
+ * Precalienta en memoria RAM los archivos TIB que ya residen en el disco local del VPS.
+ * Se invoca al iniciar o reiniciar el contenedor amex-worker para garantizar CERO COLD-START.
+ */
+async function bootWarmUpTibIndices() {
+  console.log('[worker] [BOOT-WARMUP 🚀] Verificando archivos TIB en disco para precalentamiento de RAM...');
+  for (const tipo of ['sent', 'delivered', 'received']) {
+    try {
+      const filePath = getTibCacheFilePath(tipo);
+      if (fs.existsSync(filePath)) {
+        console.log(`[worker] [BOOT-WARMUP ⚡] Precalentando índice en RAM para ${tipo} (${filePath})...`);
+        getOrBuildTibLookup(tipo);
+      }
+    } catch (err) {
+      console.warn(`[worker] [BOOT-WARMUP ⚠️] No se pudo precalentar ${tipo}:`, err.message);
+    }
+  }
 }
 
 function cruzarFilasCobros(filas = [], options = {}) {
@@ -833,6 +864,57 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Endpoint de precalentamiento continuo: GET/POST /prewarm-cobros
+  if (parsedUrl.pathname === '/prewarm-cobros') {
+    const fuente = parsedUrl.searchParams.get('fuente') || 'sent';
+    try {
+      const filePath = getTibCacheFilePath(fuente);
+      if (!fs.existsSync(filePath)) {
+        const body = Buffer.from(JSON.stringify({ ok: false, status: 'file_not_found', fuente }));
+        res.writeHead(404, { 'Content-Type': 'application/json', 'Content-Length': body.length });
+        res.end(body);
+        return;
+      }
+
+      const stat = fs.statSync(filePath);
+      const cached = tibLookupCache.get(fuente);
+      if (cached && cached.mtime === stat.mtimeMs) {
+        const body = Buffer.from(JSON.stringify({
+          ok: true,
+          status: 'already_warm',
+          fuente,
+          totalWrs: cached.map ? cached.map.size : 0,
+          totalRows: cached.totalRows,
+          durationMs: cached.durationMs,
+          updatedAt: cached.updatedAt,
+        }));
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': body.length });
+        res.end(body);
+        return;
+      }
+
+      console.log(`[worker] [PREWARM ⚡] Petición de precalentamiento para ${fuente}...`);
+      const record = getOrBuildTibLookup(fuente);
+      const body = Buffer.from(JSON.stringify({
+        ok: true,
+        status: 'warmed_now',
+        fuente,
+        totalWrs: record && record.map ? record.map.size : 0,
+        totalRows: record ? record.totalRows : 0,
+        durationMs: record ? record.durationMs : 0,
+        updatedAt: record ? record.updatedAt : null,
+      }));
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': body.length });
+      res.end(body);
+    } catch (err) {
+      console.error(`[worker] Error en /prewarm-cobros: ${err.message}`);
+      const errBody = Buffer.from(JSON.stringify({ ok: false, error: err.message }));
+      res.writeHead(500, { 'Content-Type': 'application/json', 'Content-Length': errBody.length });
+      res.end(errBody);
+    }
+    return;
+  }
+
   // Endpoint para despertar al worker inmediatamente: POST /trigger-job
   if (req.method === 'POST' && parsedUrl.pathname === '/trigger-job') {
     triggerImmediatePoll();
@@ -900,6 +982,7 @@ const server = http.createServer((req, res) => {
   // Health y estado del cache (GET /)
   const mem = process.memoryUsage();
   const tibCache = {};
+  const tibMemoryCache = {};
   for (const k of SOURCE_KEYS) {
     try {
       const metaPath = getTibCacheMetaPath(k);
@@ -914,6 +997,15 @@ const server = http.createServer((req, res) => {
     } catch {
       tibCache[k] = { exists: false, error: 'read_fail' };
     }
+
+    const cachedMem = tibLookupCache.get(k);
+    tibMemoryCache[k] = cachedMem ? {
+      isWarm: true,
+      totalWrs: cachedMem.map ? cachedMem.map.size : 0,
+      totalRows: cachedMem.totalRows,
+      buildDurationMs: cachedMem.durationMs,
+      updatedAt: cachedMem.updatedAt,
+    } : { isWarm: false };
   }
 
   const uptimeSeconds = Math.round((Date.now() - workerStartTime) / 1000);
@@ -930,6 +1022,7 @@ const server = http.createServer((req, res) => {
     nodeHeapUsedMB: Math.round(mem.heapUsed / 1024 / 1024),
     tibCacheDir: TIB_CACHE_DIR,
     tibCache,
+    tibMemoryCache,
     cgroup: readCgroup(),
     telemetry,
     time: new Date().toISOString(),
@@ -970,6 +1063,7 @@ Promise.all([
   .then(() => {
     server.listen(PORT, HOST, () => {
       console.log(`[worker] Health en http://${HOST}:${PORT} | poll cada ${POLL_INTERVAL_MS}ms | workDir ${WORK_DIR} | cacheDir ${TIB_CACHE_DIR}`);
+      void bootWarmUpTibIndices();
     });
     void loop();
   })

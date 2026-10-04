@@ -36,11 +36,24 @@ export async function GET() {
       if (vpsRes.ok) {
         const vpsData = await vpsRes.json();
         const sentCache = vpsData?.tibCache?.sent;
+        const memoryCache = vpsData?.tibMemoryCache?.sent;
         if (sentCache && sentCache.exists) {
           vpsOnline = true;
           tibActivoNombre = sentCache.meta?.nombre_archivo || 'ENVIADO TIB.xlsx';
           tibSizeMb = (sentCache.sizeBytes / (1024 * 1024)).toFixed(1);
           tibActualizadoEn = sentCache.meta?.updated_at || vpsData.time || new Date().toISOString();
+
+          // Zero Cold-Start: Si por cualquier motivo la memoria RAM aún no tiene indexado el TIB
+          // (ej. reinicio reciente del VPS), disparamos precalentamiento inmediato en background.
+          // Cuando el operador dé click en Cruzar, el cruce tomará ~2ms en lugar de 24 segundos.
+          if (!memoryCache?.isWarm) {
+            void fetch(`${workerUrl.replace(/\/+$/, '')}/prewarm-cobros?fuente=sent`, {
+              signal: AbortSignal.timeout(60000),
+            }).catch((err: unknown) => {
+              const msg = err instanceof Error ? err.message : String(err);
+              console.warn('[ultimo-enviado] Aviso prewarm background:', msg);
+            });
+          }
         }
       }
     } catch {
