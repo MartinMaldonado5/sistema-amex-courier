@@ -31,6 +31,7 @@ describe('Validaciones Zod — Suite de Pruebas', () => {
         expect(res.data.numeroReciboBodega).toBe('WR-00124');
         expect(res.data.pesoKg).toBe(2.5);
         expect(res.data.ubicacionActual).toBe('AmexLince');
+        expect(res.data.estadoTib).toBe('EnAlmacen');
         expect(res.data.estadoEntrega).toBe('EnAlmacen');
       }
     });

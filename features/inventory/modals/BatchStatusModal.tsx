@@ -78,16 +78,14 @@ export default function BatchStatusModal({
             </label>
             <select
               value={batchTargetStatus}
-              onChange={e => setBatchTargetStatus(e.target.value as TipoEstadoEntrega)}
+              onChange={e => setBatchTargetStatus(e.target.value as any)}
               className="form-control"
               style={{ fontWeight: 600 }}
             >
-              <option value="EnAlmacen">📦 En Almacén (Custodia Lince)</option>
-              <option value="ListoParaRecojo">🏪 Listo para Recojo en Tienda</option>
-              <option value="EnRutaCarroAmex">🚚 En Ruta Carro Amex</option>
-              <option value="EnRutaMotorizado">🏍️ En Ruta Motorizado</option>
-              <option value="EnRutaProvincia">🚛 En Ruta Provincia</option>
-              <option value="Entregado">✅ Entregado / Liquidado</option>
+              <option value="EnAlmacen">📦 EnAlmacen (Almacén Miami/Lima)</option>
+              <option value="Enviado">✈️ Enviado (En Tránsito TIB)</option>
+              <option value="Recibido">📥 Recibido (En Bodega TIB)</option>
+              <option value="Entregado">✅ Entregado (Completado TIB)</option>
             </select>
           </div>
 

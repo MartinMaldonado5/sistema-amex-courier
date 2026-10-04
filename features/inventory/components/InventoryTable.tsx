@@ -297,37 +297,31 @@ export default function InventoryTable({
                           fontWeight: 700,
                           textTransform: 'uppercase',
                           background:
-                            pkg.estadoEntrega === 'EntregadoDomicilio' || pkg.estadoEntrega === 'RecogidoAlmacen' || pkg.estadoEntrega === 'Entregado'
+                            (pkg.estadoTib || pkg.estadoEntrega) === 'Entregado'
                               ? '#dcfce7'
-                              : pkg.estadoEntrega === 'Enviado' || pkg.estadoEntrega === 'EnRutaCarroAmex'
+                              : (pkg.estadoTib || pkg.estadoEntrega) === 'Enviado'
                               ? '#dbeafe'
-                              : pkg.estadoEntrega === 'Recibido'
+                              : (pkg.estadoTib || pkg.estadoEntrega) === 'Recibido'
                               ? '#e0f2fe'
                               : '#f8fafc',
                           color:
-                            pkg.estadoEntrega === 'EntregadoDomicilio' || pkg.estadoEntrega === 'RecogidoAlmacen' || pkg.estadoEntrega === 'Entregado'
+                            (pkg.estadoTib || pkg.estadoEntrega) === 'Entregado'
                               ? '#15803d'
-                              : pkg.estadoEntrega === 'Enviado' || pkg.estadoEntrega === 'EnRutaCarroAmex'
+                              : (pkg.estadoTib || pkg.estadoEntrega) === 'Enviado'
                               ? '#1d4ed8'
-                              : pkg.estadoEntrega === 'Recibido'
+                              : (pkg.estadoTib || pkg.estadoEntrega) === 'Recibido'
                               ? '#0284c7'
                               : '#64748b',
                           border: '1px solid #e2e8f0'
                         }}
                       >
-                        {pkg.estadoEntrega === 'Enviado'
+                        {(pkg.estadoTib || pkg.estadoEntrega) === 'Enviado'
                           ? 'Enviado'
-                          : pkg.estadoEntrega === 'Recibido'
+                          : (pkg.estadoTib || pkg.estadoEntrega) === 'Recibido'
                           ? 'Recibido'
-                          : pkg.estadoEntrega === 'EnAlmacen'
-                          ? 'En Almacén'
-                          : pkg.estadoEntrega === 'EnRutaCarroAmex'
-                          ? 'En Ruta'
-                          : pkg.estadoEntrega === 'ListoParaRecojo'
-                          ? 'Listo Recojo'
-                          : pkg.estadoEntrega === 'EntregadoDomicilio' || pkg.estadoEntrega === 'RecogidoAlmacen' || pkg.estadoEntrega === 'Entregado'
+                          : (pkg.estadoTib || pkg.estadoEntrega) === 'Entregado'
                           ? 'Entregado'
-                          : pkg.estadoEntrega || 'En Almacén'}
+                          : (pkg.estadoTib || pkg.estadoEntrega) || 'En Almacén'}
                       </span>
                     </td>
                     <td style={{ padding: '10px 14px', textAlign: 'center' }}>

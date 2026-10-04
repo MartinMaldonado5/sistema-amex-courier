@@ -72,7 +72,7 @@ export function exportPaquetesToExcel(paquetes: Paquete[], filenamePrefix = 'Inv
     'Tipo Paquete': p.tipoEmpaque || '',
     'Peso (Kg)': p.pesoKg && Number(p.pesoKg) > 0 ? Number(p.pesoKg) : '',
     'Estado AMEX': mapEstadoAmexLabel(p.estadoAmex),
-    'Estado TIB': mapEstadoTibLabel(p.estadoEntrega),
+    'Estado TIB': mapEstadoTibLabel(p.estadoTib || p.estadoEntrega),
     'Posición WMS': p.posicionEstante || (p.anaquel && p.piso ? `${p.anaquel}-${p.piso}` : 'REC'),
     'Almacén Actual': p.ubicacionActual === 'Entregado'
       ? 'Entregado'

@@ -6,7 +6,7 @@ import {
   CreatePaqueteSchema,
 } from '@/lib/validations/paquetes.schema';
 import { validateQuery, validateBody } from '@/lib/api/validate';
-import type { Paquete, TipoEstadoEntrega, TipoEstadoAmex, TipoMetodoEntrega, TipoUbicacion } from '@/types';
+import type { Paquete, TipoEstadoTib, TipoEstadoEntrega, TipoEstadoAmex, TipoMetodoEntrega, TipoUbicacion } from '@/types';
 
 function mapPaqueteRow(row: Record<string, unknown>): Paquete {
   const posicion = String(
@@ -18,20 +18,20 @@ function mapPaqueteRow(row: Record<string, unknown>): Paquete {
   return {
     id: String(row.id),
     numeroReciboBodega: String(row.numero_recibo_bodega || ''),
-    trackingUsa: String(row.tracking_usa || ''),
+    tracking: String(row.tracking || row.tracking_usa || ''),
+    trackingUsa: String(row.tracking || row.tracking_usa || ''),
     tipoEmpaque: String(row.tipo_empaque || ''),
     numeroFactura: '',
     dniConsignatario: String(row.dni_consignatario || ''),
     nombreConsignatario: String(row.nombre_consignatario || ''),
     descripcion: String(row.descripcion || ''),
     pesoKg: row.peso_kg !== null && row.peso_kg !== undefined ? Number(row.peso_kg) : 0,
-    valorDeclaradoUsd: Number(row.valor_declarado_usd || 0),
     ubicacionActual: (row.ubicacion_actual as TipoUbicacion) || 'AmexLince',
     anaquel: String(row.anaquel || anaquel),
     piso: String(row.piso || piso),
     posicionEstante: posicion,
-    metodoEntrega: (row.metodo_entrega as TipoMetodoEntrega) || 'CarroAmexDomicilio',
-    estadoEntrega: (row.estado_entrega as TipoEstadoEntrega) || 'EnAlmacen',
+    estadoTib: ((row.estado_tib || row.estado_entrega) as TipoEstadoTib) || 'EnAlmacen',
+    estadoEntrega: ((row.estado_tib || row.estado_entrega) as TipoEstadoTib) || 'EnAlmacen',
     estadoAmex: (row.estado_amex as TipoEstadoAmex) || 'recibido',
     facturaPdfUrl: '',
     usuarioEmail: String(row.usuario_email || ''),
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
     const queryValidation = validateQuery(QueryPaquetesSchema, req.nextUrl.searchParams);
     if (!queryValidation.ok) return queryValidation.response;
 
-    const { page, pageSize, search, estadoEntrega, ubicacionActual, sortBy, sortOrder } =
+    const { page, pageSize, search, estadoTib, estadoEntrega, ubicacionActual, sortBy, sortOrder } =
       queryValidation.data;
 
     const admin = getSupabaseAdmin();
@@ -60,8 +60,9 @@ export async function GET(req: NextRequest) {
       .select('*', { count: 'exact' })
       .is('eliminado_en', null);
 
-    if (estadoEntrega) {
-      query = query.eq('estado_entrega', estadoEntrega);
+    const filterStatus = estadoTib || estadoEntrega;
+    if (filterStatus) {
+      query = query.eq('estado_tib', filterStatus);
     }
 
     if (ubicacionActual) {
@@ -71,7 +72,7 @@ export async function GET(req: NextRequest) {
     if (search) {
       const cleanSearch = search.trim();
       query = query.or(
-        `numero_recibo_bodega.ilike.%${cleanSearch}%,dni_consignatario.ilike.%${cleanSearch}%,tracking_usa.ilike.%${cleanSearch}%,nombre_consignatario.ilike.%${cleanSearch}%`
+        `numero_recibo_bodega.ilike.%${cleanSearch}%,dni_consignatario.ilike.%${cleanSearch}%,tracking.ilike.%${cleanSearch}%,nombre_consignatario.ilike.%${cleanSearch}%`
       );
     }
 
@@ -128,19 +129,17 @@ export async function POST(req: NextRequest) {
 
     const insertRow = {
       numero_recibo_bodega: data.numeroReciboBodega,
-      tracking_usa: data.trackingUsa,
+      tracking: data.tracking || data.trackingUsa || '',
       tipo_empaque: data.tipoEmpaque,
       dni_consignatario: data.dniConsignatario || null,
       nombre_consignatario: data.nombreConsignatario || null,
       descripcion: data.descripcion,
       peso_kg: data.pesoKg,
-      valor_declarado_usd: data.valorDeclaradoUsd,
       ubicacion_actual: data.ubicacionActual,
       anaquel: data.anaquel || null,
       piso: data.piso || null,
       posicion_estante: data.posicionEstante || null,
-      metodo_entrega: data.metodoEntrega,
-      estado_entrega: data.estadoEntrega,
+      estado_tib: data.estadoTib || data.estadoEntrega || 'EnAlmacen',
       estado_amex: (data as any).estadoAmex || 'recibido',
       creado_por: auth.user.id,
       usuario_email: auth.user.email || null,

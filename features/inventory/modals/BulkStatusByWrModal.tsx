@@ -350,11 +350,12 @@ export default function BulkStatusByWrModal({
                 onChange={e => {
                   const val = e.target.value as TipoEstadoAmex;
                   setTargetStatusAmex(val);
-                  // Sincronización inteligente sugerida para el estado TIB
+                  // Sincronización sugerida para el estado TIB
                   if (val === 'entregado') setTargetStatusTib('Entregado');
-                  if (val === 'listo_recojo') setTargetStatusTib('ListoParaRecojo');
-                  if (val === 'en_ruta') setTargetStatusTib('EnRutaCarroAmex');
+                  if (val === 'listo_recojo') setTargetStatusTib('EnAlmacen');
+                  if (val === 'en_ruta') setTargetStatusTib('Enviado');
                   if (val === 'en_almacen') setTargetStatusTib('EnAlmacen');
+                  if (val === 'recibido') setTargetStatusTib('Recibido');
                 }}
                 className="form-control"
                 style={{
@@ -383,12 +384,10 @@ export default function BulkStatusByWrModal({
                 className="form-control"
                 style={{ fontWeight: 600 }}
               >
-                <option value="Entregado">✅ Entregado / Liquidado</option>
-                <option value="ListoParaRecojo">🏪 Listo para Recojo en Tienda</option>
-                <option value="EnRutaCarroAmex">🚚 En Ruta Carro Amex</option>
-                <option value="EnRutaMotorizado">🏍️ En Ruta Motorizado</option>
-                <option value="EnRutaProvincia">🚛 En Ruta Provincia</option>
-                <option value="EnAlmacen">📦 En Almacén</option>
+                <option value="Entregado">✅ Entregado (Completado TIB)</option>
+                <option value="EnAlmacen">📦 EnAlmacen (Almacén Miami/Lima)</option>
+                <option value="Enviado">✈️ Enviado (En Tránsito TIB)</option>
+                <option value="Recibido">📥 Recibido (En Bodega TIB)</option>
               </select>
             </div>
           </div>

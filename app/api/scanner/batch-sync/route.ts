@@ -134,8 +134,8 @@ async function handleBatchSync(req: NextRequest): Promise<NextResponse> {
   const escapedCodes = uniqueCodes.map((c) => `"${c.replace(/"/g, '')}"`).join(',');
   const { data: existingPackages, error: selectError } = await admin
     .from('paquetes')
-    .select('id, numero_recibo_bodega, tracking_usa, nombre_consignatario, ubicacion_actual, posicion_estante, anaquel, piso')
-    .or(`numero_recibo_bodega.in.(${escapedCodes}),tracking_usa.in.(${escapedCodes})`);
+    .select('id, numero_recibo_bodega, tracking, nombre_consignatario, ubicacion_actual, posicion_estante, anaquel, piso')
+    .or(`numero_recibo_bodega.in.(${escapedCodes}),tracking.in.(${escapedCodes})`);
 
   if (selectError) {
     scannerLogger.error('Error buscando paquetes existentes para el lote de escáner', selectError);
@@ -149,18 +149,19 @@ async function handleBatchSync(req: NextRequest): Promise<NextResponse> {
   const packageMap = new Map<string, {
     id: string;
     numero_recibo_bodega: string;
-    tracking_usa: string;
+    tracking?: string;
     nombre_consignatario?: string;
     ubicacion_actual?: string;
     posicion_estante?: string;
   }>();
 
-  for (const pkg of existingPackages || []) {
+  for (const pkg of (existingPackages as any[]) || []) {
     if (pkg.numero_recibo_bodega) {
       packageMap.set(pkg.numero_recibo_bodega.trim().toUpperCase(), pkg);
     }
-    if (pkg.tracking_usa) {
-      packageMap.set(pkg.tracking_usa.trim().toUpperCase(), pkg);
+    const trk = pkg.tracking || pkg.tracking_usa;
+    if (trk) {
+      packageMap.set(String(trk).trim().toUpperCase(), pkg);
     }
   }
 
@@ -216,7 +217,6 @@ async function handleBatchSync(req: NextRequest): Promise<NextResponse> {
           piso: pis,
           posicion_estante: loc,
           ubicacion_actual: 'AmexLince',
-          estado_entrega: 'EnAlmacen',
           estado_amex: (log as any).estadoAmex || 'recibido',
           ...(activeOperatorEmail ? { usuario_email: activeOperatorEmail } : {}),
           eliminado_en: null,
@@ -233,18 +233,16 @@ async function handleBatchSync(req: NextRequest): Promise<NextResponse> {
         insertedInThisBatch.add(newWr);
         toInsertList.push({
           numero_recibo_bodega: newWr,
-          tracking_usa: upper.startsWith('WR') ? '' : upper,
+          tracking: upper.startsWith('WR') ? '' : upper,
           tipo_empaque: 'Paquete',
           dni_consignatario: '',
           nombre_consignatario: consignatario,
           descripcion: 'Mercadería ingresada por Escáner',
           peso_kg: null,
-          valor_declarado_usd: 50.0,
           ubicacion_actual: 'AmexLince',
           anaquel: ana,
           piso: pis,
           posicion_estante: loc,
-          estado_entrega: 'EnAlmacen',
           estado_amex: (log as any).estadoAmex || 'recibido',
           usuario_email: activeOperatorEmail,
           creado_por: activeOperatorId,
@@ -275,7 +273,7 @@ async function handleBatchSync(req: NextRequest): Promise<NextResponse> {
     const { data: createdPkgs, error: insertError } = await admin
       .from('paquetes')
       .insert(toInsertList)
-      .select('id, numero_recibo_bodega, tracking_usa');
+      .select('id, numero_recibo_bodega, tracking');
 
     if (insertError) {
       scannerLogger.error('Error insertando nuevos paquetes en lote', insertError);
@@ -289,7 +287,7 @@ async function handleBatchSync(req: NextRequest): Promise<NextResponse> {
       insertedCount = createdPkgs.length;
       for (const created of createdPkgs) {
         const wrUpper = (created.numero_recibo_bodega || '').toUpperCase();
-        const trkUpper = (created.tracking_usa || '').toUpperCase();
+        const trkUpper = ((created as any).tracking || (created as any).tracking_usa || '').toUpperCase();
         for (const item of resolvedItems) {
           if (item.isNew && (item.code === wrUpper || (trkUpper && item.code === trkUpper))) {
             item.pkgId = created.id;

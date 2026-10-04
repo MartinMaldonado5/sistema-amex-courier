@@ -184,7 +184,7 @@ export function useInventoryData({
         pos,
         p.numeroFactura,
         p.tipoEmpaque,
-        p.estadoEntrega,
+        p.estadoTib || p.estadoEntrega,
         p.estadoAmex
       ]);
 
@@ -199,7 +199,7 @@ export function useInventoryData({
 
       const matchesFloor = floorFilter === 'ALL' ? true : pos.includes(floorFilter) || p.piso === floorFilter;
       const matchesType = packageTypeFilter === 'ALL' || p.tipoEmpaque === packageTypeFilter;
-      const matchesStatus = statusFilter === 'ALL' || p.estadoEntrega === statusFilter;
+      const matchesStatus = statusFilter === 'ALL' || (p.estadoTib || p.estadoEntrega) === statusFilter;
       const matchesStatusAmex = statusAmexFilter === 'ALL' || p.estadoAmex === statusAmexFilter;
 
       return (
@@ -376,7 +376,6 @@ export function useInventoryData({
       piso: pis,
       posicionEstante: pos,
       pesoKg: Number(editFormData.pesoKg || 0),
-      valorDeclaradoUsd: editFormData.valorDeclaradoUsd !== undefined ? Number(editFormData.valorDeclaradoUsd) : (selectedPackageForAction.valorDeclaradoUsd || 0),
       estadoAmex: (editFormData.estadoAmex || selectedPackageForAction.estadoAmex || 'recibido') as TipoEstadoAmex
     };
 

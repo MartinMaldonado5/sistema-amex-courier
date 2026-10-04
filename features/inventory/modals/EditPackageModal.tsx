@@ -145,18 +145,19 @@ export default function EditPackageModal({
             </div>
 
             <div className="form-group">
-              <label style={{ fontSize: '12px', fontWeight: 800, color: '#475569' }}>Estado TIB (Reporte)</label>
+              <label style={{ fontSize: '12px', fontWeight: 800, color: '#475569' }}>Estado TIB (Logística)</label>
               <select
-                value={editFormData.estadoEntrega || 'EnAlmacen'}
-                onChange={e => setEditFormData({ ...editFormData, estadoEntrega: e.target.value as TipoEstadoEntrega })}
+                value={editFormData.estadoTib || editFormData.estadoEntrega || 'EnAlmacen'}
+                onChange={e => {
+                  const val = e.target.value as any;
+                  setEditFormData({ ...editFormData, estadoTib: val, estadoEntrega: val });
+                }}
                 className="form-control"
               >
-                <option value="EnAlmacen">En Almacén</option>
-                <option value="ListoParaRecojo">Listo para Recojo</option>
-                <option value="EnRutaCarroAmex">En Ruta Carro Amex</option>
-                <option value="EnRutaMotorizado">En Ruta Motorizado</option>
-                <option value="EnRutaProvincia">En Ruta Provincia</option>
-                <option value="Entregado">Entregado</option>
+                <option value="EnAlmacen">EnAlmacen (Almacén Miami/Lima)</option>
+                <option value="Enviado">Enviado (En Tránsito TIB)</option>
+                <option value="Recibido">Recibido (En Bodega TIB)</option>
+                <option value="Entregado">Entregado (Completado TIB)</option>
               </select>
             </div>
           </div>

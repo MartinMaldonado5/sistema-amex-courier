@@ -37,7 +37,7 @@ export async function getDbInventoryCount(options?: DbInventoryOptions): Promise
     .is('eliminado_en', null);
 
   if (filtro === 'activos') {
-    query = query.neq('estado_entrega', 'Entregado');
+    query = query.neq('estado_amex', 'entregado').neq('ubicacion_actual', 'Entregado');
   }
 
   const { count, error } = await query;
@@ -63,11 +63,11 @@ export async function generateInventoryExcelBufferFromDb(
     .from('paquetes')
     .select(`
       numero_recibo_bodega,
-      tracking_usa,
+      tracking,
       nombre_consignatario,
       tipo_empaque,
       peso_kg,
-      estado_entrega,
+      estado_tib,
       estado_amex,
       anaquel,
       piso,
@@ -81,7 +81,7 @@ export async function generateInventoryExcelBufferFromDb(
     .order('creado_en', { ascending: false });
 
   if (filtro === 'activos') {
-    query = query.neq('estado_entrega', 'Entregado');
+    query = query.neq('estado_amex', 'entregado').neq('ubicacion_actual', 'Entregado');
   }
 
   const { data: paquetes, error } = await query;
@@ -106,7 +106,7 @@ export async function generateInventoryExcelBufferFromDb(
     { value: 'Tipo Paquete', fontWeight: 'bold' as const },
     { value: 'Peso (Kg)', fontWeight: 'bold' as const, align: 'right' as const },
     { value: 'Estado AMEX', fontWeight: 'bold' as const },
-    { value: 'Estado Entrega', fontWeight: 'bold' as const },
+    { value: 'Estado TIB', fontWeight: 'bold' as const },
     { value: 'Posición WMS', fontWeight: 'bold' as const },
     { value: 'Almacén Actual', fontWeight: 'bold' as const },
     { value: 'Usuario que Ingresó (Email)', fontWeight: 'bold' as const },
@@ -138,14 +138,14 @@ export async function generateInventoryExcelBufferFromDb(
     return [
       { type: Number, value: idx + 1 },
       { type: String, value: wr },
-      { type: String, value: String(p.tracking_usa || '') },
+      { type: String, value: String(p.tracking || '') },
       { type: String, value: String(p.nombre_consignatario || '') },
       { type: String, value: String(p.tipo_empaque || 'CAJA') },
       pesoVal !== null
         ? { type: Number, value: pesoVal }
         : { type: String, value: '' },
       { type: String, value: String(p.estado_amex || 'recibido').toUpperCase() },
-      { type: String, value: mapEstadoLabel(p.estado_entrega) },
+      { type: String, value: mapEstadoLabel(p.estado_tib) },
       { type: String, value: posicionWms },
       { type: String, value: almacen },
       { type: String, value: String(p.usuario_email || '') },

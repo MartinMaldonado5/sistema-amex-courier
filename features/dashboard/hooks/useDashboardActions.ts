@@ -78,7 +78,7 @@ export function useDashboardActions({
           eliminado_por: null,
           actualizado_en: new Date().toISOString()
         })
-        .or(`numero_recibo_bodega.eq.${upper},tracking_usa.eq.${upper}`);
+        .or(`numero_recibo_bodega.eq.${upper},tracking.eq.${upper}`);
     } catch (error) {
       console.warn('Error syncing package location to Supabase:', error);
     }
@@ -118,7 +118,6 @@ export function useDashboardActions({
     const [anaquel, piso] = posicion.includes('-') ? posicion.split('-') : [posicion, 'P1'];
 
     const numPeso = parseFloat(newPkgForm.pesoKg) || 1.0;
-    const numValor = parseFloat(newPkgForm.valorDeclaradoUsd) || 0.0;
     const wr = (newPkgForm.numeroReciboBodega || `WR${Math.floor(100000 + Math.random() * 900000)}`).trim().toUpperCase();
     const tracking = newPkgForm.trackingUsa?.trim() || '';
     const nombre = newPkgForm.nombreConsignatario?.trim() || 'CLIENTE AMEX';
@@ -126,6 +125,7 @@ export function useDashboardActions({
     const newPackage: Paquete = {
       id: `p-${Date.now()}`,
       numeroReciboBodega: wr,
+      tracking: tracking,
       trackingUsa: tracking,
       tipoEmpaque: newPkgForm.tipoEmpaque || 'CAJA',
       numeroFactura: newPkgForm.numeroFactura?.trim() || '',
@@ -133,12 +133,12 @@ export function useDashboardActions({
       nombreConsignatario: nombre,
       descripcion: newPkgForm.descripcion?.trim() || 'MERCANCÍA GENERAL',
       pesoKg: numPeso,
-      valorDeclaradoUsd: numValor,
       ubicacionActual: (newPkgForm.ubicacionActual || 'AmexLince') as TipoUbicacion,
       anaquel,
       piso,
       posicionEstante: posicion,
       metodoEntrega: (newPkgForm.metodoEntrega || 'CarroAmexDomicilio') as TipoMetodoEntrega,
+      estadoTib: 'EnAlmacen',
       estadoEntrega: 'EnAlmacen' as TipoEstadoEntrega,
       estadoAmex: 'recibido',
       facturaPdfUrl: newPkgForm.facturaPdfUrl || '',
@@ -153,19 +153,16 @@ export function useDashboardActions({
     try {
       const { data: insertedPkg, error: insertError } = await supabase.from('paquetes').insert({
         numero_recibo_bodega: wr,
-        tracking_usa: tracking || null,
+        tracking: tracking || null,
         tipo_empaque: newPkgForm.tipoEmpaque || 'CAJA',
         dni_consignatario: newPkgForm.dniConsignatario?.trim() || null,
         nombre_consignatario: nombre,
         descripcion: newPkgForm.descripcion?.trim() || 'MERCANCÍA GENERAL',
         peso_kg: numPeso,
-        valor_declarado_usd: numValor,
         ubicacion_actual: newPkgForm.ubicacionActual || 'AmexLince',
         anaquel,
         piso,
         posicion_estante: posicion,
-        metodo_entrega: newPkgForm.metodoEntrega || 'CarroAmexDomicilio',
-        estado_entrega: 'EnAlmacen',
         estado_amex: 'recibido',
         usuario_email: currentUser?.email || '',
         creado_por: currentUser?.id || null

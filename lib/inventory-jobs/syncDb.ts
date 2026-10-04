@@ -37,15 +37,13 @@ function normalizeKey(str: string): string {
     .replace(/[^A-Z0-9]/g, '');
 }
 
-function mapEstadoEntrega(rawEstado: string, currentUbicacion?: string): string {
+function mapEstadoEntrega(rawEstado: string): string {
   const norm = rawEstado.trim().toUpperCase();
   if (norm.includes('ENTREGADO') || norm.includes('RECOGIDO')) return 'Entregado';
-  if (norm.includes('ENVIADO') || norm.includes('DESPACHADO')) return 'Enviado';
+  if (norm.includes('ENVIADO') || norm.includes('DESPACHADO') || norm.includes('RUTA') || norm.includes('REPARTO') || norm.includes('TRANSITO')) return 'Enviado';
   if (norm.includes('RECIBIDO')) return 'Recibido';
-  if (norm.includes('RUTA') || norm.includes('REPARTO') || norm.includes('TRANSITO')) return 'EnRutaCarroAmex';
   if (norm.includes('RECOJO') || norm.includes('LISTO') || norm.includes('OFICINA')) return 'ListoParaRecojo';
   if (norm.includes('ALMACEN')) return 'EnAlmacen';
-  if (currentUbicacion === 'Entregado') return 'Entregado';
   return 'EnAlmacen';
 }
 
@@ -163,7 +161,7 @@ export async function syncCompletedExcelToDatabase(
     const wrList = parsedRows.map(p => p.wr);
     const { data: existingPackages, error: selectErr } = await admin
       .from('paquetes')
-      .select('id, numero_recibo_bodega, tracking_usa, nombre_consignatario, tipo_empaque, peso_kg, estado_entrega, ubicacion_actual, posicion_estante')
+      .select('id, numero_recibo_bodega, tracking, nombre_consignatario, tipo_empaque, peso_kg, estado_tib, ubicacion_actual, posicion_estante')
       .in('numero_recibo_bodega', wrList);
 
     if (selectErr) {
@@ -202,7 +200,7 @@ export async function syncCompletedExcelToDatabase(
 
     for (const item of parsedRows) {
       const existing = existingMap.get(item.wr);
-      const mappedEstado = mapEstadoEntrega(item.estadoEntrega, existing?.ubicacion_actual);
+      const mappedEstado = mapEstadoEntrega(item.estadoEntrega);
 
       if (existing) {
         updatesList.push({
@@ -212,12 +210,12 @@ export async function syncCompletedExcelToDatabase(
           payload: {
             id: existing.id,
             numero_recibo_bodega: existing.numero_recibo_bodega,
-            tracking_usa: item.tracking || existing.tracking_usa,
+            tracking: item.tracking || existing.tracking || existing.tracking_usa,
             nombre_consignatario: item.cliente || existing.nombre_consignatario,
             tipo_empaque: item.tipoEmpaque || existing.tipo_empaque || 'CAJA',
             peso_kg: item.pesoKg !== null ? item.pesoKg : existing.peso_kg,
-            estado_entrega: mappedEstado || existing.estado_entrega,
-            ubicacion_actual: mappedEstado === 'Entregado' ? 'Entregado' : (existing.ubicacion_actual || 'AmexLince'),
+            estado_tib: mappedEstado || existing.estado_tib,
+            ubicacion_actual: existing.ubicacion_actual || 'AmexLince',
             actualizado_en: nowIso,
             eliminado_en: null,
           },
@@ -232,13 +230,13 @@ export async function syncCompletedExcelToDatabase(
           mappedEstado,
           payload: {
             numero_recibo_bodega: item.wr,
-            tracking_usa: item.tracking,
+            tracking: item.tracking,
             tipo_empaque: item.tipoEmpaque || 'CAJA',
             nombre_consignatario: item.cliente,
             peso_kg: item.pesoKg,
-            estado_entrega: mappedEstado,
-            estado_amex: mappedEstado === 'Entregado' ? 'entregado' : (item.estadoAmex?.toLowerCase() || 'recibido'),
-            ubicacion_actual: mappedEstado === 'Entregado' ? 'Entregado' : 'AmexLince',
+            estado_tib: mappedEstado,
+            estado_amex: 'recibido',
+            ubicacion_actual: 'AmexLince',
             anaquel: ana,
             piso: pis,
             posicion_estante: item.posicionWms || 'REC-P1',

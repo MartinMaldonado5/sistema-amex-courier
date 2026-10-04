@@ -22,7 +22,6 @@ export const EMPTY_PKG_FORM: NewPkgFormData = {
   nombreConsignatario: '',
   descripcion: '',
   pesoKg: '1.0',
-  valorDeclaradoUsd: '50.0',
   ubicacionActual: 'AmexLince',
   anaquel: 'A1',
   piso: 'P1',

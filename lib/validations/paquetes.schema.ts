@@ -1,34 +1,31 @@
 import { z } from 'zod';
 
 export const UbicacionSchema = z.enum(['AmexLince', 'Entregado']).catch('AmexLince');
-export const MetodoEntregaSchema = z.enum(['RecojoLince', 'CarroAmexDomicilio', 'AgenciaProvincia']).catch('CarroAmexDomicilio');
-export const EstadoEntregaSchema = z.enum([
+export const EstadoTibSchema = z.enum([
   'EnAlmacen',
   'Enviado',
   'Recibido',
-  'EnRutaCarroAmex',
-  'EntregadoDomicilio',
-  'RecogidoAlmacen',
-  'ListoParaRecojo',
   'Entregado',
 ]).catch('EnAlmacen');
+export const EstadoEntregaSchema = EstadoTibSchema; // Compatibilidad
 
 export const CreatePaqueteSchema = z.object({
   numeroReciboBodega: z.string().trim().min(1, 'El recibo de bodega (WR) es requerido.'),
-  trackingUsa: z.string().trim().default(''),
+  tracking: z.string().trim().default(''),
+  trackingUsa: z.string().trim().optional(),
   tipoEmpaque: z.string().trim().default('CAJA'),
   numeroFactura: z.string().trim().optional(),
   dniConsignatario: z.string().trim().optional(),
   nombreConsignatario: z.string().trim().optional(),
   descripcion: z.string().trim().default('MERCADERIA GENERAL'),
   pesoKg: z.coerce.number().min(0, 'El peso no puede ser negativo.').default(0),
-  valorDeclaradoUsd: z.coerce.number().min(0, 'El valor declarado no puede ser negativo.').default(0),
+  valorDeclaradoUsd: z.coerce.number().optional(),
   ubicacionActual: UbicacionSchema.default('AmexLince'),
   anaquel: z.string().trim().optional(),
   piso: z.string().trim().optional(),
   posicionEstante: z.string().trim().optional(),
-  metodoEntrega: MetodoEntregaSchema.default('CarroAmexDomicilio'),
-  estadoEntrega: EstadoEntregaSchema.default('EnAlmacen'),
+  estadoTib: EstadoTibSchema.default('EnAlmacen'),
+  estadoEntrega: EstadoTibSchema.default('EnAlmacen'),
   facturaPdfUrl: z.string().trim().optional(),
 });
 
@@ -45,6 +42,7 @@ export const QueryPaquetesSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(500).default(50),
   search: z.string().trim().optional(),
+  estadoTib: z.string().trim().optional(),
   estadoEntrega: z.string().trim().optional(),
   ubicacionActual: z.string().trim().optional(),
   sortBy: z.enum(['creado_en', 'numero_recibo_bodega', 'peso_kg', 'nombre_consignatario']).default('creado_en'),

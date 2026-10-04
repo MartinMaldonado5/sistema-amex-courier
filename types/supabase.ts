@@ -756,13 +756,14 @@ export type Database = {
           anaquel: string | null
           cliente_id: string | null
           creado_en: string | null
+          creado_por: string | null
           descripcion: string | null
           dni_consignatario: string | null
           eliminado_en: string | null
           eliminado_por: string | null
-          estado_entrega: string | null
+          estado_amex: string | null
+          estado_tib: string | null
           id: string
-          metodo_entrega: string | null
           motivo_eliminacion: string | null
           nombre_consignatario: string | null
           numero_recibo_bodega: string
@@ -770,22 +771,23 @@ export type Database = {
           piso: string | null
           posicion_estante: string | null
           tipo_empaque: string | null
-          tracking_usa: string
+          tracking: string
           ubicacion_actual: string | null
-          valor_declarado_usd: number | null
+          usuario_email: string | null
         }
         Insert: {
           actualizado_en?: string | null
           anaquel?: string | null
           cliente_id?: string | null
           creado_en?: string | null
+          creado_por?: string | null
           descripcion?: string | null
           dni_consignatario?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
-          estado_entrega?: string | null
+          estado_amex?: string | null
+          estado_tib?: string | null
           id?: string
-          metodo_entrega?: string | null
           motivo_eliminacion?: string | null
           nombre_consignatario?: string | null
           numero_recibo_bodega: string
@@ -793,22 +795,23 @@ export type Database = {
           piso?: string | null
           posicion_estante?: string | null
           tipo_empaque?: string | null
-          tracking_usa: string
+          tracking: string
           ubicacion_actual?: string | null
-          valor_declarado_usd?: number | null
+          usuario_email?: string | null
         }
         Update: {
           actualizado_en?: string | null
           anaquel?: string | null
           cliente_id?: string | null
           creado_en?: string | null
+          creado_por?: string | null
           descripcion?: string | null
           dni_consignatario?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
-          estado_entrega?: string | null
+          estado_amex?: string | null
+          estado_tib?: string | null
           id?: string
-          metodo_entrega?: string | null
           motivo_eliminacion?: string | null
           nombre_consignatario?: string | null
           numero_recibo_bodega?: string
@@ -816,9 +819,9 @@ export type Database = {
           piso?: string | null
           posicion_estante?: string | null
           tipo_empaque?: string | null
-          tracking_usa?: string
+          tracking?: string
           ubicacion_actual?: string | null
-          valor_declarado_usd?: number | null
+          usuario_email?: string | null
         }
         Relationships: [
           {

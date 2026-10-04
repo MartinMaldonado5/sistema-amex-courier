@@ -141,19 +141,17 @@ export const inventoryService = {
       .from('paquetes')
       .update({
         numero_recibo_bodega: updated.numeroReciboBodega,
-        tracking_usa: updated.trackingUsa,
+        tracking: updated.tracking || updated.trackingUsa || '',
         tipo_empaque: updated.tipoEmpaque,
         dni_consignatario: updated.dniConsignatario,
         nombre_consignatario: updated.nombreConsignatario,
         descripcion: updated.descripcion,
         peso_kg: updated.pesoKg,
-        valor_declarado_usd: updated.valorDeclaradoUsd,
         ubicacion_actual: updated.ubicacionActual,
         anaquel: updated.anaquel,
         piso: updated.piso,
         posicion_estante: updated.posicionEstante,
-        metodo_entrega: updated.metodoEntrega,
-        estado_entrega: updated.estadoEntrega,
+        estado_tib: updated.estadoTib || updated.estadoEntrega || 'EnAlmacen',
         estado_amex: updated.estadoAmex || 'recibido'
       })
       .eq('id', updated.id);
@@ -189,7 +187,7 @@ export const inventoryService = {
 
   // Cambio rápido de estado individual TIB
   async quickStatusChange(pkg: Paquete, newStatus: TipoEstadoEntrega): Promise<void> {
-    await supabase.from('paquetes').update({ estado_entrega: newStatus }).eq('id', pkg.id);
+    await supabase.from('paquetes').update({ estado_tib: newStatus }).eq('id', pkg.id);
 
     await supabase.from('movimientos_kardex').insert({
       paquete_id: pkg.id,
@@ -225,7 +223,7 @@ export const inventoryService = {
       .from('paquetes')
       .update({
         estado_amex: 'entregado',
-        estado_entrega: 'Entregado',
+        estado_tib: 'Entregado',
         ubicacion_actual: 'Entregado'
       })
       .eq('id', pkg.id);
@@ -244,6 +242,7 @@ export const inventoryService = {
     return {
       ...pkg,
       estadoAmex: 'entregado',
+      estadoTib: 'Entregado',
       estadoEntrega: 'Entregado',
       ubicacionActual: 'Entregado'
     };
@@ -256,7 +255,7 @@ export const inventoryService = {
     paquetesList: Paquete[],
     targetStatusAmex?: TipoEstadoAmex
   ): Promise<Paquete[]> {
-    const updatePayload: Record<string, any> = { estado_entrega: targetStatus };
+    const updatePayload: Record<string, any> = { estado_tib: targetStatus };
     if (targetStatusAmex) {
       updatePayload.estado_amex = targetStatusAmex;
     }
@@ -271,6 +270,7 @@ export const inventoryService = {
       if (pkg) {
         const updated: Paquete = {
           ...pkg,
+          estadoTib: targetStatus,
           estadoEntrega: targetStatus,
           ...(targetStatusAmex ? { estadoAmex: targetStatusAmex } : {})
         };

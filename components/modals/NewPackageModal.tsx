@@ -27,7 +27,7 @@ export interface NewPkgFormData {
   nombreConsignatario: string;
   descripcion: string;
   pesoKg: string;
-  valorDeclaradoUsd: string;
+  valorDeclaradoUsd?: string;
   ubicacionActual: string;
   anaquel?: string;
   piso?: string;
@@ -558,20 +558,6 @@ export default function NewPackageModal({
                   </div>
                 </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                    Valor Declarado / Invoice (USD) (Opcional)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={form.valorDeclaradoUsd}
-                    onChange={e => set('valorDeclaradoUsd', e.target.value)}
-                    placeholder="0.00"
-                    style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', outline: 'none' }}
-                  />
-                </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>

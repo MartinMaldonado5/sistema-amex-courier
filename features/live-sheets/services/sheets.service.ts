@@ -259,8 +259,8 @@ export const sheetsService = {
         .from('paquetes')
         .update({
           ubicacion_actual: 'AmexLince',
-          estado_entrega: 'EnAlmacen',
-          posicion_estante: item.posicionEstante || 'REC'
+          posicion_estante: item.posicionEstante || 'REC',
+          estado_amex: 'en_almacen'
         })
         .eq('numero_recibo_bodega', item.codigoWr);
 

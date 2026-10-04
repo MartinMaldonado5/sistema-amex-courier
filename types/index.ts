@@ -2,7 +2,8 @@
 
 export type TipoUbicacion = 'AmexLince' | 'Entregado';
 export type TipoMetodoEntrega = 'RecojoLince' | 'CarroAmexDomicilio' | 'AgenciaProvincia';
-export type TipoEstadoEntrega = 'EnAlmacen' | 'Enviado' | 'Recibido' | 'EnRutaCarroAmex' | 'EntregadoDomicilio' | 'RecogidoAlmacen' | 'ListoParaRecojo' | 'Entregado' | string;
+export type TipoEstadoTib = 'EnAlmacen' | 'Enviado' | 'Recibido' | 'Entregado' | string;
+export type TipoEstadoEntrega = TipoEstadoTib; // Alias de retrocompatibilidad
 export type TipoEstadoAmex = 'recibido' | 'en_almacen' | 'listo_recojo' | 'en_ruta' | 'entregado' | string;
 export type TipoMonedaPago = 'PEN' | 'USD';
 
@@ -29,20 +30,22 @@ export interface Paquete {
   clienteId?: string;
   embarqueId?: string;
   numeroReciboBodega: string;        // Ej: WR000451
-  trackingUsa: string;
+  tracking: string;                  // Tracking
+  trackingUsa: string;               // Alias de compatibilidad (string garantizado)
   tipoEmpaque: string;               // CAJA, SOBRE, SACA
   numeroFactura?: string;
   dniConsignatario?: string;
   nombreConsignatario?: string;
   descripcion: string;
   pesoKg: number;
-  valorDeclaradoUsd: number;
+  valorDeclaradoUsd?: number;
   ubicacionActual: TipoUbicacion;
   anaquel?: 'A1' | 'A2' | 'RECEPCION' | 'DESPACHO' | string;
   piso?: 'P1' | 'P2' | 'P3' | 'P4' | string;
   posicionEstante?: string;          // Ej: A1-P1, A1-P2, A1-P3, A1-P4, A2-P1, A2-P2, A2-P3, A2-P4
-  metodoEntrega: TipoMetodoEntrega;
-  estadoEntrega: TipoEstadoEntrega;  // Estado TIB
+  metodoEntrega?: TipoMetodoEntrega; // Deprecado: opcional para compatibilidad UI
+  estadoTib: TipoEstadoTib;          // Estado Logístico Externo TIB (Recibido, Enviado, Entregado, EnAlmacen)
+  estadoEntrega?: TipoEstadoTib;     // Alias opcional de compatibilidad
   estadoAmex: TipoEstadoAmex;        // Estado Operativo AMEX (por defecto 'recibido' al escanear)
   facturaPdfUrl?: string;
   usuarioEmail?: string;
