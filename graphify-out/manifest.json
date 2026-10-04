@@ -636,24 +636,24 @@
     "semantic_hash": "230a17e78298f50a9516c6947635df4a"
   },
   "features/formato-entrega/components/ActaControlPanel.tsx": {
-    "mtime": 1790484918.787082,
-    "ast_hash": "99af2154da3aae57c11f139bd3845c9e",
-    "semantic_hash": "99af2154da3aae57c11f139bd3845c9e"
+    "mtime": 1791080213.3167346,
+    "ast_hash": "e08923658e748bc8e06c130bf5463010",
+    "semantic_hash": ""
   },
   "features/formato-entrega/components/ActaDocumentPreview.tsx": {
-    "mtime": 1790136909.0625532,
-    "ast_hash": "ca0eab222604817dcde09e395fe239af",
-    "semantic_hash": "ca0eab222604817dcde09e395fe239af"
+    "mtime": 1791080213.3188684,
+    "ast_hash": "4d22ea300c90b1e1a6e7275fe6b97d09",
+    "semantic_hash": ""
   },
   "features/formato-entrega/components/FormatoEntregaTab.tsx": {
-    "mtime": 1790572364.834996,
-    "ast_hash": "469dcedd645edb22f67089df8fb08c76",
+    "mtime": 1791080213.3209949,
+    "ast_hash": "bf306d67ae26a02625c80bf8229c065e",
     "semantic_hash": ""
   },
   "features/formato-entrega/hooks/useFormatoEntrega.ts": {
-    "mtime": 1790484664.123671,
-    "ast_hash": "bc2aa9e566e83e9cfc7c4a497ffc286f",
-    "semantic_hash": "bc2aa9e566e83e9cfc7c4a497ffc286f"
+    "mtime": 1791080213.3259792,
+    "ast_hash": "0ab46850bc4f9ba7fe1f8122fb0803ee",
+    "semantic_hash": ""
   },
   "features/formato-entrega/index.ts": {
     "mtime": 1790562767.9692433,
@@ -661,14 +661,14 @@
     "semantic_hash": ""
   },
   "features/formato-entrega/services/acta-docx.service.ts": {
-    "mtime": 1790136909.0666096,
-    "ast_hash": "aceee22a7ff8ce00e941ed09a41ed588",
-    "semantic_hash": "aceee22a7ff8ce00e941ed09a41ed588"
+    "mtime": 1791080213.327228,
+    "ast_hash": "68f39fdedf40b585f95103c997ff71f3",
+    "semantic_hash": ""
   },
   "features/formato-entrega/services/acta-pdf.service.ts": {
-    "mtime": 1790136909.0748465,
-    "ast_hash": "b4eb299ccaf28788e1a20f32bc45a33c",
-    "semantic_hash": "b4eb299ccaf28788e1a20f32bc45a33c"
+    "mtime": 1791080213.3297012,
+    "ast_hash": "fd084a9549b14ffaeb52a6c2f8fddbf3",
+    "semantic_hash": ""
   },
   "features/formato-entrega/types.ts": {
     "mtime": 1790136909.0768583,
