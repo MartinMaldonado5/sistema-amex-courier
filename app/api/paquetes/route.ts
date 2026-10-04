@@ -6,7 +6,7 @@ import {
   CreatePaqueteSchema,
 } from '@/lib/validations/paquetes.schema';
 import { validateQuery, validateBody } from '@/lib/api/validate';
-import type { Paquete, TipoEstadoTib, TipoEstadoEntrega, TipoEstadoAmex, TipoMetodoEntrega, TipoUbicacion } from '@/types';
+import type { Paquete, TipoEstadoTib, TipoEstadoAmex, TipoUbicacion } from '@/types';
 
 function mapPaqueteRow(row: Record<string, unknown>): Paquete {
   const posicion = String(

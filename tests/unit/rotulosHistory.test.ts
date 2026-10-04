@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { RotulosService } from '@/features/rotulos/services/rotulos.service';
 import { generarTextoBulto, getAgencyClass, DEFAULT_REMITENTE } from '@/features/rotulos/types';
 import type { RotuloSlotData } from '@/lib/rotulos/rotulos-pdf';

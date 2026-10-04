@@ -35,12 +35,13 @@ export async function GET(req: NextRequest) {
     const requestedDate = searchParams.get('fecha')?.trim() || todayLima;
 
     // 1. Buscar archivos de la fecha solicitada
-    let { data: rows, error } = await admin
+    const { data: initialRows, error } = await admin
       .from('inventario_tib_diario')
       .select('id, fecha, tipo, r2_key, nombre_archivo, peso_bytes, subido_por_nombre, subido_en, es_activo')
       .eq('fecha', requestedDate)
       .eq('es_activo', true);
 
+    let rows = initialRows;
     let activeDate = requestedDate;
 
     // Si no hay archivos para la fecha solicitada y no se forzó una fecha específica, buscar la más reciente
