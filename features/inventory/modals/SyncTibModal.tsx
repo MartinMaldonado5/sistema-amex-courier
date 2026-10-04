@@ -415,7 +415,7 @@ export default function SyncTibModal({ isOpen, onClose, onRefreshData }: SyncTib
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '14px' }}>
               {successResult.resultadoKey && (
                 <a
-                  href={`/api/inventario-jobs/download?key=${encodeURIComponent(successResult.resultadoKey)}`}
+                  href={`/api/storage/file?key=${encodeURIComponent(successResult.resultadoKey)}&download=true`}
                   className="btn"
                   style={{
                     background: '#ffffff',

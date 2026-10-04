@@ -38,7 +38,7 @@ describe('Dual Status Label Formatting & Mapping', () => {
       expect(mapEstadoTibLabel('Recibido')).toBe('Recibido');
       expect(mapEstadoTibLabel('recibido')).toBe('Recibido');
       expect(mapEstadoTibLabel('EnAlmacen')).toBe('En Almacén');
-      expect(mapEstadoTibLabel('EnRutaCarroAmex')).toBe('En Ruta Carro Amex');
+      expect(mapEstadoTibLabel('EnRutaCarroAmex')).toBe('Enviado');
       expect(mapEstadoTibLabel('ListoParaRecojo')).toBe('Listo para Recojo');
       expect(mapEstadoTibLabel('Entregado')).toBe('Entregado');
       expect(mapEstadoTibLabel('EntregadoDomicilio')).toBe('Entregado');

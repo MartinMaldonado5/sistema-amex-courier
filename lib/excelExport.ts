@@ -54,7 +54,7 @@ export function mapEstadoTibLabel(estado?: string | null): string {
   if (norm.toLowerCase() === 'enviado' || norm === 'Enviado') return 'Enviado';
   if (norm.toLowerCase() === 'recibido' || norm === 'Recibido') return 'Recibido';
   if (norm === 'EnAlmacen') return 'En Almacén';
-  if (norm === 'EnRutaCarroAmex') return 'En Ruta Carro Amex';
+  if (norm === 'EnRutaCarroAmex') return 'Enviado';
   if (norm === 'ListoParaRecojo') return 'Listo para Recojo';
   if (norm === 'Entregado' || norm === 'EntregadoDomicilio' || norm === 'RecogidoAlmacen') return 'Entregado';
   return norm;
