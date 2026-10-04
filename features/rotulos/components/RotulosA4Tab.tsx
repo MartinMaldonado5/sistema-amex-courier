@@ -32,6 +32,7 @@ export default function RotulosA4Tab({ clientes = [], currentUser }: RotulosA4Ta
       {/* Toast flotante */}
       {state.feedbackToast && (
         <div
+          className="rotulo-toast-feedback no-print"
           style={{
             position: 'fixed',
             top: '20px',
@@ -52,7 +53,7 @@ export default function RotulosA4Tab({ clientes = [], currentUser }: RotulosA4Ta
       )}
 
       {/* Barra Superior del Módulo: Título, Cloud Sync y Botón Historial */}
-      <div className="rotulos-header-banner">
+      <div className="rotulos-header-banner no-print">
         <div className="rotulos-header-title-box">
           <div className="rotulos-header-icon-badge">
             <i className="fa-solid fa-tags"></i>

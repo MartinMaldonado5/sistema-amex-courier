@@ -2980,7 +2980,11 @@
   .app-header,
   .mobile-bottom-nav,
   .rotulos-top-bar,
+  .rotulos-header-banner,
   .rotulos-editor-card,
+  .rotulo-top-toolbar-3col,
+  .rotulo-history-modal-overlay,
+  .rotulo-toast-feedback,
   .preview-scale-info,
   .cut-guide-indicator,
   .sidebar-backdrop,
@@ -2988,7 +2992,8 @@
   .preview-sheet-top-bar,
   .screen-only-sheet,
   .sheet-corner-tag,
-  .slot-quick-selector {
+  .slot-quick-selector,
+  .no-print {
     display: none !important;
   }
 
