@@ -188,9 +188,6 @@ export default function RotulosA4Tab({ clientes = [], currentUser }: RotulosA4Ta
           handleDeleteCurrentSheet={state.handleDeleteCurrentSheet}
           slotsAiData={state.slotsAiData}
           currentUser={currentUser}
-          handlePrintDirect={state.handlePrintDirect}
-          handleDownloadPdf={state.handleDownloadPdf}
-          isExportingPdf={state.isExportingPdf}
         />
       </div>
 

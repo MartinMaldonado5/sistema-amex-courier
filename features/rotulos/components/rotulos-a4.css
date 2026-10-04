@@ -2164,7 +2164,7 @@
   gap: 12px;
   width: 100%;
   min-width: 0;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 /* Lista horizontal de pestañas (sin scrollbar tosco con flechas) */

@@ -19,9 +19,6 @@ interface RotulosSheetPreviewProps {
   handleDeleteCurrentSheet: () => void;
   slotsAiData?: Record<number, { text: string; image: string | null }>;
   currentUser?: { nombre?: string; email?: string } | null;
-  handlePrintDirect?: () => void;
-  handleDownloadPdf?: () => void;
-  isExportingPdf?: boolean;
 }
 
 export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
@@ -36,10 +33,7 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
   handleAddNewSheet,
   handleDeleteCurrentSheet,
   slotsAiData,
-  currentUser,
-  handlePrintDirect,
-  handleDownloadPdf,
-  isExportingPdf
+  currentUser
 }) => {
   // Identificación del usuario actual (primer nombre)
   const [sessionUser, setSessionUser] = React.useState<{ nombre?: string; email?: string } | null>(currentUser || null);
@@ -243,9 +237,9 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
             )}
           </div>
 
-          {/* Acciones Directas en la Vista Previa */}
-          <div className="sheet-nav-actions">
-            {totalSheets > 1 && (
+          {/* Acciones de Hoja en la Vista Previa */}
+          {totalSheets > 1 && (
+            <div className="sheet-nav-actions">
               <button
                 type="button"
                 className="btn-sheet-action delete"
@@ -255,33 +249,8 @@ export const RotulosSheetPreview: React.FC<RotulosSheetPreviewProps> = ({
                 <i className="fa-solid fa-trash-can"></i>
                 <span className="hide-on-mobile">Borrar H{currentSheet}</span>
               </button>
-            )}
-
-            {handleDownloadPdf && (
-              <button
-                type="button"
-                className="btn-sheet-action pdf"
-                onClick={handleDownloadPdf}
-                disabled={isExportingPdf}
-                title="Descargar PDF de los rótulos"
-              >
-                <i className="fa-solid fa-file-pdf"></i>
-                <span>{isExportingPdf ? 'Exportando...' : 'PDF'}</span>
-              </button>
-            )}
-
-            {handlePrintDirect && (
-              <button
-                type="button"
-                className="btn-sheet-action print-primary"
-                onClick={handlePrintDirect}
-                title="Imprimir directamente a escala real A4 (Ctrl + P)"
-              >
-                <i className="fa-solid fa-print"></i>
-                <span>Imprimir A4</span>
-              </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
