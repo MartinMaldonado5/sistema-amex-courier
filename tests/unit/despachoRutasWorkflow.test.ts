@@ -10,21 +10,21 @@ import {
 
 describe('Módulo de Despacho y Rutas: Utilidades y Flujo de Chofer', () => {
   describe('Normalización Telefónica (Perú e Internacional)', () => {
-    it('normaliza correctamente celulares peruanos de 9 dígitos con espacios', () => {
+    it('normaliza correctamente celulares peruanos de 9 dígitos con espacios y llamada sin 51', () => {
       const res = normalizePhoneNumber('997 370 290');
       expect(res.isValid).toBe(true);
       expect(res.normalized).toBe('51997370290');
-      expect(res.telUri).toBe('tel:+51997370290');
-      expect(res.display).toBe('+51 997 370 290');
+      expect(res.telUri).toBe('tel:997370290');
+      expect(res.display).toBe('997 370 290');
       expect(res.isInternational).toBe(false);
     });
 
-    it('normaliza números peruanos que ya incluyen el código +51', () => {
+    it('normaliza números peruanos que ya incluyen el código +51 y genera llamada solo con 9 dígitos', () => {
       const res = normalizePhoneNumber('+51 997 749 502');
       expect(res.isValid).toBe(true);
       expect(res.normalized).toBe('51997749502');
-      expect(res.telUri).toBe('tel:+51997749502');
-      expect(res.display).toBe('+51 997 749 502');
+      expect(res.telUri).toBe('tel:997749502');
+      expect(res.display).toBe('997 749 502');
     });
 
     it('maneja números internacionales como Ecuador (+593)', () => {
@@ -47,12 +47,10 @@ describe('Módulo de Despacho y Rutas: Utilidades y Flujo de Chofer', () => {
   });
 
   describe('Generador de Enlaces Directos para el Chofer', () => {
-    it('genera enlace de WhatsApp oficial con mensaje pre-cargado amigable', () => {
+    it('genera enlace de WhatsApp directo al chat sin ningún mensaje predeterminado', () => {
       const url = getWhatsAppUrl('997370290', 'Daniel Valdivia', '5 CJS', 'Calle Francia 510');
-      expect(url).toContain('https://wa.me/51997370290');
-      expect(url).toContain(encodeURIComponent('Daniel Valdivia'));
-      expect(url).toContain(encodeURIComponent('5 CJS'));
-      expect(url).toContain(encodeURIComponent('Calle Francia 510'));
+      expect(url).toBe('https://wa.me/51997370290');
+      expect(url).not.toContain('?text=');
     });
 
     it('retorna cadena vacía en WhatsApp si el teléfono es inválido', () => {

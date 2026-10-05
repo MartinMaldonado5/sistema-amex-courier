@@ -14,7 +14,7 @@ export default function ChoferCardParada({ parada, onActualizarEstado }: ChoferC
   const [isPromptingNoEntrega, setIsPromptingNoEntrega] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const phoneInfo = normalizePhoneNumber(parada.telefonoRaw);
+  const phoneInfo = normalizePhoneNumber(parada.telefonoRaw || parada.telefonoNormalizado);
   const waUrl = getWhatsAppUrl(parada.telefonoNormalizado || parada.telefonoRaw, parada.destinatario, parada.wrBultos, parada.direccion);
   const mapsUrl = getGoogleMapsUrl(parada.direccion, parada.distrito);
 

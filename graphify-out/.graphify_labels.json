@@ -100,5 +100,5 @@
   "98": "TipoEstadoEntrega",
   "99": "useDashboardData.ts",
   "100": "login/route.ts",
-  "102": "scannerRelocationAndSecurity.test.ts"
+  "101": "useInventoryQuery.ts"
 }

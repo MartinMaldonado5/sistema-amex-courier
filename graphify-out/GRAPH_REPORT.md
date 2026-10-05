@@ -1,7 +1,7 @@
 # Graph Report - sistema-amex-courier  (2026-10-05)
 
 ## Corpus Check
-- 332 files · ~315,413 words
+- 332 files · ~315,406 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8816685e`
+- Built from commit: `603ec7e1`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -112,7 +112,7 @@
 - TipoEstadoEntrega
 - useDashboardData.ts
 - login/route.ts
-- scannerRelocationAndSecurity.test.ts
+- useInventoryQuery.ts
 
 ## God Nodes (most connected - your core abstractions)
 1. `Paquete` - 75 edges
@@ -240,8 +240,8 @@ Cohesion: 0.32
 Nodes (6): badgeStyle(), dropdownItemStyle, ExcelExportDropdown(), ExcelExportDropdownProps, InventoryToolbar(), InventoryToolbarProps
 
 ### Community 25 - "types/index.ts"
-Cohesion: 0.09
-Nodes (18): TableSkeleton(), KardexView(), KardexViewProps, InventoryPagination, UseInventoryQueryOptions, BoletaShalomInput, DestinoRuta, EmbarqueMaster (+10 more)
+Cohesion: 0.10
+Nodes (18): TableSkeleton(), KardexView(), KardexViewProps, parseLocation(), validateAndSimulateRelocation(), BoletaShalomInput, DestinoRuta, EmbarqueMaster (+10 more)
 
 ### Community 26 - "paquetes.schema.ts"
 Cohesion: 0.10
@@ -459,7 +459,7 @@ Nodes (12): POST(), cache, checkRateLimit(), lastCleanup, purgeExpired(), rateLi
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Paquete` connect `Paquete` to `components/DniMatrixTab.tsx`, `components/LiveSheetsTab.tsx`, `Cliente`, `components/FormatoEntregaTab.tsx`, `excelExport.ts`, `dashboard/types.ts`, `ExcelExportDropdown.tsx`, `types/index.ts`, `useInventoryData.ts`, `app/page.tsx`, `scanner.ts`, `cobros/types.ts`, `DashboardTabContent.tsx`, `authorizeUser`, `components/CobrosTab.tsx`, `components/ScannerTab.tsx`, `TipoEstadoEntrega`, `useDashboardData.ts`, `scannerRelocationAndSecurity.test.ts`?**
+- **Why does `Paquete` connect `Paquete` to `components/DniMatrixTab.tsx`, `components/LiveSheetsTab.tsx`, `Cliente`, `components/FormatoEntregaTab.tsx`, `excelExport.ts`, `dashboard/types.ts`, `ExcelExportDropdown.tsx`, `types/index.ts`, `useInventoryData.ts`, `app/page.tsx`, `scanner.ts`, `cobros/types.ts`, `DashboardTabContent.tsx`, `authorizeUser`, `components/CobrosTab.tsx`, `components/ScannerTab.tsx`, `TipoEstadoEntrega`, `useDashboardData.ts`, `useInventoryQuery.ts`?**
   _High betweenness centrality (0.103) - this node is a cross-community bridge._
 - **Why does `Cliente` connect `Cliente` to `components/InvoicesTab.tsx`, `components/DniMatrixTab.tsx`, `components/LiveSheetsTab.tsx`, `useDashboardData.ts`, `components/FormatoEntregaTab.tsx`, `CobrosDailySheetView.tsx`, `components/RotulosA4Tab.tsx`, `scanner.ts`, `cobros/types.ts`, `DashboardTabContent.tsx`, `Paquete`, `dashboard/types.ts`, `useInventoryData.ts`, `excelExport.ts`, `types/index.ts`, `components/CobrosTab.tsx`, `components/ScannerTab.tsx`, `app/page.tsx`?**
   _High betweenness centrality (0.043) - this node is a cross-community bridge._

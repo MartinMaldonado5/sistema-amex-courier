@@ -52,8 +52,8 @@ export function normalizePhoneNumber(rawInput: string | null | undefined): Phone
     return {
       raw,
       normalized,
-      telUri: `tel:+${normalized}`,
-      display: `+51 ${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`,
+      telUri: `tel:${digits}`,
+      display: `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`,
       isValid: true,
       isInternational: false
     };
@@ -65,8 +65,21 @@ export function normalizePhoneNumber(rawInput: string | null | undefined): Phone
     return {
       raw,
       normalized: digits,
-      telUri: `tel:+${digits}`,
-      display: `+51 ${celPart.slice(0, 3)} ${celPart.slice(3, 6)} ${celPart.slice(6)}`,
+      telUri: `tel:${celPart}`,
+      display: `${celPart.slice(0, 3)} ${celPart.slice(3, 6)} ${celPart.slice(6)}`,
+      isValid: true,
+      isInternational: false
+    };
+  }
+
+  // Caso 2b: Celular con 0 adelante (ej: 0987654321)
+  if (digits.length === 10 && digits.startsWith('09')) {
+    const celPart = digits.slice(1);
+    return {
+      raw,
+      normalized: `51${celPart}`,
+      telUri: `tel:${celPart}`,
+      display: `${celPart.slice(0, 3)} ${celPart.slice(3, 6)} ${celPart.slice(6)}`,
       isValid: true,
       isInternational: false
     };
@@ -96,24 +109,18 @@ export function normalizePhoneNumber(rawInput: string | null | undefined): Phone
 }
 
 /**
- * Genera el enlace directo a WhatsApp sin guardar el contacto
+ * Genera el enlace directo a WhatsApp al chat del cliente sin mensaje predeterminado
  */
 export function getWhatsAppUrl(
   phone: string | null | undefined,
-  destinatario: string,
-  wrBultos?: string,
-  direccion?: string
+  _destinatario?: string,
+  _wrBultos?: string,
+  _direccion?: string
 ): string {
   const { normalized, isValid } = normalizePhoneNumber(phone);
   if (!isValid || !normalized) return '';
 
-  const nombreLimpio = (destinatario || 'Cliente').trim();
-  const bultosTexto = wrBultos && wrBultos.trim() ? ` (${wrBultos.trim()})` : '';
-  const dirTexto = direccion && direccion.trim() ? ` en ${direccion.trim()}` : '';
-
-  const message = `Hola ${nombreLimpio}, te saluda el repartidor de AMEX Courier. Tengo un envío${bultosTexto} a tu nombre para entregar${dirTexto}. ¿Te encuentras disponible para recibirlo?`;
-
-  return `https://wa.me/${normalized}?text=${encodeURIComponent(message)}`;
+  return `https://wa.me/${normalized}`;
 }
 
 /**
