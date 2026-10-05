@@ -17,6 +17,7 @@ import ShelfPositionModal from '../modals/ShelfPositionModal';
 import EditPositionModal from '../modals/EditPositionModal';
 import SyncTibModal from '../modals/SyncTibModal';
 import BulkStatusByWrModal from '../modals/BulkStatusByWrModal';
+import TibImageModal from '../modals/TibImageModal';
 
 export interface InventoryTabProps {
   paquetes: Paquete[];
@@ -154,6 +155,25 @@ export default function InventoryTab({
     onRefreshData
   });
 
+  // Modal de Evidencia Fotográfica TIB
+  const [selectedTibPkg, setSelectedTibPkg] = useState<Paquete | null>(null);
+  const [isTibModalOpen, setIsTibModalOpen] = useState(false);
+
+  const handleOpenTibImage = (pkg: Paquete) => {
+    setSelectedTibPkg(pkg);
+    setIsTibModalOpen(true);
+  };
+
+  const handleTibImageLoaded = (wr: string, imageUrl: string, ticketUrl?: string) => {
+    if (onUpdatePackage && selectedTibPkg && selectedTibPkg.numeroReciboBodega === wr) {
+      onUpdatePackage({
+        ...selectedTibPkg,
+        tibImagenUrl: imageUrl,
+        tibTicketPdfUrl: ticketUrl
+      });
+    }
+  };
+
   const [isSyncTibModalOpen, setIsSyncTibModalOpen] = useState(false);
 
   return (
@@ -217,6 +237,7 @@ export default function InventoryTab({
           onOpenEditModal={openEditModal}
           onSelectThermalPkg={setSelectedThermalPkg}
           onViewPdf={onViewPdf}
+          onOpenTibImage={handleOpenTibImage}
           onDeletePackage={handleDeletePackage}
           currentPage={currentPage}
           setCurrentPage={setCurrentPage}
@@ -389,6 +410,17 @@ export default function InventoryTab({
         isOpen={isSyncTibModalOpen}
         onClose={() => setIsSyncTibModalOpen(false)}
         onRefreshData={onRefreshData}
+      />
+
+      {/* Modal de Foto y Evidencia TIB */}
+      <TibImageModal
+        isOpen={isTibModalOpen}
+        onClose={() => {
+          setIsTibModalOpen(false);
+          setSelectedTibPkg(null);
+        }}
+        paquete={selectedTibPkg}
+        onImageLoaded={handleTibImageLoaded}
       />
     </div>
   );

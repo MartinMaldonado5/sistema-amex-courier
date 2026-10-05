@@ -10,7 +10,8 @@ import {
   FileText,
   Trash2,
   User,
-  CheckCircle2
+  CheckCircle2,
+  Camera
 } from 'lucide-react';
 import { Paquete } from '@/types';
 
@@ -25,6 +26,7 @@ export interface InventoryTableProps {
   onOpenEditModal: (pkg: Paquete) => void;
   onSelectThermalPkg: (pkg: Paquete) => void;
   onViewPdf: (url: string) => void;
+  onOpenTibImage?: (pkg: Paquete) => void;
   onDeletePackage: (id: string, wrCode: string) => void;
   currentPage: number;
   setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
@@ -44,6 +46,7 @@ export default function InventoryTable({
   onOpenEditModal,
   onSelectThermalPkg,
   onViewPdf,
+  onOpenTibImage,
   onDeletePackage,
   currentPage,
   setCurrentPage,
@@ -111,15 +114,42 @@ export default function InventoryTable({
                       />
                     </td>
                     <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
-                      <div
-                        style={{
-                          fontWeight: 800,
-                          color: '#0f172a',
-                          fontFamily: 'monospace',
-                          fontSize: '13px'
-                        }}
-                      >
-                        {pkg.numeroReciboBodega}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div
+                          style={{
+                            fontWeight: 800,
+                            color: '#0f172a',
+                            fontFamily: 'monospace',
+                            fontSize: '13px'
+                          }}
+                        >
+                          {pkg.numeroReciboBodega}
+                        </div>
+                        {onOpenTibImage && (
+                          <button
+                            type="button"
+                            title={pkg.tibImagenUrl ? "Ver Foto TIB (Guardada)" : "Consultar Foto de Bodega TIB"}
+                            onClick={() => onOpenTibImage(pkg)}
+                            style={{
+                              background: pkg.tibImagenUrl ? '#eff6ff' : '#f8fafc',
+                              border: pkg.tibImagenUrl ? '1px solid #bfdbfe' : '1px solid #e2e8f0',
+                              color: pkg.tibImagenUrl ? '#2563eb' : '#64748b',
+                              padding: '2px 6px',
+                              borderRadius: '5px',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px',
+                              fontSize: '10px',
+                              fontWeight: 700,
+                              boxShadow: pkg.tibImagenUrl ? '0 1px 2px rgba(37,99,235,0.08)' : 'none',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <Camera style={{ width: '11px', height: '11px' }} />
+                            <span>{pkg.tibImagenUrl ? 'Foto' : 'Ver'}</span>
+                          </button>
+                        )}
                       </div>
                     </td>
                     <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
@@ -430,6 +460,28 @@ export default function InventoryTable({
                             }}
                           >
                             <FileText className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+
+                        {onOpenTibImage && (
+                          <button
+                            type="button"
+                            title={pkg.tibImagenUrl ? "Ver Evidencia Fotográfica TIB" : "Consultar Foto en Servidor TIB"}
+                            onClick={() => onOpenTibImage(pkg)}
+                            style={{
+                              background: pkg.tibImagenUrl ? '#eff6ff' : '#f8fafc',
+                              border: pkg.tibImagenUrl ? '1px solid #93c5fd' : '1px solid #cbd5e1',
+                              color: pkg.tibImagenUrl ? '#1d4ed8' : '#475569',
+                              width: '28px',
+                              height: '28px',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            <Camera className="w-3.5 h-3.5" />
                           </button>
                         )}
 

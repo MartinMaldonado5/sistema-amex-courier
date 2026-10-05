@@ -48,6 +48,8 @@ export interface Paquete {
   estadoEntrega?: TipoEstadoTib;     // Alias opcional de compatibilidad
   estadoAmex: TipoEstadoAmex;        // Estado Operativo AMEX (por defecto 'recibido' al escanear)
   facturaPdfUrl?: string;
+  tibImagenUrl?: string;             // Foto del paquete tomada en TIB
+  tibTicketPdfUrl?: string;          // Ticket PDF de recepción en TIB
   usuarioEmail?: string;
   creadoPor?: string;
   creadoEn: string;

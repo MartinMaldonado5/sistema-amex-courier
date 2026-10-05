@@ -770,6 +770,8 @@ export type Database = {
           peso_kg: number | null
           piso: string | null
           posicion_estante: string | null
+          tib_imagen_url: string | null
+          tib_ticket_pdf_url: string | null
           tipo_empaque: string | null
           tracking: string
           ubicacion_actual: string | null
@@ -794,6 +796,8 @@ export type Database = {
           peso_kg?: number | null
           piso?: string | null
           posicion_estante?: string | null
+          tib_imagen_url?: string | null
+          tib_ticket_pdf_url?: string | null
           tipo_empaque?: string | null
           tracking: string
           ubicacion_actual?: string | null
@@ -818,6 +822,8 @@ export type Database = {
           peso_kg?: number | null
           piso?: string | null
           posicion_estante?: string | null
+          tib_imagen_url?: string | null
+          tib_ticket_pdf_url?: string | null
           tipo_empaque?: string | null
           tracking?: string
           ubicacion_actual?: string | null

@@ -34,6 +34,8 @@ function mapPaqueteRow(row: Record<string, unknown>): Paquete {
     estadoEntrega: ((row.estado_tib || row.estado_entrega) as TipoEstadoTib) || 'EnAlmacen',
     estadoAmex: (row.estado_amex as TipoEstadoAmex) || 'recibido',
     facturaPdfUrl: '',
+    tibImagenUrl: row.tib_imagen_url ? String(row.tib_imagen_url) : undefined,
+    tibTicketPdfUrl: row.tib_ticket_pdf_url ? String(row.tib_ticket_pdf_url) : undefined,
     usuarioEmail: String(row.usuario_email || ''),
     creadoPor: row.creado_por ? String(row.creado_por) : undefined,
     creadoEn: String(row.creado_en || ''),
