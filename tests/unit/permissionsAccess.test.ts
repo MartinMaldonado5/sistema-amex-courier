@@ -88,9 +88,12 @@ describe('Control de Acceso y Permisos por Módulo (lib/navigation/registry.ts)'
       expect(hasModuleAccess(angelUser, 'scanner-relocate')).toBe(true);
     });
 
-    it('Angel NO debe tener acceso a los 12 módulos restantes no asignados', () => {
+    it('Angel debe tener acceso a dashboard como su home adaptativo (Mi Estación de Trabajo)', () => {
+      expect(hasModuleAccess(angelUser, 'dashboard')).toBe(true);
+    });
+
+    it('Angel NO debe tener acceso a los 11 módulos operativos no asignados', () => {
       const tabsBloqueados = [
-        'dashboard',
         'live-sheets',
         'fico-cobros',
         'directorio-clientes',
@@ -109,15 +112,15 @@ describe('Control de Acceso y Permisos por Módulo (lib/navigation/registry.ts)'
       });
     });
 
-    it('getAvailableModulesForUser debe retornar exactamente 4 módulos para Angel', () => {
+    it('getAvailableModulesForUser debe retornar los módulos autorizados más dashboard para Angel', () => {
       const modulosAngel = getAvailableModulesForUser(angelUser);
       const idsAngel = modulosAngel.map(m => m.id);
-      expect(idsAngel).toEqual(['mm-lince', 'scanner', 'info-amex', 'auditoria']);
-      expect(modulosAngel.length).toBe(4);
+      expect(idsAngel).toEqual(['dashboard', 'mm-lince', 'scanner', 'info-amex', 'auditoria']);
+      expect(modulosAngel.length).toBe(5);
     });
 
-    it('getFirstAvailableTab debe retornar el primer módulo operativo al que tiene acceso Angel', () => {
-      expect(getFirstAvailableTab(angelUser)).toBe('mm-lince');
+    it('getFirstAvailableTab debe retornar dashboard como el home adaptativo de inicio', () => {
+      expect(getFirstAvailableTab(angelUser)).toBe('dashboard');
     });
   });
 

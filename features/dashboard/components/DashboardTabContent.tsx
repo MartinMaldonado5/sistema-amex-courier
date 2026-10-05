@@ -30,6 +30,11 @@ const DashboardTab = dynamic(() => import('./DashboardTab'), {
   loading: () => <DashboardSkeleton />
 });
 
+const OperatorHubTab = dynamic(() => import('./OperatorHubTab'), {
+  ssr: false,
+  loading: () => <DashboardSkeleton />
+});
+
 const InventoryTab = dynamic(() => import('@/features/inventory/components/InventoryTab'), {
   ssr: false,
   loading: () => <InventorySkeleton />
@@ -114,7 +119,7 @@ interface DashboardTabContentProps {
   entregas: OrdenEntrega[];
   cobros: CobroVoucher[];
   scannedLogs: ScannedLog[];
-  currentUser: { nombre: string; email: string; rol: string; id?: string } | null;
+  currentUser: { nombre: string; email: string; rol: string; id?: string; permisos?: Record<string, unknown>; isAdmin?: boolean } | null;
   targetCliente360?: string;
   targetClienteCobros?: string;
   onNavigateTab: (tabId: string) => void;
@@ -162,20 +167,35 @@ export default function DashboardTabContent({
     return <PageSkeleton activeTab={activeTab} />;
   }
 
+  const isAdmin = Boolean(
+    currentUser?.isAdmin ||
+    ['admin', 'administrador'].includes(String(currentUser?.rol || '').trim().toLowerCase())
+  );
+
   return (
     <>
       {activeTab === 'dashboard' && (
-        <DashboardTab
-          paquetes={paquetes}
-          clientes={clientes}
-          entregas={entregas}
-          cobros={cobros}
-          onNavigateTab={onNavigateTab}
-          onNewPackage={onNewPackage}
-          onPrintLabel={onPrintLabel}
-          onViewPdf={onViewPdf}
-          onRefreshData={onRefreshData}
-        />
+        isAdmin ? (
+          <DashboardTab
+            paquetes={paquetes}
+            clientes={clientes}
+            entregas={entregas}
+            cobros={cobros}
+            onNavigateTab={onNavigateTab}
+            onNewPackage={onNewPackage}
+            onPrintLabel={onPrintLabel}
+            onViewPdf={onViewPdf}
+            onRefreshData={onRefreshData}
+          />
+        ) : (
+          <OperatorHubTab
+            currentUser={currentUser}
+            paquetes={paquetes}
+            scannedLogs={scannedLogs}
+            onNavigateTab={onNavigateTab}
+            onRefreshData={onRefreshData}
+          />
+        )
       )}
 
       {activeTab === 'live-sheets' && (

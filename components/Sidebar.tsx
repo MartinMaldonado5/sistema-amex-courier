@@ -106,6 +106,11 @@ export default function Sidebar({
 
   const hasAnyAccess = currentUser ? SYSTEM_MODULES.some(m => hasModuleAccess(currentUser, m.tabId)) : true;
 
+  const isAdmin = Boolean(
+    currentUser?.isAdmin ||
+    ['admin', 'administrador'].includes(String(currentUser?.rol || '').trim().toLowerCase())
+  );
+
   return (
     <nav className={`sap-sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`} aria-label="Menú principal de Operaciones y Almacenes" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       {/* Encabezado Móvil con Botón Cerrar (Oculto en PC vía CSS) */}
@@ -161,7 +166,12 @@ export default function Sidebar({
 
         {/* SUBMÓDULOS EN ORDEN OPERATIVO FILTRADOS POR PERMISOS */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-          {hasModuleAccess(currentUser, 'dashboard') && navItem('dashboard', 'fa-solid fa-chart-pie', '1. Panel Operativo')}
+          {hasModuleAccess(currentUser, 'dashboard') &&
+            navItem(
+              'dashboard',
+              isAdmin ? 'fa-solid fa-chart-pie' : 'fa-solid fa-house-laptop',
+              isAdmin ? '1. Panel Operativo' : '1. Mi Estación de Trabajo'
+            )}
           {hasModuleAccess(currentUser, 'live-sheets') && navItem('live-sheets', 'fa-solid fa-table-list', '2. Amex Excel')}
           {hasModuleAccess(currentUser, 'mm-lince') && navItem('mm-lince', 'fa-solid fa-boxes-stacked', '3. Inventario')}
           {hasModuleAccess(currentUser, 'fico-cobros') && navItem('fico-cobros', 'fa-solid fa-receipt', '4. Cobros')}

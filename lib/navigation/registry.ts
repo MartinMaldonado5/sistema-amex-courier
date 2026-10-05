@@ -307,7 +307,14 @@ export function hasModuleAccess(
     return false;
   }
 
-  // 3. Normalizar si se trata de un tab del escáner (incluyendo submódulos 6.1 a 6.4)
+  // 3. El dashboard es el home adaptativo del sistema:
+  // - Administradores acceden al Panel Operativo Global
+  // - Operadores acceden a "Mi Estación de Trabajo" (OperatorHubTab)
+  if (tabOrModuleId === 'dashboard') {
+    return true;
+  }
+
+  // 4. Normalizar si se trata de un tab del escáner (incluyendo submódulos 6.1 a 6.4)
   const isScannerTab =
     tabOrModuleId === 'scanner' ||
     tabOrModuleId === 'mobile-scanner' ||
