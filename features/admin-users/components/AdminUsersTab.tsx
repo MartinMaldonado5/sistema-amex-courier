@@ -32,6 +32,7 @@ const MODULOS: { key: string; label: string; icon: string; color: string }[] = [
   { key:'completar_inventario', label:'Completar Inventario', icon:'fa-cloud-arrow-up',      color:'#38bdf8' },
   { key:'auditoria',            label:'Auditoria',            icon:'fa-shield-halved',       color:'#a78bfa' },
   { key:'admin_usuarios',       label:'Gestion Usuarios',     icon:'fa-user-gear',           color:'#fb923c' },
+  { key:'despacho_rutas',       label:'Rutas Despacho Chofer',icon:'fa-route',               color:'#38bdf8' },
 ];
 
 /* ──── Helpers ──── */

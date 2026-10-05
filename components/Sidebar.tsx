@@ -1,13 +1,14 @@
 'use client';
 
 import React from 'react';
+import { hasModuleAccess, SYSTEM_MODULES, type UserAccessContext } from '@/lib/navigation/registry';
 
 interface SidebarProps {
   activeTab: string;
   isSidebarCollapsed: boolean;
   onSelectTab: (tab: string) => void;
   onCloseSidebar?: () => void;
-  currentUser?: { nombre: string; rol: string; email?: string } | null;
+  currentUser?: (UserAccessContext & { nombre?: string; email?: string }) | null;
   onLogout?: () => void;
 }
 
@@ -38,6 +39,7 @@ export default function Sidebar({
     const isActive = activeTab === tab || (tab === 'directorio-clientes' && activeTab === 'clientes-360');
     return (
       <div
+        key={tab}
         className={`nav-item ${isActive ? 'active' : ''}`}
         onClick={() => onSelectTab(tab)}
         role="button"
@@ -102,6 +104,8 @@ export default function Sidebar({
     );
   };
 
+  const hasAnyAccess = currentUser ? SYSTEM_MODULES.some(m => hasModuleAccess(currentUser, m.tabId)) : true;
+
   return (
     <nav className={`sap-sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`} aria-label="Menú principal de Operaciones y Almacenes" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       {/* Encabezado Móvil con Botón Cerrar (Oculto en PC vía CSS) */}
@@ -155,86 +159,98 @@ export default function Sidebar({
           </span>
         </div>
 
-        {/* SUBMÓDULOS EN ORDEN OPERATIVO */}
+        {/* SUBMÓDULOS EN ORDEN OPERATIVO FILTRADOS POR PERMISOS */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-          {navItem('dashboard', 'fa-solid fa-chart-pie', '1. Panel Operativo')}
-          {navItem('live-sheets', 'fa-solid fa-table-list', '2. Amex Excel')}
-          {navItem('mm-lince', 'fa-solid fa-boxes-stacked', '3. Inventario')}
-          {navItem('fico-cobros', 'fa-solid fa-receipt', '4. Cobros')}
-          {navItem('directorio-clientes', 'fa-solid fa-users', '5. Directorio de Clientes')}
-          {/* MÓDULO 6: ESCÁNER DE CÓDIGOS CON SUBMÓDULOS DESPLEGABLES */}
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <div
-              className={`nav-item ${isScannerActive ? 'active' : ''}`}
-              onClick={() => {
-                if (!isScannerActive) {
-                  onSelectTab('scanner-slotting');
-                  setIsScannerOpen(true);
-                } else {
-                  setIsScannerOpen(prev => !prev);
-                }
-              }}
-              role="button"
-              tabIndex={0}
-              style={{
-                borderRadius: '8px',
-                padding: '10px 14px',
-                fontSize: '13px',
-                fontWeight: isScannerActive ? 800 : 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                background: isScannerActive ? 'linear-gradient(90deg, rgba(37, 99, 235, 0.25) 0%, rgba(37, 99, 235, 0.1) 100%)' : 'transparent',
-                borderLeft: isScannerActive ? '3.5px solid #38bdf8' : '3.5px solid transparent',
-                color: isScannerActive ? '#ffffff' : '#cbd5e1'
-              }}
-            >
-              <i className="fa-solid fa-barcode" style={{ width: '18px', textAlign: 'center', color: isScannerActive ? '#38bdf8' : '#94a3b8' }}></i>
-              <span style={{ flex: 1 }}>6. Escáner de Códigos</span>
-              <i
-                className="fa-solid fa-chevron-down"
-                style={{
-                  fontSize: '10.5px',
-                  color: isScannerActive ? '#38bdf8' : '#64748b',
-                  transition: 'transform 0.2s ease',
-                  transform: isScannerOpen ? 'rotate(180deg)' : 'rotate(0deg)'
-                }}
-              />
-            </div>
+          {hasModuleAccess(currentUser, 'dashboard') && navItem('dashboard', 'fa-solid fa-chart-pie', '1. Panel Operativo')}
+          {hasModuleAccess(currentUser, 'live-sheets') && navItem('live-sheets', 'fa-solid fa-table-list', '2. Amex Excel')}
+          {hasModuleAccess(currentUser, 'mm-lince') && navItem('mm-lince', 'fa-solid fa-boxes-stacked', '3. Inventario')}
+          {hasModuleAccess(currentUser, 'fico-cobros') && navItem('fico-cobros', 'fa-solid fa-receipt', '4. Cobros')}
+          {hasModuleAccess(currentUser, 'directorio-clientes') && navItem('directorio-clientes', 'fa-solid fa-users', '5. Directorio de Clientes')}
 
-            {/* Submódulos Desplegables Verticales */}
-            {isScannerOpen && (
+          {/* MÓDULO 6: ESCÁNER DE CÓDIGOS CON SUBMÓDULOS DESPLEGABLES */}
+          {hasModuleAccess(currentUser, 'scanner') && (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div
+                className={`nav-item ${isScannerActive ? 'active' : ''}`}
+                onClick={() => {
+                  if (!isScannerActive) {
+                    onSelectTab('scanner-slotting');
+                    setIsScannerOpen(true);
+                  } else {
+                    setIsScannerOpen(prev => !prev);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
                 style={{
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  fontSize: '13px',
+                  fontWeight: isScannerActive ? 800 : 600,
                   display: 'flex',
-                  flexDirection: 'column',
-                  gap: '2px',
-                  paddingLeft: '12px',
-                  marginTop: '3px',
-                  marginBottom: '4px',
-                  borderLeft: '2px solid rgba(56, 189, 248, 0.3)',
-                  marginLeft: '20px'
+                  alignItems: 'center',
+                  gap: '10px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  background: isScannerActive ? 'linear-gradient(90deg, rgba(37, 99, 235, 0.25) 0%, rgba(37, 99, 235, 0.1) 100%)' : 'transparent',
+                  borderLeft: isScannerActive ? '3.5px solid #38bdf8' : '3.5px solid transparent',
+                  color: isScannerActive ? '#ffffff' : '#cbd5e1'
                 }}
               >
-                {navSubItem('scanner-slotting', 'fa-solid fa-layer-group', '6.1 📦 Asignar Anaquel', '#38bdf8')}
-                {navSubItem('scanner-lookup', 'fa-solid fa-magnifying-glass-location', '6.2 🔍 Localizar 360°', '#4ade80')}
-                {navSubItem('scanner-delivery', 'fa-solid fa-truck-fast', '6.3 🚚 Despachar', '#c084fc')}
-                {navSubItem('scanner-relocate', 'fa-solid fa-right-left', '6.4 🔄 Reasignar Ubicación', '#fb923c')}
+                <i className="fa-solid fa-barcode" style={{ width: '18px', textAlign: 'center', color: isScannerActive ? '#38bdf8' : '#94a3b8' }}></i>
+                <span style={{ flex: 1 }}>6. Escáner de Códigos</span>
+                <i
+                  className="fa-solid fa-chevron-down"
+                  style={{
+                    fontSize: '10.5px',
+                    color: isScannerActive ? '#38bdf8' : '#64748b',
+                    transition: 'transform 0.2s ease',
+                    transform: isScannerOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+                  }}
+                />
               </div>
-            )}
-          </div>
-          {navItem('dni-matrix', 'fa-solid fa-id-card', '7. Procesador de DNI')}
-          {navItem('rotulos-a4', 'fa-solid fa-tags', '8. Rótulos Agencias')}
-          {navItem('boletas-shalom', 'fa-solid fa-receipt', '9. Boletas Shalom')}
-          {navItem('formato-entrega', 'fa-solid fa-file-signature', '10. Formato de Entrega')}
-          {navItem('invoices-usa', 'fa-solid fa-file-invoice-dollar', '11. Facturas / Invoices USA')}
-          {navItem('info-amex', 'fa-solid fa-photo-film', '12. Info Imágenes AMEX')}
-          {navItem('completar-inventario', 'fa-solid fa-cloud-arrow-up', '13. Completar Inventario')}
-          {navItem('auditoria', 'fa-solid fa-shield-halved', '14. Auditoría & Gobernanza')}
-          {navItem('admin-usuarios', 'fa-solid fa-user-gear', '15. Gestión de Usuarios')}
-          {navItem('despacho-rutas', 'fa-solid fa-route', '16. Rutas & Despacho Chofer')}
+
+              {/* Submódulos Desplegables Verticales */}
+              {isScannerOpen && (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2px',
+                    paddingLeft: '12px',
+                    marginTop: '3px',
+                    marginBottom: '4px',
+                    borderLeft: '2px solid rgba(56, 189, 248, 0.3)',
+                    marginLeft: '20px'
+                  }}
+                >
+                  {navSubItem('scanner-slotting', 'fa-solid fa-layer-group', '6.1 📦 Asignar Anaquel', '#38bdf8')}
+                  {navSubItem('scanner-lookup', 'fa-solid fa-magnifying-glass-location', '6.2 🔍 Localizar 360°', '#4ade80')}
+                  {navSubItem('scanner-delivery', 'fa-solid fa-truck-fast', '6.3 🚚 Despachar', '#c084fc')}
+                  {navSubItem('scanner-relocate', 'fa-solid fa-right-left', '6.4 🔄 Reasignar Ubicación', '#fb923c')}
+                </div>
+              )}
+            </div>
+          )}
+
+          {hasModuleAccess(currentUser, 'dni-matrix') && navItem('dni-matrix', 'fa-solid fa-id-card', '7. Procesador de DNI')}
+          {hasModuleAccess(currentUser, 'rotulos-a4') && navItem('rotulos-a4', 'fa-solid fa-tags', '8. Rótulos Agencias')}
+          {hasModuleAccess(currentUser, 'boletas-shalom') && navItem('boletas-shalom', 'fa-solid fa-receipt', '9. Boletas Shalom')}
+          {hasModuleAccess(currentUser, 'formato-entrega') && navItem('formato-entrega', 'fa-solid fa-file-signature', '10. Formato de Entrega')}
+          {hasModuleAccess(currentUser, 'invoices-usa') && navItem('invoices-usa', 'fa-solid fa-file-invoice-dollar', '11. Facturas / Invoices USA')}
+          {hasModuleAccess(currentUser, 'info-amex') && navItem('info-amex', 'fa-solid fa-photo-film', '12. Info Imágenes AMEX')}
+          {hasModuleAccess(currentUser, 'completar-inventario') && navItem('completar-inventario', 'fa-solid fa-cloud-arrow-up', '13. Completar Inventario')}
+          {hasModuleAccess(currentUser, 'auditoria') && navItem('auditoria', 'fa-solid fa-shield-halved', '14. Auditoría & Gobernanza')}
+          {hasModuleAccess(currentUser, 'admin-usuarios') && navItem('admin-usuarios', 'fa-solid fa-user-gear', '15. Gestión de Usuarios')}
+          {hasModuleAccess(currentUser, 'despacho-rutas') && navItem('despacho-rutas', 'fa-solid fa-route', '16. Rutas & Despacho Chofer')}
+
+          {currentUser && !hasAnyAccess && (
+            <div style={{ padding: '24px 14px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>
+              <i className="fa-solid fa-shield-halved" style={{ fontSize: '24px', color: '#f59e0b', marginBottom: '8px', display: 'block' }}></i>
+              <strong style={{ color: '#f8fafc', display: 'block', marginBottom: '4px' }}>Sin módulos asignados</strong>
+              <span>Tu usuario no tiene módulos activos asignados. Contacta al Administrador.</span>
+            </div>
+          )}
         </div>
       </div>
 
