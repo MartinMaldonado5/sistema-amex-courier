@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Clipboard, CheckCircle2, X, AlertCircle } from 'lucide-react';
 import { CrearRutaInput, CrearParadaInput } from '@/types/despacho';
-import { LIMA_DISTRITOS, parseQuickPasteRows, normalizeDistrito } from '@/lib/utils/phoneUtils';
+import { ZONAS_LIMA_DISTRITOS, parseQuickPasteRows, normalizeDistrito } from '@/lib/utils/phoneUtils';
 
 interface RutaBuilderModalProps {
   isOpen: boolean;
@@ -479,7 +479,7 @@ export default function RutaBuilderModal({ isOpen, onClose, onSaveRuta }: RutaBu
                   <th style={{ padding: '8px 10px' }}>Destinatario *</th>
                   <th style={{ padding: '8px 10px', width: '140px' }}>Bultos / WR *</th>
                   <th style={{ padding: '8px 10px' }}>Dirección Completa *</th>
-                  <th style={{ padding: '8px 10px', width: '150px' }}>Distrito</th>
+                  <th style={{ padding: '8px 10px', width: '180px' }}>Distrito (Zona)</th>
                   <th style={{ padding: '8px 10px', width: '130px' }}>Teléfono Celular</th>
                   <th style={{ padding: '8px 10px', width: '100px' }}>Cobrar ($)</th>
                   <th style={{ padding: '8px 10px', width: '40px' }}></th>
@@ -540,24 +540,34 @@ export default function RutaBuilderModal({ isOpen, onClose, onSaveRuta }: RutaBu
                     </td>
 
                     <td style={{ padding: '6px 8px' }}>
-                      <input
-                        type="text"
-                        list={`distritos-list-${idx}`}
-                        value={parada.distrito}
-                        onChange={e => handleUpdateFila(idx, 'distrito', normalizeDistrito(e.target.value))}
-                        placeholder="Distrito..."
+                      <select
+                        value={normalizeDistrito(parada.distrito)}
+                        onChange={e => handleUpdateFila(idx, 'distrito', e.target.value)}
                         style={{
                           width: '100%',
                           padding: '6px 8px',
                           borderRadius: '4px',
-                          border: '1px solid #cbd5e1'
+                          border: '1px solid #cbd5e1',
+                          background: '#ffffff',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: '#0f172a',
+                          cursor: 'pointer'
                         }}
-                      />
-                      <datalist id={`distritos-list-${idx}`}>
-                        {LIMA_DISTRITOS.map(d => (
-                          <option key={d} value={d} />
+                      >
+                        <option value="" disabled>
+                          Seleccionar Distrito...
+                        </option>
+                        {ZONAS_LIMA_DISTRITOS.map(zona => (
+                          <optgroup key={zona.zona} label={zona.zona} style={{ fontWeight: 800, color: '#1e293b' }}>
+                            {zona.distritos.map(d => (
+                              <option key={d.value} value={d.value} style={{ fontWeight: 500, color: '#334155' }}>
+                                {d.label}
+                              </option>
+                            ))}
+                          </optgroup>
                         ))}
-                      </datalist>
+                      </select>
                     </td>
 
                     <td style={{ padding: '6px 8px' }}>

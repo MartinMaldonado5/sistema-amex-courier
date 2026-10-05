@@ -125,61 +125,136 @@ export function getGoogleMapsUrl(direccion: string, distrito?: string): string {
   const query = [dir, dist, 'Lima', 'Perú'].filter(Boolean).join(', ');
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
+export interface DistritoOption {
+  value: string;
+  label: string;
+}
+
+export interface ZonaDistritos {
+  zona: string;
+  distritos: DistritoOption[];
+}
 
 /**
- * Lista curada y normalizada de distritos de Lima y Callao
+ * Lista completa de los 43 distritos de Lima Metropolitana organizados por zonas tradicionales + Callao
  */
-export const LIMA_DISTRITOS = [
-  'ATE',
-  'BARRANCO',
-  'BREÑA',
-  'CALLAO',
-  'CARABAYLLO',
-  'CHORRILLOS',
-  'CHOSICA',
-  'COMAS',
-  'EL AGUSTINO',
-  'INDEPENDENCIA',
-  'JESUS MARIA',
-  'LA MOLINA',
-  'LA VICTORIA',
-  'LIMA CERCADO',
-  'LINCE',
-  'LOS OLIVOS',
-  'LURIN',
-  'MAGDALENA DEL MAR',
-  'MIRAFLORES',
-  'PUEBLO LIBRE',
-  'PUENTE PIEDRA',
-  'RIMAC',
-  'SAN BORJA',
-  'SAN ISIDRO',
-  'SAN JUAN DE LURIGANCHO',
-  'SAN JUAN DE MIRAFLORES',
-  'SAN LUIS',
-  'SAN MARTIN DE PORRES',
-  'SAN MIGUEL',
-  'SANTA ANITA',
-  'SANTIAGO DE SURCO',
-  'SURCO',
-  'SURQUILLO',
-  'VENTANILLA',
-  'VILLA EL SALVADOR',
-  'VILLA MARIA DEL TRIUNFO'
+export const ZONAS_LIMA_DISTRITOS: ZonaDistritos[] = [
+  {
+    zona: '1. Lima Norte (8 distritos)',
+    distritos: [
+      { value: 'ANCON', label: 'Ancón' },
+      { value: 'CARABAYLLO', label: 'Carabayllo' },
+      { value: 'COMAS', label: 'Comas' },
+      { value: 'INDEPENDENCIA', label: 'Independencia' },
+      { value: 'LOS OLIVOS', label: 'Los Olivos' },
+      { value: 'PUENTE PIEDRA', label: 'Puente Piedra' },
+      { value: 'SAN MARTIN DE PORRES', label: 'San Martín de Porres' },
+      { value: 'SANTA ROSA', label: 'Santa Rosa' }
+    ]
+  },
+  {
+    zona: '2. Lima Centro (16 distritos)',
+    distritos: [
+      { value: 'BARRANCO', label: 'Barranco' },
+      { value: 'BREÑA', label: 'Breña' },
+      { value: 'CERCADO DE LIMA', label: 'Cercado de Lima (Lima)' },
+      { value: 'JESUS MARIA', label: 'Jesús María' },
+      { value: 'LA VICTORIA', label: 'La Victoria' },
+      { value: 'LINCE', label: 'Lince' },
+      { value: 'MAGDALENA DEL MAR', label: 'Magdalena del Mar' },
+      { value: 'MIRAFLORES', label: 'Miraflores' },
+      { value: 'PUEBLO LIBRE', label: 'Pueblo Libre' },
+      { value: 'RIMAC', label: 'Rímac' },
+      { value: 'SAN BORJA', label: 'San Borja' },
+      { value: 'SAN ISIDRO', label: 'San Isidro' },
+      { value: 'SAN LUIS', label: 'San Luis' },
+      { value: 'SAN MIGUEL', label: 'San Miguel' },
+      { value: 'SANTIAGO DE SURCO', label: 'Santiago de Surco' },
+      { value: 'SURQUILLO', label: 'Surquillo' }
+    ]
+  },
+  {
+    zona: '3. Lima Este (8 distritos)',
+    distritos: [
+      { value: 'ATE', label: 'Ate' },
+      { value: 'CHACLACAYO', label: 'Chaclacayo' },
+      { value: 'CIENEGUILLA', label: 'Cieneguilla' },
+      { value: 'EL AGUSTINO', label: 'El Agustino' },
+      { value: 'LA MOLINA', label: 'La Molina' },
+      { value: 'LURIGANCHO-CHOSICA', label: 'Lurigancho-Chosica' },
+      { value: 'SAN JUAN DE LURIGANCHO', label: 'San Juan de Lurigancho' },
+      { value: 'SANTA ANITA', label: 'Santa Anita' }
+    ]
+  },
+  {
+    zona: '4. Lima Sur (11 distritos)',
+    distritos: [
+      { value: 'CHORRILLOS', label: 'Chorrillos' },
+      { value: 'LURIN', label: 'Lurín' },
+      { value: 'PACHACAMAC', label: 'Pachacámac' },
+      { value: 'PUCUSANA', label: 'Pucusana' },
+      { value: 'PUNTA HERMOSA', label: 'Punta Hermosa' },
+      { value: 'PUNTA NEGRA', label: 'Punta Negra' },
+      { value: 'SAN BARTOLO', label: 'San Bartolo' },
+      { value: 'SAN JUAN DE MIRAFLORES', label: 'San Juan de Miraflores' },
+      { value: 'SANTA MARIA DEL MAR', label: 'Santa María del Mar' },
+      { value: 'VILLA EL SALVADOR', label: 'Villa El Salvador' },
+      { value: 'VILLA MARIA DEL TRIUNFO', label: 'Villa María del Triunfo' }
+    ]
+  },
+  {
+    zona: '5. Callao (Prov. Constitucional)',
+    distritos: [
+      { value: 'CALLAO', label: 'Callao' },
+      { value: 'BELLAVISTA', label: 'Bellavista' },
+      { value: 'CARMEN DE LA LEGUA', label: 'Carmen de la Legua' },
+      { value: 'LA PERLA', label: 'La Perla' },
+      { value: 'LA PUNTA', label: 'La Punta' },
+      { value: 'MI PERU', label: 'Mi Perú' },
+      { value: 'VENTANILLA', label: 'Ventanilla' }
+    ]
+  }
 ];
 
+export const LIMA_DISTRITOS: string[] = ZONAS_LIMA_DISTRITOS.flatMap(z => z.distritos.map(d => d.value));
+
 /**
- * Normaliza nombres de distritos comunes del Excel
+ * Normaliza nombres de distritos comunes del Excel o entradas de usuario
  */
 export function normalizeDistrito(input: string): string {
-  const clean = String(input || '').trim().toUpperCase();
-  if (!clean) return 'LIMA';
-  if (clean === 'SURCO') return 'SANTIAGO DE SURCO';
-  if (clean === 'MOLINA') return 'LA MOLINA';
-  if (clean === 'SJL') return 'SAN JUAN DE LURIGANCHO';
-  if (clean === 'SMP') return 'SAN MARTIN DE PORRES';
-  if (clean === 'MAGDALENA') return 'MAGDALENA DEL MAR';
-  return clean;
+  if (!input) return 'MIRAFLORES';
+  const raw = String(input).trim().toUpperCase();
+  const unaccented = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  if (unaccented === 'SURCO' || unaccented === 'SANTIAGO DE SURCO') return 'SANTIAGO DE SURCO';
+  if (unaccented === 'MOLINA' || unaccented === 'LA MOLINA') return 'LA MOLINA';
+  if (unaccented === 'SJL' || unaccented === 'SAN JUAN DE LURIGANCHO') return 'SAN JUAN DE LURIGANCHO';
+  if (unaccented === 'SJM' || unaccented === 'SAN JUAN DE MIRAFLORES') return 'SAN JUAN DE MIRAFLORES';
+  if (unaccented === 'SMP' || unaccented === 'SAN MARTIN' || unaccented === 'SAN MARTIN DE PORRES') return 'SAN MARTIN DE PORRES';
+  if (unaccented === 'VMT' || unaccented === 'VILLA MARIA' || unaccented === 'VILLA MARIA DEL TRIUNFO') return 'VILLA MARIA DEL TRIUNFO';
+  if (unaccented === 'VES' || unaccented === 'VILLA EL SALVADOR') return 'VILLA EL SALVADOR';
+  if (unaccented === 'CHOSICA' || unaccented === 'LURIGANCHO' || unaccented === 'LURIGANCHO-CHOSICA') return 'LURIGANCHO-CHOSICA';
+  if (unaccented === 'LIMA' || unaccented === 'CERCADO' || unaccented === 'LIMA CERCADO' || unaccented.includes('CERCADO DE LIMA')) return 'CERCADO DE LIMA';
+  if (unaccented === 'MAGDALENA' || unaccented === 'MAGDALENA DEL MAR') return 'MAGDALENA DEL MAR';
+  if (unaccented === 'JESUS MARIA') return 'JESUS MARIA';
+  if (unaccented === 'RIMAC') return 'RIMAC';
+  if (unaccented === 'ANCON') return 'ANCON';
+  if (unaccented === 'LURIN') return 'LURIN';
+  if (unaccented === 'PACHACAMAC') return 'PACHACAMAC';
+  if (unaccented === 'BRENA') return 'BREÑA';
+
+  // Buscar coincidencia directa en los valores o etiquetas
+  for (const zona of ZONAS_LIMA_DISTRITOS) {
+    for (const d of zona.distritos) {
+      const dUnacc = d.value.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const labelUnacc = d.label.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (dUnacc === unaccented || labelUnacc === unaccented) {
+        return d.value;
+      }
+    }
+  }
+
+  return unaccented;
 }
 
 /**

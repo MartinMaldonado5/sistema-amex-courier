@@ -4,7 +4,8 @@ import {
   getWhatsAppUrl,
   getGoogleMapsUrl,
   normalizeDistrito,
-  parseQuickPasteRows
+  parseQuickPasteRows,
+  ZONAS_LIMA_DISTRITOS
 } from '@/lib/utils/phoneUtils';
 
 describe('Módulo de Despacho y Rutas: Utilidades y Flujo de Chofer', () => {
@@ -66,13 +67,40 @@ describe('Módulo de Despacho y Rutas: Utilidades y Flujo de Chofer', () => {
     });
   });
 
-  describe('Normalización de Distritos de Lima', () => {
+  describe('Normalización de Distritos de Lima y Catálogo de 43 Distritos', () => {
     it('estandariza abreviaturas comunes de Lima', () => {
       expect(normalizeDistrito('SURCO')).toBe('SANTIAGO DE SURCO');
       expect(normalizeDistrito('MOLINA')).toBe('LA MOLINA');
       expect(normalizeDistrito('SJL')).toBe('SAN JUAN DE LURIGANCHO');
       expect(normalizeDistrito('SMP')).toBe('SAN MARTIN DE PORRES');
       expect(normalizeDistrito('SAN BORJA')).toBe('SAN BORJA');
+    });
+
+    it('contiene las 4 zonas tradicionales con exactamente 43 distritos', () => {
+      const norte = ZONAS_LIMA_DISTRITOS.find(z => z.zona.includes('Lima Norte'));
+      const centro = ZONAS_LIMA_DISTRITOS.find(z => z.zona.includes('Lima Centro'));
+      const este = ZONAS_LIMA_DISTRITOS.find(z => z.zona.includes('Lima Este'));
+      const sur = ZONAS_LIMA_DISTRITOS.find(z => z.zona.includes('Lima Sur'));
+
+      expect(norte?.distritos).toHaveLength(8);
+      expect(centro?.distritos).toHaveLength(16);
+      expect(este?.distritos).toHaveLength(8);
+      expect(sur?.distritos).toHaveLength(11);
+
+      const totalTradicionales = (norte?.distritos.length || 0) +
+        (centro?.distritos.length || 0) +
+        (este?.distritos.length || 0) +
+        (sur?.distritos.length || 0);
+
+      expect(totalTradicionales).toBe(43);
+    });
+
+    it('normaliza distritos con tildes o variaciones de escritura', () => {
+      expect(normalizeDistrito('Ancón')).toBe('ANCON');
+      expect(normalizeDistrito('Breña')).toBe('BREÑA');
+      expect(normalizeDistrito('Rímac')).toBe('RIMAC');
+      expect(normalizeDistrito('Lurín')).toBe('LURIN');
+      expect(normalizeDistrito('Cercado de Lima (Lima)')).toBe('CERCADO DE LIMA');
     });
   });
 
