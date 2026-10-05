@@ -103,7 +103,45 @@ export default function DashboardPage() {
     handleScanCode
   } = dashboardActions;
 
-  const isTabAllowed = currentUser ? hasModuleAccess(currentUser, activeTab) : true;
+  if (isLoadingSession) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          background: '#090d16',
+          color: '#f8fafc',
+          fontFamily: "'Inter', sans-serif"
+        }}
+      >
+        <div
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 16,
+            background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 8px 24px rgba(37, 99, 235, 0.35)',
+            marginBottom: 20
+          }}
+        >
+          <i className="fa-solid fa-boxes-stacked" style={{ color: '#fff', fontSize: 24 }} />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <i className="fa-solid fa-spinner fa-spin" style={{ color: '#38bdf8', fontSize: 16 }} />
+          <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-0.2px' }}>SISTEMA AMEX COURIER</span>
+        </div>
+        <p style={{ fontSize: 12, color: '#64748b', margin: 0 }}>Validando credenciales y permisos de acceso...</p>
+      </div>
+    );
+  }
+
+  const isTabAllowed = currentUser ? hasModuleAccess(currentUser, activeTab) : false;
 
   return (
     <div className="app-layout-shell">
