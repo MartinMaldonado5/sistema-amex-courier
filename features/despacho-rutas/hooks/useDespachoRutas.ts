@@ -176,17 +176,25 @@ export function useDespachoRutas() {
     };
   }, [loadRutas, filtroFecha, selectedRuta]);
 
-  // 7. Filtro de búsqueda
+  // 7. Filtro de búsqueda y ordenamiento (la más actual siempre arriba)
   const rutasFiltradas = useMemo(() => {
-    if (!busqueda.trim()) return rutas;
-    const q = busqueda.toLowerCase().trim();
-    return rutas.filter(
-      r =>
-        r.nombreRuta.toLowerCase().includes(q) ||
-        r.codigoRuta.toLowerCase().includes(q) ||
-        r.choferNombre.toLowerCase().includes(q) ||
-        (r.vehiculoPlaca && r.vehiculoPlaca.toLowerCase().includes(q))
-    );
+    let list = [...rutas];
+    if (busqueda.trim()) {
+      const q = busqueda.toLowerCase().trim();
+      list = list.filter(
+        r =>
+          r.nombreRuta.toLowerCase().includes(q) ||
+          r.codigoRuta.toLowerCase().includes(q) ||
+          r.choferNombre.toLowerCase().includes(q) ||
+          (r.vehiculoPlaca && r.vehiculoPlaca.toLowerCase().includes(q))
+      );
+    }
+    // Ordenar: la más actual / recientemente creada arriba
+    return list.sort((a, b) => {
+      const dateA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
+      const dateB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
+      return dateB - dateA;
+    });
   }, [rutas, busqueda]);
 
   return {

@@ -12,12 +12,31 @@ import {
   Trash2,
   ArrowLeft,
   Calendar,
-  User
+  User,
+  Clock,
+  MessageCircle
 } from 'lucide-react';
 import { useDespachoRutas } from '../hooks/useDespachoRutas';
 import RutaBuilderModal from './RutaBuilderModal';
 import ChoferCardParada from './ChoferCardParada';
 import { DespachoRuta } from '@/types/despacho';
+
+function formatFechaCreacion(isoString?: string): string {
+  if (!isoString) return '';
+  try {
+    const d = new Date(isoString);
+    const now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+    const timeStr = d.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false });
+    if (isToday) {
+      return `Hoy ${timeStr}`;
+    }
+    const dateStr = d.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit' });
+    return `${dateStr} ${timeStr}`;
+  } catch {
+    return '';
+  }
+}
 
 export default function DespachoRutasTab() {
   const {
@@ -471,14 +490,17 @@ export default function DespachoRutasTab() {
           ) : (
             <div
               style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-                gap: '16px'
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                width: '100%'
               }}
             >
-              {rutas.map(ruta => {
+              {rutas.map((ruta, idx) => {
                 const isCompletada = ruta.estado === 'COMPLETADO';
                 const pct = ruta.totalParadas > 0 ? Math.round((ruta.paradasEntregadas / ruta.totalParadas) * 100) : 0;
+                const paradasPendientes = Math.max(0, ruta.totalParadas - ruta.paradasEntregadas);
+                const fechaCreacionTexto = formatFechaCreacion(ruta.creadoEn);
 
                 return (
                   <div
@@ -486,17 +508,44 @@ export default function DespachoRutasTab() {
                     style={{
                       background: '#ffffff',
                       border: '1px solid #e2e8f0',
-                      borderRadius: '14px',
-                      padding: '18px',
+                      borderLeft: isCompletada ? '5px solid #16a34a' : '5px solid #2563eb',
+                      borderRadius: '12px',
+                      padding: '16px 20px',
                       display: 'flex',
-                      flexDirection: 'column',
-                      gap: '12px',
-                      boxShadow: '0 2px 4px rgba(15,23,42,0.04)',
-                      transition: 'all 0.2s ease'
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '16px',
+                      boxShadow: '0 1px 3px rgba(15,23,42,0.04)',
+                      transition: 'all 0.15s ease',
+                      position: 'relative'
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div>
+                    {/* Badge destacado para la ruta más actual / reciente */}
+                    {idx === 0 && !busqueda.trim() && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '-9px',
+                          left: '16px',
+                          background: '#2563eb',
+                          color: '#ffffff',
+                          fontSize: '9.5px',
+                          fontWeight: 800,
+                          padding: '2px 8px',
+                          borderRadius: '999px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          boxShadow: '0 2px 4px rgba(37,99,235,0.25)'
+                        }}
+                      >
+                        Más Reciente
+                      </div>
+                    )}
+
+                    {/* Columna 1: Identificador, Estado, Nombre y Fecha */}
+                    <div style={{ flex: '1 1 280px', minWidth: '240px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <span
                           style={{
                             fontSize: '11px',
@@ -504,92 +553,204 @@ export default function DespachoRutasTab() {
                             fontFamily: 'monospace',
                             color: '#2563eb',
                             background: '#eff6ff',
-                            padding: '2px 6px',
-                            borderRadius: '4px'
+                            padding: '2px 7px',
+                            borderRadius: '5px',
+                            border: '1px solid #dbeafe'
                           }}
                         >
                           {ruta.codigoRuta}
                         </span>
-                        <h3 style={{ margin: '4px 0 0 0', fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>
-                          {ruta.nombreRuta}
-                        </h3>
+
+                        <span
+                          style={{
+                            background: isCompletada ? '#dcfce7' : '#fef3c7',
+                            color: isCompletada ? '#15803d' : '#b45309',
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            padding: '2px 8px',
+                            borderRadius: '6px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: '6px',
+                              height: '6px',
+                              borderRadius: '50%',
+                              background: isCompletada ? '#16a34a' : '#f59e0b'
+                            }}
+                          />
+                          {isCompletada ? 'Completado' : 'En Ruta'}
+                        </span>
+
+                        {fechaCreacionTexto && (
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              color: '#64748b',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px'
+                            }}
+                            title={`Fecha de registro: ${ruta.creadoEn || ''}`}
+                          >
+                            <Clock className="w-3 h-3 text-slate-400" /> {fechaCreacionTexto}
+                          </span>
+                        )}
                       </div>
 
-                      <span
+                      <h3
                         style={{
-                          background: isCompletada ? '#dcfce7' : '#fef3c7',
-                          color: isCompletada ? '#15803d' : '#b45309',
-                          fontSize: '11px',
+                          margin: '3px 0 1px 0',
+                          fontSize: '16.5px',
                           fontWeight: 800,
-                          padding: '3px 8px',
-                          borderRadius: '6px'
+                          color: '#0f172a',
+                          textTransform: 'capitalize'
                         }}
                       >
-                        {isCompletada ? 'Completado' : 'En Ruta'}
-                      </span>
-                    </div>
+                        {ruta.nombreRuta}
+                      </h3>
 
-                    <div style={{ fontSize: '12.5px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <User className="w-3.5 h-3.5 text-slate-400" />
-                        Chofer: <strong style={{ color: '#0f172a' }}>{ruta.choferNombre}</strong>
-                      </div>
-                      {ruta.vehiculoPlaca && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <Truck className="w-3.5 h-3.5 text-slate-400" />
-                          Vehículo: <strong style={{ color: '#0f172a' }}>{ruta.vehiculoPlaca}</strong>
-                        </div>
-                      )}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                        Fecha: {ruta.fechaDespacho}
-                      </div>
-                    </div>
-
-                    {/* Barra de Progreso de la Tarjeta */}
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}>
-                        <span>Entregas Realizadas</span>
-                        <span style={{ color: isCompletada ? '#16a34a' : '#0f172a' }}>
-                          {ruta.paradasEntregadas} / {ruta.totalParadas} ({pct}%)
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: '#64748b', flexWrap: 'wrap' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                          Despacho: <strong style={{ color: '#334155' }}>{ruta.fechaDespacho}</strong>
+                        </span>
+                        <span>•</span>
+                        <span>
+                          <strong style={{ color: '#0f172a' }}>{ruta.totalParadas}</strong> paradas / envíos
                         </span>
                       </div>
-                      <div style={{ height: '6px', background: '#f1f5f9', borderRadius: '999px', overflow: 'hidden' }}>
+                    </div>
+
+                    {/* Columna 2: Conductor & Vehículo */}
+                    <div
+                      style={{
+                        flex: '1 1 200px',
+                        minWidth: '180px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '3px',
+                        padding: '0 12px',
+                        borderLeft: '1px solid #f1f5f9'
+                      }}
+                    >
+                      <div style={{ fontSize: '10.5px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                        Chofer / Repartidor
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#334155' }}>
+                        <User className="w-4 h-4 text-blue-500 shrink-0" />
+                        <strong style={{ color: '#0f172a' }}>{ruta.choferNombre}</strong>
+                      </div>
+                      {ruta.vehiculoPlaca && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#64748b' }}>
+                          <Truck className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          Placa: <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0f172a' }}>{ruta.vehiculoPlaca}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Columna 3: Barra de Progreso y Métricas de Entrega */}
+                    <div
+                      style={{
+                        flex: '1 1 230px',
+                        minWidth: '200px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '5px',
+                        padding: '0 12px',
+                        borderLeft: '1px solid #f1f5f9'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                        <span style={{ fontWeight: 700, color: '#475569' }}>Entregas Realizadas</span>
+                        <strong style={{ color: isCompletada ? '#16a34a' : '#2563eb', fontSize: '12.5px' }}>
+                          {ruta.paradasEntregadas} / {ruta.totalParadas} ({pct}%)
+                        </strong>
+                      </div>
+
+                      <div style={{ height: '7px', background: '#f1f5f9', borderRadius: '999px', overflow: 'hidden' }}>
                         <div
                           style={{
                             height: '100%',
-                            background: isCompletada ? '#16a34a' : '#2563eb',
+                            background: isCompletada ? 'linear-gradient(90deg, #16a34a, #22c55e)' : 'linear-gradient(90deg, #2563eb, #3b82f6)',
                             width: `${pct}%`,
                             borderRadius: '999px',
-                            transition: 'width 0.3s ease'
+                            transition: 'width 0.4s ease'
                           }}
                         />
                       </div>
+
+                      <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>
+                          {paradasPendientes === 0 ? '¡Todas entregadas!' : `${paradasPendientes} pendiente${paradasPendientes > 1 ? 's' : ''}`}
+                        </span>
+                        {isCompletada && (
+                          <span style={{ color: '#16a34a', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                            <CheckCircle2 className="w-3 h-3" /> Completada
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Botones de Acción de la Ruta */}
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '6px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+                    {/* Columna 4: Botones de Acción */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        justifyContent: 'flex-end',
+                        flex: '0 0 auto'
+                      }}
+                    >
+                      {/* Botón Primario: Abrir Vista Chofer */}
                       <button
                         onClick={() => selectRuta(ruta.id, 'chofer')}
                         style={{
-                          flex: 1,
                           background: '#2563eb',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '9px 15px',
+                          fontSize: '12.5px',
+                          fontWeight: 800,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 4px rgba(37,99,235,0.25)',
+                          transition: 'all 0.15s ease'
+                        }}
+                        title="Abrir hoja móvil interactiva con llamadas, WhatsApp y mapas"
+                      >
+                        <ExternalLink className="w-4 h-4" /> Abrir Vista Chofer
+                      </button>
+
+                      {/* Botón WhatsApp */}
+                      <button
+                        onClick={() => handleEnviarRutaWhatsApp(ruta)}
+                        style={{
+                          background: '#22c55e',
                           color: '#ffffff',
                           border: 'none',
                           borderRadius: '8px',
                           padding: '9px 12px',
                           fontSize: '12px',
-                          fontWeight: 800,
-                          display: 'flex',
+                          fontWeight: 700,
+                          display: 'inline-flex',
                           alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px',
-                          cursor: 'pointer'
+                          gap: '5px',
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 4px rgba(34,197,94,0.25)'
                         }}
+                        title="Enviar enlace al WhatsApp del chofer"
                       >
-                        <ExternalLink className="w-3.5 h-3.5" /> Abrir Vista Chofer
+                        <MessageCircle className="w-4 h-4 fill-current" /> WhatsApp
                       </button>
 
+                      {/* Botón Copiar Enlace */}
                       <button
                         onClick={() => handleCopiarEnlaceChofer(ruta)}
                         style={{
@@ -597,33 +758,37 @@ export default function DespachoRutasTab() {
                           border: '1px solid #cbd5e1',
                           color: copiedRutaId === ruta.id ? '#15803d' : '#334155',
                           borderRadius: '8px',
-                          padding: '9px 12px',
+                          padding: '9px 11px',
                           fontSize: '12px',
                           fontWeight: 700,
-                          display: 'flex',
+                          display: 'inline-flex',
                           alignItems: 'center',
                           gap: '4px',
                           cursor: 'pointer'
                         }}
-                        title="Copiar enlace para el chofer"
+                        title="Copiar enlace público de la ruta"
                       >
                         <Share2 className="w-3.5 h-3.5" />
                         {copiedRutaId === ruta.id ? '¡Copiado!' : 'Enlace'}
                       </button>
 
+                      {/* Botón Eliminar */}
                       <button
                         onClick={() => {
-                          if (confirm(`¿Eliminar la ruta "${ruta.nombreRuta}"?`)) {
+                          if (confirm(`¿Eliminar la ruta "${ruta.nombreRuta}" y todas sus paradas?`)) {
                             handleEliminarRuta(ruta.id);
                           }
                         }}
                         style={{
                           background: '#fee2e2',
-                          border: 'none',
+                          border: '1px solid #fecaca',
                           color: '#ef4444',
                           borderRadius: '8px',
                           padding: '9px 10px',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
                         }}
                         title="Eliminar ruta"
                       >

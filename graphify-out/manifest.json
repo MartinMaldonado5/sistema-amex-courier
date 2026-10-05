@@ -1612,8 +1612,8 @@
     "semantic_hash": ""
   },
   "features/despacho-rutas/components/DespachoRutasTab.tsx": {
-    "mtime": 1791174529.562183,
-    "ast_hash": "fa9d4dc0da70b18b3ef24d3fce307b71",
+    "mtime": 1791177419.8691754,
+    "ast_hash": "fe73a8d6ffecd2bf8969d1c6fa6d16db",
     "semantic_hash": ""
   },
   "features/despacho-rutas/components/RutaBuilderModal.tsx": {
@@ -1622,8 +1622,8 @@
     "semantic_hash": ""
   },
   "features/despacho-rutas/hooks/useDespachoRutas.ts": {
-    "mtime": 1791173931.1238005,
-    "ast_hash": "19ebb9c2ac89ac1a5ba52a7f22e7e35e",
+    "mtime": 1791177342.9970691,
+    "ast_hash": "ad25e34b973965329c1836d217de83e1",
     "semantic_hash": ""
   },
   "features/despacho-rutas/index.ts": {
@@ -1632,38 +1632,13 @@
     "semantic_hash": ""
   },
   "features/despacho-rutas/services/despacho.service.ts": {
-    "mtime": 1791173911.1415646,
-    "ast_hash": "2d4794cfef339ab85f804f8b84999497",
+    "mtime": 1791177324.474255,
+    "ast_hash": "b34ed97f5bdae235b453f250838b84bd",
     "semantic_hash": ""
   },
   "lib/utils/phoneUtils.ts": {
     "mtime": 1791173849.7092652,
     "ast_hash": "702c86a52db77e01026f486f68da39aa",
-    "semantic_hash": ""
-  },
-  "scratch/analyze_entregas.js": {
-    "mtime": 1791172793.6252077,
-    "ast_hash": "36419e6ca868e4ed1e44245854e1b647",
-    "semantic_hash": ""
-  },
-  "scratch/analyze_entregas_blocks.js": {
-    "mtime": 1791172813.643216,
-    "ast_hash": "b0c1cd77119bb7cf06998ad8fa42b06d",
-    "semantic_hash": ""
-  },
-  "scratch/analyze_phones_distritos.js": {
-    "mtime": 1791172925.3760574,
-    "ast_hash": "d1b392feee90417e98d65c156847c83a",
-    "semantic_hash": ""
-  },
-  "scratch/inspect_delivery_details.js": {
-    "mtime": 1791172831.0971282,
-    "ast_hash": "49abfe9fc95ee0e6014db4eba3fdae77",
-    "semantic_hash": ""
-  },
-  "scratch/summary_all_sheets.js": {
-    "mtime": 1791172857.7829323,
-    "ast_hash": "6459b67e3dc4d03d26045056d5e70b1d",
     "semantic_hash": ""
   },
   "tests/unit/despachoRutasWorkflow.test.ts": {

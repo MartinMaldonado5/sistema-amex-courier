@@ -17,7 +17,6 @@ export class DespachoService {
     let query = supabase
       .from('despachos_rutas')
       .select('*')
-      .order('fecha_despacho', { ascending: false })
       .order('creado_en', { ascending: false });
 
     if (fecha) {
