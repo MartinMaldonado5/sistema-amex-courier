@@ -52,21 +52,6 @@ interface CameraDeviceOption {
   isPrimary?: boolean;
 }
 
-const formatOperatorName = (user?: { nombre?: string; email?: string } | null): string => {
-  if (!user) return 'Operador Logístico AMEX';
-  const rawName = user.nombre?.trim();
-  if (rawName && !rawName.includes('@')) {
-    return rawName;
-  }
-  const emailSource = (rawName && rawName.includes('@')) ? rawName : user.email;
-  if (emailSource && emailSource.includes('@')) {
-    const alias = emailSource.split('@')[0].replace(/[._-]/g, ' ').trim();
-    if (alias) {
-      return alias.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    }
-  }
-  return 'Operador AMEX';
-};
 
 export default function MobileScannerModal({
   isOpen,
@@ -1241,30 +1226,6 @@ export default function MobileScannerModal({
               {workflowMode === 'slotting' ? `ASIGNANDO ➔ ${currentShelfLocation}` : workflowMode.toUpperCase()}
             </div>
 
-            {/* Operador activo */}
-            {currentUser && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '38px',
-                  left: '10px',
-                  zIndex: 30,
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  color: '#93c5fd',
-                  background: 'rgba(15, 23, 42, 0.88)',
-                  padding: '2px 8px',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(59, 130, 246, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                <User style={{ width: '11px', height: '11px' }} />
-                <span>{formatOperatorName(currentUser)}</span>
-              </div>
-            )}
 
             {/* Controles Flotantes */}
             <div
