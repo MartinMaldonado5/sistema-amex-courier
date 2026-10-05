@@ -531,12 +531,6 @@ export default function ScannerTab({
             {currentSub === 'delivery' && '6.3 🚚 Despachar & Reparto'}
           </strong>
         </div>
-        {currentUser && (
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '20px', padding: '4px 12px', fontSize: '12px', color: '#1e40af', fontWeight: 600 }}>
-            <User className="w-3.5 h-3.5 text-blue-600" />
-            <span>Operador Activo: <strong>{formatOperatorName(currentUser)}</strong></span>
-          </div>
-        )}
       </div>
 
       {/* NOTIFICACIÓN FLOTANTE */}
@@ -577,79 +571,8 @@ export default function ScannerTab({
             />
           </div>
 
-          {/* LADO DERECHO: MATRIZ DE OCUPACIÓN DE ANAQUELES + BANDEJA DE SUBIDA A MASTER */}
+          {/* LADO DERECHO: BANDEJA DE SUBIDA A MASTER & KPI */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            
-            {/* MATRIZ VISUAL DE OCUPACIÓN DE ANAQUELES (A1 & A2) */}
-            <div style={{ background: '#ffffff', border: '1.5px solid #bfdbfe', borderRadius: '12px', padding: '14px', boxShadow: '0 2px 8px rgba(37,99,235,0.06)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e40af', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Layers className="w-4 h-4 text-blue-600" /> Capacidad y Ocupación en Anaqueles Físicos
-                </span>
-                <span style={{ fontSize: '11px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '2px 8px', borderRadius: '6px', fontWeight: 800 }}>
-                  2 Anaqueles × 4 Pisos
-                </span>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                {/* Anaquel 1 (A1) */}
-                <div style={{ background: '#f8fafc', border: '1.5px solid #93c5fd', borderRadius: '10px', padding: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <span style={{ fontWeight: 900, fontSize: '12px', color: '#1e40af' }}>🟦 Anaquel 1 (A1)</span>
-                    <span style={{ fontSize: '11.5px', fontWeight: 900, background: '#dbeafe', color: '#1e40af', padding: '1px 6px', borderRadius: '4px' }}>
-                      {totalA1} paq.
-                    </span>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', textAlign: 'center', fontSize: '10.5px' }}>
-                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 2px' }}>
-                      <span style={{ color: '#64748b', display: 'block', fontSize: '9px' }}>P1</span>
-                      <strong style={{ color: '#0f172a' }}>{a1_P1}</strong>
-                    </div>
-                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 2px' }}>
-                      <span style={{ color: '#64748b', display: 'block', fontSize: '9px' }}>P2</span>
-                      <strong style={{ color: '#0f172a' }}>{a1_P2}</strong>
-                    </div>
-                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 2px' }}>
-                      <span style={{ color: '#64748b', display: 'block', fontSize: '9px' }}>P3</span>
-                      <strong style={{ color: '#0f172a' }}>{a1_P3}</strong>
-                    </div>
-                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 2px' }}>
-                      <span style={{ color: '#64748b', display: 'block', fontSize: '9px' }}>P4</span>
-                      <strong style={{ color: '#0f172a' }}>{a1_P4}</strong>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Anaquel 2 (A2) */}
-                <div style={{ background: '#f8fafc', border: '1.5px solid #86efac', borderRadius: '10px', padding: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <span style={{ fontWeight: 900, fontSize: '12px', color: '#15803d' }}>🟩 Anaquel 2 (A2)</span>
-                    <span style={{ fontSize: '11.5px', fontWeight: 900, background: '#dcfce7', color: '#166534', padding: '1px 6px', borderRadius: '4px' }}>
-                      {totalA2} paq.
-                    </span>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', textAlign: 'center', fontSize: '10.5px' }}>
-                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 2px' }}>
-                      <span style={{ color: '#64748b', display: 'block', fontSize: '9px' }}>P1</span>
-                      <strong style={{ color: '#0f172a' }}>{a2_P1}</strong>
-                    </div>
-                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 2px' }}>
-                      <span style={{ color: '#64748b', display: 'block', fontSize: '9px' }}>P2</span>
-                      <strong style={{ color: '#0f172a' }}>{a2_P2}</strong>
-                    </div>
-                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 2px' }}>
-                      <span style={{ color: '#64748b', display: 'block', fontSize: '9px' }}>P3</span>
-                      <strong style={{ color: '#0f172a' }}>{a2_P3}</strong>
-                    </div>
-                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 2px' }}>
-                      <span style={{ color: '#64748b', display: 'block', fontSize: '9px' }}>P4</span>
-                      <strong style={{ color: '#0f172a' }}>{a2_P4}</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* KPI RIBBON DE COLA LOCAL Y LECTURAS */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
               <div
