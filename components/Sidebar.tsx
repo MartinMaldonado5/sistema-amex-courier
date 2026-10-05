@@ -234,6 +234,7 @@ export default function Sidebar({
           {navItem('completar-inventario', 'fa-solid fa-cloud-arrow-up', '13. Completar Inventario')}
           {navItem('auditoria', 'fa-solid fa-shield-halved', '14. Auditoría & Gobernanza')}
           {navItem('admin-usuarios', 'fa-solid fa-user-gear', '15. Gestión de Usuarios')}
+          {navItem('despacho-rutas', 'fa-solid fa-route', '16. Rutas & Despacho Chofer')}
         </div>
       </div>
 

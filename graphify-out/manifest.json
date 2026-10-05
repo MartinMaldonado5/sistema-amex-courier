@@ -110,8 +110,8 @@
     "semantic_hash": ""
   },
   "components/Sidebar.tsx": {
-    "mtime": 1791165101.9069767,
-    "ast_hash": "53e62ba19228284b882ec39d5472eb15",
+    "mtime": 1791174213.4364452,
+    "ast_hash": "8f8a22587b12b0bd829d43502243c89b",
     "semantic_hash": ""
   },
   "components/modals/NewClientModal.tsx": {
@@ -506,8 +506,8 @@
     "semantic_hash": ""
   },
   "features/dashboard/components/DashboardTabContent.tsx": {
-    "mtime": 1791165104.3184028,
-    "ast_hash": "72668e5377b95490d22c3845d61a3147",
+    "mtime": 1791174150.388952,
+    "ast_hash": "0779b91cf513f936ff897f7d7465072c",
     "semantic_hash": ""
   },
   "features/dashboard/components/ExecutiveKpiGrid.tsx": {
@@ -541,8 +541,8 @@
     "semantic_hash": ""
   },
   "features/dashboard/hooks/useDashboardNavigation.ts": {
-    "mtime": 1791165098.199442,
-    "ast_hash": "5301567c1243bf3019d19feb6c9da1e5",
+    "mtime": 1791174129.0769734,
+    "ast_hash": "5dff649c8c40c86d4bb107c7c9e9cfed",
     "semantic_hash": ""
   },
   "features/dashboard/hooks/useDashboardSession.ts": {
@@ -1021,8 +1021,8 @@
     "semantic_hash": ""
   },
   "lib/navigation/routes.ts": {
-    "mtime": 1791167197.5004177,
-    "ast_hash": "8681995c1e9b988ca6ecb47033fc32d0",
+    "mtime": 1791174061.610505,
+    "ast_hash": "373f0a5886b0904387e0de9700aba4f7",
     "semantic_hash": ""
   },
   "lib/openai/analyzer.ts": {
@@ -1577,8 +1577,8 @@
     "semantic_hash": ""
   },
   "lib/navigation/registry.ts": {
-    "mtime": 1791167144.8439171,
-    "ast_hash": "ffbaf5ac871d5912b2b16b1c6fca43ec",
+    "mtime": 1791174030.5902028,
+    "ast_hash": "94f9ee792a197a8825a0b221d8ca4c93",
     "semantic_hash": ""
   },
   "tests/unit/authGuards.test.ts": {
@@ -1592,8 +1592,8 @@
     "semantic_hash": ""
   },
   "tests/unit/navigationRegistry.test.ts": {
-    "mtime": 1791167618.3827922,
-    "ast_hash": "9add5b9036145e32f90610dfd2580d55",
+    "mtime": 1791174649.3477573,
+    "ast_hash": "e15ab956861dd2aafc85fad5053d4883",
     "semantic_hash": ""
   },
   "tests/unit/scannerRelocationAndSecurity.test.ts": {
@@ -1604,6 +1604,76 @@
   "types/scanner.ts": {
     "mtime": 1791167442.5829527,
     "ast_hash": "b88775cee3d36076c39f3bd1424fe560",
+    "semantic_hash": ""
+  },
+  "features/despacho-rutas/components/ChoferCardParada.tsx": {
+    "mtime": 1791174545.8354652,
+    "ast_hash": "3005b637f74ad0615a9d772753b6f4b9",
+    "semantic_hash": ""
+  },
+  "features/despacho-rutas/components/DespachoRutasTab.tsx": {
+    "mtime": 1791174529.562183,
+    "ast_hash": "fa9d4dc0da70b18b3ef24d3fce307b71",
+    "semantic_hash": ""
+  },
+  "features/despacho-rutas/components/RutaBuilderModal.tsx": {
+    "mtime": 1791174635.8576186,
+    "ast_hash": "ba3b734647b2d324a0b621dc2eb75ecb",
+    "semantic_hash": ""
+  },
+  "features/despacho-rutas/hooks/useDespachoRutas.ts": {
+    "mtime": 1791173931.1238005,
+    "ast_hash": "19ebb9c2ac89ac1a5ba52a7f22e7e35e",
+    "semantic_hash": ""
+  },
+  "features/despacho-rutas/index.ts": {
+    "mtime": 1791174012.0870678,
+    "ast_hash": "1517842f8802b29b6b1e1588ecb32b29",
+    "semantic_hash": ""
+  },
+  "features/despacho-rutas/services/despacho.service.ts": {
+    "mtime": 1791173911.1415646,
+    "ast_hash": "2d4794cfef339ab85f804f8b84999497",
+    "semantic_hash": ""
+  },
+  "lib/utils/phoneUtils.ts": {
+    "mtime": 1791173849.7092652,
+    "ast_hash": "702c86a52db77e01026f486f68da39aa",
+    "semantic_hash": ""
+  },
+  "scratch/analyze_entregas.js": {
+    "mtime": 1791172793.6252077,
+    "ast_hash": "36419e6ca868e4ed1e44245854e1b647",
+    "semantic_hash": ""
+  },
+  "scratch/analyze_entregas_blocks.js": {
+    "mtime": 1791172813.643216,
+    "ast_hash": "b0c1cd77119bb7cf06998ad8fa42b06d",
+    "semantic_hash": ""
+  },
+  "scratch/analyze_phones_distritos.js": {
+    "mtime": 1791172925.3760574,
+    "ast_hash": "d1b392feee90417e98d65c156847c83a",
+    "semantic_hash": ""
+  },
+  "scratch/inspect_delivery_details.js": {
+    "mtime": 1791172831.0971282,
+    "ast_hash": "49abfe9fc95ee0e6014db4eba3fdae77",
+    "semantic_hash": ""
+  },
+  "scratch/summary_all_sheets.js": {
+    "mtime": 1791172857.7829323,
+    "ast_hash": "6459b67e3dc4d03d26045056d5e70b1d",
+    "semantic_hash": ""
+  },
+  "tests/unit/despachoRutasWorkflow.test.ts": {
+    "mtime": 1791173863.5135732,
+    "ast_hash": "62bc520df4fa43bfea3f748be3f83828",
+    "semantic_hash": ""
+  },
+  "types/despacho.ts": {
+    "mtime": 1791173832.7350936,
+    "ast_hash": "3f62dc1835c72488e4deb5db22e08019",
     "semantic_hash": ""
   }
 }

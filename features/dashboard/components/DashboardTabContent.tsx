@@ -100,6 +100,11 @@ const AdminUsersTab = dynamic(() => import('@/features/admin-users/components/Ad
   loading: () => <DashboardSkeleton />
 });
 
+const DespachoRutasTab = dynamic(() => import('@/features/despacho-rutas/components/DespachoRutasTab'), {
+  ssr: false,
+  loading: () => <DashboardSkeleton />
+});
+
 interface DashboardTabContentProps {
   activeTab: DashboardTabId;
   isLoadingInitialData: boolean;
@@ -267,6 +272,7 @@ export default function DashboardTabContent({
       {activeTab === 'completar-inventario' && <InventarioJobsTab />}
       {activeTab === 'auditoria' && <AuditoriaTab />}
       {activeTab === 'admin-usuarios' && <AdminUsersTab />}
+      {activeTab === 'despacho-rutas' && <DespachoRutasTab />}
     </>
   );
 }

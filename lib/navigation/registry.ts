@@ -220,6 +220,16 @@ export const SYSTEM_MODULES: ModuleMetadata[] = [
     icon: 'fa-solid fa-user-gear',
     category: 'sistema',
     allowedRoles: ['ADMIN', 'SUPER_ADMIN']
+  },
+  {
+    id: 'despacho-rutas',
+    tabId: 'despacho-rutas',
+    number: 16,
+    label: '16. Rutas & Despacho Chofer',
+    shortLabel: 'Despacho Chofer',
+    path: '/despacho-rutas',
+    icon: 'fa-solid fa-route',
+    category: 'operaciones'
   }
 ];
 

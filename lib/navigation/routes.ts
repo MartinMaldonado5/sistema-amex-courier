@@ -19,7 +19,8 @@ export const TAB_TO_PATH: Record<string, string> = {
   'info-amex': '/info-amex',
   'completar-inventario': '/completar-inventario',
   'auditoria': '/auditoria',
-  'admin-usuarios': '/admin-usuarios'
+  'admin-usuarios': '/admin-usuarios',
+  'despacho-rutas': '/despacho-rutas'
 };
 
 export const PATH_TO_TAB: Record<string, string> = {
@@ -56,6 +57,8 @@ export const PATH_TO_TAB: Record<string, string> = {
   '/info-amex': 'info-amex',
   '/completar-inventario': 'completar-inventario',
   '/admin-usuarios': 'admin-usuarios',
+  '/despacho-rutas': 'despacho-rutas',
+  '/rutas': 'despacho-rutas',
   '/completar': 'completar-inventario',
   '/inventario-tib': 'completar-inventario',
   '/imagenes': 'info-amex',
