@@ -6556,7 +6556,7 @@
       "label": "KardexView()",
       "file_type": "code",
       "source_file": "features/inventory/components/KardexView.tsx",
-      "source_location": "L20",
+      "source_location": "L21",
       "_callable": true,
       "_origin": "ast",
       "id": "features_inventory_components_kardexview_kardexview",
@@ -37016,7 +37016,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "features/inventory/components/InventoryTab.tsx",
-      "source_location": "L149",
+      "source_location": "L150",
       "weight": 1.0,
       "_origin": "ast",
       "source": "features_inventory_components_inventorytab_inventorytab",
@@ -37190,7 +37190,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "features/inventory/components/KardexView.tsx",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0,
       "_origin": "ast",
       "source": "features_inventory_components_kardexview",
@@ -56262,5 +56262,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "7c7e598811b0f8aafa4a89e93e169a77fc82ef2f"
+  "built_at_commit": "189dc0baa317adec1512bc18ed3d957fb7f0fdb3"
 }

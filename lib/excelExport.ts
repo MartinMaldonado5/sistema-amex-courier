@@ -87,9 +87,9 @@ export function exportPaquetesToExcel(paquetes: Paquete[], filenamePrefix = 'Inv
 }
 
 /**
- * Exportador profesional de Kardex de Movimientos a Excel (.xlsx)
+ * Exportador profesional de Bitácora de Movimientos y Custodia a Excel (.xlsx)
  */
-export function exportKardexToExcel(kardexList: MovimientoKardex[], filenamePrefix = 'Kardex_Movimientos_AMEX') {
+export function exportKardexToExcel(kardexList: MovimientoKardex[], filenamePrefix = 'Bitacora_Movimientos_Custodia_AMEX') {
   const formattedData = kardexList.map((k, idx) => ({
     'N°': idx + 1,
     'Fecha y Hora': new Date(k.creadoEn).toLocaleString('es-PE'),
@@ -104,7 +104,7 @@ export function exportKardexToExcel(kardexList: MovimientoKardex[], filenamePref
   }));
 
   const dateStr = new Date().toISOString().slice(0, 10);
-  exportToExcel(`${filenamePrefix}_${dateStr}`, 'Kardex WMS', formattedData);
+  exportToExcel(`${filenamePrefix}_${dateStr}`, 'Movimientos y Custodia', formattedData);
 }
 
 /**

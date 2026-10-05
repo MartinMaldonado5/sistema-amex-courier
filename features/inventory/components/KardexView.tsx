@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Clock, RefreshCw, Plus, Search, ChevronRight } from 'lucide-react';
+import { Clock, RefreshCw, Plus, Search, ChevronRight, Download } from 'lucide-react';
 import { MovimientoKardex } from '@/types';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 
@@ -15,6 +15,7 @@ export interface KardexViewProps {
   isLoadingKardex: boolean;
   onRefreshKardex: () => Promise<void> | void;
   onOpenTransferModal: () => void;
+  onExportExcel?: () => void;
 }
 
 export default function KardexView({
@@ -26,7 +27,8 @@ export default function KardexView({
   setKardexTypeFilter,
   isLoadingKardex,
   onRefreshKardex,
-  onOpenTransferModal
+  onOpenTransferModal,
+  onExportExcel
 }: KardexViewProps) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -55,14 +57,34 @@ export default function KardexView({
               gap: '8px'
             }}
           >
-            <Clock className="w-5 h-5 text-blue-600" /> Bitácora Kardex de Movimientos y Auditoría en Tiempo Real
+            <Clock className="w-5 h-5 text-blue-600" /> Bitácora de Movimientos y Cadena de Custodia
           </h3>
           <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#64748b' }}>
-            Registro cronológico inmutable de entradas, salidas, reubicaciones y cambios de estado
+            Registro cronológico inmutable de entradas, salidas, reubicaciones y custodia física de paquetes
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {onExportExcel && (
+            <button
+              onClick={onExportExcel}
+              className="btn"
+              style={{
+                background: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                color: '#166534',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '12.5px',
+                fontWeight: 700
+              }}
+              title="Descargar bitácora de custodia en formato Excel"
+            >
+              <Download className="w-3.5 h-3.5 text-green-700" /> Exportar Excel
+            </button>
+          )}
+
           <button
             onClick={onRefreshKardex}
             className="btn"
@@ -90,7 +112,7 @@ export default function KardexView({
         </div>
       </div>
 
-      {/* Filtros de Kardex */}
+      {/* Filtros de Bitácora de Custodia */}
       <div
         style={{
           background: '#ffffff',
@@ -141,7 +163,7 @@ export default function KardexView({
               fontSize: '12px'
             }}
           >
-            <option value="ALL">Todos los Movimientos</option>
+            <option value="ALL">Todos los Movimientos de Custodia</option>
             <option value="RECEPCION">Recepción</option>
             <option value="SLOTTING">Slotting / Clasificación</option>
             <option value="REUBICACION">Reubicación</option>
@@ -171,7 +193,7 @@ export default function KardexView({
                 <tr>
                   <td colSpan={6} style={{ textAlign: 'center', padding: '32px', color: '#94a3b8' }}>
                     <Clock style={{ width: '36px', height: '36px', margin: '0 auto 8px auto', color: '#cbd5e1' }} />
-                    <div style={{ fontWeight: 800, color: '#64748b' }}>No hay registros de Kardex coincidentes</div>
+                    <div style={{ fontWeight: 800, color: '#64748b' }}>No hay registros de movimientos y custodia coincidentes</div>
                   </td>
                 </tr>
               ) : (

@@ -218,7 +218,7 @@ export default function InventoryToolbar({
               fontWeight: 700
             }}
           >
-            <Clock className="w-4 h-4 text-teal-600" /> 🔄 Kardex Movimientos
+            <Clock className="w-4 h-4 text-teal-600" /> 🔄 Bitácora de Custodia
           </button>
 
           <button
@@ -307,7 +307,7 @@ export default function InventoryToolbar({
             cursor: 'pointer'
           }}
         >
-          <Clock className="w-4 h-4" /> 3. 🔄 Kardex Movimientos ({kardexCount})
+          <Clock className="w-4 h-4" /> 3. 🔄 Bitácora de Movimientos y Custodia ({kardexCount})
         </button>
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>

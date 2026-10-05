@@ -145,7 +145,8 @@ export default function InventoryTab({
     // Acciones
     handleDeletePackage,
     handleQuickDeliver,
-    handleExportExcel
+    handleExportExcel,
+    handleExportKardexExcel
   } = useInventoryData({
     paquetes,
     onUpdatePackage,
@@ -249,7 +250,7 @@ export default function InventoryTab({
         />
       )}
 
-      {/* VISTA 4: Kardex de Movimientos & Trazabilidad */}
+      {/* VISTA 4: Bitácora de Movimientos y Cadena de Custodia */}
       {activeSubTab === 'movimientos' && (
         <KardexView
           kardexList={kardexList}
@@ -261,6 +262,7 @@ export default function InventoryTab({
           isLoadingKardex={isLoadingKardex}
           onRefreshKardex={fetchData}
           onOpenTransferModal={() => openTransferModal()}
+          onExportExcel={handleExportKardexExcel}
         />
       )}
 
@@ -360,12 +362,12 @@ export default function InventoryTab({
         />
       </Modal>
 
-      {/* Modal Pop-up: Kardex de Movimientos */}
+      {/* Modal Pop-up: Bitácora de Movimientos y Cadena de Custodia */}
       <Modal
         isOpen={isKardexModalOpen}
         onClose={() => setIsKardexModalOpen(false)}
-        title="🔄 Kardex de Movimientos y Auditoría"
-        subtitle="Historial de movimientos y trazabilidad física de paquetes"
+        title="🔄 Bitácora de Movimientos y Cadena de Custodia"
+        subtitle="Historial inmutable de movimientos, ubicaciones y custodia física de paquetes"
         maxWidth="full"
       >
         <KardexView
@@ -378,6 +380,7 @@ export default function InventoryTab({
           isLoadingKardex={isLoadingKardex}
           onRefreshKardex={fetchData}
           onOpenTransferModal={() => openTransferModal()}
+          onExportExcel={handleExportKardexExcel}
         />
       </Modal>
 

@@ -575,9 +575,9 @@ export function useInventoryData({
     exportPaquetesToExcel(filteredPaquetes, 'Inventario_AMEX_Lince');
   };
 
-  // Exportar Kardex a Excel
+  // Exportar Bitácora de Movimientos y Custodia a Excel
   const handleExportKardexExcel = () => {
-    exportKardexToExcel(filteredKardex, 'Kardex_Movimientos_AMEX');
+    exportKardexToExcel(filteredKardex, 'Bitacora_Movimientos_Custodia_AMEX');
   };
 
   return {

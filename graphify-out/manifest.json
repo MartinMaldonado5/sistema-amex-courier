@@ -716,8 +716,8 @@
     "semantic_hash": ""
   },
   "features/inventory/components/InventoryTab.tsx": {
-    "mtime": 1790997729.014797,
-    "ast_hash": "09520a76136b8ff5a54d60f443e51cca",
+    "mtime": 1791172181.5625167,
+    "ast_hash": "d8897fa3c0e03cb8de0a52d7850a445e",
     "semantic_hash": ""
   },
   "features/inventory/components/InventoryTable.tsx": {
@@ -726,13 +726,13 @@
     "semantic_hash": ""
   },
   "features/inventory/components/InventoryToolbar.tsx": {
-    "mtime": 1791089957.9469128,
-    "ast_hash": "b3d8f3528598ef14b14acce144fd68df",
+    "mtime": 1791172105.4150872,
+    "ast_hash": "8369fe9221596af29de2b72120f606a0",
     "semantic_hash": ""
   },
   "features/inventory/components/KardexView.tsx": {
-    "mtime": 1789101991.9215107,
-    "ast_hash": "5a3fdeaf80e5ccff5ed2cb36c2513be0",
+    "mtime": 1791172143.9947212,
+    "ast_hash": "3f68dcf61a3d2aef683686c278eff298",
     "semantic_hash": ""
   },
   "features/inventory/components/ShelfMatrixGrid.tsx": {
@@ -741,8 +741,8 @@
     "semantic_hash": ""
   },
   "features/inventory/hooks/useInventoryData.ts": {
-    "mtime": 1791128144.397667,
-    "ast_hash": "52fd2996a2242ab1f1cdd29558658a8b",
+    "mtime": 1791172214.2522204,
+    "ast_hash": "5ef14b6e1e7f3552149d4ec70028db93",
     "semantic_hash": ""
   },
   "features/inventory/index.ts": {
@@ -951,8 +951,8 @@
     "semantic_hash": ""
   },
   "features/scanner/components/ScannerTab.tsx": {
-    "mtime": 1791167352.8486226,
-    "ast_hash": "66ed23087d4d2f0304fda779118adae4",
+    "mtime": 1791172230.7835732,
+    "ast_hash": "5262d3f51f3c345dc86db7a8d66d7f0a",
     "semantic_hash": ""
   },
   "features/scanner/index.ts": {
@@ -1001,8 +1001,8 @@
     "semantic_hash": ""
   },
   "lib/excelExport.ts": {
-    "mtime": 1791125554.377538,
-    "ast_hash": "a76a71559e2f9f38f33be3057185d571",
+    "mtime": 1791172197.3405392,
+    "ast_hash": "90b5bc84d2d4e8ee0c57d08b48a41f08",
     "semantic_hash": ""
   },
   "lib/fuzzySearch.ts": {
@@ -1582,8 +1582,8 @@
     "semantic_hash": ""
   },
   "tests/unit/authGuards.test.ts": {
-    "mtime": 1791167978.8454401,
-    "ast_hash": "f172cb4a4e726779a1e0332cf5483578",
+    "mtime": 1791168191.2836335,
+    "ast_hash": "6118ed2269aea0e76131d99a096c717b",
     "semantic_hash": ""
   },
   "tests/unit/cobrosCalculations.test.ts": {
@@ -1597,8 +1597,8 @@
     "semantic_hash": ""
   },
   "tests/unit/scannerRelocationAndSecurity.test.ts": {
-    "mtime": 1791167632.152698,
-    "ast_hash": "d1beb8bc723183d2c01590538f3e2088",
+    "mtime": 1791168079.4650488,
+    "ast_hash": "7e41dd1bd4ad85087eda0be732d80dd3",
     "semantic_hash": ""
   },
   "types/scanner.ts": {

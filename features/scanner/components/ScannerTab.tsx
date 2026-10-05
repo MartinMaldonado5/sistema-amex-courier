@@ -1611,7 +1611,7 @@ export default function ScannerTab({
                   <strong>
                     {selectedIds.length > 0 ? selectedIds.length : pendingLogs.length} paquete(s)
                   </strong>{' '}
-                  en la base de datos de <strong>Supabase</strong> con sus ubicaciones de estantes y registros inmutables en el <strong>Kardex de Movimientos</strong>.
+                  en la base de datos de <strong>Supabase</strong> con sus ubicaciones de estantes y registros inmutables en la <strong>Bitácora de Movimientos y Custodia</strong>.
                 </div>
               </div>
 
