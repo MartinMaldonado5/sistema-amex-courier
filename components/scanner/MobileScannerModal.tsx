@@ -9,7 +9,6 @@ import {
   VolumeX,
   Vibrate,
   Sparkles,
-  Upload,
   Keyboard,
   AlertCircle,
   VideoOff,
@@ -1765,7 +1764,7 @@ export default function MobileScannerModal({
                 <Camera style={{ width: '36px', height: '36px', color: '#3b82f6', margin: '0 auto 8px auto' }} />
                 <p style={{ fontWeight: 800, color: '#f8fafc', fontSize: '13.5px', margin: 0 }}>Cámara en Espera</p>
                 <p style={{ fontSize: '11.5px', color: '#94a3b8', marginTop: '4px' }}>
-                  Presiona el botón para encender el visor o usa la foto/ingreso manual
+                  Presiona el botón para encender el visor o usa el ingreso manual
                 </p>
               </>
             )}
@@ -1799,31 +1798,7 @@ export default function MobileScannerModal({
           )}
         </button>
 
-        <input
-          type="file"
-          accept="image/*"
-          capture="environment"
-          ref={fileInputRef}
-          style={{ display: 'none' }}
-          onChange={handlePhotoUpload}
-        />
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isProcessingImage}
-          className="btn btn-secondary"
-          style={{
-            height: '42px',
-            borderRadius: '8px',
-            fontWeight: 700,
-            fontSize: '12px',
-            gap: '6px',
-            padding: '0 12px'
-          }}
-          title="Tomar foto con la cámara nativa del celular o subir imagen"
-        >
-          <Upload className="w-4 h-4 text-blue-600" />
-          {isProcessingImage ? 'Leyendo Foto...' : '📸 Tomar Foto'}
-        </button>
+
 
         {cameras.length > 1 && (
           <select
