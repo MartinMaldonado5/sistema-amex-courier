@@ -521,17 +521,6 @@ export default function ScannerTab({
   return (
     <div style={{ width: '100%', maxWidth: '100%', margin: 0, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '16px', boxSizing: 'border-box' }}>
       
-      {/* ENCABEZADO Y BREADCRUMB CON SUBMÓDULO */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-        <div className="sap-breadcrumb" style={{ margin: 0 }}>
-          <span>Operaciones y Almacenes</span> / <span>6. Escáner de Códigos</span> /{' '}
-          <strong style={{ color: currentSub === 'slotting' ? '#2563eb' : currentSub === 'lookup' ? '#16a34a' : '#9333ea' }}>
-            {currentSub === 'slotting' && '6.1 📦 Asignar Anaquel (Slotting WMS)'}
-            {currentSub === 'lookup' && '6.2 🔍 Localizar 360° & Auditoría'}
-            {currentSub === 'delivery' && '6.3 🚚 Despachar & Reparto'}
-          </strong>
-        </div>
-      </div>
 
       {/* NOTIFICACIÓN FLOTANTE */}
       {syncNotification && (
