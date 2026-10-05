@@ -831,26 +831,7 @@ export default function MobileScannerModal({
             <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
               <i className="fa-solid fa-barcode" style={{ color: '#2563eb' }}></i> Escáner Logístico AMEX
             </h3>
-            <span
-              style={{
-                fontSize: '10.5px',
-                fontWeight: 800,
-                padding: '3px 8px',
-                borderRadius: '12px',
-                background: activeEngine === 'native_gpu' ? '#dcfce7' : '#fef3c7',
-                color: activeEngine === 'native_gpu' ? '#166534' : '#92400e',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              <Sparkles className="w-3 h-3" />
-              {activeEngine === 'native_gpu' ? 'GPU Ultra-Rápido' : 'ZXing Engine'}
-            </span>
           </div>
-          <p style={{ fontSize: '11.5px', color: '#64748b', margin: '4px 0 0 0' }}>
-            Lee Guías WR#, Trackings USA y códigos DNI PDF417.
-          </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
