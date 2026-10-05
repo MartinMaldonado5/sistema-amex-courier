@@ -41,7 +41,7 @@ interface MobileScannerModalProps {
   clientes?: Cliente[];
   currentUser?: { nombre: string; email: string; rol?: string } | null;
   onSlotPackage?: (code: string, location: string) => void;
-  activeWorkflowMode?: 'slotting' | 'lookup' | 'delivery' | 'general';
+  activeWorkflowMode?: 'slotting' | 'lookup' | 'delivery' | 'relocate' | 'general';
   hideWorkflowSelector?: boolean;
 }
 
@@ -71,7 +71,7 @@ export default function MobileScannerModal({
   const [scanMode, setScanMode] = useState<'burst' | 'manual'>('burst');
 
   // 🎯 Flujo de Trabajo Logístico (Workflows de Operación)
-  const [workflowMode, setWorkflowMode] = useState<'slotting' | 'lookup' | 'delivery' | 'general'>(
+  const [workflowMode, setWorkflowMode] = useState<'slotting' | 'lookup' | 'delivery' | 'relocate' | 'general'>(
     activeWorkflowMode || 'slotting'
   );
 
@@ -114,7 +114,7 @@ export default function MobileScannerModal({
   interface PendingConfirmationData {
     code: string;
     format: string;
-    workflow: 'slotting' | 'lookup' | 'delivery' | 'general';
+    workflow: 'slotting' | 'lookup' | 'delivery' | 'relocate' | 'general';
     location: string;
     anaquel: 'A1' | 'A2' | 'REC' | 'DSP';
     piso: 'P1' | 'P2' | 'P3' | 'P4';
@@ -335,6 +335,21 @@ export default function MobileScannerModal({
       if (onConfirmRef.current) {
         onConfirmRef.current(code, format, {
           mode: 'slotting',
+          location: targetLocation,
+          anaquel,
+          piso,
+          pkg,
+          cli
+        } as unknown as { mode: string; location?: string });
+      }
+    } else if (workflow === 'relocate') {
+      setLastScannedCode({ code, location: targetLocation, time: now });
+      if (onSlotPackageRef.current) {
+        onSlotPackageRef.current(code, targetLocation);
+      }
+      if (onConfirmRef.current) {
+        onConfirmRef.current(code, format, {
+          mode: 'relocate',
           location: targetLocation,
           anaquel,
           piso,
@@ -926,7 +941,7 @@ export default function MobileScannerModal({
       )}
 
       {/* 🔹 MÉTODO 1: PANEL SELECTOR FIJO DE ANAQUEL Y PISO (2 ANAQUELES × 3 PISOS EN TIEMPO REAL) */}
-      {workflowMode === 'slotting' && (
+      {(workflowMode === 'slotting' || workflowMode === 'relocate') && (
         <div
           style={{
             background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
@@ -1222,7 +1237,7 @@ export default function MobileScannerModal({
               }}
             >
               <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
-              {workflowMode === 'slotting' ? `ASIGNANDO ➔ ${currentShelfLocation}` : workflowMode.toUpperCase()}
+              {workflowMode === 'slotting' ? `ASIGNANDO ➔ ${currentShelfLocation}` : workflowMode === 'relocate' ? `REASIGNANDO ➔ ${currentShelfLocation}` : workflowMode.toUpperCase()}
             </div>
 
 
@@ -1448,7 +1463,7 @@ export default function MobileScannerModal({
               )}
 
               {/* Selector de Destino en Modo Asignar Anaquel (Slotting) */}
-              {pendingConfirmation.workflow === 'slotting' && (
+              {(pendingConfirmation.workflow === 'slotting' || pendingConfirmation.workflow === 'relocate') && (
                 <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '10px', padding: '10px 12px', marginBottom: '14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '4px' }}>

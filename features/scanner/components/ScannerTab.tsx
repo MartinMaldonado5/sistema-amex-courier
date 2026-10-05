@@ -56,8 +56,8 @@ interface ScannerTabProps {
   onSlotPackage?: (code: string, location: string) => void;
   onUpdateLogs?: React.Dispatch<React.SetStateAction<ScannedLog[]>>;
   onRefreshData?: () => Promise<void> | void;
-  activeSubmodule?: 'slotting' | 'lookup' | 'delivery';
-  onChangeSubmodule?: (submodule: 'slotting' | 'lookup' | 'delivery') => void;
+  activeSubmodule?: 'slotting' | 'lookup' | 'delivery' | 'relocate';
+  onChangeSubmodule?: (submodule: 'slotting' | 'lookup' | 'delivery' | 'relocate') => void;
 }
 
 const formatOperatorName = (user?: { nombre?: string; email?: string } | null): string => {
@@ -89,7 +89,7 @@ export default function ScannerTab({
   onChangeSubmodule
 }: ScannerTabProps) {
   // Estado local para permitir navegación interna o externa por submódulos
-  const [internalSubmodule, setInternalSubmodule] = useState<'slotting' | 'lookup' | 'delivery'>(activeSubmodule);
+  const [internalSubmodule, setInternalSubmodule] = useState<'slotting' | 'lookup' | 'delivery' | 'relocate'>(activeSubmodule);
 
   useEffect(() => {
     if (activeSubmodule) {
@@ -99,7 +99,7 @@ export default function ScannerTab({
 
   const currentSub = activeSubmodule || internalSubmodule;
 
-  const handleSelectSubmodule = (sub: 'slotting' | 'lookup' | 'delivery') => {
+  const handleSelectSubmodule = (sub: 'slotting' | 'lookup' | 'delivery' | 'relocate') => {
     setInternalSubmodule(sub);
     if (onChangeSubmodule) {
       onChangeSubmodule(sub);
@@ -125,6 +125,16 @@ export default function ScannerTab({
     time: string;
     operator: string;
     pkg?: Paquete;
+  }>>([]);
+
+  // Historial de reasignaciones de la sesión (Submódulo 6.4)
+  const [relocatedSessionLogs, setRelocatedSessionLogs] = useState<Array<{
+    id: string;
+    code: string;
+    consignatario: string;
+    from: string;
+    to: string;
+    time: string;
   }>>([]);
 
   // Selección múltiple para decisión de subida a Master
@@ -434,6 +444,20 @@ export default function ScannerTab({
     format: string,
     extra?: { mode: string; location?: string; anaquel?: string; piso?: string; pkg?: Paquete; cli?: Cliente }
   ) => {
+    // 6.4 Reasignar: la ubicación ya se persistió vía onSlotPackage; no se encola en la cola de lecturas
+    if (extra?.mode === 'relocate') {
+      const foundPkg = extra.pkg || paquetes.find(p => p.numeroReciboBodega.toUpperCase() === code.toUpperCase() || p.trackingUsa.toUpperCase() === code.toUpperCase());
+      setRelocatedSessionLogs(prev => [{
+        id: `rel-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        code,
+        consignatario: foundPkg?.nombreConsignatario || 'Sin registro en inventario',
+        from: foundPkg?.posicionEstante || 'Sin ubicar',
+        to: extra.location || 'REC-P1',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      }, ...prev]);
+      soundEffects.playSuccess();
+      return;
+    }
     onConfirm(code, format, extra);
 
     // Si estamos en 6.2 Localizar 360, seleccionar inmediatamente la ficha del paquete
@@ -1271,6 +1295,68 @@ export default function ScannerTab({
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 🔄 SUBMÓDULO 6.4: REASIGNAR UBICACIÓN (EXCLUSIVO PARA CAMBIOS DE UBICACIÓN) */}
+      {/* ========================================================================= */}
+      {currentSub === 'relocate' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '16px', alignItems: 'start' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ background: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)', border: '1.5px solid #fdba74', borderRadius: '12px', padding: '10px 14px' }}>
+              <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#c2410c', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <RefreshCw className="w-4 h-4" /> Modo Reasignación de Ubicación
+              </div>
+              <div style={{ fontSize: '11px', color: '#9a3412', marginTop: '2px', lineHeight: 1.4 }}>
+                Elige el nuevo anaquel/piso, escanea o escribe la guía WR y confirma. <strong>La ubicación se actualiza al instante</strong> en el inventario.
+              </div>
+            </div>
+            <MobileScannerModal
+              isOpen={true}
+              isInline={true}
+              paquetes={paquetes}
+              clientes={clientes}
+              currentUser={currentUser}
+              onClose={() => {}}
+              onConfirm={handleScannerConfirm}
+              onSlotPackage={onSlotPackage}
+              activeWorkflowMode="relocate"
+              hideWorkflowSelector={true}
+            />
+          </div>
+
+          <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderBottom: '1px solid #e2e8f0', background: '#fff7ed' }}>
+              <span style={{ fontSize: '13px', fontWeight: 800, color: '#c2410c' }}>Reasignaciones de esta sesión</span>
+              <span style={{ fontSize: '11px', fontWeight: 800, background: '#ffedd5', color: '#9a3412', padding: '2px 10px', borderRadius: '999px' }}>
+                {relocatedSessionLogs.length}
+              </span>
+            </div>
+            {relocatedSessionLogs.length === 0 ? (
+              <div style={{ padding: '36px 20px', textAlign: 'center', color: '#94a3b8', fontSize: '12.5px' }}>
+                <RefreshCw style={{ width: '32px', height: '32px', margin: '0 auto 8px auto', color: '#cbd5e1' }} />
+                Aún no has reasignado paquetes en esta sesión.
+              </div>
+            ) : (
+              <div style={{ maxHeight: '460px', overflowY: 'auto' }}>
+                {relocatedSessionLogs.map(item => (
+                  <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', padding: '10px 14px', borderBottom: '1px solid #f1f5f9' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 800, color: '#1e40af', fontSize: '12.5px' }}>{item.code}</div>
+                      <div style={{ fontSize: '11px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.consignatario}</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                      <span style={{ fontSize: '11px', fontWeight: 800, fontFamily: 'monospace', background: '#f1f5f9', color: '#475569', padding: '2px 6px', borderRadius: '4px' }}>{item.from}</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-orange-500" />
+                      <span style={{ fontSize: '11px', fontWeight: 800, fontFamily: 'monospace', background: '#ffedd5', color: '#c2410c', padding: '2px 6px', borderRadius: '4px' }}>{item.to}</span>
+                      <span style={{ fontSize: '10.5px', color: '#94a3b8', fontFamily: 'monospace' }}>{item.time}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

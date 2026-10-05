@@ -221,6 +221,7 @@ export default function Sidebar({
                 {navSubItem('scanner-slotting', 'fa-solid fa-layer-group', '6.1 📦 Asignar Anaquel', '#38bdf8')}
                 {navSubItem('scanner-lookup', 'fa-solid fa-magnifying-glass-location', '6.2 🔍 Localizar 360°', '#4ade80')}
                 {navSubItem('scanner-delivery', 'fa-solid fa-truck-fast', '6.3 🚚 Despachar', '#c084fc')}
+                {navSubItem('scanner-relocate', 'fa-solid fa-right-left', '6.4 🔄 Reasignar Ubicación', '#fb923c')}
               </div>
             )}
           </div>
