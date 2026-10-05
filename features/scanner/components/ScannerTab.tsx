@@ -539,86 +539,6 @@ export default function ScannerTab({
         )}
       </div>
 
-      {/* BARRA DE NAVEGACIÓN SUPERIOR DE SUBMÓDULOS (SINCRONIZADA CON EL MENÚ DEL SIDEBAR) */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '8px',
-          flexWrap: 'wrap',
-          background: '#ffffff',
-          border: '1.5px solid #e2e8f0',
-          borderRadius: '12px',
-          padding: '8px 12px',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
-        }}
-      >
-        <button
-          onClick={() => handleSelectSubmodule('slotting')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 16px',
-            borderRadius: '8px',
-            fontSize: '12.5px',
-            fontWeight: currentSub === 'slotting' ? 800 : 600,
-            cursor: 'pointer',
-            background: currentSub === 'slotting' ? 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)' : '#f8fafc',
-            color: currentSub === 'slotting' ? '#ffffff' : '#334155',
-            border: currentSub === 'slotting' ? '1.5px solid #1e40af' : '1px solid #cbd5e1',
-            boxShadow: currentSub === 'slotting' ? '0 2px 8px rgba(37,99,235,0.3)' : 'none',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          <Layers className="w-4 h-4" />
-          <span>6.1 📦 Asignar Anaquel</span>
-        </button>
-
-        <button
-          onClick={() => handleSelectSubmodule('lookup')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 16px',
-            borderRadius: '8px',
-            fontSize: '12.5px',
-            fontWeight: currentSub === 'lookup' ? 800 : 600,
-            cursor: 'pointer',
-            background: currentSub === 'lookup' ? 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)' : '#f8fafc',
-            color: currentSub === 'lookup' ? '#ffffff' : '#334155',
-            border: currentSub === 'lookup' ? '1.5px solid #166534' : '1px solid #cbd5e1',
-            boxShadow: currentSub === 'lookup' ? '0 2px 8px rgba(22,163,74,0.3)' : 'none',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          <Search className="w-4 h-4" />
-          <span>6.2 🔍 Localizar 360°</span>
-        </button>
-
-        <button
-          onClick={() => handleSelectSubmodule('delivery')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 16px',
-            borderRadius: '8px',
-            fontSize: '12.5px',
-            fontWeight: currentSub === 'delivery' ? 800 : 600,
-            cursor: 'pointer',
-            background: currentSub === 'delivery' ? 'linear-gradient(135deg, #9333ea 0%, #7e22ce 100%)' : '#f8fafc',
-            color: currentSub === 'delivery' ? '#ffffff' : '#334155',
-            border: currentSub === 'delivery' ? '1.5px solid #6b21a8' : '1px solid #cbd5e1',
-            boxShadow: currentSub === 'delivery' ? '0 2px 8px rgba(147,51,234,0.3)' : 'none',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          <Truck className="w-4 h-4" />
-          <span>6.3 🚚 Despachar</span>
-        </button>
-      </div>
-
       {/* NOTIFICACIÓN FLOTANTE */}
       {syncNotification && (
         <div style={{ background: '#dcfce7', border: '1px solid #86efac', color: '#166534', padding: '12px 16px', borderRadius: '10px', fontWeight: 800, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(22,163,74,0.15)' }}>
@@ -1349,22 +1269,17 @@ export default function ScannerTab({
                     </div>
                   </div>
 
-                  {/* Acciones Rápidas */}
+                  {/* Acciones de Consulta 360° */}
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     <button
-                      onClick={() => handleSelectSubmodule('slotting')}
-                      className="btn btn-primary"
+                      onClick={() => {
+                        setSelectedPackage360(null);
+                        setLiveSearchQuery('');
+                      }}
+                      className="btn btn-secondary"
                       style={{ height: '34px', fontSize: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}
                     >
-                      <Layers className="w-4 h-4" /> Reasignar a Otro Anaquel
-                    </button>
-
-                    <button
-                      onClick={() => handleSelectSubmodule('delivery')}
-                      className="btn btn-secondary"
-                      style={{ height: '34px', fontSize: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px', background: '#faf5ff', border: '1px solid #d8b4fe', color: '#7e22ce' }}
-                    >
-                      <Truck className="w-4 h-4" /> Despachar este Paquete
+                      <X className="w-4 h-4 text-slate-500" /> Limpiar y Nueva Consulta 360°
                     </button>
                   </div>
                 </div>
