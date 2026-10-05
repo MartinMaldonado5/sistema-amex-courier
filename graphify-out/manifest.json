@@ -110,8 +110,8 @@
     "semantic_hash": ""
   },
   "components/Sidebar.tsx": {
-    "mtime": 1791154072.289778,
-    "ast_hash": "594448ac9884f6de675a7b4793d13176",
+    "mtime": 1791165101.9069767,
+    "ast_hash": "53e62ba19228284b882ec39d5472eb15",
     "semantic_hash": ""
   },
   "components/modals/NewClientModal.tsx": {
@@ -155,8 +155,8 @@
     "semantic_hash": "ce3de8dad74fc9126883b04a486a8962"
   },
   "components/scanner/MobileScannerModal.tsx": {
-    "mtime": 1791154138.33198,
-    "ast_hash": "8e8aa09f9e53fb33180ff2c203c70f42",
+    "mtime": 1791167301.4588213,
+    "ast_hash": "7a50dd5bab676504f6ab39d925d7c9a1",
     "semantic_hash": ""
   },
   "components/tabs/AdminUsersTab.tsx": {
@@ -466,13 +466,13 @@
     "semantic_hash": ""
   },
   "features/cobros/services/excel-cobros-parser.ts": {
-    "mtime": 1790565358.9724042,
-    "ast_hash": "4180f72f7e11a8680d83ee7fa299d07d",
+    "mtime": 1791167892.1156206,
+    "ast_hash": "b83888aa2b858882afd66a05d9afad02",
     "semantic_hash": ""
   },
   "features/cobros/services/kambista.service.ts": {
-    "mtime": 1789233036.2384903,
-    "ast_hash": "ab88837ff52c9fe299b5a025861aefc4",
+    "mtime": 1791167918.2367995,
+    "ast_hash": "57c0d0568e4a79f3c44e5d56b327529e",
     "semantic_hash": ""
   },
   "features/cobros/types.ts": {
@@ -506,8 +506,8 @@
     "semantic_hash": ""
   },
   "features/dashboard/components/DashboardTabContent.tsx": {
-    "mtime": 1791154157.1808946,
-    "ast_hash": "e009334c3bcf06a91ca6bc5cbade826c",
+    "mtime": 1791165104.3184028,
+    "ast_hash": "72668e5377b95490d22c3845d61a3147",
     "semantic_hash": ""
   },
   "features/dashboard/components/ExecutiveKpiGrid.tsx": {
@@ -526,8 +526,8 @@
     "semantic_hash": ""
   },
   "features/dashboard/hooks/useDashboardActions.ts": {
-    "mtime": 1791129811.1480806,
-    "ast_hash": "00d0bbab5d548b942368cb5e27563478",
+    "mtime": 1791167422.7889018,
+    "ast_hash": "1936168d1e392b096516050c1746d802",
     "semantic_hash": ""
   },
   "features/dashboard/hooks/useDashboardData.ts": {
@@ -541,8 +541,8 @@
     "semantic_hash": ""
   },
   "features/dashboard/hooks/useDashboardNavigation.ts": {
-    "mtime": 1791153968.5254989,
-    "ast_hash": "1c23354f3d55569fae9b019506f937db",
+    "mtime": 1791165098.199442,
+    "ast_hash": "5301567c1243bf3019d19feb6c9da1e5",
     "semantic_hash": ""
   },
   "features/dashboard/hooks/useDashboardSession.ts": {
@@ -951,8 +951,8 @@
     "semantic_hash": ""
   },
   "features/scanner/components/ScannerTab.tsx": {
-    "mtime": 1791154368.2657087,
-    "ast_hash": "2930bf46d2915589b07c78bb563772ac",
+    "mtime": 1791167352.8486226,
+    "ast_hash": "66ed23087d4d2f0304fda779118adae4",
     "semantic_hash": ""
   },
   "features/scanner/index.ts": {
@@ -1021,8 +1021,8 @@
     "semantic_hash": ""
   },
   "lib/navigation/routes.ts": {
-    "mtime": 1791154035.0636644,
-    "ast_hash": "1a56304d81449c45e411de7d7d80dfbc",
+    "mtime": 1791167197.5004177,
+    "ast_hash": "8681995c1e9b988ca6ecb47033fc32d0",
     "semantic_hash": ""
   },
   "lib/openai/analyzer.ts": {
@@ -1076,7 +1076,7 @@
     "semantic_hash": "251bbc2cbda7fdcf91cfa9cb3e42f173"
   },
   "next-env.d.ts": {
-    "mtime": 1791154739.2597842,
+    "mtime": 1791159275.137201,
     "ast_hash": "0e4a65e8b2b9aa3ed0f8957b9406bd41",
     "semantic_hash": "0e4a65e8b2b9aa3ed0f8957b9406bd41"
   },
@@ -1152,8 +1152,8 @@
     "semantic_hash": "ab575e944f15d39a5486cf9fca385c5e"
   },
   "types/index.ts": {
-    "mtime": 1791129951.3813174,
-    "ast_hash": "a6887941dcb5029a7aea7348f47f1f2c",
+    "mtime": 1791167246.9889357,
+    "ast_hash": "fed5575ac4ef8de35122156aebbaf8e9",
     "semantic_hash": ""
   },
   "types/supabase.ts": {
@@ -1497,8 +1497,8 @@
     "semantic_hash": ""
   },
   "scripts/cleanup-test-data.mjs": {
-    "mtime": 1790997729.179364,
-    "ast_hash": "8ca51dc59eb7b29b4c17244209d333b9",
+    "mtime": 1791166937.8806045,
+    "ast_hash": "eb17954ea5cf6e925c3a93b036694dc7",
     "semantic_hash": ""
   },
   "scripts/test-api-scanner-batch.mjs": {
@@ -1574,6 +1574,36 @@
   "features/rotulos/components/RotulosSheetDropdown.tsx": {
     "mtime": 1791150947.3724215,
     "ast_hash": "e5c460826ea02e09648242c2d4391f45",
+    "semantic_hash": ""
+  },
+  "lib/navigation/registry.ts": {
+    "mtime": 1791167144.8439171,
+    "ast_hash": "ffbaf5ac871d5912b2b16b1c6fca43ec",
+    "semantic_hash": ""
+  },
+  "tests/unit/authGuards.test.ts": {
+    "mtime": 1791167978.8454401,
+    "ast_hash": "f172cb4a4e726779a1e0332cf5483578",
+    "semantic_hash": ""
+  },
+  "tests/unit/cobrosCalculations.test.ts": {
+    "mtime": 1791167938.5088768,
+    "ast_hash": "2f51f548d81f179db3c592c0751a5fb5",
+    "semantic_hash": ""
+  },
+  "tests/unit/navigationRegistry.test.ts": {
+    "mtime": 1791167618.3827922,
+    "ast_hash": "9add5b9036145e32f90610dfd2580d55",
+    "semantic_hash": ""
+  },
+  "tests/unit/scannerRelocationAndSecurity.test.ts": {
+    "mtime": 1791167632.152698,
+    "ast_hash": "d1beb8bc723183d2c01590538f3e2088",
+    "semantic_hash": ""
+  },
+  "types/scanner.ts": {
+    "mtime": 1791167442.5829527,
+    "ast_hash": "b88775cee3d36076c39f3bd1424fe560",
     "semantic_hash": ""
   }
 }

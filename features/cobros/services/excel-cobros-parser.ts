@@ -213,7 +213,14 @@ export const ExcelCobrosParser = {
         const upperNotes = combinedNotes.toUpperCase();
 
         let estadoPago: EstadoPagoWR = 'FALTA';
-        if (upperNotes.includes('PAGO') || currentObservations.toUpperCase().includes('PAGO')) {
+        if (
+          upperNotes.includes('PAGO') ||
+          upperNotes.includes('PAGAD') ||
+          upperNotes.includes('CANCELAD') ||
+          upperNotes.includes('CANCELO') ||
+          currentObservations.toUpperCase().includes('PAGO') ||
+          currentObservations.toUpperCase().includes('PAGAD')
+        ) {
           estadoPago = 'PAGADO';
         }
         if (upperNotes.includes('FALTA') || currentObservations.toUpperCase().includes('FALTA')) {
@@ -221,13 +228,19 @@ export const ExcelCobrosParser = {
         }
 
         let estadoEntrega: EstadoEntregaWR = 'EN_ALMACEN';
-        if (upperNotes.includes('RECOJO') || upperNotes.includes('ENTREG') || currentObservations.toUpperCase().includes('RECOJO')) {
+        if (
+          upperNotes.includes('RECOJO') ||
+          upperNotes.includes('RECOG') ||
+          upperNotes.includes('ENTREG') ||
+          currentObservations.toUpperCase().includes('RECOJO') ||
+          currentObservations.toUpperCase().includes('RECOG')
+        ) {
           estadoEntrega = 'RECOGIDO';
         }
 
         // Detección de entrega física / motorizado si está documentada
         let entregaInfo: RegistroEntrega | undefined = undefined;
-        if (upperNotes.includes('ENTREGADO') || upperNotes.includes('RECOJO')) {
+        if (upperNotes.includes('ENTREG') || upperNotes.includes('RECOJ') || upperNotes.includes('RECOG')) {
           let tipoRetirante: 'TITULAR' | 'FAMILIAR' | 'MOTORIZADO' | 'OTRO' = 'TITULAR';
           let nombreRetirante = currentClienteName;
 
@@ -251,7 +264,16 @@ export const ExcelCobrosParser = {
         let trackingUsa: string | undefined = undefined;
         let cajaNumero: string | undefined = undefined;
 
-        if (c5 && !c5.toUpperCase().includes('PAGO') && !c5.toUpperCase().includes('RECOJO') && !c5.toUpperCase().includes('FALTA')) {
+        const isPaymentOrStatusKeyword =
+          c5.toUpperCase().includes('PAGO') ||
+          c5.toUpperCase().includes('PAGAD') ||
+          c5.toUpperCase().includes('CANCELAD') ||
+          c5.toUpperCase().includes('RECOJO') ||
+          c5.toUpperCase().includes('RECOG') ||
+          c5.toUpperCase().includes('ENTREG') ||
+          c5.toUpperCase().includes('FALTA');
+
+        if (c5 && !isPaymentOrStatusKeyword) {
           if (c5.startsWith('1Z') || c5.startsWith('TBA') || c5.length > 10) {
             trackingUsa = c5;
           } else {

@@ -32,6 +32,18 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1);
 }
 
+// 🛑 Guardia de Seguridad: Prevenir eliminación accidental de base de datos de producción
+const isProdSupabase = supabaseUrl.includes('supabase.co');
+if (isProdSupabase && process.env.ALLOW_DESTRUCTIVE_CLEANUP !== 'true') {
+  console.error('\n🛑 ACCIÓN BLOQUEADA POR SEGURIDAD:');
+  console.error('   Este script está apuntando a una base de datos remota de Supabase:');
+  console.error(`   ${supabaseUrl}`);
+  console.error('   Para prevenir la eliminación accidental de paquetes y datos reales,');
+  console.error('   se requiere la variable de entorno explícita: ALLOW_DESTRUCTIVE_CLEANUP=true');
+  console.error('   Ejemplo: ALLOW_DESTRUCTIVE_CLEANUP=true node scripts/cleanup-test-data.mjs\n');
+  process.exit(1);
+}
+
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: { persistSession: false }
 });

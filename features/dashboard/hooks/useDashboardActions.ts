@@ -1,12 +1,15 @@
 'use client';
 
 import { useCallback, type Dispatch, type FormEvent, type SetStateAction } from 'react';
-import type { Cliente, Paquete, ScannedLog, TipoEstadoEntrega, TipoMetodoEntrega, TipoUbicacion } from '@/types';
+import type { Cliente, Paquete, ScannedLog, ScanConfirmExtra, TipoEstadoEntrega, TipoMetodoEntrega, TipoUbicacion } from '@/types';
 import type { NewClientFormData } from '@/components/modals/NewClientModal';
 import type { NewPkgFormData } from '@/components/modals/NewPackageModal';
 import { supabase } from '@/lib/supabase/client';
+import { soundEffects } from '@/lib/audio/soundEffects';
 
 import { DashboardUser } from './useDashboardSession';
+
+const WMS_CODE_REGEX = /^[A-Za-z0-9\-_]{3,60}$/;
 
 export interface DashboardScanExtra {
   mode?: string;
@@ -54,35 +57,58 @@ export function useDashboardActions({
     setPaquetes((previous) => previous.filter((item) => item.id !== id));
   }, [setPaquetes]);
 
-  const handleAssignPackageLocation = useCallback(async (code: string, location: string) => {
+  const handleAssignPackageLocation = useCallback(async (code: string, location: string): Promise<boolean> => {
     const upper = code.trim().toUpperCase();
+
+    if (!WMS_CODE_REGEX.test(upper)) {
+      console.warn(`[WMS] Código inválido rechazado por seguridad: "${code}"`);
+      soundEffects.playNotFound();
+      return false;
+    }
+
     const [anaquel, piso] = location.includes('-') ? location.split('-') : [location, 'P1'];
 
-    setPaquetes((previous) =>
-      previous.map((item) =>
+    let snapshot: Paquete[] = [];
+    setPaquetes((previous) => {
+      snapshot = previous;
+      return previous.map((item) =>
         item.numeroReciboBodega.toUpperCase() === upper || item.trackingUsa.toUpperCase() === upper
           ? { ...item, anaquel, piso, posicionEstante: location }
           : item
-      )
-    );
+      );
+    });
 
     try {
-      await supabase
-        .from('paquetes')
-        .update({
-          anaquel,
-          piso,
-          posicion_estante: location,
-          eliminado_en: null,
-          motivo_eliminacion: null,
-          eliminado_por: null,
-          actualizado_en: new Date().toISOString()
-        })
-        .or(`numero_recibo_bodega.eq.${upper},tracking.eq.${upper}`);
-    } catch (error) {
-      console.warn('Error syncing package location to Supabase:', error);
+      const { data, error } = await supabase.rpc('asignar_ubicacion_paquete', {
+        p_codigo: upper,
+        p_nueva_ubicacion: location,
+        p_usuario_email: currentUser?.email || null,
+        p_usuario_nombre: currentUser?.nombre || null,
+        p_motivo: 'Asignación / reubicación WMS'
+      });
+
+      const rpcResult = data as { success?: boolean; error?: string } | null;
+
+      if (error || !rpcResult?.success) {
+        console.error('[WMS] Error al persistir ubicación en Supabase:', error || rpcResult?.error);
+        if (snapshot.length > 0) {
+          setPaquetes(snapshot);
+        }
+        soundEffects.playNotFound();
+        return false;
+      }
+
+      soundEffects.playSuccess();
+      return true;
+    } catch (err) {
+      console.error('[WMS] Excepción al invocar RPC asignar_ubicacion_paquete:', err);
+      if (snapshot.length > 0) {
+        setPaquetes(snapshot);
+      }
+      soundEffects.playNotFound();
+      return false;
     }
-  }, [setPaquetes]);
+  }, [currentUser, setPaquetes]);
 
   const handleSaveClient = useCallback(async (event: FormEvent) => {
     event.preventDefault();
@@ -201,7 +227,7 @@ export function useDashboardActions({
     setIsNewPkgModalOpen(true);
   }, [emptyPkgForm, setIsNewPkgModalOpen, setNewPkgForm]);
 
-  const handleScanCode = useCallback((code: string, format: string, extra?: DashboardScanExtra) => {
+  const handleScanCode = useCallback((code: string, format: string, extra?: DashboardScanExtra | ScanConfirmExtra) => {
     const newLog: ScannedLog = {
       id: `scan-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
       code: code.trim().toUpperCase(),
@@ -211,7 +237,7 @@ export function useDashboardActions({
       location: extra?.location,
       anaquel: extra?.anaquel,
       piso: extra?.piso,
-      workflow: (extra?.mode as 'slotting' | 'lookup' | 'delivery' | 'general') || 'slotting',
+      workflow: (extra?.mode as 'slotting' | 'lookup' | 'delivery' | 'relocate' | 'general') || 'slotting',
       nombreConsignatario: extra?.pkg?.nombreConsignatario || extra?.cli?.nombre,
       operadorEmail: currentUser?.email || '',
       operadorNombre: currentUser?.nombre || 'Operador Logístico AMEX',

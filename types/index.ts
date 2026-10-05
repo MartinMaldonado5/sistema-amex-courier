@@ -151,7 +151,7 @@ export interface ScannedLog {
   location?: string;
   anaquel?: string;
   piso?: string;
-  workflow?: 'slotting' | 'lookup' | 'delivery' | 'general';
+  workflow?: 'slotting' | 'lookup' | 'delivery' | 'relocate' | 'general';
   nombreConsignatario?: string;
   operadorEmail?: string;
   operadorNombre?: string;
@@ -446,3 +446,5 @@ export interface FiltrosBoletaShalom {
   page?: number;
   limit?: number;
 }
+
+export * from './scanner';

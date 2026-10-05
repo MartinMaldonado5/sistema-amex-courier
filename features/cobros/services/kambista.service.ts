@@ -83,7 +83,7 @@ export const KambistaService = {
    * Convierte un monto en dólares (USD) a soles peruanos (PEN) usando el tipo de cambio venta
    */
   convertUsdToPen(amountUsd: number, tc?: number): number {
-    const activeTc = tc || this.getCotizacionActual().venta;
+    const activeTc = typeof tc === 'number' ? tc : this.getCotizacionActual().venta;
     return Math.round(amountUsd * activeTc * 100) / 100;
   },
 
@@ -91,7 +91,7 @@ export const KambistaService = {
    * Convierte un monto en soles (PEN) a dólares (USD) usando el tipo de cambio
    */
   convertPenToUsd(amountPen: number, tc?: number): number {
-    const activeTc = tc || this.getCotizacionActual().venta;
+    const activeTc = typeof tc === 'number' ? tc : this.getCotizacionActual().venta;
     if (!activeTc || activeTc <= 0) return 0;
     return Math.round((amountPen / activeTc) * 100) / 100;
   },

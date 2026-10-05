@@ -22,8 +22,9 @@ import {
   MapPin
 } from 'lucide-react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
-import { Paquete, Cliente } from '@/types';
+import { Paquete, Cliente, ScanConfirmExtra } from '@/types';
 import { supabase } from '@/lib/supabase/client';
+import { soundEffects } from '@/lib/audio/soundEffects';
 
 interface BarcodeBoundingBox {
   x: number;
@@ -35,7 +36,7 @@ interface BarcodeBoundingBox {
 interface MobileScannerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (decodedText: string, format: string, extra?: { mode: string; location?: string }) => void;
+  onConfirm: (decodedText: string, format: string, extra?: ScanConfirmExtra) => void;
   isInline?: boolean;
   paquetes?: Paquete[];
   clientes?: Cliente[];
@@ -307,7 +308,12 @@ export default function MobileScannerModal({
       return;
     }
 
-    // 🛑 Para modo 'slotting' o 'delivery': Presentar diálogo interactivo de confirmación antes de añadir a la cola local
+    // ⚠️ Para modo 'relocate': si el paquete no existe en bodega, alertar sonoramente
+    if (activeWorkflow === 'relocate' && !foundPkg) {
+      soundEffects.playNotFound();
+    }
+
+    // 🛑 Para modo 'slotting', 'relocate' o 'delivery': Presentar diálogo interactivo de confirmación antes de añadir a la cola local
     setPendingConfirmation({
       code: cleanCode,
       format,
@@ -340,9 +346,15 @@ export default function MobileScannerModal({
           piso,
           pkg,
           cli
-        } as unknown as { mode: string; location?: string });
+        });
       }
     } else if (workflow === 'relocate') {
+      if (!pkg) {
+        soundEffects.playNotFound();
+        alert('⚠️ Este paquete no se encuentra en el inventario. Solo se pueden reubicar paquetes previamente registrados.');
+        setPendingConfirmation(null);
+        return;
+      }
       setLastScannedCode({ code, location: targetLocation, time: now });
       if (onSlotPackageRef.current) {
         onSlotPackageRef.current(code, targetLocation);
@@ -355,25 +367,25 @@ export default function MobileScannerModal({
           piso,
           pkg,
           cli
-        } as unknown as { mode: string; location?: string });
+        });
       }
     } else if (workflow === 'lookup') {
       setLastScannedCode({ code, time: now });
       performLookup(code);
       if (onConfirmRef.current) {
-        onConfirmRef.current(code, format, { mode: 'lookup', pkg, cli } as unknown as { mode: string; location?: string });
+        onConfirmRef.current(code, format, { mode: 'lookup', pkg, cli });
       }
     } else {
       setLastScannedCode({ code, location: targetLocation, time: now });
       if (onConfirmRef.current) {
         onConfirmRef.current(code, format, {
-          mode: workflow,
+          mode: workflow as 'delivery' | 'general',
           location: targetLocation,
           anaquel,
           piso,
           pkg,
           cli
-        } as unknown as { mode: string; location?: string });
+        });
       }
     }
 
@@ -1526,25 +1538,36 @@ export default function MobileScannerModal({
                 </div>
               )}
 
+              {/* Alerta de bloqueo para reubicación de paquetes inexistentes */}
+              {pendingConfirmation.workflow === 'relocate' && !pendingConfirmation.pkg && (
+                <div style={{ background: '#fef2f2', border: '1.5px solid #f87171', borderRadius: '10px', padding: '10px 12px', marginBottom: '14px', color: '#991b1b', fontSize: '11.5px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                  <span>Este paquete no está registrado en el inventario. Solo es posible reubicar paquetes existentes en bodega.</span>
+                </div>
+              )}
+
               {/* Botones de Confirmación y Cancelación */}
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   onClick={() => handleConfirmScan(pendingConfirmation)}
+                  disabled={pendingConfirmation.workflow === 'relocate' && !pendingConfirmation.pkg}
                   className="btn btn-primary"
                   style={{
                     flex: 1.5,
                     height: '42px',
-                    background: '#16a34a',
-                    borderColor: '#15803d',
+                    background: (pendingConfirmation.workflow === 'relocate' && !pendingConfirmation.pkg) ? '#94a3b8' : '#16a34a',
+                    borderColor: (pendingConfirmation.workflow === 'relocate' && !pendingConfirmation.pkg) ? '#64748b' : '#15803d',
                     fontSize: '13px',
                     fontWeight: 800,
                     borderRadius: '8px',
                     justifyContent: 'center',
                     gap: '6px',
-                    boxShadow: '0 4px 12px rgba(22, 163, 74, 0.35)'
+                    opacity: (pendingConfirmation.workflow === 'relocate' && !pendingConfirmation.pkg) ? 0.6 : 1,
+                    cursor: (pendingConfirmation.workflow === 'relocate' && !pendingConfirmation.pkg) ? 'not-allowed' : 'pointer',
+                    boxShadow: (pendingConfirmation.workflow === 'relocate' && !pendingConfirmation.pkg) ? 'none' : '0 4px 12px rgba(22, 163, 74, 0.35)'
                   }}
                 >
-                  <CheckCircle2 className="w-4 h-4" /> Confirmar y Guardar
+                  <CheckCircle2 className="w-4 h-4" /> {(pendingConfirmation.workflow === 'relocate' && !pendingConfirmation.pkg) ? 'Paquete no Registrado' : 'Confirmar y Guardar'}
                 </button>
 
                 <button

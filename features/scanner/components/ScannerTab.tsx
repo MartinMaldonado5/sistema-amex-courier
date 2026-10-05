@@ -38,7 +38,7 @@ import {
 } from 'lucide-react';
 import { exportScannerLogsToExcel } from '@/lib/excelExport';
 import { matchesFuzzySearch } from '@/lib/fuzzySearch';
-import { Paquete, Cliente, ScannedLog } from '@/types';
+import { Paquete, Cliente, ScannedLog, ScanConfirmExtra } from '@/types';
 import { supabase } from '@/lib/supabase/client';
 import { soundEffects } from '@/lib/audio/soundEffects';
 
@@ -52,7 +52,7 @@ interface ScannerTabProps {
   paquetes?: Paquete[];
   clientes?: Cliente[];
   currentUser?: { nombre: string; email: string; rol: string; id?: string } | null;
-  onConfirm: (code: string, format: string, extra?: { mode: string; location?: string; anaquel?: string; piso?: string; pkg?: Paquete; cli?: Cliente }) => void;
+  onConfirm: (code: string, format: string, extra?: ScanConfirmExtra) => void;
   onSlotPackage?: (code: string, location: string) => void;
   onUpdateLogs?: React.Dispatch<React.SetStateAction<ScannedLog[]>>;
   onRefreshData?: () => Promise<void> | void;
@@ -442,16 +442,21 @@ export default function ScannerTab({
   const handleScannerConfirm = (
     code: string,
     format: string,
-    extra?: { mode: string; location?: string; anaquel?: string; piso?: string; pkg?: Paquete; cli?: Cliente }
+    extra?: ScanConfirmExtra
   ) => {
     // 6.4 Reasignar: la ubicación ya se persistió vía onSlotPackage; no se encola en la cola de lecturas
     if (extra?.mode === 'relocate') {
       const foundPkg = extra.pkg || paquetes.find(p => p.numeroReciboBodega.toUpperCase() === code.toUpperCase() || p.trackingUsa.toUpperCase() === code.toUpperCase());
+      if (!foundPkg) {
+        soundEffects.playNotFound();
+        alert(`⚠️ El paquete "${code}" no existe en el inventario. Solo se pueden reubicar paquetes previamente registrados en bodega.`);
+        return;
+      }
       setRelocatedSessionLogs(prev => [{
         id: `rel-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         code,
-        consignatario: foundPkg?.nombreConsignatario || 'Sin registro en inventario',
-        from: foundPkg?.posicionEstante || 'Sin ubicar',
+        consignatario: foundPkg.nombreConsignatario || 'Consignatario no especificado',
+        from: foundPkg.posicionEstante || 'Sin ubicar',
         to: extra.location || 'REC-P1',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
       }, ...prev]);
