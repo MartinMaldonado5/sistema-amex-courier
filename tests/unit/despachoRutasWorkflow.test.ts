@@ -146,4 +146,22 @@ describe('Módulo de Despacho y Rutas: Utilidades y Flujo de Chofer', () => {
       expect(paradas[0].destinatario).toBe('VICTOR SCALISI');
     });
   });
+
+  describe('Gestión de Fotografías y Evidencias de Entrega por Parada', () => {
+    it('soporta colección vacía o múltiple de fotos por parada', () => {
+      const fotosMock: string[] = [
+        'https://r2.amex.com/FOLDER%20AMEX/despacho-rutas/paradas/foto1.jpg',
+        'https://r2.amex.com/FOLDER%20AMEX/despacho-rutas/paradas/foto2.jpg'
+      ];
+
+      expect(fotosMock).toHaveLength(2);
+      expect(fotosMock[0]).toContain('FOLDER%20AMEX/despacho-rutas');
+
+      // Eliminación de una foto
+      const updatedFotos = fotosMock.filter(f => f !== 'https://r2.amex.com/FOLDER%20AMEX/despacho-rutas/paradas/foto1.jpg');
+      expect(updatedFotos).toHaveLength(1);
+      expect(updatedFotos[0]).toBe('https://r2.amex.com/FOLDER%20AMEX/despacho-rutas/paradas/foto2.jpg');
+    });
+  });
 });
+

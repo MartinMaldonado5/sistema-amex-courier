@@ -53,6 +53,8 @@ export default function DespachoRutasTab() {
     selectRuta,
     handleCrearRuta,
     handleActualizarEstadoParada,
+    handleSubirFotoParada,
+    handleEliminarFotoParada,
     handleEliminarRuta
   } = useDespachoRutas();
 
@@ -266,6 +268,8 @@ export default function DespachoRutasTab() {
                   key={parada.id}
                   parada={parada}
                   onActualizarEstado={handleActualizarEstadoParada}
+                  onSubirFoto={handleSubirFotoParada}
+                  onEliminarFoto={handleEliminarFotoParada}
                 />
               ))
             )}

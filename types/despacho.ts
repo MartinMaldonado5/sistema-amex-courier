@@ -38,6 +38,7 @@ export interface DespachoParada {
   estado: EstadoParada;
   motivoNoEntrega?: string | null;
   entregadoEn?: string | null;
+  fotos?: string[];
   creadoEn: string;
 }
 

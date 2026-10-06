@@ -183,6 +183,54 @@ export class DespachoService {
     }
   }
 
+  /**
+   * Sube una fotografía o comprobante de entrega para una parada
+   */
+  async subirFotoParada(
+    paradaId: string,
+    file: File,
+    destinatario?: string
+  ): Promise<{ url: string; fotos: string[] }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (destinatario) {
+      formData.append('destinatario', destinatario);
+    }
+
+    const res = await fetch(`/api/despacho/paradas/${paradaId}/fotos`, {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Error al subir la fotografía de la parada.');
+    }
+
+    return {
+      url: data.url,
+      fotos: data.fotos || []
+    };
+  }
+
+  /**
+   * Elimina una foto previamente asociada a una parada
+   */
+  async eliminarFotoParada(paradaId: string, fotoUrl: string): Promise<string[]> {
+    const res = await fetch(`/api/despacho/paradas/${paradaId}/fotos`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fotoUrl })
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Error al eliminar la fotografía de la parada.');
+    }
+
+    return data.fotos || [];
+  }
+
   private mapRutaDbToDomain(db: any): DespachoRuta {
     return {
       id: db.id,
@@ -218,6 +266,7 @@ export class DespachoService {
       estado: db.estado,
       motivoNoEntrega: db.motivo_no_entrega,
       entregadoEn: db.entregado_en,
+      fotos: Array.isArray(db.fotos) ? db.fotos : [],
       creadoEn: db.creado_en
     };
   }

@@ -145,9 +145,67 @@ export function useDespachoRutas() {
     [selectedRuta]
   );
 
+  // 5b. Subir fotografía para una parada
+  const handleSubirFotoParada = useCallback(
+    async (paradaId: string, file: File, destinatario?: string): Promise<string> => {
+      try {
+        const result = await despachoService.subirFotoParada(paradaId, file, destinatario);
+        setSelectedRuta(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            paradas: prev.paradas.map(p =>
+              p.id === paradaId
+                ? { ...p, fotos: result.fotos }
+                : p
+            )
+          };
+        });
+        return result.url;
+      } catch (err) {
+        console.error('Error subiendo foto de parada:', err);
+        throw err;
+      }
+    },
+    []
+  );
+
+  // 5c. Eliminar fotografía de una parada
+  const handleEliminarFotoParada = useCallback(
+    async (paradaId: string, fotoUrl: string): Promise<void> => {
+      try {
+        const updatedFotos = await despachoService.eliminarFotoParada(paradaId, fotoUrl);
+        setSelectedRuta(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            paradas: prev.paradas.map(p =>
+              p.id === paradaId
+                ? { ...p, fotos: updatedFotos }
+                : p
+            )
+          };
+        });
+      } catch (err) {
+        console.error('Error eliminando foto de parada:', err);
+        throw err;
+      }
+    },
+    []
+  );
+
   // 6. Efecto inicial y suscripción Realtime
   useEffect(() => {
     loadRutas(filtroFecha);
+
+    // Detección automática de parámetro de URL para chofer (?rutaId=...)
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlRutaId = params.get('rutaId');
+      if (urlRutaId) {
+        selectRuta(urlRutaId, 'chofer');
+      }
+    }
 
     const channel = supabase
       .channel('despachos_rutas_realtime')
@@ -174,7 +232,7 @@ export function useDespachoRutas() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [loadRutas, filtroFecha, selectedRuta]);
+  }, [loadRutas, filtroFecha, selectedRuta, selectRuta]);
 
   // 7. Filtro de búsqueda y ordenamiento (la más actual siempre arriba)
   const rutasFiltradas = useMemo(() => {
@@ -213,6 +271,8 @@ export function useDespachoRutas() {
     selectRuta,
     handleCrearRuta,
     handleActualizarEstadoParada,
+    handleSubirFotoParada,
+    handleEliminarFotoParada,
     handleEliminarRuta
   };
 }
