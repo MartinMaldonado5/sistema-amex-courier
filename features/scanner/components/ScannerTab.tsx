@@ -349,6 +349,7 @@ export default function ScannerTab({
             piso: it.piso,
             workflow: it.workflow || 'slotting',
             nombreConsignatario: it.nombreConsignatario || '',
+            estadoAmex: 'en_almacen',
             operadorEmail: activeUserEmail,
             operadorNombre: activeUserName,
           })),

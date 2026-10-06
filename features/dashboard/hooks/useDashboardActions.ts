@@ -73,7 +73,7 @@ export function useDashboardActions({
       snapshot = previous;
       return previous.map((item) =>
         item.numeroReciboBodega.toUpperCase() === upper || item.trackingUsa.toUpperCase() === upper
-          ? { ...item, anaquel, piso, posicionEstante: location }
+          ? { ...item, anaquel, piso, posicionEstante: location, estadoAmex: 'en_almacen' }
           : item
       );
     });
@@ -82,9 +82,12 @@ export function useDashboardActions({
       const { data, error } = await supabase.rpc('asignar_ubicacion_paquete', {
         p_codigo: upper,
         p_nueva_ubicacion: location,
-        p_usuario_email: currentUser?.email || null,
-        p_usuario_nombre: currentUser?.nombre || null,
-        p_motivo: 'Asignación / reubicación WMS'
+        p_anaquel: anaquel,
+        p_piso: piso,
+        p_operador_nombre: currentUser?.nombre || 'Operador Logístico AMEX',
+        p_operador_email: currentUser?.email || null,
+        p_operador_id: currentUser?.id || null,
+        p_tipo_movimiento: 'Asignación / reubicación WMS'
       });
 
       const rpcResult = data as { success?: boolean; error?: string } | null;
@@ -166,7 +169,7 @@ export function useDashboardActions({
       metodoEntrega: (newPkgForm.metodoEntrega || 'CarroAmexDomicilio') as TipoMetodoEntrega,
       estadoTib: 'EnAlmacen',
       estadoEntrega: 'EnAlmacen' as TipoEstadoEntrega,
-      estadoAmex: 'recibido',
+      estadoAmex: 'en_almacen',
       facturaPdfUrl: newPkgForm.facturaPdfUrl || '',
       usuarioEmail: currentUser?.email || '',
       creadoPor: currentUser?.id || undefined,
@@ -189,7 +192,7 @@ export function useDashboardActions({
         anaquel,
         piso,
         posicion_estante: posicion,
-        estado_amex: 'recibido',
+        estado_amex: 'en_almacen',
         usuario_email: currentUser?.email || '',
         creado_por: currentUser?.id || null
       }).select('id').maybeSingle();
