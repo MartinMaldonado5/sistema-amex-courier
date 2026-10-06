@@ -16,7 +16,8 @@ import {
   Copy,
   Check,
   Download,
-  Info
+  Info,
+  Sparkles
 } from 'lucide-react';
 import { Paquete } from '@/types';
 import * as XLSX from 'xlsx';
@@ -56,6 +57,7 @@ export default function ScannerBulkLocationView({
   const [operador, setOperador] = useState(currentUser?.nombre || 'Operador AMEX');
 
   // 3. Estados de ejecución y retroalimentación
+  const [autoCreateMissing, setAutoCreateMissing] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusNotification, setStatusNotification] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const [sessionBatches, setSessionBatches] = useState<ProcessedSessionBatch[]>([]);
@@ -164,8 +166,12 @@ export default function ScannerBulkLocationView({
   // Ejecutar Asignación Masiva
   const handleExecuteBulkAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (matchedPackages.length === 0) {
-      alert('No hay paquetes válidos coincidentes para asignar.');
+    const payloadCodes = autoCreateMissing
+      ? uniqueCodes
+      : matchedPackages.map((p) => p.numeroReciboBodega || p.trackingUsa).filter(Boolean);
+
+    if (payloadCodes.length === 0) {
+      alert('No hay paquetes válidos para asignar.');
       return;
     }
 
@@ -173,13 +179,12 @@ export default function ScannerBulkLocationView({
     setStatusNotification(null);
 
     try {
-      const payloadCodes = matchedPackages.map((p) => p.numeroReciboBodega || p.trackingUsa).filter(Boolean);
-
       const res = await fetch('/api/paquetes/asignacion-masiva', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           codes: payloadCodes,
+          autoCreateMissing,
           targetUbicacion,
           targetAnaquel:
             targetTipo === 'ANAQUEL'
@@ -206,19 +211,20 @@ export default function ScannerBulkLocationView({
       }
 
       // Éxito: Guardar lote en la sesión
+      const totalProcesados = data.totalProcesados ?? data.totalActualizados ?? payloadCodes.length;
       const newBatch: ProcessedSessionBatch = {
         id: `batch-${Date.now()}`,
         hora: new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        totalActualizados: data.totalActualizados,
+        totalActualizados: totalProcesados,
         ubicacionDestino: targetPosicionFinal,
-        estadoAmex: targetEstadoAmex !== 'mantener' ? targetEstadoAmex : 'Sin cambio',
+        estadoAmex: targetEstadoAmex !== 'mantener' ? targetEstadoAmex : 'recibido',
         codigos: payloadCodes as string[]
       };
 
       setSessionBatches((prev) => [newBatch, ...prev]);
       setStatusNotification({
         type: 'success',
-        msg: data.mensaje || `✓ Se asignó exitosamente la ubicación ${targetPosicionFinal} a ${data.totalActualizados} paquetes.`
+        msg: data.mensaje || `✓ Se asignó exitosamente la ubicación ${targetPosicionFinal} a ${totalProcesados} paquetes.`
       });
 
       // Limpiar texto de entrada
@@ -431,11 +437,11 @@ export default function ScannerBulkLocationView({
                 Únicos: {uniqueCodes.length}
               </span>
               <span style={{ fontSize: '11.5px', background: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0', padding: '3px 8px', borderRadius: '6px', fontWeight: 800 }}>
-                ✓ Encontrados: {matchedPackages.length}
+                ✓ En BD: {matchedPackages.length}
               </span>
               {missingCodes.length > 0 && (
-                <span style={{ fontSize: '11.5px', background: '#fff1f2', color: '#9f1239', border: '1px solid #fecdd3', padding: '3px 8px', borderRadius: '6px', fontWeight: 800 }}>
-                  ⚠️ No encontrados: {missingCodes.length}
+                <span style={{ fontSize: '11.5px', background: autoCreateMissing ? '#f0fdf4' : '#fff1f2', color: autoCreateMissing ? '#15803d' : '#9f1239', border: `1px solid ${autoCreateMissing ? '#86efac' : '#fecdd3'}`, padding: '3px 8px', borderRadius: '6px', fontWeight: 800 }}>
+                  {autoCreateMissing ? '✨ Nuevos a registrar' : '⚠️ No en BD'}: {missingCodes.length}
                 </span>
               )}
             </div>
@@ -628,37 +634,85 @@ export default function ScannerBulkLocationView({
               </select>
             </div>
 
-            {/* Botón de Confirmación Principal */}
-            <button
-              type="submit"
-              disabled={isSubmitting || matchedPackages.length === 0}
+            {/* Auto-registro de códigos nuevos */}
+            <div
+              onClick={() => setAutoCreateMissing(!autoCreateMissing)}
               style={{
-                marginTop: '6px',
-                background: matchedPackages.length === 0 ? '#94a3b8' : '#059669',
-                color: '#ffffff',
-                border: 'none',
-                padding: '12px 20px',
+                background: autoCreateMissing ? '#f0fdf4' : '#f8fafc',
+                border: `1.5px solid ${autoCreateMissing ? '#86efac' : '#cbd5e1'}`,
+                padding: '10px 14px',
                 borderRadius: '8px',
-                fontWeight: 900,
-                fontSize: '13.5px',
-                cursor: matchedPackages.length === 0 ? 'not-allowed' : isSubmitting ? 'wait' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                boxShadow: matchedPackages.length === 0 ? 'none' : '0 4px 10px rgba(5, 150, 105, 0.3)'
+                justifyContent: 'space-between',
+                gap: '10px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
               }}
             >
-              {isSubmitting ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" /> Guardando en Base de Datos Master...
-                </>
-              ) : (
-                <>
-                  ✓ Asignar Ubicación {targetPosicionFinal} a {matchedPackages.length} Paquete(s)
-                </>
-              )}
-            </button>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                <Sparkles className="w-4 h-4 text-emerald-600 flex-shrink-0" style={{ marginTop: '2px' }} />
+                <div>
+                  <div style={{ fontSize: '12.5px', fontWeight: 800, color: autoCreateMissing ? '#15803d' : '#334155' }}>
+                    Registrar e Ingresar automáticamente códigos nuevos
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748b', marginTop: '1px' }}>
+                    Si algún código de Excel no existe aún en el inventario, se creará y asignará directamente a {targetPosicionFinal}.
+                  </div>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={autoCreateMissing}
+                onChange={(e) => setAutoCreateMissing(e.target.checked)}
+                style={{ width: '18px', height: '18px', accentColor: '#059669', cursor: 'pointer' }}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+
+            {/* Botón de Confirmación Principal */}
+            {(() => {
+              const totalToProcess = autoCreateMissing ? uniqueCodes.length : matchedPackages.length;
+              const canSubmit = !isSubmitting && totalToProcess > 0;
+
+              return (
+                <button
+                  type="submit"
+                  disabled={!canSubmit}
+                  style={{
+                    marginTop: '6px',
+                    background: !canSubmit ? '#94a3b8' : '#059669',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '12px 20px',
+                    borderRadius: '8px',
+                    fontWeight: 900,
+                    fontSize: '13.5px',
+                    cursor: !canSubmit ? 'not-allowed' : isSubmitting ? 'wait' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: !canSubmit ? 'none' : '0 4px 10px rgba(5, 150, 105, 0.3)'
+                  }}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" /> Guardando en Base de Datos Master...
+                    </>
+                  ) : (
+                    <>
+                      ✓ Asignar Ubicación {targetPosicionFinal} a {totalToProcess} Paquete(s)
+                      {autoCreateMissing && missingCodes.length > 0 && uniqueCodes.length > 0 && (
+                        <span style={{ fontSize: '11px', opacity: 0.95, background: 'rgba(255,255,255,0.25)', padding: '2px 8px', borderRadius: '4px' }}>
+                          {matchedPackages.length > 0 ? `${matchedPackages.length} exist. + ` : ''}{missingCodes.length} nuevo(s)
+                        </span>
+                      )}
+                    </>
+                  )}
+                </button>
+              );
+            })()}
           </div>
         </form>
 
@@ -683,7 +737,7 @@ export default function ScannerBulkLocationView({
                 cursor: 'pointer'
               }}
             >
-              Listos para Asignar ({matchedPackages.length})
+              Listos para Asignar ({autoCreateMissing ? uniqueCodes.length : matchedPackages.length})
             </button>
 
             <button
@@ -693,14 +747,14 @@ export default function ScannerBulkLocationView({
                 padding: '6px 14px',
                 borderRadius: '6px',
                 border: 'none',
-                background: activeTabPreview === 'missing' ? '#dc2626' : '#f1f5f9',
+                background: activeTabPreview === 'missing' ? (autoCreateMissing ? '#047857' : '#dc2626') : '#f1f5f9',
                 color: activeTabPreview === 'missing' ? '#ffffff' : '#475569',
                 fontWeight: 800,
                 fontSize: '12px',
                 cursor: 'pointer'
               }}
             >
-              No Encontrados ({missingCodes.length})
+              {autoCreateMissing ? 'Códigos Nuevos' : 'No Encontrados'} ({missingCodes.length})
             </button>
 
             <button
@@ -727,14 +781,14 @@ export default function ScannerBulkLocationView({
             <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
               <div style={{ padding: '10px 14px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#334155' }}>
-                  Previsualización de Cambios ({matchedPackages.length} paquetes)
+                  Previsualización de Cambios ({autoCreateMissing ? uniqueCodes.length : matchedPackages.length} paquetes)
                 </span>
                 <span style={{ fontSize: '11px', color: '#64748b' }}>
                   Destino: <strong>{targetPosicionFinal}</strong>
                 </span>
               </div>
 
-              {matchedPackages.length === 0 ? (
+              {(autoCreateMissing ? uniqueCodes.length : matchedPackages.length) === 0 ? (
                 <div style={{ padding: '48px 20px', textAlign: 'center', color: '#94a3b8' }}>
                   <Boxes style={{ width: '40px', height: '40px', margin: '0 auto 10px auto', color: '#cbd5e1' }} />
                   <p style={{ margin: '0 0 4px 0', fontWeight: 800, fontSize: '14px', color: '#0f172a' }}>
@@ -751,33 +805,50 @@ export default function ScannerBulkLocationView({
                       <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 800 }}>
                         <th style={{ padding: '8px 12px', width: '40px' }}>#</th>
                         <th style={{ padding: '8px 12px' }}>Guía WR</th>
+                        <th style={{ padding: '8px 12px' }}>Tipo</th>
                         <th style={{ padding: '8px 12px' }}>Consignatario</th>
                         <th style={{ padding: '8px 12px' }}>Ubicación</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {matchedPackages.map((pkg, idx) => (
-                        <tr key={pkg.id || idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                          <td style={{ padding: '8px 12px', color: '#94a3b8', fontWeight: 700 }}>{idx + 1}</td>
-                          <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontWeight: 800, color: '#1e40af' }}>
-                            {pkg.numeroReciboBodega || pkg.trackingUsa}
-                          </td>
-                          <td style={{ padding: '8px 12px', color: '#334155', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {pkg.nombreConsignatario || '—'}
-                          </td>
-                          <td style={{ padding: '8px 12px' }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                              <span style={{ fontFamily: 'monospace', color: '#64748b', fontSize: '11px' }}>
-                                {pkg.posicionEstante || 'S/U'}
-                              </span>
-                              <ArrowRight className="w-3 h-3 text-emerald-500" />
-                              <span style={{ fontFamily: 'monospace', color: '#047857', fontWeight: 800, background: '#ecfdf5', padding: '1px 6px', borderRadius: '4px' }}>
-                                {targetPosicionFinal}
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                      {(autoCreateMissing ? uniqueCodes : matchedPackages.map((p) => p.numeroReciboBodega || p.trackingUsa || '')).map((code, idx) => {
+                        const pkg = combinedPackages.get(code);
+                        const isNew = !pkg;
+
+                        return (
+                          <tr key={code || idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '8px 12px', color: '#94a3b8', fontWeight: 700 }}>{idx + 1}</td>
+                            <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontWeight: 800, color: '#1e40af' }}>
+                              {code}
+                            </td>
+                            <td style={{ padding: '8px 12px' }}>
+                              {isNew ? (
+                                <span style={{ background: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0', fontSize: '10.5px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
+                                  ✨ Nuevo Ingreso
+                                </span>
+                              ) : (
+                                <span style={{ background: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe', fontSize: '10.5px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
+                                  Reubicación
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ padding: '8px 12px', color: '#334155', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {pkg?.nombreConsignatario || (isNew ? 'Por registrar' : '—')}
+                            </td>
+                            <td style={{ padding: '8px 12px' }}>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                                <span style={{ fontFamily: 'monospace', color: '#64748b', fontSize: '11px' }}>
+                                  {pkg?.posicionEstante || '—'}
+                                </span>
+                                <ArrowRight className="w-3 h-3 text-emerald-500" />
+                                <span style={{ fontFamily: 'monospace', color: '#047857', fontWeight: 800, background: '#ecfdf5', padding: '1px 6px', borderRadius: '4px' }}>
+                                  {targetPosicionFinal}
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -785,12 +856,20 @@ export default function ScannerBulkLocationView({
             </div>
           )}
 
-          {/* TAB 2: CÓDIGOS NO ENCONTRADOS */}
+          {/* TAB 2: CÓDIGOS NO ENCONTRADOS / NUEVOS */}
           {activeTabPreview === 'missing' && (
-            <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #fecdd3', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-              <div style={{ padding: '10px 14px', background: '#fff1f2', borderBottom: '1px solid #fecdd3', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#9f1239', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <AlertTriangle className="w-4 h-4 text-rose-600" /> Códigos No Encontrados ({missingCodes.length})
+            <div style={{ background: '#ffffff', borderRadius: '12px', border: autoCreateMissing ? '1px solid #a7f3d0' : '1px solid #fecdd3', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              <div style={{ padding: '10px 14px', background: autoCreateMissing ? '#f0fdf4' : '#fff1f2', borderBottom: autoCreateMissing ? '1px solid #a7f3d0' : '1px solid #fecdd3', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12.5px', fontWeight: 800, color: autoCreateMissing ? '#15803d' : '#9f1239', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {autoCreateMissing ? (
+                    <>
+                      <Sparkles className="w-4 h-4 text-emerald-600" /> Códigos Nuevos a Registrar ({missingCodes.length})
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="w-4 h-4 text-rose-600" /> Códigos No Encontrados ({missingCodes.length})
+                    </>
+                  )}
                 </span>
 
                 <div style={{ display: 'flex', gap: '6px' }}>
@@ -802,8 +881,8 @@ export default function ScannerBulkLocationView({
                         disabled={isVerifyingDb}
                         style={{
                           background: '#ffffff',
-                          border: '1px solid #fda4af',
-                          color: '#be123c',
+                          border: autoCreateMissing ? '1px solid #a7f3d0' : '1px solid #fda4af',
+                          color: autoCreateMissing ? '#15803d' : '#be123c',
                           padding: '3px 8px',
                           borderRadius: '6px',
                           fontSize: '11px',
@@ -845,12 +924,14 @@ export default function ScannerBulkLocationView({
 
               {missingCodes.length === 0 ? (
                 <div style={{ padding: '36px 20px', textAlign: 'center', color: '#059669', fontSize: '13px', fontWeight: 700 }}>
-                  ✓ ¡Excelente! El 100% de los códigos ingresados fueron reconocidos en el sistema.
+                  ✓ ¡Excelente! El 100% de los códigos ingresados ya se encontraban registrados en el inventario.
                 </div>
               ) : (
                 <div style={{ maxHeight: '380px', overflowY: 'auto', padding: '12px' }}>
                   <p style={{ margin: '0 0 10px 0', fontSize: '12px', color: '#64748b' }}>
-                    Estos códigos fueron detectados en tu lista de Excel pero no figuran registrados en la tabla de paquetes. Puedes copiarlos para revisarlos en tu hoja de cálculo:
+                    {autoCreateMissing
+                      ? `Estos ${missingCodes.length} códigos no existen previamente en la base de datos. Se registrarán e ingresarán directamente en ${targetPosicionFinal} al pulsar el botón verde:`
+                      : 'Estos códigos no figuran en la base de datos de paquetes y se omitirán al asignar:'}
                   </p>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {missingCodes.map((code, idx) => (
@@ -860,9 +941,9 @@ export default function ScannerBulkLocationView({
                           fontFamily: 'monospace',
                           fontSize: '11.5px',
                           fontWeight: 700,
-                          background: '#fee2e2',
-                          color: '#b91c1c',
-                          border: '1px solid #fca5a5',
+                          background: autoCreateMissing ? '#ecfdf5' : '#fee2e2',
+                          color: autoCreateMissing ? '#065f46' : '#b91c1c',
+                          border: autoCreateMissing ? '1px solid #a7f3d0' : '1px solid #fca5a5',
                           padding: '2px 8px',
                           borderRadius: '4px'
                         }}

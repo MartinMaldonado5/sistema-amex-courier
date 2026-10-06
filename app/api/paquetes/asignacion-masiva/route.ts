@@ -37,20 +37,26 @@ export async function GET(req: NextRequest) {
     const admin = getSupabaseAdmin();
 
     // Buscar por numero_recibo_bodega o por tracking
-    const { data: matchedPackages, error } = await admin
-      .from('paquetes')
-      .select('id, numero_recibo_bodega, tracking, tracking_usa, nombre_consignatario, dni_consignatario, ubicacion_actual, anaquel, piso, posicion_estante, estado_amex, estado_tib')
-      .or(`numero_recibo_bodega.in.(${rawCodes.map(c => `"${c}"`).join(',')}),tracking.in.(${rawCodes.map(c => `"${c}"`).join(',')})`);
+    const [byWr, byTrk] = await Promise.all([
+      admin
+        .from('paquetes')
+        .select('id, numero_recibo_bodega, tracking, nombre_consignatario, dni_consignatario, ubicacion_actual, anaquel, piso, posicion_estante, estado_amex, estado_tib')
+        .in('numero_recibo_bodega', rawCodes),
+      admin
+        .from('paquetes')
+        .select('id, numero_recibo_bodega, tracking, nombre_consignatario, dni_consignatario, ubicacion_actual, anaquel, piso, posicion_estante, estado_amex, estado_tib')
+        .in('tracking', rawCodes)
+    ]);
 
-    if (error) {
-      console.error('Error verificando códigos:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    const existingMap = new Map<string, any>();
+    (byWr.data || []).forEach((p) => existingMap.set(p.id, p));
+    (byTrk.data || []).forEach((p) => existingMap.set(p.id, p));
+    const matchedPackages = Array.from(existingMap.values());
 
-    const foundList = (matchedPackages || []).map((p) => ({
+    const foundList = matchedPackages.map((p) => ({
       id: p.id,
       numeroReciboBodega: p.numero_recibo_bodega || '',
-      tracking: p.tracking || p.tracking_usa || '',
+      tracking: p.tracking || '',
       nombreConsignatario: p.nombre_consignatario || '',
       dniConsignatario: p.dni_consignatario || '',
       ubicacionActual: p.ubicacion_actual || 'AmexLince',
@@ -85,7 +91,7 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/paquetes/asignacion-masiva
- * Ejecuta la actualización de ubicación y estado en bloque
+ * Ejecuta la actualización o creación (ingreso masivo) de ubicación y estado en bloque
  */
 export async function POST(req: NextRequest) {
   try {
@@ -101,9 +107,10 @@ export async function POST(req: NextRequest) {
       targetAnaquel = 'A1',
       targetPiso = 'P1',
       targetPosicion,
-      targetEstadoAmex,
+      targetEstadoAmex = 'recibido',
       motivo = 'Ingreso y Asignación Masiva WMS desde Excel',
-      operador
+      operador,
+      autoCreateMissing = true
     } = body;
 
     if (!codes || !Array.isArray(codes) || codes.length === 0) {
@@ -128,22 +135,36 @@ export async function POST(req: NextRequest) {
     const userId = auth.user.id;
 
     // 1. Localizar los paquetes existentes
-    const { data: paquetesToUpdate, error: fetchErr } = await admin
-      .from('paquetes')
-      .select('id, numero_recibo_bodega, tracking, tracking_usa, nombre_consignatario, ubicacion_actual, anaquel, piso, posicion_estante, estado_amex')
-      .or(`numero_recibo_bodega.in.(${cleanCodes.map(c => `"${c}"`).join(',')}),tracking.in.(${cleanCodes.map(c => `"${c}"`).join(',')})`);
+    const [byWr, byTrk] = await Promise.all([
+      admin
+        .from('paquetes')
+        .select('id, numero_recibo_bodega, tracking, nombre_consignatario, ubicacion_actual, anaquel, piso, posicion_estante, estado_amex')
+        .in('numero_recibo_bodega', cleanCodes),
+      admin
+        .from('paquetes')
+        .select('id, numero_recibo_bodega, tracking, nombre_consignatario, ubicacion_actual, anaquel, piso, posicion_estante, estado_amex')
+        .in('tracking', cleanCodes)
+    ]);
 
-    if (fetchErr) {
-      console.error('Error buscando paquetes para asignación:', fetchErr);
-      return NextResponse.json({ error: `Error buscando paquetes: ${fetchErr.message}` }, { status: 500 });
-    }
+    const existingMap = new Map<string, any>();
+    (byWr.data || []).forEach((p) => existingMap.set(p.id, p));
+    (byTrk.data || []).forEach((p) => existingMap.set(p.id, p));
+    const paquetesToUpdate = Array.from(existingMap.values());
 
-    if (!paquetesToUpdate || paquetesToUpdate.length === 0) {
+    const foundCodesSet = new Set<string>();
+    paquetesToUpdate.forEach((p) => {
+      if (p.numero_recibo_bodega) foundCodesSet.add(p.numero_recibo_bodega.toUpperCase());
+      if (p.tracking) foundCodesSet.add(p.tracking.toUpperCase());
+    });
+    const missingCodes = cleanCodes.filter((c) => !foundCodesSet.has(c));
+
+    // Si no hay existentes y no se permite auto-crear los no encontrados
+    if (paquetesToUpdate.length === 0 && (!autoCreateMissing || missingCodes.length === 0)) {
       return NextResponse.json({
         success: false,
         totalEnviados: cleanCodes.length,
         totalActualizados: 0,
-        mensaje: 'Ninguno de los códigos proporcionados existe en la base de datos.',
+        mensaje: 'Ninguno de los códigos existe en el sistema y la opción de auto-creación está inactiva.',
         noEncontrados: cleanCodes
       }, { status: 404 });
     }
@@ -160,75 +181,133 @@ export async function POST(req: NextRequest) {
       targetPosicion ||
       (isLevelLess ? targetAnaquel : `${targetAnaquel}-${targetPiso}`);
 
-    const ids = paquetesToUpdate.map((p) => p.id);
-
-    // 2. Preparar campos a actualizar
-    const updateData: Record<string, any> = {
-      ubicacion_actual: targetUbicacion,
-      anaquel: targetAnaquel,
-      piso: isLevelLess ? null : targetPiso,
-      posicion_estante: finalPosicion,
-      actualizado_en: new Date().toISOString()
-    };
-
-    if (targetEstadoAmex && targetEstadoAmex !== 'mantener') {
-      updateData.estado_amex = targetEstadoAmex;
-    }
-
-    // 3. Ejecutar UPDATE en lote
-    const { error: updErr } = await admin
-      .from('paquetes')
-      .update(updateData)
-      .in('id', ids);
-
-    if (updErr) {
-      console.error('Error actualizando paquetes en lote:', updErr);
-      return NextResponse.json({ error: `Error al actualizar: ${updErr.message}` }, { status: 500 });
-    }
-
-    // 4. Registrar movimientos en kardex
     const nowIso = new Date().toISOString();
-    const kardexRows = paquetesToUpdate.map((p) => {
-      const origen = `${p.ubicacion_actual || 'AmexLince'} (${p.posicion_estante || 'S/U'})`;
-      const destino = `${targetUbicacion} (${finalPosicion})`;
-      return {
+    let totalActualizados = 0;
+    let totalCreados = 0;
+
+    // 2. Actualizar paquetes existentes
+    if (paquetesToUpdate.length > 0) {
+      const ids = paquetesToUpdate.map((p) => p.id);
+      const updateData: Record<string, any> = {
+        ubicacion_actual: targetUbicacion,
+        anaquel: targetAnaquel,
+        piso: isLevelLess ? null : targetPiso,
+        posicion_estante: finalPosicion,
+        actualizado_en: nowIso
+      };
+
+      if (targetEstadoAmex && targetEstadoAmex !== 'mantener') {
+        updateData.estado_amex = targetEstadoAmex;
+      }
+
+      const { error: updErr } = await admin
+        .from('paquetes')
+        .update(updateData)
+        .in('id', ids);
+
+      if (updErr) {
+        console.error('Error actualizando paquetes existentes en lote:', updErr);
+        return NextResponse.json({ error: `Error al actualizar existentes: ${updErr.message}` }, { status: 500 });
+      }
+
+      totalActualizados = ids.length;
+
+      // Registrar kardex para actualizados
+      const kardexRows = paquetesToUpdate.map((p) => {
+        const origen = `${p.ubicacion_actual || 'AmexLince'} (${p.posicion_estante || 'S/U'})`;
+        const destino = `${targetUbicacion} (${finalPosicion})`;
+        return {
+          paquete_id: p.id,
+          codigo_paquete: p.numero_recibo_bodega || p.tracking || 'S/N',
+          consignatario: p.nombre_consignatario || 'Cliente AMEX',
+          origen_descripcion: origen,
+          destino_descripcion: destino,
+          tipo_movimiento: 'REUBICACION_MASIVA_EXCEL',
+          motivo: `${motivo}${targetEstadoAmex && targetEstadoAmex !== 'mantener' ? ` [Estado: ${targetEstadoAmex}]` : ''}`,
+          usuario_operador: userDisplayName,
+          usuario_email: userEmail,
+          usuario_id: userId,
+          creado_en: nowIso
+        };
+      });
+
+      const chunkSize = 50;
+      for (let i = 0; i < kardexRows.length; i += chunkSize) {
+        await admin.from('movimientos_kardex').insert(kardexRows.slice(i, i + chunkSize));
+      }
+    }
+
+    // 3. Crear / Ingresar códigos que no existan previamente
+    if (autoCreateMissing && missingCodes.length > 0) {
+      const newRows = missingCodes.map((code) => ({
+        numero_recibo_bodega: code,
+        tracking: code,
+        tipo_empaque: 'CAJA',
+        descripcion: 'Mercadería General',
+        peso_kg: 1.0,
+        ubicacion_actual: targetUbicacion || 'AmexLince',
+        anaquel: targetAnaquel,
+        piso: isLevelLess ? null : targetPiso,
+        posicion_estante: finalPosicion,
+        estado_amex: targetEstadoAmex && targetEstadoAmex !== 'mantener' ? targetEstadoAmex : 'recibido',
+        usuario_email: userEmail,
+        creado_por: userId,
+        creado_en: nowIso,
+        actualizado_en: nowIso
+      }));
+
+      const chunkSize = 50;
+      const insertedPkgs: Array<{ id: string; numero_recibo_bodega: string }> = [];
+
+      for (let i = 0; i < newRows.length; i += chunkSize) {
+        const chunk = newRows.slice(i, i + chunkSize);
+        const { data: insertedChunk, error: insErr } = await admin
+          .from('paquetes')
+          .insert(chunk)
+          .select('id, numero_recibo_bodega');
+
+        if (insErr) {
+          console.error('Error insertando paquetes nuevos:', insErr);
+          return NextResponse.json({ error: `Error creando paquetes: ${insErr.message}` }, { status: 500 });
+        }
+
+        if (insertedChunk) {
+          insertedPkgs.push(...insertedChunk);
+        }
+      }
+
+      totalCreados = insertedPkgs.length;
+
+      // Registrar kardex para nuevos ingresos
+      const newKardexRows = insertedPkgs.map((p) => ({
         paquete_id: p.id,
-        codigo_paquete: p.numero_recibo_bodega || p.tracking || 'S/N',
-        consignatario: p.nombre_consignatario || 'Cliente AMEX',
-        origen_descripcion: origen,
-        destino_descripcion: destino,
-        tipo_movimiento: 'REUBICACION_MASIVA_EXCEL',
-        motivo: `${motivo}${targetEstadoAmex && targetEstadoAmex !== 'mantener' ? ` [Estado: ${targetEstadoAmex}]` : ''}`,
+        codigo_paquete: p.numero_recibo_bodega,
+        consignatario: 'Pendiente de datos',
+        origen_descripcion: 'INGRESO BODEGA / EXCEL',
+        destino_descripcion: `${targetUbicacion} (${finalPosicion})`,
+        tipo_movimiento: 'INGRESO_MASIVO_EXCEL',
+        motivo: `${motivo} [Nuevo Ingreso Masivo]`,
         usuario_operador: userDisplayName,
         usuario_email: userEmail,
         usuario_id: userId,
         creado_en: nowIso
-      };
-    });
+      }));
 
-    if (kardexRows.length > 0) {
-      const { error: kardexErr } = await admin.from('movimientos_kardex').insert(kardexRows);
-      if (kardexErr) {
-        console.warn('Aviso insertando kardex masivo:', kardexErr.message);
+      for (let i = 0; i < newKardexRows.length; i += chunkSize) {
+        await admin.from('movimientos_kardex').insert(newKardexRows.slice(i, i + chunkSize));
       }
     }
 
-    // Identificar códigos no encontrados
-    const foundCodes = new Set<string>();
-    paquetesToUpdate.forEach((p) => {
-      if (p.numero_recibo_bodega) foundCodes.add(p.numero_recibo_bodega.toUpperCase());
-      if (p.tracking) foundCodes.add(p.tracking.toUpperCase());
-    });
-    const notFound = cleanCodes.filter((c) => !foundCodes.has(c));
+    const totalProcesados = totalActualizados + totalCreados;
 
     return NextResponse.json({
       success: true,
       totalEnviados: cleanCodes.length,
-      totalActualizados: ids.length,
-      totalNoEncontrados: notFound.length,
-      noEncontrados: notFound,
+      totalActualizados,
+      totalCreados,
+      totalProcesados,
       ubicacionAsignada: finalPosicion,
-      mensaje: `✓ Se asignó exitosamente la ubicación ${finalPosicion} a ${ids.length} paquete(s).${notFound.length > 0 ? ` (${notFound.length} códigos no encontrados en el sistema)` : ''}`
+      mensaje: `✓ Proceso exitoso: Se asignó la ubicación ${finalPosicion} a ${totalProcesados} paquete(s) (${totalActualizados} actualizados, ${totalCreados} nuevos ingresados).`
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Error interno al procesar asignación masiva';
