@@ -1,16 +1,16 @@
 # Graph Report - sistema-amex-courier  (2026-10-05)
 
 ## Corpus Check
-- 332 files · ~315,406 words
+- 350 files · ~424,352 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1569 nodes · 3388 edges · 102 communities (81 shown, 21 thin omitted)
+- 1644 nodes · 3533 edges · 110 communities (87 shown, 23 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 5 edges (avg confidence: 0.74)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `603ec7e1`
+- Built from commit: `4c3076ce`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -19,15 +19,15 @@
 - components/DniMatrixTab.tsx
 - Program
 - components/LiveSheetsTab.tsx
-- Cliente
-- phoneUtils.ts
+- main.py
+- supabase/client.ts
 - components/FormatoEntregaTab.tsx
 - worker.js
 - getSupabaseAdmin
 - components/BoletasShalomTab.tsx
 - CobrosDailySheetView.tsx
 - components/RotulosA4Tab.tsx
-- inventario-jobs/route.ts
+- test-cruce-produccion.mjs
 - ArmarPlanillaTab.tsx
 - test-real-flow.mjs
 - components/AdminUsersTab.tsx
@@ -38,10 +38,10 @@
 - compilerOptions
 - ui/index.ts
 - dependencies
-- ExcelExportDropdown.tsx
+- useCobrosOperaciones.ts
 - SoundSynthesizer
 - types/index.ts
-- paquetes.schema.ts
+- validations.test.ts
 - devDependencies
 - components/InfoAmexTab.tsx
 - useInventoryData.ts
@@ -57,11 +57,11 @@
 - next-env.d.ts
 - vercel.json
 - postcss.config.mjs
-- components/InventarioJobsTab.tsx
+- useDashboardData.ts
 - batch-sync/route.ts
-- scanner.ts
+- Cliente
 - cobros/types.ts
-- useDashboardNavigation.ts
+- components/ScannerTab.tsx
 - ref_node_fs
 - test-scanner-performance.mjs
 - test-vps-300-filas.mjs
@@ -94,9 +94,9 @@
 - @types/node
 - DashboardTabContent.tsx
 - Paquete
-- useCobrosOperaciones.ts
+- excel-cobros-parser.ts
 - createClient
-- getR2ViewUrl
+- components/CobrosTab.tsx
 - authorizeUser
 - ref_node_path
 - test-api-scanner-batch.mjs
@@ -104,22 +104,30 @@
 - inventoryJobsWorkflow.test.ts
 - r2/client.ts
 - Logger
-- components/CobrosTab.tsx
-- components/ScannerTab.tsx
-- cruzar-planilla/route.ts
-- upload/route.ts
+- useDashboardNavigation.ts
+- registry.ts
+- CobroDeliveryModal.tsx
+- next_types_root_params_d
 - components/AuditoriaTab.tsx
 - TipoEstadoEntrega
-- useDashboardData.ts
-- login/route.ts
-- useInventoryQuery.ts
+- ManifiestosTibTab.tsx
+- next_types_routes_d
+- Despliegue en VPS (Hostinger / Ubuntu)
+- extract_table_rows
+- paquetes/route.ts
+- cruzar-planilla/route.ts
+- upload/route.ts
+- EstanteriaPosicion
+- paquetes.schema.ts
+- uploadFileToR2
+- ExcelExportDropdown.tsx
 
 ## God Nodes (most connected - your core abstractions)
-1. `Paquete` - 75 edges
+1. `Paquete` - 81 edges
 2. `Program` - 54 edges
 3. `Cliente` - 53 edges
-4. `authorizeUser()` - 43 edges
-5. `getSupabaseAdmin()` - 34 edges
+4. `authorizeUser()` - 50 edges
+5. `getSupabaseAdmin()` - 41 edges
 6. `supabase` - 22 edges
 7. `DniSlotData` - 18 edges
 8. `SoundSynthesizer` - 16 edges
@@ -133,15 +141,15 @@
   components/modals/PasteWrListModal.tsx → types/index.ts
 - `ExcelExportDropdownProps` --references--> `Paquete`  [EXTRACTED]
   features/inventory/components/ExcelExportDropdown.tsx → types/index.ts
+- `UseInventoryDataProps` --references--> `Paquete`  [EXTRACTED]
+  features/inventory/hooks/useInventoryData.ts → types/index.ts
 - `InvoicesTabProps` --references--> `Cliente`  [EXTRACTED]
   features/invoices/components/InvoicesTab.tsx → types/index.ts
-- `POST()` --calls--> `authorizeUser()`  [EXTRACTED]
-  app/api/ai/analyze-invoice/route.ts → lib/auth/guards.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (102 total, 21 thin omitted)
+## Communities (110 total, 23 thin omitted)
 
 ### Community 0 - "components/InvoicesTab.tsx"
 Cohesion: 0.19
@@ -157,15 +165,15 @@ Nodes (50): Action, CachedSourceData, CellData, DateTime, Dictionary, documentfo
 
 ### Community 3 - "components/LiveSheetsTab.tsx"
 Cohesion: 0.07
-Nodes (55): NewSheetModal(), NewSheetModalProps, ParsedItem, PasteWrListModal(), PasteWrListModalProps, BarcodeBoundingBox, CameraDeviceOption, MobileScannerModal() (+47 more)
+Nodes (53): NewSheetModal(), NewSheetModalProps, ParsedItem, PasteWrListModal(), PasteWrListModalProps, BarcodeBoundingBox, CameraDeviceOption, LiveSheetsTab (+45 more)
 
-### Community 4 - "Cliente"
-Cohesion: 0.27
-Nodes (10): NewPackageModalProps, DashboardTabContentProps, DashboardScanExtra, UseDashboardMetricsProps, DashboardTabId, DashboardTabProps, RotulosA4TabProps, Cliente (+2 more)
+### Community 4 - "main.py"
+Cohesion: 0.09
+Nodes (28): get, health_check(), process_manifest(), Procesa un PDF multipágina o imagen de manifiesto físico de TIB Courier: 1.…, detect_modalidad_omr(), ndarray, Detecta cuál casilla de verificación está marcada en el encabezado (DOMICILIO,…, clean_ocr_digits() (+20 more)
 
-### Community 5 - "phoneUtils.ts"
-Cohesion: 0.13
-Nodes (27): ChoferCardParada(), ChoferCardParadaProps, DespachoRutasTab(), formatFechaCreacion(), RutaBuilderModal(), RutaBuilderModalProps, useDespachoRutas(), ViewModeDespacho (+19 more)
+### Community 5 - "supabase/client.ts"
+Cohesion: 0.07
+Nodes (41): DespachoRutasTab, InventarioJobsTab, ChoferCardParada(), ChoferCardParadaProps, DespachoRutasTab(), formatFechaCreacion(), RutaBuilderModal(), RutaBuilderModalProps (+33 more)
 
 ### Community 6 - "components/FormatoEntregaTab.tsx"
 Cohesion: 0.17
@@ -177,23 +185,23 @@ Nodes (53): ref_node_http, bootWarmUpTibIndices(), candidateEnvPaths, checkProce
 
 ### Community 8 - "getSupabaseAdmin"
 Cohesion: 0.16
-Nodes (22): GET(), POST(), requireAdmin(), GET(), POST(), requireAdmin(), RESTORABLE_MODULES, FuenteTibOpcion (+14 more)
+Nodes (24): GET(), POST(), requireAdmin(), GET(), POST(), requireAdmin(), RESTORABLE_MODULES, FuenteTibOpcion (+16 more)
 
 ### Community 9 - "components/BoletasShalomTab.tsx"
 Cohesion: 0.12
 Nodes (28): ShalomTableSkeleton(), features_boletas_shalom_components_boletas_shalom, BoletasShalomTab(), ShalomFilterBar(), ShalomFilterBarProps, ShalomHeader(), ShalomHeaderProps, ShalomKpiGrid() (+20 more)
 
 ### Community 10 - "CobrosDailySheetView.tsx"
-Cohesion: 0.18
-Nodes (17): CobrosDailySheetViewProps, Client360Modal, DirectorioClienteModal(), DirectorioClienteModalProps, Clientes360View, DirectorioClientesViewProps, RegistrarCobroDiarioModal(), RegistrarCobroDiarioModalProps (+9 more)
+Cohesion: 0.13
+Nodes (22): CobrosDailySheetViewProps, Client360Modal, DirectorioClienteModal(), DirectorioClienteModalProps, DirectorioClientesTabProps, Clientes360View, DirectorioClientesView(), DirectorioClientesViewProps (+14 more)
 
 ### Community 11 - "components/RotulosA4Tab.tsx"
 Cohesion: 0.14
 Nodes (31): AmexitoAiRotulosPanel(), AmexitoAiRotulosPanelProps, features_rotulos_components_rotulos_a4, RotulosA4Tab(), RotulosHistoryModal(), RotulosHistoryModalProps, RotulosSheetDropdown(), RotulosSheetDropdownProps (+23 more)
 
-### Community 12 - "inventario-jobs/route.ts"
-Cohesion: 0.16
-Nodes (15): GET(), isXlsxKey(), POST(), SOURCE_KEY_FIELD, VALID_SOURCES, DbInventoryOptions, GeneratedInventory, generateInventoryExcelBufferFromDb() (+7 more)
+### Community 12 - "test-cruce-produccion.mjs"
+Cohesion: 0.24
+Nodes (8): DbInventoryOptions, GeneratedInventory, generateInventoryExcelBufferFromDb(), mapEstadoLabel(), admin, bufferComp, jobId, t0
 
 ### Community 13 - "ArmarPlanillaTab.tsx"
 Cohesion: 0.16
@@ -212,16 +220,16 @@ Cohesion: 0.15
 Nodes (22): POST(), POST(), POST(), POST(), analyzeInvoiceDocument(), analyzeShalomBoletaPdf(), DEFAULT_OPENAI_MODEL, DNI_JSON_SCHEMA (+14 more)
 
 ### Community 17 - "excelExport.ts"
-Cohesion: 0.20
-Nodes (16): InventoryTab(), useInventoryData(), exportClientesToExcel(), exportCobrosToExcel(), exportEntregasToExcel(), exportHojaDeRutaToExcel(), exportKardexToExcel(), exportLiquidacionesToExcel() (+8 more)
+Cohesion: 0.25
+Nodes (13): exportClientesToExcel(), exportCobrosToExcel(), exportEntregasToExcel(), exportHojaDeRutaToExcel(), exportLiquidacionesToExcel(), exportPaquetesToExcel(), exportPickingOrderToExcel(), exportScannerLogsToExcel() (+5 more)
 
 ### Community 18 - "package.json"
 Cohesion: 0.50
 Nodes (3): name, private, version
 
 ### Community 19 - "dashboard/types.ts"
-Cohesion: 0.17
-Nodes (21): AnalyticsChartsSection(), AnalyticsChartsSectionProps, DailyTasksSection(), DailyTasksSectionProps, DashboardHeader(), DashboardHeaderProps, DashboardTab(), DashboardTab (+13 more)
+Cohesion: 0.15
+Nodes (25): AnalyticsChartsSection(), AnalyticsChartsSectionProps, DailyTasksSection(), DailyTasksSectionProps, DashboardHeader(), DashboardHeaderProps, DashboardTab(), DashboardTab (+17 more)
 
 ### Community 20 - "compilerOptions"
 Cohesion: 0.07
@@ -235,17 +243,17 @@ Nodes (30): Badge(), BadgeProps, DOT_MAP, getVariantFromStatus(), VARIANT_MAP, B
 Cohesion: 0.08
 Nodes (25): docx, file-saver, html5-qrcode, jspdf, jszip, next, openai, dependencies (+17 more)
 
-### Community 23 - "ExcelExportDropdown.tsx"
-Cohesion: 0.32
-Nodes (6): badgeStyle(), dropdownItemStyle, ExcelExportDropdown(), ExcelExportDropdownProps, InventoryToolbar(), InventoryToolbarProps
+### Community 23 - "useCobrosOperaciones.ts"
+Cohesion: 0.21
+Nodes (11): CobroPaymentModal(), CobroPaymentModalProps, INITIAL_COBROS_LOTES, features_cobros_data_initial_lotes, features_cobros_types_clientecobrolote, MetodoPagoCobro, VoucherCobroItem, features_cobros_types_filtroscobroslote (+3 more)
 
 ### Community 25 - "types/index.ts"
 Cohesion: 0.10
-Nodes (18): TableSkeleton(), KardexView(), KardexViewProps, parseLocation(), validateAndSimulateRelocation(), BoletaShalomInput, DestinoRuta, EmbarqueMaster (+10 more)
+Nodes (16): InventoryPagination, UseInventoryQueryOptions, parseLocation(), validateAndSimulateRelocation(), BoletaShalomInput, DestinoRuta, EmbarqueMaster, EstadoDestinoRuta (+8 more)
 
-### Community 26 - "paquetes.schema.ts"
-Cohesion: 0.10
-Nodes (19): CreateInventarioJobInput, CreateInventarioJobSchema, PresignUploadInput, PresignUploadSchema, TibFuenteSchema, AssignShelfSchema, CreatePaqueteInput, CreatePaqueteSchema (+11 more)
+### Community 26 - "validations.test.ts"
+Cohesion: 0.14
+Nodes (13): LoginInput, LoginSchema, UserUpdateInput, UserUpdateSchema, CreateInventarioJobInput, CreateInventarioJobSchema, PresignUploadInput, PresignUploadSchema (+5 more)
 
 ### Community 27 - "devDependencies"
 Cohesion: 0.07
@@ -256,16 +264,16 @@ Cohesion: 0.28
 Nodes (8): InfoAmexTab, features_info_amex_components_infoamex, InfoAmexTab(), AMEX_INFO_IMAGES, AmexInfoImage, copyImageToClipboard(), copyTextToClipboard(), downloadImage()
 
 ### Community 29 - "useInventoryData.ts"
-Cohesion: 0.23
-Nodes (13): ShelfMatrixGridProps, EditPositionModal(), EditPositionModalProps, ShelfPositionModalProps, TransferModalProps, inventoryService, BatchShelfData, InventoryStats (+5 more)
+Cohesion: 0.19
+Nodes (17): InventoryTab(), KardexView(), KardexViewProps, useInventoryData(), UseInventoryDataProps, ShelfPositionModalProps, TransferModal(), TransferModalProps (+9 more)
 
 ### Community 30 - "worker/package.json"
 Cohesion: 0.14
 Nodes (13): dependencies, @aws-sdk/client-s3, xlsx, description, engines, node, @aws-sdk/client-s3, xlsx (+5 more)
 
 ### Community 31 - "app/page.tsx"
-Cohesion: 0.14
-Nodes (18): DashboardPage(), NewClientModal, NewPackageModal, HeaderBar(), HeaderBarProps, NewClientFormData, NewClientModalProps, NewPkgFormData (+10 more)
+Cohesion: 0.18
+Nodes (15): DashboardPage(), NewClientModal, HeaderBar(), HeaderBarProps, NewClientFormData, NewClientModalProps, NewPkgFormData, DashboardTabContent() (+7 more)
 
 ### Community 32 - "What You Must Do When Invoked"
 Cohesion: 0.07
@@ -295,33 +303,29 @@ Nodes (3): generateDriverWhatsAppUrl(), sanitizePeruvianPhoneNumber(), WhatsAppM
 Cohesion: 0.50
 Nodes (3): net8.0, DocumentFormat.OpenXml (3.3.0), Microsoft.NET.Sdk
 
-### Community 39 - "next-env.d.ts"
-Cohesion: 0.50
-Nodes (3): NOTE: This file should not be edited, next_types_root_params_d, next_types_routes_d
-
 ### Community 40 - "vercel.json"
 Cohesion: 0.50
 Nodes (3): framework, outputDirectory, version
 
-### Community 44 - "components/InventarioJobsTab.tsx"
-Cohesion: 0.16
-Nodes (9): InventarioJobsTab, formatBytes(), FuenteKey, FUENTES, InventarioJobsTab(), Job, TibFileInfo, TibState (+1 more)
+### Community 44 - "useDashboardData.ts"
+Cohesion: 0.57
+Nodes (6): mapCliente(), mapPaquete(), mapRealtimeCliente(), mapRealtimePaquete(), useDashboardData(), TipoMetodoEntrega
 
 ### Community 45 - "batch-sync/route.ts"
-Cohesion: 0.20
-Nodes (12): handleBatchSync(), isValidUuid(), POST, scannerLogger, formatZodError(), validateBody(), validateQuery(), getAuthenticatedUser() (+4 more)
+Cohesion: 0.15
+Nodes (16): handleBatchSync(), isValidUuid(), POST, scannerLogger, getAuthenticatedUser(), cache, checkRateLimit(), lastCleanup (+8 more)
 
-### Community 46 - "scanner.ts"
-Cohesion: 0.36
-Nodes (8): BaseScanExtra, DeliveryScanExtra, GeneralScanExtra, LookupScanExtra, OnScanConfirmHandler, RelocateScanExtra, ScanWorkflowMode, SlottingScanExtra
+### Community 46 - "Cliente"
+Cohesion: 0.17
+Nodes (15): NewPackageModal, NewPackageModalProps, MobileScannerModalProps, RotulosA4TabProps, ScannerTabProps, Cliente, BaseScanExtra, DeliveryScanExtra (+7 more)
 
 ### Community 47 - "cobros/types.ts"
 Cohesion: 0.24
 Nodes (11): CobrosKpiCardsProps, CobrosListProps, CobrosToolbarProps, NewVoucherFormProps, UseVoucherFormProps, CobrosService, CobrosMetrics, CobrosSubtab (+3 more)
 
-### Community 48 - "useDashboardNavigation.ts"
-Cohesion: 0.19
-Nodes (15): isDashboardTab(), useDashboardNavigation(), VALID_DASHBOARD_TABS, getModuleByTabId(), getScannerSubmoduleById(), getScannerSubmoduleByTabId(), ModuleMetadata, SCANNER_SUBMODULES (+7 more)
+### Community 48 - "components/ScannerTab.tsx"
+Cohesion: 0.26
+Nodes (10): useCobrosData(), useVoucherForm(), ScannerTab, formatOperatorName(), ScannerTab(), cleanAlphanumeric(), extractDigits(), matchesFuzzySearch() (+2 more)
 
 ### Community 49 - "ref_node_fs"
 Cohesion: 0.33
@@ -336,8 +340,8 @@ Cohesion: 0.29
 Nodes (6): buf, data, filas, instructivoPath, t0, wb
 
 ### Community 53 - "benchmark-comparativo-completo.mjs"
-Cohesion: 0.16
-Nodes (16): deleteFileFromR2(), getFileFromR2(), __dirname, envPath, __filename, r2Root, REAL_FILES, runBenchmark() (+8 more)
+Cohesion: 0.12
+Nodes (22): mapEstadoEntrega(), normalizeKey(), ParsedRow, syncCompletedExcelToDatabase(), SyncDbResult, deleteFileFromR2(), getFileFromR2(), ref_node_crypto (+14 more)
 
 ### Community 54 - "Find Skills"
 Cohesion: 0.14
@@ -376,28 +380,28 @@ Cohesion: 0.50
 Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
 
 ### Community 81 - "DashboardTabContent.tsx"
-Cohesion: 0.11
-Nodes (19): BoletasShalomSkeleton(), CobrosSkeleton(), DashboardSkeleton(), DniMatrixSkeleton(), FormatoEntregaSkeleton(), InventorySkeleton(), InvoicesSkeleton(), LiveSheetsSkeleton() (+11 more)
+Cohesion: 0.10
+Nodes (21): BoletasShalomSkeleton(), CobrosSkeleton(), DashboardSkeleton(), DniMatrixSkeleton(), FormatoEntregaSkeleton(), InventorySkeleton(), InvoicesSkeleton(), LiveSheetsSkeleton() (+13 more)
 
 ### Community 82 - "Paquete"
-Cohesion: 0.14
-Nodes (17): ThermalLabelModal, ThermalLabelModal(), ThermalLabelModalProps, GestorAlmacenView(), GestorAlmacenViewProps, InventoryStatsCards(), InventoryStatsCardsProps, InventoryTabProps (+9 more)
+Cohesion: 0.13
+Nodes (19): ThermalLabelModal, ThermalLabelModal(), ThermalLabelModalProps, InventoryStatsCards(), InventoryStatsCardsProps, InventoryTabProps, InventoryTable(), InventoryTableProps (+11 more)
 
-### Community 83 - "useCobrosOperaciones.ts"
-Cohesion: 0.10
-Nodes (30): CobroDeliveryModal(), CobroDeliveryModalProps, CobroPaymentModal(), CobroPaymentModalProps, CobrosExcelImporterModal(), CobrosExcelImporterModalProps, INITIAL_COBROS_LOTES, features_cobros_data_initial_lotes (+22 more)
+### Community 83 - "excel-cobros-parser.ts"
+Cohesion: 0.18
+Nodes (13): CobrosExcelImporterModal(), CobrosExcelImporterModalProps, ExcelCobrosParser, SheetParseResult, WorkbookParseResult, ClienteCobroLote, EstadoEntregaWR, EstadoPagoWR (+5 more)
 
 ### Community 84 - "createClient"
-Cohesion: 0.21
-Nodes (11): POST(), GET(), GET(), POST(), getSessionUser(), SessionUser, uploadFileToR2(), sanitizeFileNamePart() (+3 more)
+Cohesion: 0.39
+Nodes (5): POST(), GET(), getSessionUser(), SessionUser, createClient()
 
-### Community 85 - "getR2ViewUrl"
-Cohesion: 0.24
-Nodes (8): PdfViewerModal, PdfViewerModal(), PdfViewerModalProps, PhotoItem, PhotoViewerModal(), PhotoViewerModalProps, CobrosList(), getR2ViewUrl()
+### Community 85 - "components/CobrosTab.tsx"
+Cohesion: 0.13
+Nodes (15): PdfViewerModal, PdfViewerModal(), PdfViewerModalProps, PhotoItem, PhotoViewerModal(), PhotoViewerModalProps, CobrosDailySheetView(), CobrosList() (+7 more)
 
 ### Community 86 - "authorizeUser"
-Cohesion: 0.24
-Nodes (12): GET(), getLimaDateString(), POST(), TibTipo, GET(), mapPaqueteRow(), POST(), DELETE() (+4 more)
+Cohesion: 0.20
+Nodes (13): GET(), getLimaDateString(), POST(), TibTipo, detectAndDeskew(), maxDuration, POST(), GET() (+5 more)
 
 ### Community 87 - "ref_node_path"
 Cohesion: 0.29
@@ -423,53 +427,81 @@ Nodes (12): dynamic, GET(), POST(), SLOTS, dynamic, GET(), getEnv(), getR2Client
 Cohesion: 0.20
 Nodes (5): ApiHandler, withErrorHandler(), LogEntry, Logger, LogLevel
 
-### Community 93 - "components/CobrosTab.tsx"
-Cohesion: 0.15
-Nodes (11): CobrosDailySheetView(), CobrosTab(), DirectorioClientesTab(), DirectorioClientesTabProps, DirectorioClientesView(), useCobrosOperaciones(), VoucherViewerModal(), VoucherViewerModalProps (+3 more)
+### Community 93 - "useDashboardNavigation.ts"
+Cohesion: 0.36
+Nodes (8): isDashboardTab(), useDashboardNavigation(), VALID_DASHBOARD_TABS, migrateLegacyHash(), PATH_TO_TAB, pathToTab(), TAB_TO_PATH, tabToPath()
 
-### Community 94 - "components/ScannerTab.tsx"
+### Community 94 - "registry.ts"
 Cohesion: 0.19
-Nodes (14): MobileScannerModalProps, useCobrosData(), useVoucherForm(), ScannerTab, formatOperatorName(), MobileScannerModal, ScannerTab(), ScannerTabProps (+6 more)
+Nodes (16): Sidebar(), SidebarProps, OperatorHubTab, OperatorHubTab(), OperatorHubTabProps, getAvailableModulesForUser(), getFirstAvailableTab(), getModuleByTabId() (+8 more)
 
-### Community 95 - "cruzar-planilla/route.ts"
-Cohesion: 0.27
-Nodes (12): aNumero(), construirIndiceDesdeEnviado(), dynamic, esKeyValida(), FilaCruzarInput, indiceKeyPara(), leerIndice(), limpiar() (+4 more)
-
-### Community 96 - "upload/route.ts"
-Cohesion: 0.73
-Nodes (8): POST(), buildDniPath(), buildEntregaPath(), buildInvoicePath(), buildManifiestoPath(), buildVoucherPath(), getDateSegments(), sanitizeFileName()
+### Community 95 - "CobroDeliveryModal.tsx"
+Cohesion: 0.40
+Nodes (4): CobroDeliveryModal(), CobroDeliveryModalProps, TipoRetirante, features_cobros_types_tiporetirante
 
 ### Community 98 - "TipoEstadoEntrega"
 Cohesion: 0.43
 Nodes (6): BatchStatusModal(), BatchStatusModalProps, BulkStatusByWrModal(), BulkStatusByWrModalProps, TipoEstadoAmex, TipoEstadoEntrega
 
-### Community 99 - "useDashboardData.ts"
-Cohesion: 0.57
-Nodes (6): mapCliente(), mapPaquete(), mapRealtimeCliente(), mapRealtimePaquete(), useDashboardData(), TipoMetodoEntrega
+### Community 99 - "ManifiestosTibTab.tsx"
+Cohesion: 0.33
+Nodes (4): ManifiestosTibTab, HeaderData, ManifestRow, ReconciliationData
 
-### Community 100 - "login/route.ts"
-Cohesion: 0.18
-Nodes (12): POST(), cache, checkRateLimit(), lastCleanup, purgeExpired(), rateLimitExceededResponse(), RateLimitOptions, RateLimitRecord (+4 more)
+### Community 101 - "Despliegue en VPS (Hostinger / Ubuntu)"
+Cohesion: 0.33
+Nodes (5): Despliegue en VPS (Hostinger / Ubuntu), Endpoints, Motor Python de Digitalización de Manifiestos TIB Courier, Opción 1: Con Docker (Recomendado), Opción 2: Con Python venv directo
+
+### Community 102 - "extract_table_rows"
+Cohesion: 0.50
+Nodes (3): extract_table_rows(), ndarray, Detecta la tabla principal en la página utilizando operaciones morfológicas y…
+
+### Community 103 - "paquetes/route.ts"
+Cohesion: 0.28
+Nodes (10): POST(), GET(), mapPaqueteRow(), POST(), formatZodError(), validateBody(), validateQuery(), CreatePaqueteSchema (+2 more)
+
+### Community 104 - "cruzar-planilla/route.ts"
+Cohesion: 0.27
+Nodes (12): aNumero(), construirIndiceDesdeEnviado(), dynamic, esKeyValida(), FilaCruzarInput, indiceKeyPara(), leerIndice(), limpiar() (+4 more)
+
+### Community 105 - "upload/route.ts"
+Cohesion: 0.73
+Nodes (8): POST(), buildDniPath(), buildEntregaPath(), buildInvoicePath(), buildManifiestoPath(), buildVoucherPath(), getDateSegments(), sanitizeFileName()
+
+### Community 106 - "EstanteriaPosicion"
+Cohesion: 0.27
+Nodes (6): GestorAlmacenView(), GestorAlmacenViewProps, ShelfMatrixGridProps, EditPositionModal(), EditPositionModalProps, EstanteriaPosicion
+
+### Community 107 - "paquetes.schema.ts"
+Cohesion: 0.22
+Nodes (8): AssignShelfSchema, CreatePaqueteInput, EstadoEntregaSchema, EstadoTibSchema, QueryPaquetesInput, UbicacionSchema, UpdatePaqueteInput, UpdatePaqueteSchema
+
+### Community 108 - "uploadFileToR2"
+Cohesion: 0.43
+Nodes (6): GET(), POST(), uploadFileToR2(), sanitizeFileNamePart(), uploadShalomBoletaFile(), uploadShalomBoletaPdf()
+
+### Community 109 - "ExcelExportDropdown.tsx"
+Cohesion: 0.32
+Nodes (6): badgeStyle(), dropdownItemStyle, ExcelExportDropdown(), ExcelExportDropdownProps, InventoryToolbar(), InventoryToolbarProps
 
 ## Knowledge Gaps
-- **413 isolated node(s):** `RESTORABLE_MODULES`, `dynamic`, `maxDuration`, `TibItem`, `FilaCruzarInput` (+408 more)
+- **421 isolated node(s):** `RESTORABLE_MODULES`, `dynamic`, `maxDuration`, `TibItem`, `FilaCruzarInput` (+416 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **21 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **23 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Paquete` connect `Paquete` to `components/DniMatrixTab.tsx`, `components/LiveSheetsTab.tsx`, `Cliente`, `components/FormatoEntregaTab.tsx`, `excelExport.ts`, `dashboard/types.ts`, `ExcelExportDropdown.tsx`, `types/index.ts`, `useInventoryData.ts`, `app/page.tsx`, `scanner.ts`, `cobros/types.ts`, `DashboardTabContent.tsx`, `authorizeUser`, `components/CobrosTab.tsx`, `components/ScannerTab.tsx`, `TipoEstadoEntrega`, `useDashboardData.ts`, `useInventoryQuery.ts`?**
-  _High betweenness centrality (0.103) - this node is a cross-community bridge._
-- **Why does `Cliente` connect `Cliente` to `components/InvoicesTab.tsx`, `components/DniMatrixTab.tsx`, `components/LiveSheetsTab.tsx`, `useDashboardData.ts`, `components/FormatoEntregaTab.tsx`, `CobrosDailySheetView.tsx`, `components/RotulosA4Tab.tsx`, `scanner.ts`, `cobros/types.ts`, `DashboardTabContent.tsx`, `Paquete`, `dashboard/types.ts`, `useInventoryData.ts`, `excelExport.ts`, `types/index.ts`, `components/CobrosTab.tsx`, `components/ScannerTab.tsx`, `app/page.tsx`?**
-  _High betweenness centrality (0.043) - this node is a cross-community bridge._
-- **Why does `supabase` connect `components/LiveSheetsTab.tsx` to `useDashboardData.ts`, `phoneUtils.ts`, `components/RotulosA4Tab.tsx`, `components/InventarioJobsTab.tsx`, `cobros/types.ts`, `ui/index.ts`, `useInventoryData.ts`, `components/ScannerTab.tsx`, `app/page.tsx`?**
-  _High betweenness centrality (0.039) - this node is a cross-community bridge._
+- **Why does `Paquete` connect `Paquete` to `components/DniMatrixTab.tsx`, `components/LiveSheetsTab.tsx`, `components/FormatoEntregaTab.tsx`, `CobrosDailySheetView.tsx`, `excelExport.ts`, `dashboard/types.ts`, `types/index.ts`, `useInventoryData.ts`, `app/page.tsx`, `useDashboardData.ts`, `Cliente`, `cobros/types.ts`, `components/ScannerTab.tsx`, `DashboardTabContent.tsx`, `components/CobrosTab.tsx`, `registry.ts`, `TipoEstadoEntrega`, `paquetes/route.ts`, `EstanteriaPosicion`, `ExcelExportDropdown.tsx`?**
+  _High betweenness centrality (0.099) - this node is a cross-community bridge._
+- **Why does `Cliente` connect `Cliente` to `components/InvoicesTab.tsx`, `components/DniMatrixTab.tsx`, `components/LiveSheetsTab.tsx`, `components/FormatoEntregaTab.tsx`, `CobrosDailySheetView.tsx`, `components/RotulosA4Tab.tsx`, `useDashboardData.ts`, `cobros/types.ts`, `components/ScannerTab.tsx`, `DashboardTabContent.tsx`, `Paquete`, `dashboard/types.ts`, `excelExport.ts`, `components/CobrosTab.tsx`, `types/index.ts`, `useInventoryData.ts`, `app/page.tsx`?**
+  _High betweenness centrality (0.046) - this node is a cross-community bridge._
+- **Why does `authorizeUser()` connect `authorizeUser` to `paquetes/route.ts`, `getSupabaseAdmin`, `cruzar-planilla/route.ts`, `upload/route.ts`, `uploadFileToR2`, `batch-sync/route.ts`, `analyzer.ts`, `r2/client.ts`?**
+  _High betweenness centrality (0.037) - this node is a cross-community bridge._
 - **What connects `RESTORABLE_MODULES`, `dynamic`, `maxDuration` to the rest of the system?**
-  _413 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _421 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `components/DniMatrixTab.tsx` be split into smaller, more focused modules?**
   _Cohesion score 0.06229797237731413 - nodes in this community are weakly interconnected._
 - **Should `Program` be split into smaller, more focused modules?**
   _Cohesion score 0.050774526678141134 - nodes in this community are weakly interconnected._
 - **Should `components/LiveSheetsTab.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.06835443037974684 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07219548315438726 - nodes in this community are weakly interconnected._

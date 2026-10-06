@@ -5,6 +5,68 @@ import { authorizeUser } from '@/lib/auth/guards';
 const TIB_API_URL = 'https://www.tibcourier.com/global-courier/ajax/readListaWarehouse.php';
 const TIB_BASE_URL = 'https://www.tibcourier.com/global-courier/ajax/';
 
+export async function GET(req: NextRequest) {
+  try {
+    const auth = await authorizeUser();
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
+    const { searchParams } = req.nextUrl;
+    const limit = Math.min(Math.max(Number(searchParams.get('limit') || 200), 1), 1000);
+
+    const admin = getSupabaseAdmin();
+
+    // 1. Total de paquetes con WR
+    const { count: totalCount } = await admin
+      .from('paquetes')
+      .select('id', { count: 'exact', head: true })
+      .not('numero_recibo_bodega', 'is', null)
+      .neq('numero_recibo_bodega', '');
+
+    // 2. Con imagen ya guardada
+    const { count: withImageCount } = await admin
+      .from('paquetes')
+      .select('id', { count: 'exact', head: true })
+      .not('numero_recibo_bodega', 'is', null)
+      .neq('numero_recibo_bodega', '')
+      .not('tib_imagen_url', 'is', null);
+
+    // 3. Faltantes de imagen
+    const { data: missingList, count: missingCount, error } = await admin
+      .from('paquetes')
+      .select('id, numero_recibo_bodega, tracking, nombre_consignatario, peso_kg, tib_imagen_url, tib_ticket_pdf_url, creado_en', { count: 'exact' })
+      .not('numero_recibo_bodega', 'is', null)
+      .neq('numero_recibo_bodega', '')
+      .is('tib_imagen_url', null)
+      .order('creado_en', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      throw error;
+    }
+
+    return NextResponse.json({
+      ok: true,
+      totalPackages: totalCount || 0,
+      withImage: withImageCount || 0,
+      totalMissing: missingCount || 0,
+      missing: (missingList || []).map((row: any) => ({
+        id: row.id,
+        numeroReciboBodega: row.numero_recibo_bodega,
+        tracking: row.tracking || '',
+        nombreConsignatario: row.nombre_consignatario || '',
+        pesoKg: Number(row.peso_kg || 0),
+        tibImagenUrl: row.tib_imagen_url || null,
+        tibTicketPdfUrl: row.tib_ticket_pdf_url || null,
+      })),
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error al consultar estadísticas TIB';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const auth = await authorizeUser();

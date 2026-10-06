@@ -14,7 +14,8 @@ import {
   FileSpreadsheet,
   RefreshCw,
   Warehouse,
-  Zap
+  Zap,
+  Camera
 } from 'lucide-react';
 import { EstanteriaPosicion, Paquete } from '@/types';
 import ExcelExportDropdown from './ExcelExportDropdown';
@@ -61,6 +62,8 @@ export interface InventoryToolbarProps {
   onOpenGestorModal: () => void;
   onOpenKardexModal: () => void;
   onOpenSyncTibModal?: () => void;
+  onOpenSyncTibImagesModal?: () => void;
+  missingTibImagesCount?: number;
   onExportExcel: () => void;
   onRefreshData?: () => Promise<void> | void;
   onNewPackage: () => void;
@@ -71,6 +74,8 @@ export default function InventoryToolbar({
   filteredPaquetes,
   amexStatusCounts,
   onOpenBulkWrModal,
+  onOpenSyncTibImagesModal,
+  missingTibImagesCount,
   activeSubTab,
   setActiveSubTab,
   filteredCount,
@@ -185,6 +190,43 @@ export default function InventoryToolbar({
               }}
             >
               <Zap className="w-4 h-4 text-blue-600" /> ⚡ Actualizar por WRs
+            </button>
+          )}
+
+          {onOpenSyncTibImagesModal && (
+            <button
+              type="button"
+              className="btn"
+              onClick={onOpenSyncTibImagesModal}
+              title="Detectar y asignar fotos y tickets de TIB a los paquetes pendientes"
+              style={{
+                background: (missingTibImagesCount ?? 0) > 0 ? '#eff6ff' : '#ffffff',
+                border: (missingTibImagesCount ?? 0) > 0 ? '1px solid #93c5fd' : '1px solid #cbd5e1',
+                color: (missingTibImagesCount ?? 0) > 0 ? '#1d4ed8' : '#334155',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              <Camera className="w-4 h-4 text-blue-600" />
+              <span>Fotos TIB</span>
+              {(missingTibImagesCount ?? 0) > 0 && (
+                <span
+                  style={{
+                    background: '#2563eb',
+                    color: '#ffffff',
+                    fontSize: '10.5px',
+                    fontWeight: 800,
+                    padding: '1px 6px',
+                    borderRadius: '999px',
+                    marginLeft: '2px'
+                  }}
+                >
+                  {missingTibImagesCount}
+                </span>
+              )}
             </button>
           )}
 

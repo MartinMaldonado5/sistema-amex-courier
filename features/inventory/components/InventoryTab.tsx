@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Paquete, Cliente } from '@/types';
 import ThermalLabelModal from '@/components/modals/ThermalLabelModal';
 import Modal from '@/components/ui/Modal';
@@ -18,6 +18,7 @@ import EditPositionModal from '../modals/EditPositionModal';
 import SyncTibModal from '../modals/SyncTibModal';
 import BulkStatusByWrModal from '../modals/BulkStatusByWrModal';
 import TibImageModal from '../modals/TibImageModal';
+import SyncTibImagesModal from '../modals/SyncTibImagesModal';
 
 export interface InventoryTabProps {
   paquetes: Paquete[];
@@ -174,6 +175,28 @@ export default function InventoryTab({
     }
   };
 
+  // Modal de Sincronización Masiva de Fotos TIB
+  const [isSyncTibImagesModalOpen, setIsSyncTibImagesModalOpen] = useState(false);
+
+  const missingTibImagesCount = useMemo(() => {
+    return paquetes.filter(
+      (p) => Boolean(p.numeroReciboBodega && p.numeroReciboBodega.trim() !== '' && !p.tibImagenUrl)
+    ).length;
+  }, [paquetes]);
+
+  const handleTibBulkPackageUpdated = (wr: string, imageUrl: string, ticketUrl?: string) => {
+    if (onUpdatePackage) {
+      const target = paquetes.find((p) => p.numeroReciboBodega === wr);
+      if (target) {
+        onUpdatePackage({
+          ...target,
+          tibImagenUrl: imageUrl,
+          tibTicketPdfUrl: ticketUrl
+        });
+      }
+    }
+  };
+
   const [isSyncTibModalOpen, setIsSyncTibModalOpen] = useState(false);
 
   return (
@@ -184,6 +207,8 @@ export default function InventoryTab({
         filteredPaquetes={filteredPaquetes}
         amexStatusCounts={amexStatusCounts}
         onOpenBulkWrModal={() => setIsBulkWrModalOpen(true)}
+        onOpenSyncTibImagesModal={() => setIsSyncTibImagesModalOpen(true)}
+        missingTibImagesCount={missingTibImagesCount}
         activeSubTab={activeSubTab}
         setActiveSubTab={setActiveSubTab}
         filteredCount={filteredPaquetes.length}
@@ -412,7 +437,7 @@ export default function InventoryTab({
         onRefreshData={onRefreshData}
       />
 
-      {/* Modal de Foto y Evidencia TIB */}
+      {/* Modal de Foto y Evidencia TIB Individual */}
       <TibImageModal
         isOpen={isTibModalOpen}
         onClose={() => {
@@ -421,6 +446,15 @@ export default function InventoryTab({
         }}
         paquete={selectedTibPkg}
         onImageLoaded={handleTibImageLoaded}
+      />
+
+      {/* Modal de Sincronización y Asignación Masiva de Fotos TIB */}
+      <SyncTibImagesModal
+        isOpen={isSyncTibImagesModalOpen}
+        onClose={() => setIsSyncTibImagesModalOpen(false)}
+        paquetesActuales={paquetes}
+        onRefreshData={onRefreshData}
+        onPackageUpdated={handleTibBulkPackageUpdated}
       />
     </div>
   );

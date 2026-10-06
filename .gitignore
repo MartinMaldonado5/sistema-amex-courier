@@ -62,6 +62,7 @@ worker/test_output/
 worker/test_files/
 worker/run-worker-local.bat
 benchmark-data/
+prueba scan embarque tib/
 
 # Graphify cache y backups temporales
 graphify-out/cache/
