@@ -1,7 +1,24 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Camera, Download, FileText, ExternalLink, RefreshCw, AlertCircle, X, MapPin, Scale, User, Box } from 'lucide-react';
+import {
+  Camera,
+  Download,
+  FileText,
+  ExternalLink,
+  RefreshCw,
+  AlertCircle,
+  X,
+  MapPin,
+  Scale,
+  User,
+  Box,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  Maximize2,
+  Minimize2
+} from 'lucide-react';
 import { Paquete } from '@/types';
 
 export interface TibImageModalProps {
@@ -35,6 +52,9 @@ export default function TibImageModal({
   const [tibData, setTibData] = useState<TibData | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [rotation, setRotation] = useState<number>(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !paquete) {
@@ -42,8 +62,15 @@ export default function TibImageModal({
       setTicketUrl(null);
       setTibData(null);
       setErrorMsg(null);
+      setZoomLevel(1);
+      setRotation(0);
+      setIsFullscreen(false);
       return;
     }
+
+    setZoomLevel(1);
+    setRotation(0);
+    setIsFullscreen(false);
 
     // Si el paquete ya tiene la URL cargada
     if (paquete.tibImagenUrl) {
@@ -120,7 +147,7 @@ export default function TibImageModal({
       <div
         className="modal-dialog"
         style={{
-          maxWidth: '720px',
+          maxWidth: '820px',
           width: '95%',
           maxHeight: '90vh',
           display: 'flex',
@@ -256,32 +283,52 @@ export default function TibImageModal({
             </div>
           ) : imageUrl ? (
             <>
-              {/* Contenedor de la Imagen */}
+              {/* Contenedor de la Imagen (100% Sin Recorte con Aspect Ratio Natural y Controles) */}
               <div
                 style={{
                   position: 'relative',
                   width: '100%',
-                  minHeight: '260px',
-                  maxHeight: '440px',
                   borderRadius: '12px',
                   overflow: 'hidden',
                   background: '#090d16',
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  border: '1px solid #cbd5e1'
+                  border: '1px solid #cbd5e1',
+                  flexShrink: 0
                 }}
               >
-                <img
-                  src={imageUrl}
-                  alt={`Paquete ${paquete.numeroReciboBodega}`}
+                <div
                   style={{
-                    maxWidth: '100%',
-                    maxHeight: '440px',
-                    objectFit: 'contain',
-                    display: 'block'
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: zoomLevel > 1 ? 'auto' : 'hidden',
+                    maxHeight: 'min(65vh, 520px)',
+                    background: '#090d16'
                   }}
-                />
+                >
+                  <img
+                    src={imageUrl}
+                    alt={`Paquete ${paquete.numeroReciboBodega}`}
+                    style={{
+                      width: '100%',
+                      height: 'auto',
+                      maxHeight: 'min(65vh, 520px)',
+                      objectFit: 'contain',
+                      display: 'block',
+                      transform: `scale(${zoomLevel}) rotate(${rotation}deg)`,
+                      transformOrigin: 'center center',
+                      transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                      cursor: zoomLevel === 1 ? 'zoom-in' : 'zoom-out'
+                    }}
+                    onClick={() => setZoomLevel((prev) => (prev === 1 ? 1.6 : 1))}
+                  />
+                </div>
+
+                {/* Badge Superior Izquierdo */}
                 <span
                   style={{
                     position: 'absolute',
@@ -295,11 +342,139 @@ export default function TibImageModal({
                     fontSize: '11px',
                     fontWeight: 800,
                     border: '1px solid rgba(56, 189, 248, 0.3)',
-                    letterSpacing: '0.5px'
+                    letterSpacing: '0.5px',
+                    zIndex: 2,
+                    pointerEvents: 'none'
                   }}
                 >
-                  ✓ EVIDENCIA ORIGINAL TIB
+                  ✓ EVIDENCIA ORIGINAL TIB (COMPLETA)
                 </span>
+
+                {/* Barra Flotante de Herramientas de Visualización Superior Derecha */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    background: 'rgba(15, 23, 42, 0.85)',
+                    backdropFilter: 'blur(6px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    padding: '3px 6px',
+                    borderRadius: '8px',
+                    zIndex: 5
+                  }}
+                >
+                  <button
+                    type="button"
+                    title="Acercar (Zoom In)"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setZoomLevel((prev) => Math.min(prev + 0.3, 3));
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#ffffff',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    <ZoomIn className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    type="button"
+                    title="Alejar (Zoom Out)"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setZoomLevel((prev) => Math.max(prev - 0.3, 1));
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#ffffff',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    <ZoomOut className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    type="button"
+                    title="Rotar 90°"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRotation((prev) => (prev + 90) % 360);
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#ffffff',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    <RotateCw className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    type="button"
+                    title="Ver en Pantalla Completa"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsFullscreen(true);
+                    }}
+                    style={{
+                      background: 'rgba(59, 130, 246, 0.3)',
+                      border: '1px solid rgba(96, 165, 250, 0.4)',
+                      color: '#60a5fa',
+                      cursor: 'pointer',
+                      padding: '4px 8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      borderRadius: '4px'
+                    }}
+                  >
+                    <Maximize2 className="w-3.5 h-3.5" /> Ampliar
+                  </button>
+                </div>
+
+                {/* Badge Inferior con info de escala */}
+                {zoomLevel > 1 && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      bottom: '10px',
+                      right: '12px',
+                      background: 'rgba(15, 23, 42, 0.8)',
+                      color: '#cbd5e1',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      fontSize: '10.5px',
+                      fontWeight: 700,
+                      zIndex: 2,
+                      pointerEvents: 'none'
+                    }}
+                  >
+                    Zoom: {Math.round(zoomLevel * 100)}%
+                  </span>
+                )}
               </div>
 
               {/* Tarjetas de Datos de Bodega TIB */}
@@ -544,6 +719,168 @@ export default function TibImageModal({
           </div>
         </div>
       </div>
+
+      {/* Lightbox / Pantalla Completa Modal */}
+      {isFullscreen && imageUrl && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 100000,
+            background: 'rgba(5, 8, 15, 0.96)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            padding: '16px'
+          }}
+          onClick={() => setIsFullscreen(false)}
+        >
+          {/* Barra Superior Lightbox */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              color: '#ffffff',
+              padding: '10px 18px',
+              background: 'rgba(255, 255, 255, 0.08)',
+              borderRadius: '12px',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.15)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+              <span style={{ fontWeight: 800, fontSize: '15px', color: '#60a5fa', fontFamily: 'monospace' }}>
+                {paquete.numeroReciboBodega}
+              </span>
+              <span style={{ color: '#64748b' }}>•</span>
+              <span style={{ fontSize: '13px', color: '#e2e8f0', fontFamily: 'monospace' }}>
+                {paquete.trackingUsa || paquete.tracking || ''}
+              </span>
+              <span style={{ color: '#64748b' }}>•</span>
+              <span style={{ fontSize: '11.5px', color: '#38bdf8', fontWeight: 700, background: 'rgba(56, 189, 248, 0.15)', padding: '2px 8px', borderRadius: '4px' }}>
+                Resolución Original TIB (1280 × 720 px · Sin Recorte)
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setZoomLevel((prev) => Math.min(prev + 0.3, 3.5))}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.12)',
+                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                  color: '#ffffff',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  fontSize: '12px',
+                  fontWeight: 700
+                }}
+              >
+                <ZoomIn className="w-4 h-4" /> Zoom +
+              </button>
+              <button
+                type="button"
+                onClick={() => setZoomLevel((prev) => Math.max(prev - 0.3, 1))}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.12)',
+                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                  color: '#ffffff',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  fontSize: '12px',
+                  fontWeight: 700
+                }}
+              >
+                <ZoomOut className="w-4 h-4" /> Zoom -
+              </button>
+              <button
+                type="button"
+                onClick={() => setRotation((prev) => (prev + 90) % 360)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.12)',
+                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                  color: '#ffffff',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  fontSize: '12px',
+                  fontWeight: 700
+                }}
+              >
+                <RotateCw className="w-4 h-4" /> Rotar
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsFullscreen(false)}
+                style={{
+                  background: '#dc2626',
+                  border: 'none',
+                  color: '#ffffff',
+                  padding: '7px 16px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '12px',
+                  fontWeight: 800
+                }}
+              >
+                <Minimize2 className="w-4 h-4" /> Salir de Pantalla Completa
+              </button>
+            </div>
+          </div>
+
+          {/* Imagen Centrada en Lightbox */}
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'auto',
+              padding: '16px'
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsFullscreen(false);
+            }}
+          >
+            <img
+              src={imageUrl}
+              alt={`Paquete ${paquete.numeroReciboBodega}`}
+              style={{
+                maxWidth: '94vw',
+                maxHeight: '82vh',
+                objectFit: 'contain',
+                borderRadius: '8px',
+                boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8)',
+                transform: `scale(${zoomLevel}) rotate(${rotation}deg)`,
+                transformOrigin: 'center center',
+                transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                cursor: zoomLevel === 1 ? 'zoom-in' : 'zoom-out'
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setZoomLevel((prev) => (prev === 1 ? 1.8 : 1));
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
