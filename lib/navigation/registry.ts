@@ -67,6 +67,15 @@ export const SCANNER_SUBMODULES: SubmoduleMetadata[] = [
     path: '/escaner/reasignar',
     icon: 'fa-solid fa-right-left',
     accentColor: '#fb923c'
+  },
+  {
+    id: 'masivo',
+    tabId: 'scanner-masivo',
+    label: '6.5 📋 Asignación Masiva',
+    shortLabel: 'Asignación Masiva',
+    path: '/escaner/masivo',
+    icon: 'fa-solid fa-file-excel',
+    accentColor: '#10b981'
   }
 ];
 

@@ -47,6 +47,8 @@ const MobileScannerModal = dynamic(
   { ssr: false }
 );
 
+import ScannerBulkLocationView from './ScannerBulkLocationView';
+
 interface ScannerTabProps {
   scannedLogs: ScannedLog[];
   paquetes?: Paquete[];
@@ -56,8 +58,8 @@ interface ScannerTabProps {
   onSlotPackage?: (code: string, location: string) => void;
   onUpdateLogs?: React.Dispatch<React.SetStateAction<ScannedLog[]>>;
   onRefreshData?: () => Promise<void> | void;
-  activeSubmodule?: 'slotting' | 'lookup' | 'delivery' | 'relocate';
-  onChangeSubmodule?: (submodule: 'slotting' | 'lookup' | 'delivery' | 'relocate') => void;
+  activeSubmodule?: 'slotting' | 'lookup' | 'delivery' | 'relocate' | 'masivo';
+  onChangeSubmodule?: (submodule: 'slotting' | 'lookup' | 'delivery' | 'relocate' | 'masivo') => void;
 }
 
 const formatOperatorName = (user?: { nombre?: string; email?: string } | null): string => {
@@ -89,7 +91,7 @@ export default function ScannerTab({
   onChangeSubmodule
 }: ScannerTabProps) {
   // Estado local para permitir navegación interna o externa por submódulos
-  const [internalSubmodule, setInternalSubmodule] = useState<'slotting' | 'lookup' | 'delivery' | 'relocate'>(activeSubmodule);
+  const [internalSubmodule, setInternalSubmodule] = useState<'slotting' | 'lookup' | 'delivery' | 'relocate' | 'masivo'>(activeSubmodule);
 
   useEffect(() => {
     if (activeSubmodule) {
@@ -99,7 +101,7 @@ export default function ScannerTab({
 
   const currentSub = activeSubmodule || internalSubmodule;
 
-  const handleSelectSubmodule = (sub: 'slotting' | 'lookup' | 'delivery' | 'relocate') => {
+  const handleSelectSubmodule = (sub: 'slotting' | 'lookup' | 'delivery' | 'relocate' | 'masivo') => {
     setInternalSubmodule(sub);
     if (onChangeSubmodule) {
       onChangeSubmodule(sub);
@@ -174,7 +176,7 @@ export default function ScannerTab({
   const a2_P4 = useMemo(() => paquetes.filter(p => (p.posicionEstante === 'A2-P4' || (p.anaquel === 'A2' && p.piso === 'P4'))).length, [paquetes]);
   const totalA2 = a2_P1 + a2_P2 + a2_P3 + a2_P4;
 
-  const sinUbicarCount = useMemo(() => paquetes.filter(p => !p.posicionEstante || p.posicionEstante.includes('REC') || p.posicionEstante.includes('MESA')).length, [paquetes]);
+  const sinUbicarCount = useMemo(() => paquetes.filter(p => !p.posicionEstante || p.posicionEstante.includes('OFI') || p.posicionEstante.includes('REC') || p.posicionEstante.includes('MESA')).length, [paquetes]);
 
   // Filtrado de lecturas
   const pendingLogs = useMemo(() => scannedLogs.filter(l => !l.synced), [scannedLogs]);
@@ -255,7 +257,8 @@ export default function ScannerTab({
     e.preventDefault();
     if (!editingLog) return;
 
-    const loc = `${editingLog.anaquel || 'A1'}-${editingLog.piso || 'P1'}`;
+    const isNoFloor = editingLog.anaquel === 'OFI' || editingLog.anaquel === 'DSP-Z1' || editingLog.anaquel === 'DSP-Z2';
+    const loc = isNoFloor ? (editingLog.anaquel as string) : `${editingLog.anaquel || 'A1'}-${editingLog.piso || 'P1'}`;
     const updatedLog: ScannedLog = {
       ...editingLog,
       location: loc
@@ -550,6 +553,36 @@ export default function ScannerTab({
   return (
     <div style={{ width: '100%', maxWidth: '100%', margin: 0, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '16px', boxSizing: 'border-box' }}>
       
+      {/* NAVEGACIÓN RÁPIDA DE SUBMÓDULOS 6.1 - 6.5 */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', background: '#f8fafc', padding: '8px 12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+        {[
+          { id: 'slotting', label: '6.1 📦 Asignar Anaquel' },
+          { id: 'lookup', label: '6.2 🔍 Localizar 360°' },
+          { id: 'delivery', label: '6.3 🚚 Despachar & Reparto' },
+          { id: 'relocate', label: '6.4 🔄 Reasignar Ubicación' },
+          { id: 'masivo', label: '6.5 📋 Asignación Masiva' },
+        ].map(item => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => handleSelectSubmodule(item.id as any)}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '8px',
+              fontSize: '12px',
+              fontWeight: currentSub === item.id ? 800 : 600,
+              background: currentSub === item.id ? '#0f172a' : '#ffffff',
+              color: currentSub === item.id ? '#ffffff' : '#475569',
+              border: currentSub === item.id ? '1px solid #0f172a' : '1px solid #cbd5e1',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
 
       {/* NOTIFICACIÓN FLOTANTE */}
       {syncNotification && (
@@ -1585,6 +1618,17 @@ export default function ScannerTab({
         </div>
       )}
 
+      {/* ========================================================================= */}
+      {/* 📋 SUBMÓDULO 6.5: ASIGNACIÓN MASIVA DESDE EXCEL */}
+      {/* ========================================================================= */}
+      {currentSub === 'masivo' && (
+        <ScannerBulkLocationView
+          paquetes={paquetes}
+          currentUser={currentUser}
+          onRefreshData={onRefreshData}
+        />
+      )}
+
       {/* 🚀 MODAL DE CONFIRMACIÓN FINAL PARA SUBIR A SUPABASE MASTER */}
       {isConfirmSyncModalOpen && (
         <div className="modal-backdrop">
@@ -1713,22 +1757,32 @@ export default function ScannerTab({
                   >
                     <option value="A1">Anaquel 1 (A1)</option>
                     <option value="A2">Anaquel 2 (A2)</option>
-                    <option value="REC">Recepción (REC)</option>
-                    <option value="DSP">Despacho (DSP)</option>
+                    <option value="OFI">Oficina (OFI)</option>
+                    <option value="DSP-Z1">Despacho Zona 1 (DSP-Z1)</option>
+                    <option value="DSP-Z2">Despacho Zona 2 (DSP-Z2)</option>
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>Piso / Nivel</label>
+                  <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>
+                    {editingLog.anaquel === 'OFI' || editingLog.anaquel === 'DSP-Z1' || editingLog.anaquel === 'DSP-Z2' ? 'Piso / Nivel (N/A)' : 'Piso / Nivel'}
+                  </label>
                   <select
                     value={editingLog.piso || 'P1'}
+                    disabled={editingLog.anaquel === 'OFI' || editingLog.anaquel === 'DSP-Z1' || editingLog.anaquel === 'DSP-Z2'}
                     onChange={e => setEditingLog({ ...editingLog, piso: e.target.value })}
                     className="form-control"
                   >
-                    <option value="P1">P1 (Piso 1 · Inferior)</option>
-                    <option value="P2">P2 (Piso 2 · Medio)</option>
-                    <option value="P3">P3 (Piso 3 · Medio Alto)</option>
-                    <option value="P4">P4 (Piso 4 · Superior)</option>
+                    {editingLog.anaquel === 'OFI' || editingLog.anaquel === 'DSP-Z1' || editingLog.anaquel === 'DSP-Z2' ? (
+                      <option value="">— Sin pisos —</option>
+                    ) : (
+                      <>
+                        <option value="P1">P1 (Piso 1 · Inferior)</option>
+                        <option value="P2">P2 (Piso 2 · Medio)</option>
+                        <option value="P3">P3 (Piso 3 · Medio Alto)</option>
+                        <option value="P4">P4 (Piso 4 · Superior)</option>
+                      </>
+                    )}
                   </select>
                 </div>
               </div>

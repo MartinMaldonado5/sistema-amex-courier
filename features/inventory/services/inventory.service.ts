@@ -83,17 +83,23 @@ export const inventoryService = {
     transferData: TransferFormData,
     paquetesList: Paquete[]
   ): Promise<{ updatedPackages: Paquete[] }> {
-    const targetPos =
-      transferData.targetAnaquel === 'REC' || transferData.targetAnaquel === 'DSP'
-        ? transferData.targetAnaquel
-        : `${transferData.targetAnaquel}-${transferData.targetPiso}`;
+    const isLevelLess =
+      transferData.targetAnaquel === 'OFI' ||
+      transferData.targetAnaquel === 'DSP-Z1' ||
+      transferData.targetAnaquel === 'DSP-Z2' ||
+      transferData.targetAnaquel === 'REC' ||
+      transferData.targetAnaquel === 'DSP';
+
+    const targetPos = isLevelLess
+      ? transferData.targetAnaquel
+      : `${transferData.targetAnaquel}-${transferData.targetPiso}`;
 
     await supabase
       .from('paquetes')
       .update({
         ubicacion_actual: transferData.targetUbicacion,
         anaquel: transferData.targetAnaquel,
-        piso: transferData.targetPiso,
+        piso: isLevelLess ? null : transferData.targetPiso,
         posicion_estante: targetPos
       })
       .in('id', idsToMove);
@@ -104,7 +110,7 @@ export const inventoryService = {
     for (const id of idsToMove) {
       const pkg = paquetesList.find(p => p.id === id);
       if (pkg) {
-        const origenStr = `${pkg.ubicacionActual} (${pkg.posicionEstante || 'REC'})`;
+        const origenStr = `${pkg.ubicacionActual} (${pkg.posicionEstante || 'OFI'})`;
         const destinoStr = `${transferData.targetUbicacion} (${targetPos})`;
 
         kardexInserts.push({

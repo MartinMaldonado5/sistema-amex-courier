@@ -82,8 +82,8 @@ export default function MobileScannerModal({
     }
   }, [activeWorkflowMode]);
 
-  // 📍 Selector Fijo de Anaqueles (2 Anaqueles × 4 Pisos)
-  const [selectedAnaquel, setSelectedAnaquel] = useState<'A1' | 'A2' | 'REC' | 'DSP'>('A1');
+  // 📍 Selector Fijo de Anaqueles y Zonas
+  const [selectedAnaquel, setSelectedAnaquel] = useState<'A1' | 'A2' | 'OFI' | 'DSP-Z1' | 'DSP-Z2'>('A1');
   const [selectedPiso, setSelectedPiso] = useState<'P1' | 'P2' | 'P3' | 'P4'>('P1');
 
   // Refs de Estado en Tiempo Real (Resuelven el Stale Closure en el bucle de cámara)
@@ -117,7 +117,7 @@ export default function MobileScannerModal({
     format: string;
     workflow: 'slotting' | 'lookup' | 'delivery' | 'relocate' | 'general';
     location: string;
-    anaquel: 'A1' | 'A2' | 'REC' | 'DSP';
+    anaquel: 'A1' | 'A2' | 'OFI' | 'DSP-Z1' | 'DSP-Z2' | 'REC' | 'DSP';
     piso: 'P1' | 'P2' | 'P3' | 'P4';
     pkg?: Paquete;
     cli?: Cliente;
@@ -170,7 +170,8 @@ export default function MobileScannerModal({
   const lastCodeTimeRef = useRef<{ code: string; timestamp: number }>({ code: '', timestamp: 0 });
   const isMountedRef = useRef(true);
 
-  const currentShelfLocation = `${selectedAnaquel}-${selectedPiso}`;
+  const isLevelLessCurrent = selectedAnaquel === 'OFI' || selectedAnaquel === 'DSP-Z1' || selectedAnaquel === 'DSP-Z2';
+  const currentShelfLocation = isLevelLessCurrent ? selectedAnaquel : `${selectedAnaquel}-${selectedPiso}`;
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -283,7 +284,8 @@ export default function MobileScannerModal({
     const activeWorkflow = workflowModeRef.current;
     const activeAnaquel = selectedAnaquelRef.current;
     const activePiso = selectedPisoRef.current;
-    const activeLocation = `${activeAnaquel}-${activePiso}`;
+    const isLevelLess = activeAnaquel === 'OFI' || activeAnaquel === 'DSP-Z1' || activeAnaquel === 'DSP-Z2';
+    const activeLocation = isLevelLess ? activeAnaquel : `${activeAnaquel}-${activePiso}`;
 
     // Buscar paquete y cliente en el sistema para enriquecer la confirmación
     const upper = cleanCode.toUpperCase();
@@ -993,7 +995,7 @@ export default function MobileScannerModal({
               <select
                 value={selectedAnaquel}
                 onChange={e => {
-                  const val = e.target.value as 'A1' | 'A2' | 'REC' | 'DSP';
+                  const val = e.target.value as 'A1' | 'A2' | 'OFI' | 'DSP-Z1' | 'DSP-Z2';
                   setSelectedAnaquel(val);
                   selectedAnaquelRef.current = val;
                 }}
@@ -1004,7 +1006,7 @@ export default function MobileScannerModal({
                   border: '1.5px solid #93c5fd',
                   background: '#ffffff',
                   fontWeight: 800,
-                  fontSize: '12.5px',
+                  fontSize: '12px',
                   color: '#1e3a8a',
                   padding: '0 8px',
                   outline: 'none'
@@ -1012,17 +1014,19 @@ export default function MobileScannerModal({
               >
                 <option value="A1">🟦 Anaquel 1 (A1)</option>
                 <option value="A2">🟩 Anaquel 2 (A2)</option>
-                <option value="REC">🟨 Mesa Recepción (REC)</option>
-                <option value="DSP">🟪 Zona Despacho (DSP)</option>
+                <option value="OFI">🏢 Oficina (OFI)</option>
+                <option value="DSP-Z1">📦 Despacho Zona 1 (DSP-Z1)</option>
+                <option value="DSP-Z2">🚚 Despacho Zona 2 (DSP-Z2)</option>
               </select>
             </div>
 
             <div>
               <label style={{ fontSize: '10.5px', fontWeight: 700, color: '#3b82f6', display: 'block', marginBottom: '2px' }}>
-                Piso (4 Niveles):
+                {isLevelLessCurrent ? 'Piso / Nivel (N/A):' : 'Piso (4 Niveles):'}
               </label>
               <select
                 value={selectedPiso}
+                disabled={isLevelLessCurrent}
                 onChange={e => {
                   const val = e.target.value as 'P1' | 'P2' | 'P3' | 'P4';
                   setSelectedPiso(val);
@@ -1033,18 +1037,25 @@ export default function MobileScannerModal({
                   height: '38px',
                   borderRadius: '8px',
                   border: '1.5px solid #93c5fd',
-                  background: '#ffffff',
+                  background: isLevelLessCurrent ? '#f1f5f9' : '#ffffff',
                   fontWeight: 800,
                   fontSize: '12.5px',
-                  color: '#1e3a8a',
+                  color: isLevelLessCurrent ? '#94a3b8' : '#1e3a8a',
                   padding: '0 8px',
-                  outline: 'none'
+                  outline: 'none',
+                  cursor: isLevelLessCurrent ? 'not-allowed' : 'pointer'
                 }}
               >
-                <option value="P1">⬇️ Piso 1 (Inferior)</option>
-                <option value="P2">↔️ Piso 2 (Medio)</option>
-                <option value="P3">↗️ Piso 3 (Medio Alto)</option>
-                <option value="P4">⬆️ Piso 4 (Superior)</option>
+                {isLevelLessCurrent ? (
+                  <option value="P1">— Sin pisos —</option>
+                ) : (
+                  <>
+                    <option value="P1">⬇️ Piso 1 (Inferior)</option>
+                    <option value="P2">↔️ Piso 2 (Medio)</option>
+                    <option value="P3">↗️ Piso 3 (Medio Alto)</option>
+                    <option value="P4">⬆️ Piso 4 (Superior)</option>
+                  </>
+                )}
               </select>
             </div>
           </div>
@@ -1482,7 +1493,9 @@ export default function MobileScannerModal({
                       <Layers className="w-3.5 h-3.5 text-green-600" /> Asignar a Anaquel y Piso:
                     </label>
                     <span style={{ fontFamily: 'JetBrains Mono', fontSize: '12px', fontWeight: 900, color: '#15803d', background: '#dcfce7', padding: '2px 8px', borderRadius: '4px' }}>
-                      {pendingConfirmation.anaquel}-{pendingConfirmation.piso}
+                      {pendingConfirmation.anaquel === 'OFI' || pendingConfirmation.anaquel === 'DSP-Z1' || pendingConfirmation.anaquel === 'DSP-Z2'
+                        ? pendingConfirmation.anaquel
+                        : `${pendingConfirmation.anaquel}-${pendingConfirmation.piso}`}
                     </span>
                   </div>
 
@@ -1490,8 +1503,9 @@ export default function MobileScannerModal({
                     <select
                       value={pendingConfirmation.anaquel}
                       onChange={e => {
-                        const val = e.target.value as 'A1' | 'A2' | 'REC' | 'DSP';
-                        setPendingConfirmation(prev => prev ? { ...prev, anaquel: val, location: `${val}-${prev.piso}` } : null);
+                        const val = e.target.value as any;
+                        const isNoFloor = val === 'OFI' || val === 'DSP-Z1' || val === 'DSP-Z2';
+                        setPendingConfirmation(prev => prev ? { ...prev, anaquel: val, location: isNoFloor ? val : `${val}-${prev.piso}` } : null);
                       }}
                       style={{
                         height: '36px',
@@ -1499,20 +1513,22 @@ export default function MobileScannerModal({
                         border: '1.5px solid #86efac',
                         background: '#ffffff',
                         fontWeight: 800,
-                        fontSize: '12px',
+                        fontSize: '11px',
                         color: '#14532d',
-                        padding: '0 6px',
+                        padding: '0 4px',
                         outline: 'none'
                       }}
                     >
                       <option value="A1">🟦 Anaquel 1 (A1)</option>
                       <option value="A2">🟩 Anaquel 2 (A2)</option>
-                      <option value="REC">🟨 Recepción (REC)</option>
-                      <option value="DSP">🟪 Despacho (DSP)</option>
+                      <option value="OFI">🏢 Oficina (OFI)</option>
+                      <option value="DSP-Z1">📦 Despacho Z1</option>
+                      <option value="DSP-Z2">🚚 Despacho Z2</option>
                     </select>
 
                     <select
                       value={pendingConfirmation.piso}
+                      disabled={pendingConfirmation.anaquel === 'OFI' || pendingConfirmation.anaquel === 'DSP-Z1' || pendingConfirmation.anaquel === 'DSP-Z2'}
                       onChange={e => {
                         const val = e.target.value as 'P1' | 'P2' | 'P3' | 'P4';
                         setPendingConfirmation(prev => prev ? { ...prev, piso: val, location: `${prev.anaquel}-${val}` } : null);
@@ -1521,7 +1537,7 @@ export default function MobileScannerModal({
                         height: '36px',
                         borderRadius: '6px',
                         border: '1.5px solid #86efac',
-                        background: '#ffffff',
+                        background: pendingConfirmation.anaquel === 'OFI' || pendingConfirmation.anaquel === 'DSP-Z1' || pendingConfirmation.anaquel === 'DSP-Z2' ? '#f1f5f9' : '#ffffff',
                         fontWeight: 800,
                         fontSize: '12px',
                         color: '#14532d',
@@ -1529,10 +1545,10 @@ export default function MobileScannerModal({
                         outline: 'none'
                       }}
                     >
-                      <option value="P1">⬇️ Piso 1</option>
-                      <option value="P2">↔️ Piso 2</option>
-                      <option value="P3">↗️ Piso 3</option>
-                      <option value="P4">⬆️ Piso 4</option>
+                      <option value="P1">Piso 1</option>
+                      <option value="P2">Piso 2</option>
+                      <option value="P3">Piso 3</option>
+                      <option value="P4">Piso 4</option>
                     </select>
                   </div>
                 </div>

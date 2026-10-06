@@ -14,7 +14,11 @@ export default function InventoryStatsCards({ paquetes }: InventoryStatsCardsPro
 
   // Métricas logísticas y de estantería para el personal de Almacén Lince
   const paquetesEnEstante = paquetes.filter(
-    p => p.posicionEstante && !p.posicionEstante.startsWith('REC') && p.posicionEstante !== 'SIN_ASIGNAR'
+    p =>
+      p.posicionEstante &&
+      !p.posicionEstante.startsWith('OFI') &&
+      !p.posicionEstante.startsWith('REC') &&
+      p.posicionEstante !== 'SIN_ASIGNAR'
   ).length;
   const paquetesSinUbicar = totalExistencias - paquetesEnEstante;
 

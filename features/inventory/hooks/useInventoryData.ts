@@ -193,8 +193,10 @@ export function useInventoryData({
       const matchesShelf =
         shelfFilter === 'ALL'
           ? true
-          : shelfFilter === 'REC'
-          ? pos.startsWith('REC') || (!p.posicionEstante && !p.anaquel)
+          : shelfFilter === 'OFI' || shelfFilter === 'REC'
+          ? pos.startsWith('OFI') || pos.startsWith('REC') || (!p.posicionEstante && !p.anaquel)
+          : shelfFilter === 'DSP'
+          ? pos.startsWith('DSP')
           : pos.startsWith(shelfFilter);
 
       const matchesFloor = floorFilter === 'ALL' ? true : pos.includes(floorFilter) || p.piso === floorFilter;
@@ -285,8 +287,9 @@ export function useInventoryData({
             { id: '6', almacenId: 'LIN', codigoEstante: 'A2', nivelPiso: 'P2', codigoPosicion: 'A2-P2', zonaTipo: 'ALMACENAJE', capacidadMaxPaquetes: 40, pesoMaxKg: 120 },
             { id: '7', almacenId: 'LIN', codigoEstante: 'A2', nivelPiso: 'P3', codigoPosicion: 'A2-P3', zonaTipo: 'ALMACENAJE', capacidadMaxPaquetes: 40, pesoMaxKg: 80 },
             { id: '8', almacenId: 'LIN', codigoEstante: 'A2', nivelPiso: 'P4', codigoPosicion: 'A2-P4', zonaTipo: 'ALMACENAJE', capacidadMaxPaquetes: 40, pesoMaxKg: 80 },
-            { id: '9', almacenId: 'LIN', codigoEstante: 'REC', nivelPiso: 'P1', codigoPosicion: 'REC', zonaTipo: 'RECEPCION', capacidadMaxPaquetes: 100, pesoMaxKg: 500 },
-            { id: '10', almacenId: 'LIN', codigoEstante: 'DSP', nivelPiso: 'P1', codigoPosicion: 'DSP', zonaTipo: 'DESPACHO', capacidadMaxPaquetes: 100, pesoMaxKg: 500 }
+            { id: '9', almacenId: 'LIN', codigoEstante: 'OFI', nivelPiso: 'N/A', codigoPosicion: 'OFI', zonaTipo: 'OFICINA', capacidadMaxPaquetes: 100, pesoMaxKg: 500, descripcion: 'Oficina (OFI)' },
+            { id: '10', almacenId: 'LIN', codigoEstante: 'DSP-Z1', nivelPiso: 'N/A', codigoPosicion: 'DSP-Z1', zonaTipo: 'DESPACHO', capacidadMaxPaquetes: 100, pesoMaxKg: 500, descripcion: 'Despacho Zona 1' },
+            { id: '11', almacenId: 'LIN', codigoEstante: 'DSP-Z2', nivelPiso: 'N/A', codigoPosicion: 'DSP-Z2', zonaTipo: 'DESPACHO', capacidadMaxPaquetes: 100, pesoMaxKg: 500, descripcion: 'Despacho Zona 2' }
           ];
 
     effectivePosiciones.forEach(pos => {

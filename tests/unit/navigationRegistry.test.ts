@@ -25,13 +25,13 @@ describe('Módulo de Navegación y Rutas — Suite de Pruebas', () => {
       expect(manifiestosTibMod?.path).toBe('/manifiestos-tib');
     });
 
-    it('el Módulo 6 (Escáner de Códigos) debe contener los 4 submódulos operativos', () => {
+    it('el Módulo 6 (Escáner de Códigos) debe contener los 5 submódulos operativos', () => {
       const scannerMod = SYSTEM_MODULES.find(m => m.id === 'scanner');
       expect(scannerMod).toBeDefined();
-      expect(scannerMod?.submodules?.length).toBe(4);
+      expect(scannerMod?.submodules?.length).toBe(5);
 
       const subIds = scannerMod?.submodules?.map(s => s.id);
-      expect(subIds).toEqual(['slotting', 'lookup', 'delivery', 'relocate']);
+      expect(subIds).toEqual(['slotting', 'lookup', 'delivery', 'relocate', 'masivo']);
     });
 
     it('debe recuperar módulos y submódulos mediante las funciones auxiliares de búsqueda', () => {
@@ -42,6 +42,10 @@ describe('Módulo de Navegación y Rutas — Suite de Pruebas', () => {
       const relocateSub = getScannerSubmoduleById('relocate');
       expect(relocateSub?.label).toContain('6.4');
       expect(relocateSub?.path).toBe('/escaner/reasignar');
+
+      const masivoSub = getScannerSubmoduleById('masivo');
+      expect(masivoSub?.label).toContain('6.5');
+      expect(masivoSub?.path).toBe('/escaner/masivo');
 
       const slottingSub = getScannerSubmoduleByTabId('scanner-slotting');
       expect(slottingSub?.id).toBe('slotting');
@@ -55,6 +59,7 @@ describe('Módulo de Navegación y Rutas — Suite de Pruebas', () => {
       expect(tabToPath('scanner-lookup')).toBe('/escaner/localizar');
       expect(tabToPath('scanner-delivery')).toBe('/escaner/despachar');
       expect(tabToPath('scanner-relocate')).toBe('/escaner/reasignar');
+      expect(tabToPath('scanner-masivo')).toBe('/escaner/masivo');
       expect(tabToPath('mobile-scanner')).toBe('/escaner');
       expect(tabToPath('despacho-rutas')).toBe('/despacho-rutas');
     });
@@ -69,6 +74,7 @@ describe('Módulo de Navegación y Rutas — Suite de Pruebas', () => {
       expect(pathToTab('/escaner/localizar')).toEqual({ tab: 'scanner-lookup' });
       expect(pathToTab('/escaner/despachar')).toEqual({ tab: 'scanner-delivery' });
       expect(pathToTab('/escaner/reasignar')).toEqual({ tab: 'scanner-relocate' });
+      expect(pathToTab('/escaner/masivo')).toEqual({ tab: 'scanner-masivo' });
       expect(pathToTab('/escaner')).toEqual({ tab: 'mobile-scanner' });
       expect(pathToTab('/despacho-rutas')).toEqual({ tab: 'despacho-rutas' });
       expect(pathToTab('/rutas')).toEqual({ tab: 'despacho-rutas' });
@@ -82,12 +88,15 @@ describe('Módulo de Navegación y Rutas — Suite de Pruebas', () => {
 
     it('pathToTab debe ser tolerante a mayúsculas y barras diagonales finales', () => {
       expect(pathToTab('/ESCANER/REASIGNAR/')).toEqual({ tab: 'scanner-relocate' });
+      expect(pathToTab('/ESCANER/MASIVO/')).toEqual({ tab: 'scanner-masivo' });
       expect(pathToTab('/COBROS/')).toEqual({ tab: 'fico-cobros' });
     });
 
     it('migrateLegacyHash debe traducir hashes antiguos hacia rutas limpias modernas', () => {
       expect(migrateLegacyHash('#relocate')).toBe('/escaner/reasignar');
       expect(migrateLegacyHash('#scanner-relocate')).toBe('/escaner/reasignar');
+      expect(migrateLegacyHash('#masivo')).toBe('/escaner/masivo');
+      expect(migrateLegacyHash('#scanner-masivo')).toBe('/escaner/masivo');
       expect(migrateLegacyHash('#slotting')).toBe('/escaner/asignar');
       expect(migrateLegacyHash('#cobros')).toBe('/cobros');
       expect(migrateLegacyHash('#d/EXCEL999')).toBe('/amex-excel/d/EXCEL999');

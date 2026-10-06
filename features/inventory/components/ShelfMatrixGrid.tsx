@@ -226,7 +226,7 @@ export default function ShelfMatrixGrid({
                 (p.posicionEstante && p.posicionEstante.startsWith(shelfCode))
             ).length;
 
-            const isSpecialZone = shelfCode === 'REC' || shelfCode === 'DSP';
+            const isSpecialZone = shelfCode === 'OFI' || shelfCode === 'REC' || shelfCode.startsWith('DSP');
             const borderColor =
               shelfCode === 'A1'
                 ? '#3b82f6'
@@ -234,9 +234,11 @@ export default function ShelfMatrixGrid({
                 ? '#10b981'
                 : shelfCode === 'A3'
                 ? '#8b5cf6'
-                : isSpecialZone
-                ? '#f59e0b'
-                : '#0284c7';
+                : shelfCode === 'OFI' || shelfCode === 'REC'
+                ? '#0284c7'
+                : shelfCode.startsWith('DSP')
+                ? '#7c3aed'
+                : '#f59e0b';
 
             return (
               <div
@@ -280,14 +282,18 @@ export default function ShelfMatrixGrid({
                     </span>
                     <div>
                       <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#0f172a' }}>
-                        {isSpecialZone
-                          ? shelfCode === 'REC'
-                            ? 'Mesa de Recepción & Ingreso'
-                            : 'Zona de Despacho & Salida'
+                        {shelfCode === 'OFI' || shelfCode === 'REC'
+                          ? 'Oficina (OFI)'
+                          : shelfCode === 'DSP-Z1'
+                          ? 'Despacho Zona 1 (DSP-Z1)'
+                          : shelfCode === 'DSP-Z2'
+                          ? 'Despacho Zona 2 (DSP-Z2)'
+                          : isSpecialZone
+                          ? 'Zona de Despacho'
                           : `Anaquel ${shelfCode}`}
                       </span>
                       <div style={{ fontSize: '11px', color: '#64748b' }}>
-                        {positions.length} niveles configurados
+                        {isSpecialZone ? 'Zona directa sin niveles' : `${positions.length} niveles configurados`}
                       </div>
                     </div>
                   </div>
@@ -334,16 +340,18 @@ export default function ShelfMatrixGrid({
                         p.posicionEstante === posCode ||
                         (p.anaquel === shelfCode && p.piso === posItem.nivelPiso)
                     );
-                    const floorLabel =
-                      posItem.nivelPiso === 'P4'
-                        ? 'Piso 4 (Superior)'
-                        : posItem.nivelPiso === 'P3'
-                        ? 'Piso 3 (Medio Alto)'
-                        : posItem.nivelPiso === 'P2'
-                        ? 'Piso 2 (Medio)'
-                        : posItem.nivelPiso === 'P1'
-                        ? 'Piso 1 (Inferior)'
-                        : `Nivel ${posItem.nivelPiso}`;
+                    const isNoFloor = posItem.nivelPiso === 'N/A' || !posItem.nivelPiso || posItem.codigoPosicion === 'OFI' || posItem.codigoPosicion.startsWith('DSP');
+                    const floorLabel = isNoFloor
+                      ? posItem.descripcion || posItem.codigoPosicion
+                      : posItem.nivelPiso === 'P4'
+                      ? 'Piso 4 (Superior)'
+                      : posItem.nivelPiso === 'P3'
+                      ? 'Piso 3 (Medio Alto)'
+                      : posItem.nivelPiso === 'P2'
+                      ? 'Piso 2 (Medio)'
+                      : posItem.nivelPiso === 'P1'
+                      ? 'Piso 1 (Inferior)'
+                      : `Nivel ${posItem.nivelPiso}`;
 
                     return (
                       <div

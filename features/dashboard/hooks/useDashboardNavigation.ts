@@ -16,6 +16,7 @@ export const VALID_DASHBOARD_TABS = [
   'scanner-lookup',
   'scanner-delivery',
   'scanner-relocate',
+  'scanner-masivo',
   'dni-matrix',
   'rotulos-a4',
   'boletas-shalom',

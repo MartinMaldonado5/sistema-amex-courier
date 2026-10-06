@@ -14,9 +14,12 @@ import {
   Check,
   Download,
   Database,
-  ArrowRight
+  ArrowRight,
+  History,
+  Sparkles
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import ManifiestosTibHistorial from './ManifiestosTibHistorial';
 
 interface HeaderData {
   fecha_vuelo: string;
@@ -55,6 +58,7 @@ interface ManifestRow {
 }
 
 export default function ManifiestosTibTab({ onRefreshData }: { onRefreshData?: () => Promise<void> }) {
+  const [activeTab, setActiveTab] = useState<'extractor' | 'historial'>('extractor');
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState<string>('');
@@ -233,7 +237,7 @@ export default function ManifiestosTibTab({ onRefreshData }: { onRefreshData?: (
           </div>
         </div>
 
-        {cuadre && (
+        {activeTab === 'extractor' && cuadre && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button
               type="button"
@@ -280,28 +284,118 @@ export default function ManifiestosTibTab({ onRefreshData }: { onRefreshData?: (
         )}
       </div>
 
+      {/* Selector de Submódulos */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          background: '#f1f5f9',
+          padding: '6px',
+          borderRadius: '12px',
+          width: 'fit-content',
+          border: '1px solid #e2e8f0',
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setActiveTab('extractor')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 18px',
+            borderRadius: '8px',
+            border: 'none',
+            fontWeight: 800,
+            fontSize: '13px',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            background: activeTab === 'extractor' ? '#ffffff' : 'transparent',
+            color: activeTab === 'extractor' ? '#0f172a' : '#64748b',
+            boxShadow: activeTab === 'extractor' ? '0 2px 4px rgba(0,0,0,0.06)' : 'none',
+          }}
+        >
+          <Sparkles className="w-4 h-4 text-blue-600" />
+          Digitalizar Manifiesto
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('historial')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 18px',
+            borderRadius: '8px',
+            border: 'none',
+            fontWeight: 800,
+            fontSize: '13px',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            background: activeTab === 'historial' ? '#ffffff' : 'transparent',
+            color: activeTab === 'historial' ? '#0f172a' : '#64748b',
+            boxShadow: activeTab === 'historial' ? '0 2px 4px rgba(0,0,0,0.06)' : 'none',
+          }}
+        >
+          <History className="w-4 h-4 text-violet-600" />
+          Historial & Auditoría
+        </button>
+      </div>
+
       {saveSuccessMsg && (
         <div
           style={{
             background: '#ecfdf5',
             border: '1px solid #6ee7b7',
-            padding: '14px 18px',
+            padding: '14px 20px',
             borderRadius: '12px',
             color: '#065f46',
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
             fontWeight: 700,
-            fontSize: '14px'
+            fontSize: '14px',
+            boxShadow: '0 2px 6px rgba(16, 185, 129, 0.1)',
           }}
         >
-          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-          <span>{saveSuccessMsg}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+            <span>{saveSuccessMsg}</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('historial')}
+            style={{
+              background: '#047857',
+              color: '#ffffff',
+              border: 'none',
+              padding: '6px 14px',
+              borderRadius: '8px',
+              fontWeight: 800,
+              fontSize: '12.5px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 4px rgba(4, 120, 87, 0.25)',
+            }}
+          >
+            Ver en Historial <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
       )}
 
-      {/* Zona de Carga de Documento */}
-      {!cuadre && (
+      {activeTab === 'historial' ? (
+        <ManifiestosTibHistorial onRefreshParent={onRefreshData} />
+      ) : (
+        <>
+          {/* Zona de Carga de Documento */}
+          {!cuadre && (
         <div
           style={{
             background: '#ffffff',
@@ -744,6 +838,8 @@ export default function ManifiestosTibTab({ onRefreshData }: { onRefreshData?: (
           </div>
         </>
       )}
-    </div>
+    </>
+  )}
+</div>
   );
 }

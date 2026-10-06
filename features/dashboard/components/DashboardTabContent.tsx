@@ -248,7 +248,8 @@ export default function DashboardTabContent({
         activeTab === 'scanner-slotting' ||
         activeTab === 'scanner-lookup' ||
         activeTab === 'scanner-delivery' ||
-        activeTab === 'scanner-relocate') && (
+        activeTab === 'scanner-relocate' ||
+        activeTab === 'scanner-masivo') && (
         <ScannerTab
           activeSubmodule={
             activeTab === 'scanner-lookup'
@@ -257,10 +258,12 @@ export default function DashboardTabContent({
                 ? 'delivery'
                 : activeTab === 'scanner-relocate'
                   ? 'relocate'
-                  : 'slotting'
+                  : activeTab === 'scanner-masivo'
+                    ? 'masivo'
+                    : 'slotting'
           }
-          onChangeSubmodule={(sub: 'slotting' | 'lookup' | 'delivery' | 'relocate') => {
-            onNavigateTab(`scanner-${sub}`);
+          onChangeSubmodule={(sub: 'slotting' | 'lookup' | 'delivery' | 'relocate' | 'masivo') => {
+            onNavigateTab(`scanner-${sub}` as any);
           }}
           scannedLogs={scannedLogs}
           paquetes={paquetes}

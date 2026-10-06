@@ -11,6 +11,7 @@ export const TAB_TO_PATH: Record<string, string> = {
   'scanner-lookup': '/escaner/localizar',
   'scanner-delivery': '/escaner/despachar',
   'scanner-relocate': '/escaner/reasignar',
+  'scanner-masivo': '/escaner/masivo',
   'dni-matrix': '/matriz-dni',
   'rotulos-a4': '/rotulos',
   'boletas-shalom': '/boletas-shalom',
@@ -44,6 +45,8 @@ export const PATH_TO_TAB: Record<string, string> = {
   '/escaner/reasignar': 'scanner-relocate',
   '/escaner/relocate': 'scanner-relocate',
   '/escaner/reubicar': 'scanner-relocate',
+  '/escaner/masivo': 'scanner-masivo',
+  '/escaner/excel': 'scanner-masivo',
   '/matriz-dni': 'dni-matrix',
   '/rotulos': 'rotulos-a4',
   '/boletas-shalom': 'boletas-shalom',
@@ -85,6 +88,7 @@ export const PATH_TO_TAB: Record<string, string> = {
   '/scanner-lookup': 'scanner-lookup',
   '/scanner-delivery': 'scanner-delivery',
   '/scanner-relocate': 'scanner-relocate',
+  '/scanner-masivo': 'scanner-masivo',
   '/dni-matrix': 'dni-matrix',
   '/rotulos-a4': 'rotulos-a4'
 };
@@ -175,6 +179,8 @@ export function migrateLegacyHash(hash: string): string | null {
     'delivery': '/escaner/despachar',
     'scanner-relocate': '/escaner/reasignar',
     'relocate': '/escaner/reasignar',
+    'scanner-masivo': '/escaner/masivo',
+    'masivo': '/escaner/masivo',
     'dni-matrix': '/matriz-dni',
     'dni': '/matriz-dni',
     'rotulos-a4': '/rotulos',

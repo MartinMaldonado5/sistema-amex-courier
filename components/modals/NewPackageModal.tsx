@@ -98,8 +98,9 @@ export default function NewPackageModal({
     { code: 'A2-P2', label: 'Anaquel 2 · Piso 2 (Medio)', ana: 'A2', pis: 'P2' },
     { code: 'A2-P3', label: 'Anaquel 2 · Piso 3 (Ligero)', ana: 'A2', pis: 'P3' },
     { code: 'A2-P4', label: 'Anaquel 2 · Piso 4 (Superior)', ana: 'A2', pis: 'P4' },
-    { code: 'REC', label: 'Mesa de Recepción Rápida', ana: 'REC', pis: 'P1' },
-    { code: 'DSP', label: 'Zona Despacho Inmediato', ana: 'DSP', pis: 'P1' }
+    { code: 'OFI', label: 'Oficina (OFI)', ana: 'OFI', pis: '' },
+    { code: 'DSP-Z1', label: 'Despacho Zona 1 (DSP-Z1)', ana: 'DSP-Z1', pis: '' },
+    { code: 'DSP-Z2', label: 'Despacho Zona 2 (DSP-Z2)', ana: 'DSP-Z2', pis: '' }
   ];
 
   const currentEstante = form.posicionEstante || (form.anaquel && form.piso ? `${form.anaquel}-${form.piso}` : 'A1-P1');

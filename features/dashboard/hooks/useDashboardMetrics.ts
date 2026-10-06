@@ -324,20 +324,26 @@ export function useDashboardMetrics({
     const a2Cap = 160; // 4 pisos x 40
     const a2Pct = Math.min(100, Math.round((a2Count / a2Cap) * 100));
 
-    // Mesa Recepción (REC)
-    const recCount = paquetesLince.filter(
+    // Oficina (OFI)
+    const ofiCount = paquetesLince.filter(
       p =>
+        (p.posicionEstante || '').startsWith('OFI') ||
         (p.posicionEstante || '').startsWith('REC') ||
-        (p.posicionEstante || '').includes('RECEPCION') ||
-        (p.posicionEstante || '').includes('ALMACEN LINCE')
+        (p.posicionEstante || '').includes('OFICINA') ||
+        (p.posicionEstante || '').includes('RECEPCION')
     ).length;
-    const recCap = 100;
-    const recPct = Math.min(100, Math.round((recCount / recCap) * 100));
+    const ofiCap = 100;
+    const ofiPct = Math.min(100, Math.round((ofiCount / ofiCap) * 100));
 
-    // Despacho (DSP)
-    const dspCount = paquetesLince.filter(p => (p.posicionEstante || '').startsWith('DSP')).length;
-    const dspCap = 100;
-    const dspPct = Math.min(100, Math.round((dspCount / dspCap) * 100));
+    // Despacho Zona 1 (DSP-Z1)
+    const dspZ1Count = paquetesLince.filter(p => (p.posicionEstante || '').startsWith('DSP-Z1')).length;
+    const dspZ1Cap = 100;
+    const dspZ1Pct = Math.min(100, Math.round((dspZ1Count / dspZ1Cap) * 100));
+
+    // Despacho Zona 2 (DSP-Z2)
+    const dspZ2Count = paquetesLince.filter(p => (p.posicionEstante || '').startsWith('DSP-Z2')).length;
+    const dspZ2Cap = 100;
+    const dspZ2Pct = Math.min(100, Math.round((dspZ2Count / dspZ2Cap) * 100));
 
     return [
       {
@@ -361,24 +367,34 @@ export function useDashboardMetrics({
         status: a2Pct >= 90 ? 'warning' : a2Pct >= 60 ? 'optimal' : 'normal'
       },
       {
-        code: 'REC',
-        name: 'Mesa Central de Recepción (REC)',
-        zone: 'Desconsolidación y Entrada',
-        count: recCount,
-        capacity: recCap,
-        percentage: recPct,
-        color: '#d97706',
-        status: recPct >= 70 ? 'warning' : 'normal'
+        code: 'OFI',
+        name: 'Oficina Central (OFI)',
+        zone: 'Gestión y Custodia Administrativa',
+        count: ofiCount,
+        capacity: ofiCap,
+        percentage: ofiPct,
+        color: '#0284c7',
+        status: ofiPct >= 70 ? 'warning' : 'normal'
       },
       {
-        code: 'DSP',
-        name: 'Bahía de Despacho & Salida (DSP)',
-        zone: 'Zona de Carga y Rutas',
-        count: dspCount,
-        capacity: dspCap,
-        percentage: dspPct,
+        code: 'DSP-Z1',
+        name: 'Despacho Zona 1 (DSP-Z1)',
+        zone: 'Salida y Agencias Lima',
+        count: dspZ1Count,
+        capacity: dspZ1Cap,
+        percentage: dspZ1Pct,
         color: '#059669',
-        status: dspPct >= 70 ? 'warning' : 'normal'
+        status: dspZ1Pct >= 70 ? 'warning' : 'normal'
+      },
+      {
+        code: 'DSP-Z2',
+        name: 'Despacho Zona 2 (DSP-Z2)',
+        zone: 'Salida y Agencias Provincia',
+        count: dspZ2Count,
+        capacity: dspZ2Cap,
+        percentage: dspZ2Pct,
+        color: '#0d9488',
+        status: dspZ2Pct >= 70 ? 'warning' : 'normal'
       }
     ];
   }, [paquetesLince]);
