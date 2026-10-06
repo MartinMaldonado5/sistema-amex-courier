@@ -34,6 +34,7 @@ export default function ExcelExportDropdown({
   const totalCount = paquetes.length;
   const filteredCount = filteredPaquetes.length;
   const selectedCount = selectedIds.length;
+  const activasCount = paquetes.filter(p => p.estadoAmex !== 'entregado' && p.ubicacionActual !== 'Entregado').length;
   const recibidoCount = paquetes.filter(p => p.estadoAmex === 'recibido').length;
   const enAlmacenCount = paquetes.filter(p => p.estadoAmex === 'en_almacen').length;
   const listoRecojoCount = paquetes.filter(p => p.estadoAmex === 'listo_recojo').length;
@@ -64,6 +65,12 @@ export default function ExcelExportDropdown({
         break;
       case 'all':
         exportPaquetesToExcel(paquetes, 'Inventario_Completo_AMEX');
+        break;
+      case 'activas':
+        exportPaquetesToExcel(
+          paquetes.filter(p => p.estadoAmex !== 'entregado' && p.ubicacionActual !== 'Entregado'),
+          'Inventario_AMEX_Solo_Existencias_Activas'
+        );
         break;
       case 'recibido':
         exportPaquetesToExcel(
@@ -196,6 +203,21 @@ export default function ExcelExportDropdown({
               <span style={{ fontWeight: 700, color: '#1e293b', fontSize: '12px' }}>Todo el Inventario</span>
             </div>
             <span style={badgeStyle('#f1f5f9', '#475569')}>{totalCount}</span>
+          </button>
+
+          {/* Existencias Activas (Sin Entregados) */}
+          <button
+            type="button"
+            onClick={() => handleExport('activas')}
+            style={dropdownItemStyle}
+            onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Package className="w-4 h-4 text-blue-600" />
+              <span style={{ fontWeight: 700, color: '#1e293b', fontSize: '12px' }}>Solo Existencias Activas</span>
+            </div>
+            <span style={badgeStyle('#eff6ff', '#1d4ed8')}>{activasCount}</span>
           </button>
 
           {/* 3. Solo Seleccionados */}

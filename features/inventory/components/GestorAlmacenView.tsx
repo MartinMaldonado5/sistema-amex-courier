@@ -133,8 +133,10 @@ export default function GestorAlmacenView({
                 posicionesList.map(pos => {
                   const countInPos = paquetes.filter(
                     p =>
-                      p.posicionEstante === pos.codigoPosicion ||
-                      (p.anaquel === pos.codigoEstante && p.piso === pos.nivelPiso)
+                      p.estadoAmex !== 'entregado' &&
+                      p.ubicacionActual !== 'Entregado' &&
+                      (p.posicionEstante === pos.codigoPosicion ||
+                      (p.anaquel === pos.codigoEstante && p.piso === pos.nivelPiso))
                   ).length;
 
                   return (

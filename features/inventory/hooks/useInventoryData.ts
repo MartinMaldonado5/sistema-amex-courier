@@ -202,7 +202,12 @@ export function useInventoryData({
       const matchesFloor = floorFilter === 'ALL' ? true : pos.includes(floorFilter) || p.piso === floorFilter;
       const matchesType = packageTypeFilter === 'ALL' || p.tipoEmpaque === packageTypeFilter;
       const matchesStatus = statusFilter === 'ALL' || (p.estadoTib || p.estadoEntrega) === statusFilter;
-      const matchesStatusAmex = statusAmexFilter === 'ALL' || p.estadoAmex === statusAmexFilter;
+      const matchesStatusAmex =
+        statusAmexFilter === 'ALL'
+          ? true
+          : statusAmexFilter === 'ACTIVAS'
+          ? p.estadoAmex !== 'entregado' && p.ubicacionActual !== 'Entregado'
+          : p.estadoAmex === statusAmexFilter;
 
       return (
         matchesSearch &&
@@ -238,8 +243,13 @@ export function useInventoryData({
       else if (st === 'entregado') entregado++;
     });
 
+    const activas = paquetes.filter(
+      p => p.estadoAmex !== 'entregado' && p.ubicacionActual !== 'Entregado'
+    ).length;
+
     return {
       total: paquetes.length,
+      activas,
       recibido,
       en_almacen,
       listo_recojo,

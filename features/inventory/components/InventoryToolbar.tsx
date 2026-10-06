@@ -25,6 +25,7 @@ export interface InventoryToolbarProps {
   filteredPaquetes: Paquete[];
   amexStatusCounts?: {
     total: number;
+    activas?: number;
     recibido: number;
     en_almacen: number;
     listo_recojo: number;
@@ -600,12 +601,13 @@ export default function InventoryToolbar({
                     color: '#0369a1'
                   }}
                 >
-                  <option value="ALL">Todos los Estados AMEX</option>
-                  <option value="recibido">📥 Recibido</option>
-                  <option value="en_almacen">📦 En Almacén</option>
-                  <option value="listo_recojo">🏪 Listo Recojo</option>
-                  <option value="en_ruta">🚚 En Ruta</option>
-                  <option value="entregado">✅ Entregado</option>
+                  <option value="ALL">Todos los Estados AMEX ({amexStatusCounts?.total ?? paquetes.length})</option>
+                  <option value="ACTIVAS">📦 Solo Existencias Activas ({amexStatusCounts?.activas ?? paquetes.filter(p => p.estadoAmex !== 'entregado').length})</option>
+                  <option value="en_almacen">📦 En Almacén ({amexStatusCounts?.en_almacen ?? 0})</option>
+                  <option value="recibido">📥 Recibido ({amexStatusCounts?.recibido ?? 0})</option>
+                  <option value="listo_recojo">🏪 Listo Recojo ({amexStatusCounts?.listo_recojo ?? 0})</option>
+                  <option value="en_ruta">🚚 En Ruta ({amexStatusCounts?.en_ruta ?? 0})</option>
+                  <option value="entregado">✅ Entregado ({amexStatusCounts?.entregado ?? 0})</option>
                 </select>
               </div>
             )}

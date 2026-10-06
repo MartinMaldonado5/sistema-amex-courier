@@ -246,8 +246,12 @@ export default function InventoryTab({
         onNewPackage={onNewPackage}
       />
 
-      {/* Tarjetas de estadísticas globales WMS */}
-      <InventoryStatsCards paquetes={paquetes} />
+      {/* Tarjetas de estadísticas globales WMS y Monitor en Vivo */}
+      <InventoryStatsCards
+        paquetes={paquetes}
+        statusAmexFilter={statusAmexFilter}
+        setStatusAmexFilter={setStatusAmexFilter}
+      />
 
       {/* VISTA 1: Existencias y Almacén */}
       {activeSubTab === 'existencias' && (

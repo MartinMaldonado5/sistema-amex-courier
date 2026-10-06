@@ -222,8 +222,10 @@ export default function ShelfMatrixGrid({
           .map(([shelfCode, positions]) => {
             const totalInShelf = paquetes.filter(
               p =>
-                p.anaquel === shelfCode ||
-                (p.posicionEstante && p.posicionEstante.startsWith(shelfCode))
+                p.estadoAmex !== 'entregado' &&
+                p.ubicacionActual !== 'Entregado' &&
+                (p.anaquel === shelfCode ||
+                (p.posicionEstante && p.posicionEstante.startsWith(shelfCode)))
             ).length;
 
             const isSpecialZone = shelfCode === 'OFI' || shelfCode === 'REC' || shelfCode.startsWith('DSP');
@@ -337,8 +339,10 @@ export default function ShelfMatrixGrid({
                     const posCode = posItem.codigoPosicion;
                     const pkgsInFloor = paquetes.filter(
                       p =>
-                        p.posicionEstante === posCode ||
-                        (p.anaquel === shelfCode && p.piso === posItem.nivelPiso)
+                        p.estadoAmex !== 'entregado' &&
+                        p.ubicacionActual !== 'Entregado' &&
+                        (p.posicionEstante === posCode ||
+                        (p.anaquel === shelfCode && p.piso === posItem.nivelPiso))
                     );
                     const isNoFloor = posItem.nivelPiso === 'N/A' || !posItem.nivelPiso || posItem.codigoPosicion === 'OFI' || posItem.codigoPosicion.startsWith('DSP');
                     const floorLabel = isNoFloor
