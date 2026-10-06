@@ -20,7 +20,8 @@ export const TAB_TO_PATH: Record<string, string> = {
   'completar-inventario': '/completar-inventario',
   'auditoria': '/auditoria',
   'admin-usuarios': '/admin-usuarios',
-  'despacho-rutas': '/despacho-rutas'
+  'despacho-rutas': '/despacho-rutas',
+  'manifiestos-tib': '/manifiestos-tib'
 };
 
 export const PATH_TO_TAB: Record<string, string> = {
@@ -58,6 +59,9 @@ export const PATH_TO_TAB: Record<string, string> = {
   '/completar-inventario': 'completar-inventario',
   '/admin-usuarios': 'admin-usuarios',
   '/despacho-rutas': 'despacho-rutas',
+  '/manifiestos-tib': 'manifiestos-tib',
+  '/manifiesto': 'manifiestos-tib',
+  '/manifiestos': 'manifiestos-tib',
   '/rutas': 'despacho-rutas',
   '/completar': 'completar-inventario',
   '/inventario-tib': 'completar-inventario',

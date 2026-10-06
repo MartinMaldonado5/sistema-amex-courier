@@ -264,6 +264,18 @@ export const SYSTEM_MODULES: ModuleMetadata[] = [
     category: 'operaciones',
     permissionKey: 'despacho_rutas',
     permissionAliases: ['despacho-rutas']
+  },
+  {
+    id: 'manifiestos-tib',
+    tabId: 'manifiestos-tib',
+    number: 17,
+    label: '17. Manifiestos TIB',
+    shortLabel: 'Manifiestos TIB',
+    path: '/manifiestos-tib',
+    icon: 'fa-solid fa-file-invoice',
+    category: 'documentacion',
+    permissionKey: 'manifiestos_tib',
+    permissionAliases: ['manifiestos-tib', 'manifiestos']
   }
 ];
 
