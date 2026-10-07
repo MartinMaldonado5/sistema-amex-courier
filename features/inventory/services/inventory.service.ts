@@ -256,16 +256,35 @@ export const inventoryService = {
     };
   },
 
-  // Cambio de estado masivo en lote (soporta Estado TIB y/o Estado AMEX)
+  // Cambio de estado masivo en lote (solo afecta a la columna de Estado AMEX)
   async batchStatusChange(
     selectedIds: string[],
-    targetStatus: TipoEstadoEntrega,
-    paquetesList: Paquete[],
-    targetStatusAmex?: TipoEstadoAmex
+    arg2: Paquete[] | TipoEstadoEntrega,
+    arg3: TipoEstadoAmex | Paquete[],
+    arg4?: TipoEstadoAmex | TipoEstadoEntrega
   ): Promise<Paquete[]> {
-    const updatePayload: Record<string, any> = { estado_tib: targetStatus };
-    if (targetStatusAmex) {
-      updatePayload.estado_amex = targetStatusAmex;
+    let paquetesList: Paquete[] = [];
+    let targetStatusAmex: TipoEstadoAmex = 'recibido';
+    let targetStatusTib: TipoEstadoEntrega | undefined = undefined;
+
+    if (Array.isArray(arg2)) {
+      // Firma: batchStatusChange(selectedIds, paquetesList, targetStatusAmex, targetStatusTib?)
+      paquetesList = arg2;
+      targetStatusAmex = (arg3 as TipoEstadoAmex) || 'recibido';
+      targetStatusTib = arg4 as TipoEstadoEntrega | undefined;
+    } else {
+      // Firma previa: batchStatusChange(selectedIds, targetStatusTib, paquetesList, targetStatusAmex?)
+      targetStatusTib = arg2 as TipoEstadoEntrega | undefined;
+      paquetesList = (arg3 as Paquete[]) || [];
+      targetStatusAmex = (arg4 as TipoEstadoAmex) || 'recibido';
+    }
+
+    // Por requerimiento: el cambio masivo solo afecta a la columna estado_amex
+    const updatePayload: Record<string, any> = {
+      estado_amex: targetStatusAmex
+    };
+    if (targetStatusTib) {
+      updatePayload.estado_tib = targetStatusTib;
     }
 
     await supabase.from('paquetes').update(updatePayload).in('id', selectedIds);
@@ -278,9 +297,8 @@ export const inventoryService = {
       if (pkg) {
         const updated: Paquete = {
           ...pkg,
-          estadoTib: targetStatus,
-          estadoEntrega: targetStatus,
-          ...(targetStatusAmex ? { estadoAmex: targetStatusAmex } : {})
+          estadoAmex: targetStatusAmex,
+          ...(targetStatusTib ? { estadoTib: targetStatusTib, estadoEntrega: targetStatusTib } : {})
         };
         updatedList.push(updated);
 
@@ -289,9 +307,9 @@ export const inventoryService = {
           codigo_paquete: pkg.numeroReciboBodega,
           consignatario: pkg.nombreConsignatario || 'Cliente AMEX',
           origen_descripcion: `AmexLince (${pkg.posicionEstante || 'REC'})`,
-          destino_descripcion: `Estado en lote: TIB=${targetStatus}${targetStatusAmex ? ` | AMEX=${targetStatusAmex}` : ''}`,
-          tipo_movimiento: targetStatus === 'Entregado' || targetStatusAmex === 'entregado' ? 'ENTREGA' : 'ESTADO_CAMBIO',
-          motivo: 'Cambio masivo de estado desde Almacén Lince',
+          destino_descripcion: `Estado AMEX masivo: ${targetStatusAmex}`,
+          tipo_movimiento: targetStatusAmex === 'entregado' ? 'ENTREGA' : 'ESTADO_CAMBIO',
+          motivo: 'Cambio masivo de estado AMEX desde Almacén Lince',
           usuario_operador: 'Operador Logístico AMEX'
         });
       }

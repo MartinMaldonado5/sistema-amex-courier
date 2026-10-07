@@ -465,13 +465,11 @@ export function useInventoryData({
   // Aplicar cambio de estado masivo directo (usado por modal de WRs)
   const handleBulkStatusChangeDirect = async (
     matchedIds: string[],
-    targetStatusAmex: TipoEstadoAmex,
-    targetStatusTib: TipoEstadoEntrega
+    targetStatusAmex: TipoEstadoAmex
   ) => {
     if (matchedIds.length === 0) return;
     const updatedList = await inventoryService.batchStatusChange(
       matchedIds,
-      targetStatusTib,
       paquetes,
       targetStatusAmex
     );
@@ -480,13 +478,12 @@ export function useInventoryData({
     }
   };
 
-  // Cambio de estado masivo en lote
+  // Cambio de estado masivo en lote (por selección en tabla)
   const handleBatchStatusChange = async () => {
     if (selectedIds.length === 0) return;
     try {
       const updatedList = await inventoryService.batchStatusChange(
         selectedIds,
-        batchTargetStatus,
         paquetes,
         batchTargetStatusAmex
       );

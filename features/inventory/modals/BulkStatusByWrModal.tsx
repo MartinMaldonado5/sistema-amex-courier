@@ -21,7 +21,7 @@ export interface BulkStatusByWrModalProps {
   onApply: (
     matchedIds: string[],
     targetStatusAmex: TipoEstadoAmex,
-    targetStatusTib: TipoEstadoEntrega
+    targetStatusTib?: TipoEstadoEntrega
   ) => Promise<void> | void;
 }
 
@@ -33,7 +33,6 @@ export default function BulkStatusByWrModal({
 }: BulkStatusByWrModalProps) {
   const [rawText, setRawText] = useState('');
   const [targetStatusAmex, setTargetStatusAmex] = useState<TipoEstadoAmex>('entregado');
-  const [targetStatusTib, setTargetStatusTib] = useState<TipoEstadoEntrega>('Entregado');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMissingDetails, setShowMissingDetails] = useState(false);
 
@@ -110,7 +109,7 @@ export default function BulkStatusByWrModal({
     try {
       setIsSubmitting(true);
       const matchedIds = matchedPackages.map(p => p.id);
-      await onApply(matchedIds, targetStatusAmex, targetStatusTib);
+      await onApply(matchedIds, targetStatusAmex);
       setRawText('');
       onClose();
     } catch (err) {
@@ -332,64 +331,30 @@ export default function BulkStatusByWrModal({
             </div>
           )}
 
-          {/* Selectores de Nuevo Estado */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-              gap: '12px'
-            }}
-          >
-            {/* Estado AMEX */}
-            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 800, color: '#0369a1' }}>
-                ⭐ Nuevo Estado AMEX (Operativo)
-              </label>
-              <select
-                value={targetStatusAmex}
-                onChange={e => {
-                  const val = e.target.value as TipoEstadoAmex;
-                  setTargetStatusAmex(val);
-                  // Sincronización sugerida para el estado TIB
-                  if (val === 'entregado') setTargetStatusTib('Entregado');
-                  if (val === 'listo_recojo') setTargetStatusTib('EnAlmacen');
-                  if (val === 'en_ruta') setTargetStatusTib('Enviado');
-                  if (val === 'en_almacen') setTargetStatusTib('EnAlmacen');
-                  if (val === 'recibido') setTargetStatusTib('Recibido');
-                }}
-                className="form-control"
-                style={{
-                  fontWeight: 800,
-                  borderColor: '#93c5fd',
-                  background: '#f0f9ff',
-                  color: '#0369a1'
-                }}
-              >
-                <option value="entregado">✅ Entregado al Cliente Final</option>
-                <option value="listo_recojo">🏪 Listo para Recojo en Tienda Lince</option>
-                <option value="en_ruta">🚚 En Ruta (Reparto / Envío a Provincia)</option>
-                <option value="en_almacen">📦 En Almacén (Ubicado en Estante)</option>
-                <option value="recibido">📥 Recibido (Ingreso en Recepción)</option>
-              </select>
-            </div>
-
-            {/* Estado TIB */}
-            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 800, color: '#475569' }}>
-                Estado Logístico TIB
-              </label>
-              <select
-                value={targetStatusTib}
-                onChange={e => setTargetStatusTib(e.target.value as TipoEstadoEntrega)}
-                className="form-control"
-                style={{ fontWeight: 600 }}
-              >
-                <option value="Entregado">✅ Entregado (Completado TIB)</option>
-                <option value="EnAlmacen">📦 EnAlmacen (Almacén Miami/Lima)</option>
-                <option value="Enviado">✈️ Enviado (En Tránsito TIB)</option>
-                <option value="Recibido">📥 Recibido (En Bodega TIB)</option>
-              </select>
-            </div>
+          {/* Selector de Nuevo Estado AMEX */}
+          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '12px', fontWeight: 800, color: '#0369a1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              ⭐ Nuevo Estado Operativo AMEX
+            </label>
+            <select
+              value={targetStatusAmex}
+              onChange={e => setTargetStatusAmex(e.target.value as TipoEstadoAmex)}
+              className="form-control"
+              style={{
+                fontWeight: 800,
+                borderColor: '#93c5fd',
+                background: '#f0f9ff',
+                color: '#0369a1',
+                padding: '8px 12px',
+                borderRadius: '8px'
+              }}
+            >
+              <option value="entregado">✅ Entregado al Cliente Final</option>
+              <option value="listo_recojo">🏪 Listo para Recojo en Tienda Lince</option>
+              <option value="en_ruta">🚚 En Ruta (Reparto / Envío a Provincia)</option>
+              <option value="en_almacen">📦 En Almacén (Ubicado en Estante)</option>
+              <option value="recibido">📥 Recibido (Ingreso en Recepción)</option>
+            </select>
           </div>
 
           {/* Footer de Acciones */}

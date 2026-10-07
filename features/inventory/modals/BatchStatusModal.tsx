@@ -47,49 +47,32 @@ export default function BatchStatusModal({
             Configura el nuevo estado para los <strong>{selectedCount}</strong> paquetes seleccionados:
           </p>
 
-          {setBatchTargetStatusAmex && (
-            <div className="form-group">
-              <label style={{ fontSize: '12px', fontWeight: 800, color: '#0369a1' }}>
-                ⭐ Nuevo Estado Operativo AMEX
-              </label>
-              <select
-                value={batchTargetStatusAmex}
-                onChange={e => setBatchTargetStatusAmex(e.target.value as TipoEstadoAmex)}
-                className="form-control"
-                style={{
-                  fontWeight: 700,
-                  borderColor: '#93c5fd',
-                  background: '#f0f9ff',
-                  color: '#0369a1'
-                }}
-              >
-                <option value="recibido">📥 Recibido (Ingreso en Recepción)</option>
-                <option value="en_almacen">📦 En Almacén (Ubicado en Estante)</option>
-                <option value="listo_recojo">🏪 Listo para Recojo en Tienda Lince</option>
-                <option value="en_ruta">🚚 En Ruta (Reparto / Envío a Provincia)</option>
-                <option value="entregado">✅ Entregado al Cliente Final</option>
-              </select>
-            </div>
-          )}
-
           <div className="form-group">
-            <label style={{ fontSize: '12px', fontWeight: 800, color: '#475569' }}>
-              Estado Logístico TIB
+            <label style={{ fontSize: '12px', fontWeight: 800, color: '#0369a1', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+              ⭐ Nuevo Estado Operativo AMEX
             </label>
             <select
-              value={batchTargetStatus}
-              onChange={e => setBatchTargetStatus(e.target.value as any)}
+              value={batchTargetStatusAmex}
+              onChange={e => setBatchTargetStatusAmex?.(e.target.value as TipoEstadoAmex)}
               className="form-control"
-              style={{ fontWeight: 600 }}
+              style={{
+                fontWeight: 700,
+                borderColor: '#93c5fd',
+                background: '#f0f9ff',
+                color: '#0369a1',
+                padding: '8px 12px',
+                borderRadius: '8px'
+              }}
             >
-              <option value="EnAlmacen">📦 EnAlmacen (Almacén Miami/Lima)</option>
-              <option value="Enviado">✈️ Enviado (En Tránsito TIB)</option>
-              <option value="Recibido">📥 Recibido (En Bodega TIB)</option>
-              <option value="Entregado">✅ Entregado (Completado TIB)</option>
+              <option value="recibido">📥 Recibido (Ingreso en Recepción)</option>
+              <option value="en_almacen">📦 En Almacén (Ubicado en Estante)</option>
+              <option value="listo_recojo">🏪 Listo para Recojo en Tienda Lince</option>
+              <option value="en_ruta">🚚 En Ruta (Reparto / Envío a Provincia)</option>
+              <option value="entregado">✅ Entregado al Cliente Final</option>
             </select>
           </div>
 
-          <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+          <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '6px' }}>
             <button type="button" onClick={onClose} className="btn btn-secondary">
               Cancelar
             </button>
