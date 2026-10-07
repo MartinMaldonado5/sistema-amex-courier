@@ -38,7 +38,8 @@ describe('Control de Acceso y Permisos por Módulo (lib/navigation/registry.ts)'
       formato_entrega: false,
       directorio_clientes: false,
       completar_inventario: false,
-      despacho_rutas: false
+      despacho_rutas: false,
+      manifiestos_tib: false
     }
   };
 
@@ -53,12 +54,13 @@ describe('Control de Acceso y Permisos por Módulo (lib/navigation/registry.ts)'
       usuarios: { ver: false, gestionar: false },
       auditoria: { ver: false, restaurar: false },
       inventario: { ver: true, crear: false, editar: false, eliminar: false, exportar: true },
-      completar_tib: { ver: false, crear: false, editar: false, eliminar: false, exportar: false }
+      completar_tib: { ver: false, crear: false, editar: false, eliminar: false, exportar: false },
+      manifiestos_tib: false
     }
   };
 
   describe('hasModuleAccess — Validación para Administradores', () => {
-    it('el administrador debe tener acceso irrestricto a todos los 16 módulos del sistema', () => {
+    it('el administrador debe tener acceso irrestricto a todos los 17 módulos del sistema', () => {
       SYSTEM_MODULES.forEach(module => {
         expect(hasModuleAccess(adminUser, module.tabId)).toBe(true);
       });
@@ -92,7 +94,7 @@ describe('Control de Acceso y Permisos por Módulo (lib/navigation/registry.ts)'
       expect(hasModuleAccess(angelUser, 'dashboard')).toBe(true);
     });
 
-    it('Angel NO debe tener acceso a los 11 módulos operativos no asignados', () => {
+    it('Angel NO debe tener acceso a los 12 módulos operativos no asignados', () => {
       const tabsBloqueados = [
         'live-sheets',
         'fico-cobros',
@@ -104,12 +106,22 @@ describe('Control de Acceso y Permisos por Módulo (lib/navigation/registry.ts)'
         'invoices-usa',
         'completar-inventario',
         'admin-usuarios',
-        'despacho-rutas'
+        'despacho-rutas',
+        'manifiestos-tib'
       ];
 
       tabsBloqueados.forEach(tabId => {
         expect(hasModuleAccess(angelUser, tabId)).toBe(false);
       });
+    });
+
+    it('debe otorgar acceso a 17. Manifiestos TIB cuando el permiso manifiestos_tib está activo', () => {
+      const manifestUser = {
+        nombre: 'Digitador TIB',
+        rol: 'Operador Manifiestos',
+        permisos: { manifiestos_tib: true }
+      };
+      expect(hasModuleAccess(manifestUser, 'manifiestos-tib')).toBe(true);
     });
 
     it('getAvailableModulesForUser debe retornar los módulos autorizados más dashboard para Angel', () => {

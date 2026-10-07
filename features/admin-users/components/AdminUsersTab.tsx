@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { SYSTEM_MODULES } from '@/lib/navigation/registry';
 
 /* ──── Types ──── */
 interface UserRow {
@@ -15,25 +16,57 @@ interface RolRow {
 }
 type View = 'usuarios' | 'roles';
 
-/* ──── Modulos ──── */
-const MODULOS: { key: string; label: string; icon: string; color: string }[] = [
-  { key:'dashboard',            label:'Panel Operativo',      icon:'fa-chart-pie',           color:'#38bdf8' },
-  { key:'live_sheets',          label:'Amex Excel',           icon:'fa-table-list',          color:'#a78bfa' },
-  { key:'inventario',           label:'Inventario',           icon:'fa-boxes-stacked',       color:'#fb923c' },
-  { key:'cobros',               label:'Cobros',               icon:'fa-receipt',             color:'#4ade80' },
-  { key:'directorio_clientes',  label:'Directorio Clientes',  icon:'fa-users',               color:'#38bdf8' },
-  { key:'scanner',              label:'Escaner Codigos',      icon:'fa-barcode',             color:'#f472b6' },
-  { key:'dni_matrix',           label:'Procesador DNI',       icon:'fa-id-card',             color:'#fbbf24' },
-  { key:'rotulos',              label:'Rotulos Agencias',     icon:'fa-tags',                color:'#34d399' },
-  { key:'boletas_shalom',       label:'Boletas Shalom',       icon:'fa-file-invoice',        color:'#60a5fa' },
-  { key:'formato_entrega',      label:'Formato Entrega',      icon:'fa-file-signature',      color:'#c084fc' },
-  { key:'invoices',             label:'Facturas USA',         icon:'fa-file-invoice-dollar', color:'#34d399' },
-  { key:'info_amex',            label:'Info Imagenes AMEX',   icon:'fa-photo-film',          color:'#f87171' },
-  { key:'completar_inventario', label:'Completar Inventario', icon:'fa-cloud-arrow-up',      color:'#38bdf8' },
-  { key:'auditoria',            label:'Auditoria',            icon:'fa-shield-halved',       color:'#a78bfa' },
-  { key:'admin_usuarios',       label:'Gestion Usuarios',     icon:'fa-user-gear',           color:'#fb923c' },
-  { key:'despacho_rutas',       label:'Rutas Despacho Chofer',icon:'fa-route',               color:'#38bdf8' },
-];
+/* ──── Modulos del Sistema (Sincronizado con SYSTEM_MODULES) ──── */
+const MODULE_COLORS: Record<string, string> = {
+  dashboard: '#38bdf8',
+  live_sheets: '#a78bfa',
+  inventario: '#fb923c',
+  cobros: '#4ade80',
+  directorio_clientes: '#38bdf8',
+  scanner: '#f472b6',
+  dni_matrix: '#fbbf24',
+  rotulos: '#34d399',
+  boletas_shalom: '#60a5fa',
+  formato_entrega: '#c084fc',
+  invoices: '#34d399',
+  info_amex: '#f87171',
+  completar_inventario: '#38bdf8',
+  auditoria: '#a78bfa',
+  admin_usuarios: '#fb923c',
+  despacho_rutas: '#38bdf8',
+  manifiestos_tib: '#06b6d4',
+};
+
+const MODULOS: { key: string; number: number; label: string; icon: string; color: string }[] = SYSTEM_MODULES.map(m => ({
+  key: m.permissionKey,
+  number: m.number,
+  label: m.label,
+  icon: m.icon.replace(/^fa-solid\s+/, ''),
+  color: MODULE_COLORS[m.permissionKey] || '#38bdf8'
+}));
+
+function isModuleEnabledForRole(permisos: Record<string, unknown> | undefined, moduleKey: string): boolean {
+  if (!permisos) return false;
+  const val = permisos[moduleKey];
+  if (typeof val === 'boolean') return val;
+  if (typeof val === 'object' && val !== null) {
+    const obj = val as Record<string, unknown>;
+    if (obj.ver === true) return true;
+    return Object.values(obj).some(v => v === true);
+  }
+  const sysMod = SYSTEM_MODULES.find(sm => sm.permissionKey === moduleKey);
+  if (sysMod?.permissionAliases) {
+    for (const alias of sysMod.permissionAliases) {
+      const aVal = permisos[alias];
+      if (typeof aVal === 'boolean' && aVal) return true;
+      if (typeof aVal === 'object' && aVal !== null) {
+        const obj = aVal as Record<string, unknown>;
+        if (obj.ver === true || Object.values(obj).some(v => v === true)) return true;
+      }
+    }
+  }
+  return false;
+}
 
 /* ──── Helpers ──── */
 const ROL_COLORS: Record<string, { bg:string; text:string; border:string; grad:string }> = {
@@ -170,7 +203,7 @@ export default function AdminUsersTab() {
     showToast(`Usuario ${!u.activo?'activado':'desactivado'}.`, true); load();
   }
   function openNewRole() { setEditR(null); const p: Record<string,boolean>={}; MODULOS.forEach(m=>{p[m.key]=false;}); setRForm({nombre:'',descripcion:'',permisos:p}); setShowRM(true); }
-  function openEditRole(r: RolRow) { setEditR(r); const p: Record<string,boolean>={}; MODULOS.forEach(m=>{p[m.key]=!!(r.permisos as Record<string,unknown>)[m.key];}); setRForm({nombre:r.nombre,descripcion:r.descripcion||'',permisos:p}); setShowRM(true); }
+  function openEditRole(r: RolRow) { setEditR(r); const p: Record<string,boolean>={}; MODULOS.forEach(m=>{p[m.key]=isModuleEnabledForRole(r.permisos, m.key);}); setRForm({nombre:r.nombre,descripcion:r.descripcion||'',permisos:p}); setShowRM(true); }
   async function saveRole() {
     setSavingR(true);
     try {
@@ -341,7 +374,7 @@ export default function AdminUsersTab() {
                 {roles.map(r => {
                   const rc = rolColor(r.nombre);
                   const usersR = users.filter(u=>u.rol_id===r.id);
-                  const activeP = MODULOS.filter(m=>!!(r.permisos as Record<string,unknown>)[m.key]);
+                  const activeP = MODULOS.filter(m=>isModuleEnabledForRole(r.permisos, m.key));
                   const pct = Math.round((activeP.length/MODULOS.length)*100);
                   return (
                     <div key={r.id} style={{ ...card, padding:22, transition:'border-color 0.2s, transform 0.2s' }}
@@ -445,7 +478,7 @@ export default function AdminUsersTab() {
               {uForm.rol_id && (() => {
                 const r = roles.find(x=>x.id===uForm.rol_id);
                 if (!r) return null;
-                const cnt = MODULOS.filter(m=>!!(r.permisos as Record<string,unknown>)[m.key]).length;
+                const cnt = MODULOS.filter(m=>isModuleEnabledForRole(r.permisos, m.key)).length;
                 const rc = rolColor(r.nombre);
                 return <div style={{ marginTop:8, padding:'8px 12px', borderRadius:8, background:rc.bg, border:`1px solid ${rc.border}`, fontSize:12, color:rc.text, display:'flex', alignItems:'center', gap:8 }}><i className="fa-solid fa-info-circle" />Este rol tiene acceso a <strong>{cnt}</strong> de {MODULOS.length} modulos</div>;
               })()}
@@ -478,7 +511,7 @@ export default function AdminUsersTab() {
 
       {/* ═══ MODAL ROL ═══ */}
       {showRM && (
-        <Modal title={editR?`Editar rol: ${editR.nombre}`:'Crear nuevo rol'} subtitle="Selecciona los modulos a los que tendra acceso" onClose={()=>setShowRM(false)} width={620}>
+        <Modal title={editR?`Editar rol: ${editR.nombre}`:'Crear nuevo rol'} subtitle="Selecciona los módulos a los que tendrá acceso" onClose={()=>setShowRM(false)} width={640}>
           <div style={{ display:'flex', flexDirection:'column', gap:18 }}>
             {!editR && (
               <div>
@@ -493,14 +526,14 @@ export default function AdminUsersTab() {
             {/* Permission matrix */}
             <div>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-                <label style={{ ...labelSt, margin:0 }}>Modulos del sistema</label>
+                <label style={{ ...labelSt, margin:0 }}>Módulos del sistema</label>
                 <div style={{ display:'flex', gap:8, alignItems:'center' }}>
                   <button onClick={()=>{const a: Record<string,boolean>={};MODULOS.forEach(m=>{a[m.key]=true;});setRForm(p=>({...p,permisos:a}));}} style={{ padding:'4px 11px', borderRadius:6, background:'rgba(52,211,153,0.12)', border:'1px solid rgba(52,211,153,0.3)', color:'#34d399', cursor:'pointer', fontSize:11, fontWeight:700 }}>Todo</button>
                   <button onClick={()=>{const n: Record<string,boolean>={};MODULOS.forEach(m=>{n[m.key]=false;});setRForm(p=>({...p,permisos:n}));}} style={{ padding:'4px 11px', borderRadius:6, background:'rgba(248,113,113,0.12)', border:'1px solid rgba(248,113,113,0.3)', color:'#f87171', cursor:'pointer', fontSize:11, fontWeight:700 }}>Ninguno</button>
                   <span style={{ fontSize:12, color:'#38bdf8', fontWeight:800 }}>{Object.values(rForm.permisos).filter(Boolean).length}/{MODULOS.length}</span>
                 </div>
               </div>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, maxHeight:340, overflowY:'auto', paddingRight:4 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, maxHeight:380, overflowY:'auto', paddingRight:4 }}>
                 {MODULOS.map(m => {
                   const on = !!rForm.permisos[m.key];
                   return (
