@@ -34,13 +34,13 @@ export default function InventoryStatsCards({
   );
   const pesoPromedioActivo = totalExistenciasReales > 0 ? totalPesoRealKg / totalExistenciasReales : 0;
 
-  // 3. Slotting en estantería sobre paquetes físicamente presentes
+  // 3. Slotting en estantería o zona de almacén sobre paquetes físicamente presentes
   const paquetesEnEstante = useMemo(
     () =>
       paquetesActivos.filter(
         p =>
           p.posicionEstante &&
-          !p.posicionEstante.startsWith('OFI') &&
+          p.posicionEstante.trim() !== '' &&
           !p.posicionEstante.startsWith('REC') &&
           p.posicionEstante !== 'SIN_ASIGNAR'
       ).length,
@@ -122,7 +122,7 @@ export default function InventoryStatsCards({
           {paquetesEnEstante} <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>ubicados</span>
         </div>
         <div style={{ fontSize: '11px', color: paquetesSinUbicar > 0 ? '#d97706' : '#22c55e', marginTop: '4px', fontWeight: 700 }}>
-          {paquetesSinUbicar > 0 ? `${paquetesSinUbicar} pendientes de slotting` : '✓ 100% en anaquel asignado'}
+          {paquetesSinUbicar > 0 ? `${paquetesSinUbicar} pendientes de slotting` : '✓ 100% en ubicación asignada'}
         </div>
       </div>
 

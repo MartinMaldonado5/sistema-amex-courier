@@ -96,11 +96,12 @@ export function useDashboardMetrics({
       paquetesLince.filter(
         p =>
           !p.posicionEstante ||
+          p.posicionEstante.trim() === '' ||
           p.posicionEstante === 'REC' ||
           p.posicionEstante === 'REC-P1' ||
+          p.posicionEstante === 'SIN_ASIGNAR' ||
           p.posicionEstante.includes('RECEPCION') ||
-          p.posicionEstante.includes('ALMACEN LINCE') ||
-          !p.posicionEstante.includes('-')
+          p.posicionEstante.includes('ALMACEN LINCE')
       ),
     [paquetesLince]
   );
