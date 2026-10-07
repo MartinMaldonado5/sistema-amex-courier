@@ -58,7 +58,7 @@ export default function InventoryTable({
     <div className="w-full bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-xs text-left">
-          <thead>
+          <thead className="sticky top-0 bg-slate-50 z-10 shadow-xs">
             <tr className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold">
               <th className="py-2.5 px-3.5 w-10">
                 <input

@@ -19,6 +19,7 @@ import SyncTibModal from '../modals/SyncTibModal';
 import BulkStatusByWrModal from '../modals/BulkStatusByWrModal';
 import TibImageModal from '../modals/TibImageModal';
 import SyncTibImagesModal from '../modals/SyncTibImagesModal';
+import '../styles/inventory.css';
 
 export interface InventoryTabProps {
   paquetes: Paquete[];
@@ -246,34 +247,36 @@ export default function InventoryTab({
         onNewPackage={onNewPackage}
       />
 
-      {/* Tarjetas de estadísticas globales WMS y Monitor en Vivo */}
-      <InventoryStatsCards
-        paquetes={paquetes}
-        statusAmexFilter={statusAmexFilter}
-        setStatusAmexFilter={setStatusAmexFilter}
-      />
-
       {/* VISTA 1: Existencias y Almacén */}
       {activeSubTab === 'existencias' && (
-        <InventoryTable
-          filteredPaquetes={filteredPaquetes}
-          paginatedPaquetes={paginatedPaquetes}
-          selectedIds={selectedIds}
-          onToggleSelect={handleToggleSelect}
-          onSelectAll={handleSelectAll}
-          onQuickDeliver={handleQuickDeliver}
-          onOpenTransferModal={openTransferModal}
-          onOpenEditModal={openEditModal}
-          onSelectThermalPkg={setSelectedThermalPkg}
-          onViewPdf={onViewPdf}
-          onOpenTibImage={handleOpenTibImage}
-          onDeletePackage={handleDeletePackage}
-          currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
-          pageSize={pageSize}
-          setPageSize={setPageSize}
-          totalPages={totalPages}
-        />
+        <>
+          {/* Tarjetas de estadísticas globales WMS compactas */}
+          <InventoryStatsCards
+            paquetes={paquetes}
+            statusAmexFilter={statusAmexFilter}
+            setStatusAmexFilter={setStatusAmexFilter}
+          />
+
+          <InventoryTable
+            filteredPaquetes={filteredPaquetes}
+            paginatedPaquetes={paginatedPaquetes}
+            selectedIds={selectedIds}
+            onToggleSelect={handleToggleSelect}
+            onSelectAll={handleSelectAll}
+            onQuickDeliver={handleQuickDeliver}
+            onOpenTransferModal={openTransferModal}
+            onOpenEditModal={openEditModal}
+            onSelectThermalPkg={setSelectedThermalPkg}
+            onViewPdf={onViewPdf}
+            onOpenTibImage={handleOpenTibImage}
+            onDeletePackage={handleDeletePackage}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            pageSize={pageSize}
+            setPageSize={setPageSize}
+            totalPages={totalPages}
+          />
+        </>
       )}
 
 

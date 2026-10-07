@@ -34,7 +34,7 @@ export default function InventoryStatsCards({
   );
   const pesoPromedioActivo = totalExistenciasReales > 0 ? totalPesoRealKg / totalExistenciasReales : 0;
 
-  // 3. Slotting en estantería o zona de almacén sobre paquetes físicamente presentes
+  // 3. Slotting en estantería o zona de almacén sobre existencias activas
   const paquetesEnEstante = useMemo(
     () =>
       paquetesActivos.filter(
@@ -49,108 +49,196 @@ export default function InventoryStatsCards({
   const paquetesSinUbicar = totalExistenciasReales - paquetesEnEstante;
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-      {/* Total Existencias Lince (Solo los que NO están entregados) */}
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+        gap: '10px'
+      }}
+    >
+      {/* 1. Existencias Reales Lince */}
       <div
-        onClick={() => setStatusAmexFilter && setStatusAmexFilter('ACTIVAS')}
+        onClick={() => setStatusAmexFilter && setStatusAmexFilter(statusAmexFilter === 'ACTIVAS' ? 'ALL' : 'ACTIVAS')}
         style={{
-          background: '#ffffff',
-          border: statusAmexFilter === 'ACTIVAS' ? '2px solid #2563eb' : '1px solid #e2e8f0',
-          borderRadius: '12px',
-          padding: '14px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          background: statusAmexFilter === 'ACTIVAS' ? '#eff6ff' : '#ffffff',
+          border: statusAmexFilter === 'ACTIVAS' ? '1.5px solid #2563eb' : '1px solid #e2e8f0',
+          borderRadius: '10px',
+          padding: '10px 14px',
+          boxShadow: statusAmexFilter === 'ACTIVAS' ? '0 2px 6px rgba(37,99,235,0.15)' : '0 1px 2px rgba(0,0,0,0.03)',
           cursor: setStatusAmexFilter ? 'pointer' : 'default',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
           transition: 'all 0.15s ease'
         }}
-        title="Existencias físicas reales en almacén (excluye entregados)"
+        title="Clic para filtrar existencias activas en almacén Lince"
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
-            Total Existencias Lince
-          </span>
-          <Boxes className="w-5 h-5 text-blue-600" />
+        <div
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '8px',
+            background: '#eff6ff',
+            color: '#2563eb',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}
+        >
+          <Boxes className="w-5 h-5" />
         </div>
-        <div style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a' }}>
-          {totalExistenciasReales} <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>paquetes</span>
-        </div>
-        <div style={{ fontSize: '11px', color: '#22c55e', marginTop: '4px', fontWeight: 700 }}>
-          ● Sincronizado en Vivo (Supabase)
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+            Existencias Lince
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+            <span style={{ fontSize: '19px', fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>
+              {totalExistenciasReales}
+            </span>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#16a34a' }}>
+              ● Activas
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Peso Total en Custodia (Solo bultos reales en bodega) */}
+      {/* 2. Peso Total en Custodia */}
       <div
         style={{
           background: '#ffffff',
           border: '1px solid #e2e8f0',
-          borderRadius: '12px',
-          padding: '14px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+          borderRadius: '10px',
+          padding: '10px 14px',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
-            Peso en Custodia (Lince)
-          </span>
-          <Warehouse className="w-5 h-5 text-indigo-600" />
+        <div
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '8px',
+            background: '#eef2ff',
+            color: '#4f46e5',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}
+        >
+          <Warehouse className="w-5 h-5" />
         </div>
-        <div style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a' }}>
-          {totalPesoRealKg.toFixed(1)} <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>kg</span>
-        </div>
-        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
-          Promedio: {pesoPromedioActivo.toFixed(2)} kg / paquete
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+            Peso en Custodia
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+            <span style={{ fontSize: '19px', fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>
+              {totalPesoRealKg.toFixed(1)} <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b' }}>kg</span>
+            </span>
+            <span style={{ fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap' }}>
+              ({pesoPromedioActivo.toFixed(2)} kg/prom)
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* En Anaqueles (Slotting WMS sobre existencias reales) */}
+      {/* 3. Slotting en Estanterías */}
       <div
         style={{
           background: '#ffffff',
           border: '1px solid #e2e8f0',
-          borderRadius: '12px',
-          padding: '14px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+          borderRadius: '10px',
+          padding: '10px 14px',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
-            En Anaqueles (Slotting)
-          </span>
-          <Layers className="w-5 h-5 text-emerald-600" />
+        <div
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '8px',
+            background: '#f0fdf4',
+            color: '#16a34a',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}
+        >
+          <Layers className="w-5 h-5" />
         </div>
-        <div style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a' }}>
-          {paquetesEnEstante} <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>ubicados</span>
-        </div>
-        <div style={{ fontSize: '11px', color: paquetesSinUbicar > 0 ? '#d97706' : '#22c55e', marginTop: '4px', fontWeight: 700 }}>
-          {paquetesSinUbicar > 0 ? `${paquetesSinUbicar} pendientes de slotting` : '✓ 100% en ubicación asignada'}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+            Ubicados (Slotting)
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+            <span style={{ fontSize: '19px', fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>
+              {paquetesEnEstante}
+            </span>
+            <span
+              style={{
+                fontSize: '11px',
+                fontWeight: 800,
+                color: paquetesSinUbicar > 0 ? '#d97706' : '#16a34a'
+              }}
+            >
+              {paquetesSinUbicar > 0 ? `(${paquetesSinUbicar} pendientes)` : '✓ 100% ubicados'}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Salidas y Entregados (Historial fuera de almacén) */}
+      {/* 4. Salidas y Entregados */}
       <div
-        onClick={() => setStatusAmexFilter && setStatusAmexFilter('entregado')}
+        onClick={() => setStatusAmexFilter && setStatusAmexFilter(statusAmexFilter === 'entregado' ? 'ALL' : 'entregado')}
         style={{
-          background: statusAmexFilter === 'entregado' ? '#f0fdf4' : '#eff6ff',
-          border: statusAmexFilter === 'entregado' ? '2px solid #16a34a' : '1px solid #bfdbfe',
-          borderRadius: '12px',
-          padding: '14px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          background: statusAmexFilter === 'entregado' ? '#f0fdf4' : '#ffffff',
+          border: statusAmexFilter === 'entregado' ? '1.5px solid #16a34a' : '1px solid #e2e8f0',
+          borderRadius: '10px',
+          padding: '10px 14px',
+          boxShadow: statusAmexFilter === 'entregado' ? '0 2px 6px rgba(22,163,74,0.15)' : '0 1px 2px rgba(0,0,0,0.03)',
           cursor: setStatusAmexFilter ? 'pointer' : 'default',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
           transition: 'all 0.15s ease'
         }}
-        title="Paquetes entregados fuera de almacén"
+        title="Clic para ver historial de paquetes entregados"
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 800, color: '#1e40af', textTransform: 'uppercase' }}>
-            Salidas y Entregados
-          </span>
-          <CheckCircle2 className="w-5 h-5 text-blue-600" />
+        <div
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '8px',
+            background: '#f8fafc',
+            color: '#64748b',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}
+        >
+          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
         </div>
-        <div style={{ fontSize: '22px', fontWeight: 800, color: '#1e3a8a' }}>
-          {totalEntregados} <span style={{ fontSize: '12px', color: '#3b82f6', fontWeight: 600 }}>entregados</span>
-        </div>
-        <div style={{ fontSize: '11px', color: '#1d4ed8', marginTop: '4px', fontWeight: 600 }}>
-          Fuera de Almacén ({paquetes.length} registros totales)
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+            Salidas / Entregados
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+            <span style={{ fontSize: '19px', fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>
+              {totalEntregados}
+            </span>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b' }}>
+              Completados
+            </span>
+          </div>
         </div>
       </div>
     </div>
