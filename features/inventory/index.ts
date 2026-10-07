@@ -20,6 +20,7 @@ export { default as InventoryFilterBar } from './components/InventoryFilterBar';
 export { default as InventorySelectionBar } from './components/InventorySelectionBar';
 export { default as TibOperationsDropdown } from './components/TibOperationsDropdown';
 export { default as InventoryTable } from './components/InventoryTable';
+export { default as RowActionsDropdown } from './components/RowActionsDropdown';
 export { default as KardexView } from './components/KardexView';
 export { default as ShelfMatrixGrid } from './components/ShelfMatrixGrid';
 export { default as GestorAlmacenView } from './components/GestorAlmacenView';

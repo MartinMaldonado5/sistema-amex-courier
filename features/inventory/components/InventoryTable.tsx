@@ -14,6 +14,7 @@ import {
   Camera
 } from 'lucide-react';
 import { Paquete } from '@/types';
+import RowActionsDropdown from './RowActionsDropdown';
 
 export interface InventoryTableProps {
   filteredPaquetes: Paquete[];
@@ -91,7 +92,7 @@ export default function InventoryTable({
                 </td>
               </tr>
             ) : (
-              paginatedPaquetes.map(pkg => {
+              paginatedPaquetes.map((pkg, index) => {
                 const pos =
                   pkg.posicionEstante ||
                   (pkg.anaquel && pkg.piso ? `${pkg.anaquel}-${pkg.piso}` : 'REC');
@@ -354,156 +355,23 @@ export default function InventoryTable({
                           : (pkg.estadoTib || pkg.estadoEntrega) || 'En Almacén'}
                       </span>
                     </td>
-                    <td style={{ padding: '10px 14px', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                        {onQuickDeliver && pkg.estadoAmex !== 'entregado' && (
-                          <button
-                            title="Marcar como Entregado en 1 Clic"
-                            onClick={() => {
-                              if (confirm(`¿Confirmar entrega del paquete ${pkg.numeroReciboBodega} a ${pkg.nombreConsignatario || 'cliente'}?`)) {
-                                onQuickDeliver(pkg);
-                              }
-                            }}
-                            style={{
-                              background: '#f0fdf4',
-                              border: '1px solid #86efac',
-                              color: '#15803d',
-                              padding: '0 8px',
-                              height: '28px',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              fontSize: '11px',
-                              fontWeight: 800,
-                              boxShadow: '0 1px 2px rgba(21, 128, 61, 0.1)'
-                            }}
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                            Entregar
-                          </button>
-                        )}
-
-                        <button
-                          title="Mover a otro Estante / Anaquel"
-                          onClick={() => onOpenTransferModal(pkg)}
-                          style={{
-                            background: '#eff6ff',
-                            border: '1px solid #bfdbfe',
-                            color: '#2563eb',
-                            width: '28px',
-                            height: '28px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          <ArrowRightLeft className="w-3.5 h-3.5" />
-                        </button>
-
-                        <button
-                          title="Editar Paquete / Modificar Datos"
-                          onClick={() => onOpenEditModal(pkg)}
-                          style={{
-                            background: '#f8fafc',
-                            border: '1px solid #cbd5e1',
-                            color: '#334155',
-                            width: '28px',
-                            height: '28px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
-
-                        <button
-                          title="Imprimir Rótulo Térmico 4x6"
-                          onClick={() => onSelectThermalPkg(pkg)}
-                          style={{
-                            background: '#f0fdf4',
-                            border: '1px solid #bbf7d0',
-                            color: '#166534',
-                            width: '28px',
-                            height: '28px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          <Printer className="w-3.5 h-3.5" />
-                        </button>
-
-                        {pkg.facturaPdfUrl && (
-                          <button
-                            title="Ver Factura PDF R2"
-                            onClick={() => onViewPdf(pkg.facturaPdfUrl!)}
-                            style={{
-                              background: '#fef2f2',
-                              border: '1px solid #fecaca',
-                              color: '#dc2626',
-                              width: '28px',
-                              height: '28px',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }}
-                          >
-                            <FileText className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-
-                        {onOpenTibImage && (
-                          <button
-                            type="button"
-                            title={pkg.tibImagenUrl ? "Ver Evidencia Fotográfica TIB" : "Consultar Foto en Servidor TIB"}
-                            onClick={() => onOpenTibImage(pkg)}
-                            style={{
-                              background: pkg.tibImagenUrl ? '#eff6ff' : '#f8fafc',
-                              border: pkg.tibImagenUrl ? '1px solid #93c5fd' : '1px solid #cbd5e1',
-                              color: pkg.tibImagenUrl ? '#1d4ed8' : '#475569',
-                              width: '28px',
-                              height: '28px',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }}
-                          >
-                            <Camera className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-
-                        <button
-                          title="Eliminar Paquete"
-                          onClick={() => onDeletePackage(pkg.id, pkg.numeroReciboBodega)}
-                          style={{
-                            background: '#fee2e2',
-                            border: '1px solid #fca5a5',
-                            color: '#dc2626',
-                            width: '28px',
-                            height: '28px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                    <td style={{ padding: '8px 12px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                      <RowActionsDropdown
+                        pkg={pkg}
+                        index={index}
+                        totalRows={paginatedPaquetes.length}
+                        onQuickDeliver={onQuickDeliver ? (p) => {
+                          if (confirm(`¿Confirmar entrega del paquete ${p.numeroReciboBodega} a ${p.nombreConsignatario || 'cliente'}?`)) {
+                            onQuickDeliver(p);
+                          }
+                        } : undefined}
+                        onOpenTransferModal={onOpenTransferModal}
+                        onOpenEditModal={onOpenEditModal}
+                        onSelectThermalPkg={onSelectThermalPkg}
+                        onViewPdf={onViewPdf}
+                        onOpenTibImage={onOpenTibImage}
+                        onDeletePackage={onDeletePackage}
+                      />
                     </td>
                   </tr>
                 );
