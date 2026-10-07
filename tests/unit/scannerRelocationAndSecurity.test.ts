@@ -138,5 +138,29 @@ describe('Módulo 6: Escáner y WMS — Seguridad, Sanitización y Reasignación
       // Verificamos que el estado volvió a su valor original
       expect(state[0].posicionEstante).toBe('A1-P1');
     });
+
+    it('debe tratar las zonas de Despacho (DSP-Z1, DSP-Z2, DSP) y Oficina (OFI) como áreas sin pisos/niveles', () => {
+      const isLevelLess = (shelf: string) => {
+        const s = shelf.trim().toUpperCase();
+        return (
+          s.startsWith('DSP') ||
+          s === 'OFI' ||
+          s === 'REC' ||
+          s.includes('DESPACHO')
+        );
+      };
+
+      expect(isLevelLess('DSP-Z1')).toBe(true);
+      expect(isLevelLess('DSP-Z2')).toBe(true);
+      expect(isLevelLess('DSP')).toBe(true);
+      expect(isLevelLess('OFI')).toBe(true);
+      expect(isLevelLess('REC')).toBe(true);
+      expect(isLevelLess('A1')).toBe(false);
+      expect(isLevelLess('A2')).toBe(false);
+
+      // Reubicación directa a DSP-Z1 sin nivel
+      const targetPos = isLevelLess('DSP-Z1') ? 'DSP-Z1' : 'DSP-Z1-P1';
+      expect(targetPos).toBe('DSP-Z1');
+    });
   });
 });

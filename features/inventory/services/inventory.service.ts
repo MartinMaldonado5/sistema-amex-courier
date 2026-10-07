@@ -88,18 +88,20 @@ export const inventoryService = {
       transferData.targetAnaquel === 'DSP-Z1' ||
       transferData.targetAnaquel === 'DSP-Z2' ||
       transferData.targetAnaquel === 'REC' ||
-      transferData.targetAnaquel === 'DSP';
+      transferData.targetAnaquel === 'DSP' ||
+      transferData.targetAnaquel?.startsWith('DSP') ||
+      transferData.targetAnaquel?.includes('DESPACHO');
 
     const targetPos = isLevelLess
       ? transferData.targetAnaquel
-      : `${transferData.targetAnaquel}-${transferData.targetPiso}`;
+      : `${transferData.targetAnaquel}-${transferData.targetPiso || 'P1'}`;
 
     await supabase
       .from('paquetes')
       .update({
         ubicacion_actual: transferData.targetUbicacion,
         anaquel: transferData.targetAnaquel,
-        piso: isLevelLess ? null : transferData.targetPiso,
+        piso: isLevelLess ? null : (transferData.targetPiso || 'P1'),
         posicion_estante: targetPos
       })
       .in('id', idsToMove);
@@ -128,7 +130,7 @@ export const inventoryService = {
           ...pkg,
           ubicacionActual: transferData.targetUbicacion,
           anaquel: transferData.targetAnaquel,
-          piso: transferData.targetPiso,
+          piso: isLevelLess ? undefined : transferData.targetPiso,
           posicionEstante: targetPos
         });
       }

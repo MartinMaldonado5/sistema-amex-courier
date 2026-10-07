@@ -330,11 +330,17 @@ export function useInventoryData({
     if (singlePkg) {
       setSelectedPackageForAction(singlePkg);
       setSelectedIds([singlePkg.id]);
+      const initialAnaquel = singlePkg.anaquel || 'A1';
+      const isLevelLessInit =
+        initialAnaquel === 'OFI' ||
+        initialAnaquel === 'REC' ||
+        initialAnaquel.startsWith('DSP');
+
       setTransferData(prev => ({
         ...prev,
         targetUbicacion: singlePkg.ubicacionActual,
-        targetAnaquel: singlePkg.anaquel || 'A1',
-        targetPiso: singlePkg.piso || 'P1'
+        targetAnaquel: initialAnaquel,
+        targetPiso: isLevelLessInit ? '' : (singlePkg.piso || 'P1')
       }));
     } else {
       setSelectedPackageForAction(null);

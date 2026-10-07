@@ -1748,45 +1748,76 @@ export default function ScannerTab({
                 />
               </div>
 
-              <div className="wms-modal-grid-2">
-                <div className="form-group">
-                  <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>Anaquel Físico</label>
-                  <select
-                    value={editingLog.anaquel || 'A1'}
-                    onChange={e => setEditingLog({ ...editingLog, anaquel: e.target.value })}
-                    className="form-control"
-                  >
-                    <option value="A1">Anaquel 1 (A1)</option>
-                    <option value="A2">Anaquel 2 (A2)</option>
-                    <option value="OFI">Oficina (OFI)</option>
-                    <option value="DSP-Z1">Despacho Zona 1 (DSP-Z1)</option>
-                    <option value="DSP-Z2">Despacho Zona 2 (DSP-Z2)</option>
-                  </select>
-                </div>
+              {(() => {
+                const isNoFloor = editingLog.anaquel === 'OFI' || editingLog.anaquel?.startsWith('DSP');
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isNoFloor ? '1fr' : '1fr 1fr', gap: '12px' }}>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>
+                          {isNoFloor ? 'Zona / Ubicación Destino' : 'Anaquel Físico'}
+                        </label>
+                        <select
+                          value={editingLog.anaquel || 'A1'}
+                          onChange={e => {
+                            const val = e.target.value;
+                            const noFloor = val === 'OFI' || val.startsWith('DSP');
+                            setEditingLog({
+                              ...editingLog,
+                              anaquel: val,
+                              piso: noFloor ? '' : (editingLog.piso || 'P1')
+                            });
+                          }}
+                          className="form-control"
+                        >
+                          <option value="A1">Anaquel 1 (A1)</option>
+                          <option value="A2">Anaquel 2 (A2)</option>
+                          <option value="OFI">🏢 Oficina (OFI)</option>
+                          <option value="DSP-Z1">📦 Despacho Zona 1 (DSP-Z1)</option>
+                          <option value="DSP-Z2">📦 Despacho Zona 2 (DSP-Z2)</option>
+                        </select>
+                      </div>
 
-                <div className="form-group">
-                  <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>
-                    {editingLog.anaquel === 'OFI' || editingLog.anaquel === 'DSP-Z1' || editingLog.anaquel === 'DSP-Z2' ? 'Piso / Nivel (N/A)' : 'Piso / Nivel'}
-                  </label>
-                  <select
-                    value={editingLog.piso || 'P1'}
-                    disabled={editingLog.anaquel === 'OFI' || editingLog.anaquel === 'DSP-Z1' || editingLog.anaquel === 'DSP-Z2'}
-                    onChange={e => setEditingLog({ ...editingLog, piso: e.target.value })}
-                    className="form-control"
-                  >
-                    {editingLog.anaquel === 'OFI' || editingLog.anaquel === 'DSP-Z1' || editingLog.anaquel === 'DSP-Z2' ? (
-                      <option value="">— Sin pisos —</option>
-                    ) : (
-                      <>
-                        <option value="P1">P1 (Piso 1 · Inferior)</option>
-                        <option value="P2">P2 (Piso 2 · Medio)</option>
-                        <option value="P3">P3 (Piso 3 · Medio Alto)</option>
-                        <option value="P4">P4 (Piso 4 · Superior)</option>
-                      </>
+                      {!isNoFloor && (
+                        <div className="form-group" style={{ margin: 0 }}>
+                          <label style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>Piso / Nivel</label>
+                          <select
+                            value={editingLog.piso || 'P1'}
+                            onChange={e => setEditingLog({ ...editingLog, piso: e.target.value })}
+                            className="form-control"
+                          >
+                            <option value="P1">P1 (Piso 1 · Inferior)</option>
+                            <option value="P2">P2 (Piso 2 · Medio)</option>
+                            <option value="P3">P3 (Piso 3 · Medio Alto)</option>
+                            <option value="P4">P4 (Piso 4 · Superior)</option>
+                          </select>
+                        </div>
+                      )}
+                    </div>
+
+                    {isNoFloor && (
+                      <div
+                        style={{
+                          background: '#eff6ff',
+                          border: '1px solid #bfdbfe',
+                          borderLeft: '4px solid #2563eb',
+                          borderRadius: '8px',
+                          padding: '8px 12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}
+                      >
+                        <span style={{ fontSize: '11.5px', color: '#1e40af', fontWeight: 700 }}>
+                          {editingLog.anaquel?.startsWith('DSP')
+                            ? '🚚 Zona de Despacho en piso: No tiene niveles ni estantería.'
+                            : '🏢 Oficina / Custodia interna (sin niveles de estantería).'}
+                        </span>
+                      </div>
                     )}
-                  </select>
-                </div>
-              </div>
+                  </div>
+                );
+              })()}
 
               <div className="modal-footer" style={{ marginTop: '8px' }}>
                 <button type="button" onClick={() => setEditingLog(null)} className="btn btn-secondary">
