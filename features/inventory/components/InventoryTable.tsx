@@ -3,14 +3,6 @@
 import React from 'react';
 import {
   Boxes,
-  MapPin,
-  ArrowRightLeft,
-  Edit3,
-  Printer,
-  FileText,
-  Trash2,
-  User,
-  CheckCircle2,
   Camera
 } from 'lucide-react';
 import { Paquete } from '@/types';
@@ -70,21 +62,18 @@ export default function InventoryTable({
               </th>
               <th className="py-2.5 px-3.5">Guía WR</th>
               <th className="py-2.5 px-3.5">Tracking USA</th>
-              <th className="py-2.5 px-3.5">Usuario (Correo)</th>
               <th className="py-2.5 px-3.5">Cliente</th>
               <th className="py-2.5 px-3.5">Descripción & Tipo</th>
               <th className="py-2.5 px-3.5">Peso Físico (kg)</th>
-              <th className="py-2.5 px-3.5">Ubicación Sede</th>
               <th className="py-2.5 px-3.5">Anaquel & Piso (WMS)</th>
               <th className="py-2.5 px-3.5">Estado AMEX</th>
-              <th className="py-2.5 px-3.5">Estado TIB</th>
               <th className="py-2.5 px-3.5 text-center">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {filteredPaquetes.length === 0 ? (
               <tr>
-                <td colSpan={12} style={{ textAlign: 'center', padding: '36px', color: '#94a3b8' }}>
+                <td colSpan={9} style={{ textAlign: 'center', padding: '36px', color: '#94a3b8' }}>
                   <Boxes style={{ width: '40px', height: '40px', margin: '0 auto 8px auto', color: '#cbd5e1' }} />
                   <div style={{ fontWeight: 800, color: '#64748b' }}>
                     No se encontraron paquetes con los filtros seleccionados
@@ -165,34 +154,15 @@ export default function InventoryTable({
                         {pkg.trackingUsa || '—'}
                       </div>
                     </td>
-                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
-                      {pkg.usuarioEmail ? (
-                        <div
-                          style={{
-                            fontSize: '11px',
-                            color: '#0369a1',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            background: '#f0f9ff',
-                            padding: '2px 8px',
-                            borderRadius: '6px',
-                            border: '1px solid #bae6fd',
-                            fontWeight: 600
-                          }}
-                          title={`Ingresado por: ${pkg.usuarioEmail}`}
-                        >
-                          <User style={{ width: '11px', height: '11px' }} />
-                          <span>{pkg.usuarioEmail}</span>
-                        </div>
-                      ) : (
-                        <span style={{ color: '#94a3b8', fontSize: '11px' }}>—</span>
-                      )}
-                    </td>
                     <td style={{ padding: '10px 14px' }}>
                       <div style={{ fontWeight: 800, color: '#2563eb' }}>
                         {pkg.nombreConsignatario || 'Consignatario no asignado'}
                       </div>
+                      {pkg.usuarioEmail && (
+                        <div style={{ fontSize: '10.5px', color: '#64748b' }} title={`Usuario: ${pkg.usuarioEmail}`}>
+                          {pkg.usuarioEmail}
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: '10px 14px' }}>
                       <div
@@ -217,24 +187,6 @@ export default function InventoryTable({
                       <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
                         Custodia Almacén
                       </div>
-                    </td>
-                    <td style={{ padding: '10px 14px' }}>
-                      <span
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: '2px 8px',
-                          borderRadius: '9999px',
-                          fontSize: '11px',
-                          fontWeight: 800,
-                          background: pkg.ubicacionActual === 'Entregado' ? '#f1f5f9' : '#dcfce7',
-                          color: pkg.ubicacionActual === 'Entregado' ? '#475569' : '#15803d'
-                        }}
-                      >
-                        <MapPin className="w-3 h-3" />
-                        {pkg.ubicacionActual === 'Entregado' ? 'Entregado' : 'Almacén Lince'}
-                      </span>
                     </td>
                     <td style={{ padding: '10px 14px' }}>
                       <span
@@ -313,46 +265,6 @@ export default function InventoryTable({
                           : pkg.estadoAmex === 'entregado'
                           ? '✅ ENTREGADO'
                           : (pkg.estadoAmex || 'RECIBIDO').toUpperCase()}
-                      </span>
-                    </td>
-
-                    {/* ESTADO TIB (Logística Externa) */}
-                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
-                      <span
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          textTransform: 'uppercase',
-                          background:
-                            (pkg.estadoTib || pkg.estadoEntrega) === 'Entregado'
-                              ? '#dcfce7'
-                              : (pkg.estadoTib || pkg.estadoEntrega) === 'Enviado'
-                              ? '#dbeafe'
-                              : (pkg.estadoTib || pkg.estadoEntrega) === 'Recibido'
-                              ? '#e0f2fe'
-                              : '#f8fafc',
-                          color:
-                            (pkg.estadoTib || pkg.estadoEntrega) === 'Entregado'
-                              ? '#15803d'
-                              : (pkg.estadoTib || pkg.estadoEntrega) === 'Enviado'
-                              ? '#1d4ed8'
-                              : (pkg.estadoTib || pkg.estadoEntrega) === 'Recibido'
-                              ? '#0284c7'
-                              : '#64748b',
-                          border: '1px solid #e2e8f0'
-                        }}
-                      >
-                        {(pkg.estadoTib || pkg.estadoEntrega) === 'Enviado'
-                          ? 'Enviado'
-                          : (pkg.estadoTib || pkg.estadoEntrega) === 'Recibido'
-                          ? 'Recibido'
-                          : (pkg.estadoTib || pkg.estadoEntrega) === 'Entregado'
-                          ? 'Entregado'
-                          : (pkg.estadoTib || pkg.estadoEntrega) || 'En Almacén'}
                       </span>
                     </td>
                     <td style={{ padding: '8px 12px', textAlign: 'center', whiteSpace: 'nowrap' }}>
