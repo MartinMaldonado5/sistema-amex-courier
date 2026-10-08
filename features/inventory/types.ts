@@ -36,3 +36,25 @@ export interface InventoryStats {
   listosRecojo: number;
   pesoTotalKg: number;
 }
+
+export type DateFilterType =
+  | 'ALL'
+  | 'TODAY'
+  | 'YESTERDAY'
+  | 'LAST_7_DAYS'
+  | 'THIS_MONTH'
+  | 'LAST_MONTH'
+  | 'THIS_YEAR'
+  | 'EXACT_DAY'
+  | 'MONTH_YEAR'
+  | 'YEAR'
+  | 'CUSTOM_RANGE';
+
+export interface DateFilterState {
+  type: DateFilterType;
+  exactDate?: string; // YYYY-MM-DD
+  month?: number; // 1-12
+  year?: number; // YYYY
+  startDate?: string; // YYYY-MM-DD
+  endDate?: string; // YYYY-MM-DD
+}

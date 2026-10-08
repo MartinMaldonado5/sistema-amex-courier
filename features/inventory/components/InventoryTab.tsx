@@ -60,6 +60,9 @@ export default function InventoryTab({
     statusAmexFilter,
     setStatusAmexFilter,
     amexStatusCounts,
+    dateFilter,
+    setDateFilter,
+    resetDateFilter,
 
     // Paginación
     pageSize,
@@ -229,6 +232,9 @@ export default function InventoryTab({
         setStatusFilter={setStatusFilter}
         statusAmexFilter={statusAmexFilter}
         setStatusAmexFilter={setStatusAmexFilter}
+        dateFilter={dateFilter}
+        setDateFilter={setDateFilter}
+        resetDateFilter={resetDateFilter}
         selectedIds={selectedIds}
         setSelectedIds={setSelectedIds}
         onOpenTransferModal={() => openTransferModal()}

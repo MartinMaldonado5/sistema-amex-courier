@@ -14,7 +14,8 @@ import { supabase } from '@/lib/supabase/client';
 import { matchesFuzzySearch } from '@/lib/fuzzySearch';
 import { exportPaquetesToExcel, exportKardexToExcel } from '@/lib/excelExport';
 import { inventoryService } from '../services/inventory.service';
-import { BatchShelfData, SinglePositionData, TransferFormData } from '../types';
+import { BatchShelfData, SinglePositionData, TransferFormData, DateFilterState } from '../types';
+import { initialDateFilter, isPackageInDateFilter } from '../utils/dateFilter';
 
 export interface UseInventoryDataProps {
   paquetes: Paquete[];
@@ -40,6 +41,8 @@ export function useInventoryData({
   const [packageTypeFilter, setPackageTypeFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [statusAmexFilter, setStatusAmexFilter] = useState<string>('ALL');
+  const [dateFilter, setDateFilter] = useState<DateFilterState>(initialDateFilter);
+  const resetDateFilter = useCallback(() => setDateFilter(initialDateFilter), []);
 
   // Paginación reactiva
   const [pageSize, setPageSize] = useState<number>(50);
@@ -208,6 +211,7 @@ export function useInventoryData({
           : statusAmexFilter === 'en_almacen' || statusAmexFilter === 'ACTIVAS'
           ? p.estadoAmex === 'en_almacen' || p.estadoAmex === 'recibido'
           : p.estadoAmex === statusAmexFilter;
+      const matchesDate = isPackageInDateFilter(p.creadoEn, dateFilter);
 
       return (
         matchesSearch &&
@@ -216,15 +220,16 @@ export function useInventoryData({
         matchesFloor &&
         matchesType &&
         matchesStatus &&
-        matchesStatusAmex
+        matchesStatusAmex &&
+        matchesDate
       );
     });
-  }, [paquetes, searchTerm, locationFilter, shelfFilter, floorFilter, packageTypeFilter, statusFilter, statusAmexFilter]);
+  }, [paquetes, searchTerm, locationFilter, shelfFilter, floorFilter, packageTypeFilter, statusFilter, statusAmexFilter, dateFilter]);
 
   // Resetear página al cambiar filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, locationFilter, shelfFilter, floorFilter, packageTypeFilter, statusFilter, statusAmexFilter, pageSize]);
+  }, [searchTerm, locationFilter, shelfFilter, floorFilter, packageTypeFilter, statusFilter, statusAmexFilter, dateFilter, pageSize]);
 
   // Conteos en tiempo real por Estado AMEX para píldoras rápidas
   const amexStatusCounts = useMemo(() => {
@@ -615,6 +620,9 @@ export function useInventoryData({
     statusAmexFilter,
     setStatusAmexFilter,
     amexStatusCounts,
+    dateFilter,
+    setDateFilter,
+    resetDateFilter,
 
     // Paginación
     pageSize,

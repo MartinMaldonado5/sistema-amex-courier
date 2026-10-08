@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { EstanteriaPosicion, Paquete } from '@/types';
+import { DateFilterState } from '../types';
 import InventoryHeader from './InventoryHeader';
 import InventorySubTabs from './InventorySubTabs';
 import InventoryFilterBar from './InventoryFilterBar';
@@ -43,6 +44,9 @@ export interface InventoryToolbarProps {
   setStatusFilter?: (s: string) => void;
   statusAmexFilter?: string;
   setStatusAmexFilter?: (s: string) => void;
+  dateFilter?: DateFilterState;
+  setDateFilter?: React.Dispatch<React.SetStateAction<DateFilterState>>;
+  resetDateFilter?: () => void;
   selectedIds: string[];
   setSelectedIds: React.Dispatch<React.SetStateAction<string[]>>;
   onOpenTransferModal: () => void;
@@ -85,6 +89,9 @@ export default function InventoryToolbar({
   setStatusFilter,
   statusAmexFilter,
   setStatusAmexFilter,
+  dateFilter,
+  setDateFilter,
+  resetDateFilter,
   selectedIds,
   setSelectedIds,
   onOpenTransferModal,
@@ -164,6 +171,9 @@ export default function InventoryToolbar({
           setPackageTypeFilter={setPackageTypeFilter}
           statusFilter={statusFilter}
           setStatusFilter={setStatusFilter}
+          dateFilter={dateFilter}
+          setDateFilter={setDateFilter}
+          resetDateFilter={resetDateFilter}
           totalPaquetesCount={paquetes.length}
         />
       )}

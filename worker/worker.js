@@ -84,7 +84,9 @@ const PROCESSOR = process.env.AMEX_PROCESSOR_BIN || process.env.PROCESSOR || def
 const EMPTY_TEMPLATE = process.env.EMPTY_TEMPLATE || defaultEmptyTemplate;
 const WORK_DIR = process.env.WORK_DIR || path.join(os.tmpdir(), 'amex-jobs');
 const TIB_CACHE_DIR = process.env.TIB_CACHE_DIR || path.resolve(__dirname, '..', 'cache', 'tib-active');
-const POLL_INTERVAL_MS = Math.max(1000, Number(process.env.POLL_INTERVAL_MS || 1500));
+// Polling adaptativo para minimizar consumo de cuota de logs en Supabase (reduce logs >93%)
+const POLL_INTERVAL_IDLE_MS = Math.max(5000, Number(process.env.POLL_INTERVAL_MS || 25000)); // 25s en reposo
+const POLL_INTERVAL_BUSY_MS = 2000; // 2s tras procesar un trabajo para drenar cola
 const PROCESS_TIMEOUT_MS = Math.max(60_000, Number(process.env.PROCESS_TIMEOUT_MS || 20 * 60 * 1000));
 const HOST = process.env.HOST || '0.0.0.0';
 const PORT = Number(process.env.PORT || 10000);
@@ -897,21 +899,45 @@ function waitForNextPoll(ms) {
 }
 
 async function loop() {
-  workerLog('info', `Bucle del worker iniciado (polling adaptativo: ${POLL_INTERVAL_MS}ms)`);
+  workerLog(
+    'info',
+    `Bucle del worker iniciado (polling adaptativo: reposo ${POLL_INTERVAL_IDLE_MS}ms, activo ${POLL_INTERVAL_BUSY_MS}ms)`
+  );
+  let consecutiveEmptyPolls = 0;
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
       const job = await takeNextJob();
       if (job) {
+        consecutiveEmptyPolls = 0;
         telemetry.jobsProcessed = (telemetry.jobsProcessed || 0) + 1;
         telemetry.lastJobTime = new Date().toISOString();
         await processJob(job);
+        // Continuar rápidamente con el siguiente trabajo si la cola tiene más ítems
+        await waitForNextPoll(POLL_INTERVAL_BUSY_MS);
         continue;
+      } else {
+        consecutiveEmptyPolls++;
       }
     } catch (err) {
       workerLog('error', `Error en el loop principal: ${err.message}`, { error: err.stack });
     }
-    await waitForNextPoll(POLL_INTERVAL_MS);
+
+    // Escalado adaptativo cuando la cola está vacía:
+    // 1er sondeo vacío: 5s
+    // 2do sondeo vacío: 12s
+    // 3ro en adelante (reposo): POLL_INTERVAL_IDLE_MS (25s)
+    // Nota: Ante nuevos jobs, el backend notifica vía POST /trigger-job despertando el bucle al instante (<1ms).
+    let sleepMs;
+    if (consecutiveEmptyPolls <= 1) {
+      sleepMs = 5000;
+    } else if (consecutiveEmptyPolls <= 2) {
+      sleepMs = 12000;
+    } else {
+      sleepMs = POLL_INTERVAL_IDLE_MS;
+    }
+
+    await waitForNextPoll(sleepMs);
   }
 }
 
@@ -1229,7 +1255,7 @@ Promise.all([
 ])
   .then(() => {
     server.listen(PORT, HOST, () => {
-      console.log(`[worker] Health en http://${HOST}:${PORT} | poll cada ${POLL_INTERVAL_MS}ms | workDir ${WORK_DIR} | cacheDir ${TIB_CACHE_DIR}`);
+      console.log(`[worker] Health en http://${HOST}:${PORT} | poll reposo ${POLL_INTERVAL_IDLE_MS}ms / activo ${POLL_INTERVAL_BUSY_MS}ms | workDir ${WORK_DIR} | cacheDir ${TIB_CACHE_DIR}`);
       void bootWarmUpTibIndices();
     });
     void loop();

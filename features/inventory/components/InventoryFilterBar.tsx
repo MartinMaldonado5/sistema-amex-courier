@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, SlidersHorizontal, X, RotateCcw } from 'lucide-react';
+import { Search, SlidersHorizontal, X, RotateCcw, Calendar } from 'lucide-react';
 import { EstanteriaPosicion } from '@/types';
+import { DateFilterState } from '../types';
+import { MONTH_NAMES, getDateFilterSummary, toLocalDateString } from '../utils/dateFilter';
 
 export interface InventoryFilterBarProps {
   searchTerm: string;
@@ -29,6 +31,9 @@ export interface InventoryFilterBarProps {
   setPackageTypeFilter: (s: string) => void;
   statusFilter?: string;
   setStatusFilter?: (s: string) => void;
+  dateFilter?: DateFilterState;
+  setDateFilter?: React.Dispatch<React.SetStateAction<DateFilterState>>;
+  resetDateFilter?: () => void;
   totalPaquetesCount: number;
 }
 
@@ -49,16 +54,24 @@ export default function InventoryFilterBar({
   setPackageTypeFilter,
   statusFilter = 'ALL',
   setStatusFilter,
+  dateFilter,
+  setDateFilter,
+  resetDateFilter,
   totalPaquetesCount
 }: InventoryFilterBarProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const isDateFilterActive = Boolean(dateFilter && dateFilter.type !== 'ALL');
+  const currentYear = new Date().getFullYear();
+  const yearsList = [currentYear + 1, currentYear, currentYear - 1, currentYear - 2, currentYear - 3];
 
   // Conteo de filtros secundarios activos
   const activeSecondaryCount = [
     locationFilter !== 'ALL',
     floorFilter !== 'ALL',
     packageTypeFilter !== 'ALL',
-    statusFilter !== 'ALL'
+    statusFilter !== 'ALL',
+    isDateFilterActive
   ].filter(Boolean).length;
 
   const hasAnyFilterActive =
@@ -75,6 +88,7 @@ export default function InventoryFilterBar({
     setPackageTypeFilter('ALL');
     if (setStatusAmexFilter) setStatusAmexFilter('ALL');
     if (setStatusFilter) setStatusFilter('ALL');
+    if (resetDateFilter) resetDateFilter();
   };
 
   return (
@@ -241,6 +255,47 @@ export default function InventoryFilterBar({
           )}
         </button>
 
+        {/* Badge visible cuando el drawer está colapsado pero hay filtro de fecha activo */}
+        {!showAdvanced && isDateFilterActive && dateFilter && (
+          <span
+            style={{
+              background: '#eff6ff',
+              border: '1px solid #bfdbfe',
+              color: '#1d4ed8',
+              padding: '5px 9px',
+              borderRadius: '7px',
+              fontWeight: 700,
+              fontSize: '11px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px'
+            }}
+          >
+            <Calendar className="w-3.5 h-3.5 text-blue-600" />
+            <span>{getDateFilterSummary(dateFilter)}</span>
+            <button
+              type="button"
+              onClick={e => {
+                e.stopPropagation();
+                resetDateFilter?.();
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#3b82f6',
+                cursor: 'pointer',
+                padding: '0 2px',
+                fontSize: '12px',
+                fontWeight: 800,
+                lineHeight: 1
+              }}
+              title="Quitar filtro de fecha"
+            >
+              ✕
+            </button>
+          </span>
+        )}
+
         {/* Botón Limpiar Filtros */}
         {hasAnyFilterActive && (
           <button
@@ -272,84 +327,272 @@ export default function InventoryFilterBar({
         <div
           style={{
             display: 'flex',
-            gap: '12px',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            paddingTop: '8px',
+            flexDirection: 'column',
+            gap: '10px',
+            paddingTop: '10px',
             borderTop: '1px dashed #e2e8f0',
             fontSize: '11.5px'
           }}
         >
-          {/* Sede */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <span style={{ fontWeight: 700, color: '#64748b' }}>Sede:</span>
-            <select
-              value={locationFilter}
-              onChange={e => setLocationFilter(e.target.value)}
+          {/* FILA 1: FILTRO PROFESIONAL DE FECHAS (Día, Mes, Año, Rango) */}
+          {dateFilter && setDateFilter && (
+            <div
               style={{
-                padding: '4px 8px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                fontSize: '11.5px',
-                background: '#ffffff'
+                display: 'flex',
+                gap: '10px',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                background: isDateFilterActive ? '#f0f7ff' : '#f8fafc',
+                padding: '7px 11px',
+                borderRadius: '8px',
+                border: isDateFilterActive ? '1px solid #bfdbfe' : '1px solid #e2e8f0',
+                transition: 'all 0.15s ease'
               }}
             >
-              <option value="ALL">Todas las Sedes</option>
-              <option value="AmexLince">Almacén Central Lince</option>
-              <option value="Entregado">Entregados / Salidas</option>
-            </select>
-          </div>
+              {/* Etiqueta e Icono */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                <span style={{ fontWeight: 800, color: '#1e293b' }}>Fecha de Ingreso:</span>
+              </div>
 
-          {/* Piso */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <span style={{ fontWeight: 700, color: '#64748b' }}>Piso:</span>
-            <select
-              value={floorFilter}
-              onChange={e => setFloorFilter(e.target.value)}
-              style={{
-                padding: '4px 8px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                fontSize: '11.5px',
-                background: '#ffffff'
-              }}
-            >
-              <option value="ALL">Todos los Pisos</option>
-              <option value="P1">P1 (Piso 1 · Inferior)</option>
-              <option value="P2">P2 (Piso 2 · Medio)</option>
-              <option value="P3">P3 (Piso 3 · Medio Alto)</option>
-              <option value="P4">P4 (Piso 4 · Superior)</option>
-            </select>
-          </div>
-
-          {/* Empaque */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <span style={{ fontWeight: 700, color: '#64748b' }}>Empaque:</span>
-            <select
-              value={packageTypeFilter}
-              onChange={e => setPackageTypeFilter(e.target.value)}
-              style={{
-                padding: '4px 8px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                fontSize: '11.5px',
-                background: '#ffffff'
-              }}
-            >
-              <option value="ALL">Todos los Empaques</option>
-              <option value="CAJA">CAJA</option>
-              <option value="SOBRE">SOBRE</option>
-              <option value="SACA">SACA</option>
-            </select>
-          </div>
-
-          {/* Estado TIB */}
-          {setStatusFilter && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <span style={{ fontWeight: 700, color: '#64748b' }}>Estado TIB:</span>
+              {/* Selector de Modo / Preset */}
               <select
-                value={statusFilter}
-                onChange={e => setStatusFilter(e.target.value)}
+                value={dateFilter.type}
+                onChange={e => {
+                  const newType = e.target.value as any;
+                  setDateFilter(prev => ({
+                    ...prev,
+                    type: newType,
+                    exactDate:
+                      newType === 'EXACT_DAY' && !prev.exactDate
+                        ? toLocalDateString(new Date())
+                        : prev.exactDate,
+                    startDate:
+                      newType === 'CUSTOM_RANGE' && !prev.startDate
+                        ? toLocalDateString(new Date(Date.now() - 7 * 86400000))
+                        : prev.startDate,
+                    endDate:
+                      newType === 'CUSTOM_RANGE' && !prev.endDate
+                        ? toLocalDateString(new Date())
+                        : prev.endDate
+                  }));
+                }}
+                style={{
+                  padding: '5px 9px',
+                  borderRadius: '6px',
+                  border: isDateFilterActive ? '1px solid #93c5fd' : '1px solid #cbd5e1',
+                  background: '#ffffff',
+                  color: isDateFilterActive ? '#1d4ed8' : '#1e293b',
+                  fontWeight: isDateFilterActive ? 700 : 600,
+                  fontSize: '11.5px',
+                  outline: 'none'
+                }}
+              >
+                <option value="ALL">Todas las fechas (Sin filtro)</option>
+                <optgroup label="Atajos Rápidos">
+                  <option value="TODAY">📅 Hoy</option>
+                  <option value="YESTERDAY">📅 Ayer</option>
+                  <option value="LAST_7_DAYS">📅 Últimos 7 días</option>
+                  <option value="THIS_MONTH">📅 Este Mes</option>
+                  <option value="LAST_MONTH">📅 Mes Pasado</option>
+                  <option value="THIS_YEAR">📅 Este Año</option>
+                </optgroup>
+                <optgroup label="Filtrar por Período Exacto">
+                  <option value="EXACT_DAY">🎯 Por Día Específico</option>
+                  <option value="MONTH_YEAR">🗓️ Por Mes y Año</option>
+                  <option value="YEAR">📆 Por Año Específico</option>
+                  <option value="CUSTOM_RANGE">⏱️ Rango de Fechas (Desde - Hasta)</option>
+                </optgroup>
+              </select>
+
+              {/* Controles Dinámicos según Modo */}
+              {dateFilter.type === 'EXACT_DAY' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <span style={{ fontWeight: 600, color: '#64748b' }}>Día:</span>
+                  <input
+                    type="date"
+                    value={dateFilter.exactDate || ''}
+                    onChange={e => setDateFilter(prev => ({ ...prev, exactDate: e.target.value }))}
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '11.5px',
+                      background: '#ffffff',
+                      color: '#0f172a',
+                      fontWeight: 600
+                    }}
+                  />
+                </div>
+              )}
+
+              {dateFilter.type === 'MONTH_YEAR' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontWeight: 600, color: '#64748b' }}>Mes:</span>
+                  <select
+                    value={dateFilter.month || new Date().getMonth() + 1}
+                    onChange={e => setDateFilter(prev => ({ ...prev, month: Number(e.target.value) }))}
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '11.5px',
+                      background: '#ffffff',
+                      color: '#0f172a',
+                      fontWeight: 600
+                    }}
+                  >
+                    {MONTH_NAMES.map((name, idx) => (
+                      <option key={idx + 1} value={idx + 1}>
+                        {name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <span style={{ fontWeight: 600, color: '#64748b' }}>Año:</span>
+                  <select
+                    value={dateFilter.year || new Date().getFullYear()}
+                    onChange={e => setDateFilter(prev => ({ ...prev, year: Number(e.target.value) }))}
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '11.5px',
+                      background: '#ffffff',
+                      color: '#0f172a',
+                      fontWeight: 600
+                    }}
+                  >
+                    {yearsList.map(y => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {dateFilter.type === 'YEAR' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <span style={{ fontWeight: 600, color: '#64748b' }}>Año:</span>
+                  <select
+                    value={dateFilter.year || new Date().getFullYear()}
+                    onChange={e => setDateFilter(prev => ({ ...prev, year: Number(e.target.value) }))}
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '11.5px',
+                      background: '#ffffff',
+                      color: '#0f172a',
+                      fontWeight: 600
+                    }}
+                  >
+                    {yearsList.map(y => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {dateFilter.type === 'CUSTOM_RANGE' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ fontWeight: 600, color: '#64748b' }}>Desde:</span>
+                    <input
+                      type="date"
+                      value={dateFilter.startDate || ''}
+                      onChange={e => setDateFilter(prev => ({ ...prev, startDate: e.target.value }))}
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '11.5px',
+                        background: '#ffffff',
+                        color: '#0f172a',
+                        fontWeight: 600
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ fontWeight: 600, color: '#64748b' }}>Hasta:</span>
+                    <input
+                      type="date"
+                      value={dateFilter.endDate || ''}
+                      onChange={e => setDateFilter(prev => ({ ...prev, endDate: e.target.value }))}
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '11.5px',
+                        background: '#ffffff',
+                        color: '#0f172a',
+                        fontWeight: 600
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Badge descriptivo y botón de borrado rápido si hay filtro de fecha activo */}
+              {isDateFilterActive && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
+                  <span
+                    style={{
+                      background: '#eff6ff',
+                      border: '1px solid #bfdbfe',
+                      color: '#1d4ed8',
+                      padding: '3px 8px',
+                      borderRadius: '6px',
+                      fontWeight: 700,
+                      fontSize: '11px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <Calendar className="w-3 h-3 text-blue-600" />
+                    {getDateFilterSummary(dateFilter)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => resetDateFilter?.()}
+                    title="Quitar filtro de fecha"
+                    style={{
+                      background: '#fee2e2',
+                      border: '1px solid #fca5a5',
+                      color: '#b91c1c',
+                      borderRadius: '5px',
+                      padding: '2px 6px',
+                      fontSize: '10.5px',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* FILA 2: FILTROS DE UBICACIÓN, PISO, EMPAQUE Y ESTADO TIB */}
+          <div
+            style={{
+              display: 'flex',
+              gap: '12px',
+              flexWrap: 'wrap',
+              alignItems: 'center'
+            }}
+          >
+            {/* Sede */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ fontWeight: 700, color: '#64748b' }}>Sede:</span>
+              <select
+                value={locationFilter}
+                onChange={e => setLocationFilter(e.target.value)}
                 style={{
                   padding: '4px 8px',
                   borderRadius: '6px',
@@ -358,20 +601,86 @@ export default function InventoryFilterBar({
                   background: '#ffffff'
                 }}
               >
-                <option value="ALL">Todos los Estados TIB</option>
-                <option value="Enviado">Enviado</option>
-                <option value="Recibido">Recibido</option>
-                <option value="EnAlmacen">En Almacén</option>
-                <option value="ListoParaRecojo">Listo Recojo</option>
-                <option value="EnRutaCarroAmex">En Ruta Carro</option>
-                <option value="EnRutaMotorizado">En Ruta Moto</option>
-                <option value="EnRutaProvincia">En Ruta Provincia</option>
-                <option value="Entregado">Entregado</option>
+                <option value="ALL">Todas las Sedes</option>
+                <option value="AmexLince">Almacén Central Lince</option>
+                <option value="Entregado">Entregados / Salidas</option>
               </select>
             </div>
-          )}
+
+            {/* Piso */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ fontWeight: 700, color: '#64748b' }}>Piso:</span>
+              <select
+                value={floorFilter}
+                onChange={e => setFloorFilter(e.target.value)}
+                style={{
+                  padding: '4px 8px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '11.5px',
+                  background: '#ffffff'
+                }}
+              >
+                <option value="ALL">Todos los Pisos</option>
+                <option value="P1">P1 (Piso 1 · Inferior)</option>
+                <option value="P2">P2 (Piso 2 · Medio)</option>
+                <option value="P3">P3 (Piso 3 · Medio Alto)</option>
+                <option value="P4">P4 (Piso 4 · Superior)</option>
+              </select>
+            </div>
+
+            {/* Empaque */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ fontWeight: 700, color: '#64748b' }}>Empaque:</span>
+              <select
+                value={packageTypeFilter}
+                onChange={e => setPackageTypeFilter(e.target.value)}
+                style={{
+                  padding: '4px 8px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '11.5px',
+                  background: '#ffffff'
+                }}
+              >
+                <option value="ALL">Todos los Empaques</option>
+                <option value="CAJA">CAJA</option>
+                <option value="SOBRE">SOBRE</option>
+                <option value="SACA">SACA</option>
+              </select>
+            </div>
+
+            {/* Estado TIB */}
+            {setStatusFilter && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <span style={{ fontWeight: 700, color: '#64748b' }}>Estado TIB:</span>
+                <select
+                  value={statusFilter}
+                  onChange={e => setStatusFilter(e.target.value)}
+                  style={{
+                    padding: '4px 8px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '11.5px',
+                    background: '#ffffff'
+                  }}
+                >
+                  <option value="ALL">Todos los Estados TIB</option>
+                  <option value="Enviado">Enviado</option>
+                  <option value="Recibido">Recibido</option>
+                  <option value="EnAlmacen">En Almacén</option>
+                  <option value="ListoParaRecojo">Listo Recojo</option>
+                  <option value="EnRutaCarroAmex">En Ruta Carro</option>
+                  <option value="EnRutaMotorizado">En Ruta Moto</option>
+                  <option value="EnRutaProvincia">En Ruta Provincia</option>
+                  <option value="Entregado">Entregado</option>
+                </select>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
   );
 }
+
