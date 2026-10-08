@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import PdfViewerModal from '@/components/modals/PdfViewerModal';
+import { getR2ViewUrl } from '@/lib/r2/client';
 
 export interface SavedManifest {
   id: string;
@@ -83,13 +84,66 @@ export default function ManifiestosTibHistorial({
   // Visor de PDF Popup y Modal
   const [selectedPdfManifest, setSelectedPdfManifest] = useState<SavedManifest | null>(null);
 
+  // Modal para vincular escaneo original si falta en la nube
+  const [manifestToAttachScan, setManifestToAttachScan] = useState<SavedManifest | null>(null);
+  const [isUploadingScanFile, setIsUploadingScanFile] = useState(false);
+
   const handleOpenPdf = (m: SavedManifest) => {
+    if (!m.archivo_url) {
+      setManifestToAttachScan(m);
+      return;
+    }
     setSelectedPdfManifest(m);
   };
 
   const handleOpenPdfInNewTab = (m: SavedManifest) => {
-    const url = `/api/manifiestos-tib/pdf?id=${m.id}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
+    if (!m.archivo_url) {
+      setManifestToAttachScan(m);
+      return;
+    }
+    const targetUrl = getR2ViewUrl(m.archivo_url);
+    window.open(targetUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleAttachScanForManifest = async (fileToUpload: File) => {
+    if (!manifestToAttachScan) return;
+    setIsUploadingScanFile(true);
+    try {
+      const formData = new FormData();
+      formData.append('id', manifestToAttachScan.id);
+      formData.append('file', fileToUpload);
+
+      const res = await fetch('/api/manifiestos-tib/adjuntar-pdf', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al adjuntar archivo');
+
+      const updatedManifest: SavedManifest = {
+        ...manifestToAttachScan,
+        archivo_url: data.archivo_url,
+        archivo_nombre: data.archivo_nombre,
+      };
+
+      // Actualizar estado local
+      setManifiestos((prev) =>
+        prev.map((item) => (item.id === manifestToAttachScan.id ? updatedManifest : item))
+      );
+
+      if (manifestDetail && manifestDetail.manifiesto.id === manifestToAttachScan.id) {
+        setManifestDetail((prev) => (prev ? { ...prev, manifiesto: updatedManifest } : null));
+      }
+
+      setManifestToAttachScan(null);
+      // Abrir inmediatamente el visor con el PDF físico escaneado
+      setSelectedPdfManifest(updatedManifest);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al subir archivo';
+      alert(`Error: ${msg}`);
+    } finally {
+      setIsUploadingScanFile(false);
+    }
   };
 
   const [isUploadingScan, setIsUploadingScan] = useState(false);
@@ -596,39 +650,52 @@ export default function ManifiestosTibHistorial({
                       </td>
 
                       {/* Archivo */}
-                      <td style={{ padding: '12px 16px', maxWidth: '210px' }}>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenPdf(m)}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            padding: 0,
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            maxWidth: '100%',
-                            textAlign: 'left',
-                          }}
-                          title={`Visualizar PDF: ${m.archivo_nombre}`}
-                          className="group"
-                        >
-                          <FileText className="w-3.5 h-3.5 text-red-500 shrink-0 group-hover:scale-110 transition-transform" />
-                          <span
+                      <td style={{ padding: '12px 16px', maxWidth: '230px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenPdf(m)}
                             style={{
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              color: '#334155',
-                              fontWeight: 600,
-                              fontSize: '12.5px',
+                              background: 'transparent',
+                              border: 'none',
+                              padding: 0,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              maxWidth: '100%',
+                              textAlign: 'left',
                             }}
-                            className="group-hover:text-blue-600 group-hover:underline"
+                            title={m.archivo_url ? `Visualizar PDF Escaneado: ${m.archivo_nombre}` : `Haz clic para vincular el escaneo original: ${m.archivo_nombre}`}
+                            className="group"
                           >
-                            {m.archivo_nombre || 'manifiesto.pdf'}
-                          </span>
-                        </button>
+                            <FileText className={`w-3.5 h-3.5 ${m.archivo_url ? 'text-red-500' : 'text-amber-500'} shrink-0 group-hover:scale-110 transition-transform`} />
+                            <span
+                              style={{
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                color: m.archivo_url ? '#1e293b' : '#b45309',
+                                fontWeight: 600,
+                                fontSize: '12.5px',
+                              }}
+                              className="group-hover:text-blue-600 group-hover:underline"
+                            >
+                              {m.archivo_nombre || 'manifiesto.pdf'}
+                            </span>
+                          </button>
+                          <div>
+                            {m.archivo_url ? (
+                              <span style={{ fontSize: '10px', color: '#059669', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                ✓ Escaneo en nube
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: '10px', color: '#d97706', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                ⚠ Falta vincular scan
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </td>
 
                       {/* Guías AMX */}
@@ -730,50 +797,77 @@ export default function ManifiestosTibHistorial({
                             <Eye className="w-3.5 h-3.5" /> Ver Detalle
                           </button>
 
-                          <button
-                            type="button"
-                            onClick={() => handleOpenPdf(m)}
-                            title="Visualizar PDF dentro del sistema o en popup"
-                            style={{
-                              background: '#fef2f2',
-                              border: '1px solid #fecaca',
-                              color: '#dc2626',
-                              padding: '6px 10px',
-                              borderRadius: '6px',
-                              fontSize: '12px',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              transition: 'all 0.15s ease',
-                            }}
-                            className="hover:bg-red-100 hover:border-red-300"
-                          >
-                            <FileText className="w-3.5 h-3.5 text-red-600" /> Ver PDF
-                          </button>
+                          {m.archivo_url ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenPdf(m)}
+                                title="Visualizar escaneo físico original dentro del sistema"
+                                style={{
+                                  background: '#fef2f2',
+                                  border: '1px solid #fecaca',
+                                  color: '#dc2626',
+                                  padding: '6px 10px',
+                                  borderRadius: '6px',
+                                  fontSize: '12px',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  transition: 'all 0.15s ease',
+                                }}
+                                className="hover:bg-red-100 hover:border-red-300"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-red-600" /> Ver Scan PDF
+                              </button>
 
-                          <button
-                            type="button"
-                            onClick={() => handleOpenPdfInNewTab(m)}
-                            title="Abrir PDF directamente en nueva pestaña del navegador"
-                            style={{
-                              background: '#f8fafc',
-                              border: '1px solid #e2e8f0',
-                              color: '#64748b',
-                              padding: '6px 8px',
-                              borderRadius: '6px',
-                              fontSize: '12px',
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              transition: 'all 0.15s ease',
-                            }}
-                            className="hover:bg-slate-100 hover:text-slate-900"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </button>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenPdfInNewTab(m)}
+                                title="Abrir PDF escaneado original directamente en nueva pestaña del navegador"
+                                style={{
+                                  background: '#f8fafc',
+                                  border: '1px solid #e2e8f0',
+                                  color: '#64748b',
+                                  padding: '6px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '12px',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  transition: 'all 0.15s ease',
+                                }}
+                                className="hover:bg-slate-100 hover:text-slate-900"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenPdf(m)}
+                              title="Subir archivo escaneado original para este manifiesto"
+                              style={{
+                                background: '#fffbeb',
+                                border: '1px solid #fde68a',
+                                color: '#b45309',
+                                padding: '6px 10px',
+                                borderRadius: '6px',
+                                fontSize: '12px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                transition: 'all 0.15s ease',
+                              }}
+                              className="hover:bg-amber-100 hover:border-amber-300"
+                            >
+                              <Upload className="w-3.5 h-3.5 text-amber-600" /> Vincular Scan
+                            </button>
+                          )}
 
                           <button
                             type="button"
@@ -1396,12 +1490,214 @@ export default function ManifiestosTibHistorial({
       {/* Visor de PDF Popup y Modal */}
       {selectedPdfManifest && (
         <PdfViewerModal
-          url={`/api/manifiestos-tib/pdf?id=${selectedPdfManifest.id}`}
-          title={`Manifiesto TIB — Vuelo ${selectedPdfManifest.fecha_vuelo} (${selectedPdfManifest.archivo_nombre || 'manifiesto.pdf'})`}
-          subtitle={`Modalidad: ${selectedPdfManifest.modalidad} • ${selectedPdfManifest.guias_extraidas} Guías AMX • ${selectedPdfManifest.paquetes_extraidos} Paquetes WR • ${selectedPdfManifest.es_cuadre_perfecto ? 'Cuadre Perfecto' : 'Descuadre'}`}
+          url={selectedPdfManifest.archivo_url ? getR2ViewUrl(selectedPdfManifest.archivo_url) : `/api/manifiestos-tib/pdf?id=${selectedPdfManifest.id}`}
+          title={`Escaneo Original TIB — Vuelo ${selectedPdfManifest.fecha_vuelo} (${selectedPdfManifest.archivo_nombre || 'manifiesto.pdf'})`}
+          subtitle={`Modalidad: ${selectedPdfManifest.modalidad} • ${selectedPdfManifest.guias_extraidas} Guías AMX • ${selectedPdfManifest.paquetes_extraidos} Paquetes WR`}
           fileName={selectedPdfManifest.archivo_nombre || `manifiesto_vuelo_${selectedPdfManifest.fecha_vuelo}.pdf`}
           onClose={() => setSelectedPdfManifest(null)}
         />
+      )}
+
+      {/* Modal para Vincular / Subir Escaneo Original de Registros Previos */}
+      {manifestToAttachScan && (
+        <div
+          className="modal-overlay active"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(15, 23, 42, 0.8)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+          onClick={() => !isUploadingScanFile && setManifestToAttachScan(null)}
+        >
+          <div
+            className="modal-content"
+            style={{
+              width: '100%',
+              maxWidth: '560px',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              background: '#0f172a',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
+              color: '#ffffff',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Cabecera */}
+            <div
+              style={{
+                padding: '16px 20px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '8px',
+                    background: '#dc2626',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <FileText className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800 }}>
+                    Vincular Escaneo Físico Original
+                  </h3>
+                  <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+                    Vuelo: <strong>{manifestToAttachScan.fecha_vuelo}</strong> • Modalidad: <strong>{manifestToAttachScan.modalidad}</strong>
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setManifestToAttachScan(null)}
+                disabled={isUploadingScanFile}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                }}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Cuerpo */}
+            <div style={{ padding: '20px' }}>
+              <div
+                style={{
+                  background: 'rgba(30, 41, 59, 0.7)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  marginBottom: '16px',
+                  fontSize: '12.5px',
+                  color: '#cbd5e1',
+                  lineHeight: '1.5',
+                }}
+              >
+                <p style={{ margin: 0 }}>
+                  Este manifiesto fue registrado previamente en base de datos. Para ver el <strong>documento físico escaneado original</strong> en el visor y navegador, selecciona el archivo desde tu equipo:
+                </p>
+                <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px', color: '#38bdf8', fontWeight: 700 }}>
+                  <FileText className="w-4 h-4" />
+                  <span>Archivo esperado: {manifestToAttachScan.archivo_nombre || 'manifiesto.pdf'}</span>
+                </div>
+              </div>
+
+              {/* Zona de Selección de Archivo */}
+              <label
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '30px 20px',
+                  border: '2px dashed rgba(59, 130, 246, 0.5)',
+                  borderRadius: '12px',
+                  background: 'rgba(59, 130, 246, 0.05)',
+                  cursor: isUploadingScanFile ? 'wait' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  textAlign: 'center',
+                }}
+                className="hover:bg-blue-500/10 hover:border-blue-400"
+              >
+                <input
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  disabled={isUploadingScanFile}
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      handleAttachScanForManifest(e.target.files[0]);
+                    }
+                  }}
+                />
+
+                {isUploadingScanFile ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                    <RefreshCw className="w-8 h-8 text-blue-400 animate-spin" />
+                    <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#60a5fa' }}>
+                      Subiendo archivo escaneado a Cloudflare R2...
+                    </span>
+                    <span style={{ fontSize: '11.5px', color: '#94a3b8' }}>
+                      Guardando enlace permanente y abriendo visor...
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <div
+                      style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '50%',
+                        background: 'rgba(59, 130, 246, 0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '10px',
+                        color: '#60a5fa',
+                      }}
+                    >
+                      <Upload className="w-6 h-6" />
+                    </div>
+                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#ffffff', marginBottom: '4px' }}>
+                      Haz clic para seleccionar el PDF escaneado
+                    </span>
+                    <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+                      (Ejemplo: desde A:\ o tu carpeta de escaneos)
+                    </span>
+                  </>
+                )}
+              </label>
+            </div>
+
+            {/* Pie */}
+            <div
+              style={{
+                padding: '12px 20px',
+                background: 'rgba(15, 23, 42, 0.9)',
+                borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                display: 'flex',
+                justifyContent: 'flex-end',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setManifestToAttachScan(null)}
+                disabled={isUploadingScanFile}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontSize: '12.5px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
