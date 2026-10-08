@@ -65,7 +65,7 @@ export default function InventoryTable({
               <th className="py-2.5 px-3.5">Cliente</th>
               <th className="py-2.5 px-3.5">Tipo Paquete</th>
               <th className="py-2.5 px-3.5">Peso</th>
-              <th className="py-2.5 px-3.5">Anaquel & Piso (WMS)</th>
+              <th className="py-2.5 px-3.5">Ubicación</th>
               <th className="py-2.5 px-3.5">Estado AMEX</th>
               <th className="py-2.5 px-3.5 text-center">Acciones</th>
             </tr>
@@ -190,7 +190,7 @@ export default function InventoryTable({
                           border: pos.startsWith('REC') ? '1px solid #fde68a' : '1px solid #bfdbfe'
                         }}
                       >
-                        📍 {pos}
+                        {pos}
                       </span>
                     </td>
                     {/* ESTADO AMEX (Operativo Interno) */}

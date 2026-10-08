@@ -103,7 +103,7 @@ export function renderPackagesTableCanvas(packages: Paquete[]): HTMLCanvasElemen
 
   ctx.fillText('GUÍA WR', colX.wr, colY + 23);
   ctx.fillText('CLIENTE / CONSIGNATARIO', colX.nombre, colY + 23);
-  ctx.fillText('UBICACIÓN (WMS)', colX.ubicacion, colY + 23);
+  ctx.fillText('UBICACIÓN', colX.ubicacion, colY + 23);
   ctx.fillText('ESTADO AMEX', colX.estado, colY + 23);
 
   // 4. Filas de Paquetes
@@ -159,7 +159,7 @@ export function renderPackagesTableCanvas(packages: Paquete[]): HTMLCanvasElemen
       locBorder = '#fde68a';
     }
 
-    const locText = `📍 ${pos}`;
+    const locText = pos;
     ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     const locWidth = ctx.measureText(locText).width + 16;
     const locPillY = currentY + 8;
