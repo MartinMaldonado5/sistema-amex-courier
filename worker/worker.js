@@ -85,7 +85,9 @@ const EMPTY_TEMPLATE = process.env.EMPTY_TEMPLATE || defaultEmptyTemplate;
 const WORK_DIR = process.env.WORK_DIR || path.join(os.tmpdir(), 'amex-jobs');
 const TIB_CACHE_DIR = process.env.TIB_CACHE_DIR || path.resolve(__dirname, '..', 'cache', 'tib-active');
 // Polling adaptativo para minimizar consumo de cuota de logs en Supabase (reduce logs >93%)
-const POLL_INTERVAL_IDLE_MS = Math.max(5000, Number(process.env.POLL_INTERVAL_MS || 25000)); // 25s en reposo
+// Si el contenedor tiene configurado el antiguo valor legado (1500ms o <=5000ms), usar 25000ms (25s) por defecto en reposo.
+const rawPollEnv = Number(process.env.POLL_INTERVAL_MS);
+const POLL_INTERVAL_IDLE_MS = (!rawPollEnv || rawPollEnv <= 5000) ? 25000 : rawPollEnv;
 const POLL_INTERVAL_BUSY_MS = 2000; // 2s tras procesar un trabajo para drenar cola
 const PROCESS_TIMEOUT_MS = Math.max(60_000, Number(process.env.PROCESS_TIMEOUT_MS || 20 * 60 * 1000));
 const HOST = process.env.HOST || '0.0.0.0';
