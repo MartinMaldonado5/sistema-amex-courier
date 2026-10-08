@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { encabezado, cuadre, filas, archivoNombre, sincronizarInventario } = body;
+    const { encabezado, cuadre, filas, archivoNombre, archivoUrl, sincronizarInventario } = body;
 
     if (!encabezado || !filas || !Array.isArray(filas)) {
       return NextResponse.json({ error: 'Datos de manifiesto incompletos o inválidos.' }, { status: 400 });
@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
         paquetes_extraidos: Number(cuadre?.totales?.paquetes_extraidos || 0),
         es_cuadre_perfecto: Boolean(cuadre?.cuadre_perfecto),
         archivo_nombre: archivoNombre || 'manifiesto.pdf',
+        archivo_url: archivoUrl || null,
         creado_por: userNombre
       })
       .select()

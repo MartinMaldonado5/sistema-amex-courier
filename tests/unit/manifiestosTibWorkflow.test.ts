@@ -85,4 +85,36 @@ describe('Módulo 17: Manifiestos TIB — Workflow & Historial', () => {
     expect(totalCuadrePerfecto).toBe(3);
     expect(tasaCuadre).toBe(75);
   });
+
+  it('genera un buffer PDF válido con datos completos del manifiesto', async () => {
+    const { generateManifestDigitalPdf } = await import('@/features/manifiestos-tib/services/manifestPdfGenerator');
+
+    const manifestMock = {
+      id: 'test-uuid-123',
+      fecha_vuelo: '5-10',
+      cliente: 'AMEX',
+      modalidad: 'OFICINA',
+      guias_declaradas: 57,
+      paquetes_declarados: 82,
+      guias_extraidas: 57,
+      paquetes_extraidos: 82,
+      es_cuadre_perfecto: true,
+      archivo_nombre: '07102026_ALMACEN_000011.pdf',
+      creado_por: 'Administrador AMEX',
+      creado_en: '2026-10-07T18:37:00Z',
+    };
+
+    const filasMock = [
+      { guia: 'AMX000009060', wrs: ['WR000469622', 'WR000465623'], observacion: 'Urgente' },
+      { guia: 'AMX000009061', wrs: ['WR000454540'], observacion: '' },
+    ];
+
+    const buffer = generateManifestDigitalPdf(manifestMock, filasMock);
+    expect(buffer).toBeInstanceOf(Buffer);
+    expect(buffer.length).toBeGreaterThan(1000);
+    // Verificar que empiece con el encabezado %PDF
+    const header = buffer.subarray(0, 5).toString('ascii');
+    expect(header.startsWith('%PDF')).toBe(true);
+  });
 });
+

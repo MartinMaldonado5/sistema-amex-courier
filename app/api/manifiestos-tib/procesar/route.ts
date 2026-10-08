@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authorizeUser } from '@/lib/auth/guards';
 import OpenAI from 'openai';
 import sharp from 'sharp';
+import { uploadFileToR2 } from '@/lib/r2/client';
+import { getDateSegments, sanitizeFileName } from '@/lib/r2/datePartitionedUpload';
 
 export const maxDuration = 120; // 2 minutos para procesamiento de documentos multipágina
 
@@ -83,13 +85,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No se subió ningún archivo PDF o imagen.' }, { status: 400 });
     }
 
+    const arrayBuffer = await file.arrayBuffer();
+    const fileBuffer = Buffer.from(arrayBuffer);
+
+    // Subida paralela a Cloudflare R2 para visualización y descarga
+    let archivoUrl: string | null = null;
+    try {
+      const { year, month, day } = getDateSegments();
+      const cleanBase = sanitizeFileName(file.name.replace(/\.[^/.]+$/, '')) || 'MANIFIESTO';
+      const ext = (file.name.split('.').pop() || 'pdf').toLowerCase();
+      const subPath = `manifiestos-tib/${year}/${month}/${day}/${cleanBase}.${ext}`;
+      const r2Res = await uploadFileToR2(fileBuffer, subPath, file.type || 'application/pdf');
+      archivoUrl = r2Res.url;
+    } catch (r2Err) {
+      console.warn('[R2 Upload Warning in procesar]:', r2Err);
+    }
+
     // 1. Intentar procesar en el microservicio Python VPS si está disponible
     const vpsHost = process.env.VPS_HOST || '2.25.89.222';
     const engineUrl = process.env.MANIFEST_ENGINE_URL || `http://${vpsHost}:8000`;
 
     try {
       const pythonFormData = new FormData();
-      pythonFormData.append('file', file);
+      const blob = new Blob([fileBuffer], { type: file.type || 'application/pdf' });
+      pythonFormData.append('file', blob, file.name);
 
       // Timeout corto (3s) para no bloquear al operador si el puerto o VPS no está activo
       const pyRes = await fetch(`${engineUrl}/process-manifest`, {
@@ -100,7 +119,7 @@ export async function POST(req: NextRequest) {
 
       if (pyRes.ok) {
         const pyData = await pyRes.json();
-        return NextResponse.json(pyData);
+        return NextResponse.json({ ...pyData, archivo_url: archivoUrl });
       }
     } catch {
       // Si el microservicio Python en VPS no está disponible, pasar a motor multimodal
@@ -108,8 +127,6 @@ export async function POST(req: NextRequest) {
 
     // 2. Motor de Contingencia Inteligente (Soporta PDF multipágina e imágenes)
     if (process.env.OPENAI_API_KEY) {
-      const arrayBuffer = await file.arrayBuffer();
-      const fileBuffer = Buffer.from(arrayBuffer);
       const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
 
       // Extraer imágenes de cada página si es PDF, o usar la imagen directa
@@ -315,6 +332,7 @@ INSTRUCCIONES CRÍTICAS DE ALINEACIÓN DE CUADRÍCULA:
       return NextResponse.json({
         success: true,
         archivo: file.name,
+        archivo_url: archivoUrl,
         motor: 'openai_vision_multipage',
         total_paginas: pageImages.length,
         encabezado: encabezadoExtraid,

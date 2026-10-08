@@ -59,8 +59,8 @@ export function getR2ViewUrl(urlOrKey: string | null | undefined): string {
     return str;
   }
 
-  // Si ya es una ruta de nuestro proxy
-  if (str.startsWith('/api/storage/file') || str.startsWith('/api/storage/upload')) {
+  // Si ya es una ruta de nuestro proxy o API interna
+  if (str.startsWith('/api/')) {
     return str;
   }
 

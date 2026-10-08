@@ -17,9 +17,12 @@ import {
   FileText,
   Boxes,
   Copy,
-  Check
+  Check,
+  ExternalLink,
+  Upload,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import PdfViewerModal from '@/components/modals/PdfViewerModal';
 
 export interface SavedManifest {
   id: string;
@@ -32,6 +35,7 @@ export interface SavedManifest {
   paquetes_extraidos: number;
   es_cuadre_perfecto: boolean;
   archivo_nombre: string;
+  archivo_url?: string | null;
   creado_por: string;
   creado_en: string;
 }
@@ -75,6 +79,59 @@ export default function ManifiestosTibHistorial({
   // Estados de retroalimentación
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+
+  // Visor de PDF Popup y Modal
+  const [selectedPdfManifest, setSelectedPdfManifest] = useState<SavedManifest | null>(null);
+
+  const handleOpenPdf = (m: SavedManifest) => {
+    setSelectedPdfManifest(m);
+  };
+
+  const handleOpenPdfInNewTab = (m: SavedManifest) => {
+    const url = `/api/manifiestos-tib/pdf?id=${m.id}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const [isUploadingScan, setIsUploadingScan] = useState(false);
+
+  const handleUploadScanFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!manifestDetail || !e.target.files || !e.target.files[0]) return;
+    const fileToUpload = e.target.files[0];
+    setIsUploadingScan(true);
+    try {
+      const formData = new FormData();
+      formData.append('id', manifestDetail.manifiesto.id);
+      formData.append('file', fileToUpload);
+
+      const res = await fetch('/api/manifiestos-tib/adjuntar-pdf', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al adjuntar archivo');
+
+      alert('¡Archivo PDF original adjuntado con éxito!');
+      await fetchHistorial();
+      setManifestDetail((prev) =>
+        prev
+          ? {
+              ...prev,
+              manifiesto: {
+                ...prev.manifiesto,
+                archivo_url: data.archivo_url,
+                archivo_nombre: data.archivo_nombre,
+              },
+            }
+          : null
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al subir';
+      alert(`Error: ${msg}`);
+    } finally {
+      setIsUploadingScan(false);
+      e.target.value = '';
+    }
+  };
 
   const fetchHistorial = useCallback(async () => {
     setIsLoading(true);
@@ -539,20 +596,39 @@ export default function ManifiestosTibHistorial({
                       </td>
 
                       {/* Archivo */}
-                      <td style={{ padding: '12px 16px', maxWidth: '200px' }}>
-                        <div
+                      <td style={{ padding: '12px 16px', maxWidth: '210px' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenPdf(m)}
                           style={{
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            color: '#334155',
-                            fontWeight: 600,
-                            fontSize: '12.5px',
+                            background: 'transparent',
+                            border: 'none',
+                            padding: 0,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            maxWidth: '100%',
+                            textAlign: 'left',
                           }}
-                          title={m.archivo_nombre}
+                          title={`Visualizar PDF: ${m.archivo_nombre}`}
+                          className="group"
                         >
-                          {m.archivo_nombre || 'manifiesto.pdf'}
-                        </div>
+                          <FileText className="w-3.5 h-3.5 text-red-500 shrink-0 group-hover:scale-110 transition-transform" />
+                          <span
+                            style={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              color: '#334155',
+                              fontWeight: 600,
+                              fontSize: '12.5px',
+                            }}
+                            className="group-hover:text-blue-600 group-hover:underline"
+                          >
+                            {m.archivo_nombre || 'manifiesto.pdf'}
+                          </span>
+                        </button>
                       </td>
 
                       {/* Guías AMX */}
@@ -652,6 +728,51 @@ export default function ManifiestosTibHistorial({
                             }}
                           >
                             <Eye className="w-3.5 h-3.5" /> Ver Detalle
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleOpenPdf(m)}
+                            title="Visualizar PDF dentro del sistema o en popup"
+                            style={{
+                              background: '#fef2f2',
+                              border: '1px solid #fecaca',
+                              color: '#dc2626',
+                              padding: '6px 10px',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              transition: 'all 0.15s ease',
+                            }}
+                            className="hover:bg-red-100 hover:border-red-300"
+                          >
+                            <FileText className="w-3.5 h-3.5 text-red-600" /> Ver PDF
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleOpenPdfInNewTab(m)}
+                            title="Abrir PDF directamente en nueva pestaña del navegador"
+                            style={{
+                              background: '#f8fafc',
+                              border: '1px solid #e2e8f0',
+                              color: '#64748b',
+                              padding: '6px 8px',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transition: 'all 0.15s ease',
+                            }}
+                            className="hover:bg-slate-100 hover:text-slate-900"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
                           </button>
 
                           <button
@@ -799,6 +920,84 @@ export default function ManifiestosTibHistorial({
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {manifestDetail && (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPdf(manifestDetail.manifiesto)}
+                    style={{
+                      background: '#dc2626',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '7px 14px',
+                      borderRadius: '8px',
+                      fontWeight: 700,
+                      fontSize: '12.5px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                    className="hover:bg-red-700"
+                    title="Visualizar PDF dentro del sistema o popup"
+                  >
+                    <FileText className="w-4 h-4" /> Ver PDF
+                  </button>
+                )}
+
+                {manifestDetail && (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPdfInNewTab(manifestDetail.manifiesto)}
+                    style={{
+                      background: '#1e293b',
+                      color: '#cbd5e1',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      padding: '7px 12px',
+                      borderRadius: '8px',
+                      fontWeight: 700,
+                      fontSize: '12.5px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                    className="hover:bg-slate-700 hover:text-white"
+                    title="Abrir PDF directamente en nueva pestaña del navegador"
+                  >
+                    <ExternalLink className="w-4 h-4" /> Pestaña
+                  </button>
+                )}
+
+                {manifestDetail && !manifestDetail.manifiesto.archivo_url && (
+                  <label
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px dashed rgba(255, 255, 255, 0.3)',
+                      color: '#94a3b8',
+                      padding: '7px 12px',
+                      borderRadius: '8px',
+                      fontWeight: 600,
+                      fontSize: '12px',
+                      cursor: isUploadingScan ? 'wait' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                    className="hover:text-white hover:border-white/60"
+                    title="Subir archivo PDF original escaneado a la nube"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-slate-400" />
+                    <span>{isUploadingScan ? 'Subiendo...' : 'Adjuntar Scan'}</span>
+                    <input
+                      type="file"
+                      accept=".pdf,application/pdf"
+                      disabled={isUploadingScan}
+                      style={{ display: 'none' }}
+                      onChange={handleUploadScanFile}
+                    />
+                  </label>
+                )}
+
                 {manifestDetail && (
                   <button
                     type="button"
@@ -1192,6 +1391,17 @@ export default function ManifiestosTibHistorial({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Visor de PDF Popup y Modal */}
+      {selectedPdfManifest && (
+        <PdfViewerModal
+          url={`/api/manifiestos-tib/pdf?id=${selectedPdfManifest.id}`}
+          title={`Manifiesto TIB — Vuelo ${selectedPdfManifest.fecha_vuelo} (${selectedPdfManifest.archivo_nombre || 'manifiesto.pdf'})`}
+          subtitle={`Modalidad: ${selectedPdfManifest.modalidad} • ${selectedPdfManifest.guias_extraidas} Guías AMX • ${selectedPdfManifest.paquetes_extraidos} Paquetes WR • ${selectedPdfManifest.es_cuadre_perfecto ? 'Cuadre Perfecto' : 'Descuadre'}`}
+          fileName={selectedPdfManifest.archivo_nombre || `manifiesto_vuelo_${selectedPdfManifest.fecha_vuelo}.pdf`}
+          onClose={() => setSelectedPdfManifest(null)}
+        />
       )}
     </div>
   );

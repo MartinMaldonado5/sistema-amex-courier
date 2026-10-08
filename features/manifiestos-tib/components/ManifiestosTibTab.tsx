@@ -70,12 +70,14 @@ export default function ManifiestosTibTab({ onRefreshData }: { onRefreshData?: (
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
   const [syncWithInventory, setSyncWithInventory] = useState(true);
+  const [archivoUrl, setArchivoUrl] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
+      setArchivoUrl(null);
       setEncabezado(null);
       setCuadre(null);
       setFilas([]);
@@ -110,6 +112,9 @@ export default function ManifiestosTibTab({ onRefreshData }: { onRefreshData?: (
       setEncabezado(data.encabezado);
       setCuadre(data.cuadre);
       setFilas(data.filas || []);
+      if (data.archivo_url) {
+        setArchivoUrl(data.archivo_url);
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error inesperado';
       alert(`Error al procesar manifiesto: ${msg}`);
@@ -132,6 +137,7 @@ export default function ManifiestosTibTab({ onRefreshData }: { onRefreshData?: (
           cuadre,
           filas,
           archivoNombre: file?.name || 'manifiesto.pdf',
+          archivoUrl: archivoUrl || null,
           sincronizarInventario: syncWithInventory,
         }),
       });
