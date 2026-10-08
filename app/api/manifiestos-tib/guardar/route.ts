@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { encabezado, cuadre, filas, archivoNombre, archivoUrl, sincronizarInventario } = body;
+    const { encabezado, cuadre, filas, archivoNombre, archivoUrl } = body;
 
     if (!encabezado || !filas || !Array.isArray(filas)) {
       return NextResponse.json({ error: 'Datos de manifiesto incompletos o inválidos.' }, { status: 400 });
@@ -45,7 +45,6 @@ export async function POST(req: NextRequest) {
 
     // 2. Preparar filas de detalle
     const detallesInserts: any[] = [];
-    const allWrsToSync: Array<{ wr: string; guia: string }> = [];
 
     filas.forEach((f, idx) => {
       const guia = String(f.guia || '').trim();
@@ -70,7 +69,6 @@ export async function POST(req: NextRequest) {
             observacion: obs,
             fila_index: idx + 1
           });
-          allWrsToSync.push({ wr: wrClean, guia });
         });
       }
     });
@@ -82,39 +80,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Sincronización opcional con la tabla de inventario paquetes
-    let paquetesActualizados = 0;
-    if (sincronizarInventario && allWrsToSync.length > 0) {
-      const wrList = allWrsToSync.map(item => item.wr);
-      const { data: paquetesExistentes } = await admin
-        .from('paquetes')
-        .select('id, numero_recibo_bodega')
-        .in('numero_recibo_bodega', wrList);
-
-      if (paquetesExistentes && paquetesExistentes.length > 0) {
-        const ids = paquetesExistentes.map(p => p.id);
-        const { error: updErr } = await admin
-          .from('paquetes')
-          .update({
-            estado_amex: 'recibido',
-            estado_tib: 'Recibido',
-            ubicacion_actual: 'AmexLince',
-            actualizado_en: new Date().toISOString()
-          })
-          .in('id', ids);
-
-        if (!updErr) {
-          paquetesActualizados = ids.length;
-        }
-      }
-    }
-
     return NextResponse.json({
       success: true,
       manifiestoId: manifiesto.id,
       totalDetalles: detallesInserts.length,
-      paquetesActualizados,
-      mensaje: `Manifiesto guardado con éxito. Se registraron ${detallesInserts.length} items de entrega.${paquetesActualizados > 0 ? ` Se actualizaron ${paquetesActualizados} paquetes en el inventario.` : ''}`
+      mensaje: `Manifiesto guardado con éxito. Se registraron ${detallesInserts.length} items de entrega.`
     });
 
   } catch (err: unknown) {

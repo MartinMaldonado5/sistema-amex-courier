@@ -69,7 +69,6 @@ export default function ManifiestosTibTab({ onRefreshData }: { onRefreshData?: (
   const [searchTerm, setSearchTerm] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
-  const [syncWithInventory, setSyncWithInventory] = useState(true);
   const [archivoUrl, setArchivoUrl] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -138,7 +137,6 @@ export default function ManifiestosTibTab({ onRefreshData }: { onRefreshData?: (
           filas,
           archivoNombre: file?.name || 'manifiesto.pdf',
           archivoUrl: archivoUrl || null,
-          sincronizarInventario: syncWithInventory,
         }),
       });
 
@@ -148,9 +146,6 @@ export default function ManifiestosTibTab({ onRefreshData }: { onRefreshData?: (
       }
 
       setSaveSuccessMsg(data.mensaje || '¡Manifiesto guardado correctamente!');
-      if (onRefreshData && syncWithInventory) {
-        await onRefreshData();
-      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al guardar';
       alert(`Error al guardar en base de datos: ${msg}`);
@@ -708,15 +703,6 @@ export default function ManifiestosTibTab({ onRefreshData }: { onRefreshData?: (
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 700, color: '#334155', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={syncWithInventory}
-                  onChange={(e) => setSyncWithInventory(e.target.checked)}
-                />
-                Ingresar paquetes a Inventario Lince automáticamente
-              </label>
-
               <button
                 type="button"
                 onClick={() => {

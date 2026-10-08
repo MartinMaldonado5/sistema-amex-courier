@@ -1,11 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { EstanteriaPosicion, Paquete } from '@/types';
 import InventoryHeader from './InventoryHeader';
 import InventorySubTabs from './InventorySubTabs';
 import InventoryFilterBar from './InventoryFilterBar';
 import InventorySelectionBar from './InventorySelectionBar';
+import { copyPackagesTableAsImage } from '../utils/clipboardTableImage';
 
 export interface InventoryToolbarProps {
   paquetes: Paquete[];
@@ -95,6 +96,28 @@ export default function InventoryToolbar({
   onRefreshData,
   onNewPackage
 }: InventoryToolbarProps) {
+  const [selectionCopyStatus, setSelectionCopyStatus] = useState<'idle' | 'copying' | 'copied'>('idle');
+
+  const handleCopySelectedImage = async () => {
+    if (selectionCopyStatus === 'copying') return;
+    const selectedPkgs = paquetes.filter(p => selectedIds.includes(p.id));
+    if (selectedPkgs.length === 0) return;
+
+    setSelectionCopyStatus('copying');
+    try {
+      const res = await copyPackagesTableAsImage(selectedPkgs);
+      if (res.success) {
+        setSelectionCopyStatus('copied');
+        setTimeout(() => setSelectionCopyStatus('idle'), 3500);
+      } else {
+        alert(res.error || 'No se pudo copiar la imagen.');
+        setSelectionCopyStatus('idle');
+      }
+    } catch {
+      setSelectionCopyStatus('idle');
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
       {/* Breadcrumb sutil */}
@@ -156,6 +179,8 @@ export default function InventoryToolbar({
         onOpenBatchStatusModal={onOpenBatchStatusModal}
         onBatchDelete={onBatchDelete}
         onClearSelection={() => setSelectedIds([])}
+        onCopyImage={handleCopySelectedImage}
+        copyStatus={selectionCopyStatus}
       />
     </div>
   );

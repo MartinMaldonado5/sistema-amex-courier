@@ -61,10 +61,10 @@ export default function InventoryTable({
                 />
               </th>
               <th className="py-2.5 px-3.5">Guía WR</th>
-              <th className="py-2.5 px-3.5">Tracking USA</th>
+              <th className="py-2.5 px-3.5">Tracking</th>
               <th className="py-2.5 px-3.5">Cliente</th>
-              <th className="py-2.5 px-3.5">Descripción & Tipo</th>
-              <th className="py-2.5 px-3.5">Peso Físico (kg)</th>
+              <th className="py-2.5 px-3.5">Tipo Paquete</th>
+              <th className="py-2.5 px-3.5">Peso</th>
               <th className="py-2.5 px-3.5">Anaquel & Piso (WMS)</th>
               <th className="py-2.5 px-3.5">Estado AMEX</th>
               <th className="py-2.5 px-3.5 text-center">Acciones</th>
@@ -158,34 +158,23 @@ export default function InventoryTable({
                       <div style={{ fontWeight: 800, color: '#2563eb' }}>
                         {pkg.nombreConsignatario || 'Consignatario no asignado'}
                       </div>
-                      {pkg.usuarioEmail && (
-                        <div style={{ fontSize: '10.5px', color: '#64748b' }} title={`Usuario: ${pkg.usuarioEmail}`}>
-                          {pkg.usuarioEmail}
-                        </div>
-                      )}
                     </td>
                     <td style={{ padding: '10px 14px' }}>
                       <div
                         style={{
-                          color: '#0f172a',
-                          maxWidth: '200px',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis'
+                          fontWeight: 700,
+                          color: '#1e293b',
+                          fontSize: '12px',
+                          textTransform: 'uppercase'
                         }}
+                        title={pkg.descripcion || undefined}
                       >
-                        {pkg.descripcion || 'Sin descripción'}
-                      </div>
-                      <div style={{ fontSize: '11px', color: '#64748b' }}>
                         {pkg.tipoEmpaque || 'CAJA'}
                       </div>
                     </td>
-                    <td style={{ padding: '10px 14px' }}>
+                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
                       <div style={{ fontWeight: 800, color: '#0f172a' }}>
-                        {Number(pkg.pesoKg || 0).toFixed(2)} kg
-                      </div>
-                      <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
-                        Custodia Almacén
+                        {Number(pkg.pesoKg || 0).toFixed(2)}
                       </div>
                     </td>
                     <td style={{ padding: '10px 14px' }}>

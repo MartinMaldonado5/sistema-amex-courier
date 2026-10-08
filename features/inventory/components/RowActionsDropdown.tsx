@@ -9,9 +9,11 @@ import {
   Printer,
   FileText,
   Camera,
-  Trash2
+  Trash2,
+  Share2
 } from 'lucide-react';
 import { Paquete } from '@/types';
+import { copyPackagesTableAsImage } from '../utils/clipboardTableImage';
 
 export interface RowActionsDropdownProps {
   pkg: Paquete;
@@ -292,10 +294,43 @@ export default function RowActionsDropdown({
             </button>
           )}
 
+          {/* 7. Copiar Imagen para WhatsApp */}
+          <button
+            type="button"
+            onClick={async () => {
+              setIsOpen(false);
+              const res = await copyPackagesTableAsImage([pkg]);
+              if (!res.success) {
+                alert(res.error || 'No se pudo copiar la imagen.');
+              }
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '7px 9px',
+              borderRadius: '6px',
+              border: 'none',
+              background: 'transparent',
+              color: '#059669',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              width: '100%',
+              transition: 'background 0.15s ease'
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#ecfdf5')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            title="Copiar tarjeta del paquete como imagen para WhatsApp"
+          >
+            <Share2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <span>Copiar Imagen (WhatsApp)</span>
+          </button>
+
           {/* Divisor */}
           <div style={{ height: '1px', background: '#f1f5f9', margin: '3px 0' }} />
 
-          {/* 7. Eliminar */}
+          {/* 8. Eliminar */}
           <button
             type="button"
             onClick={() => {

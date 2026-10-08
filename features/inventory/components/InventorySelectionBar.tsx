@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowRightLeft, Truck, Trash2, X, CheckSquare } from 'lucide-react';
+import { ArrowRightLeft, Truck, Trash2, X, CheckSquare, Camera, Check, Loader2 } from 'lucide-react';
 
 export interface InventorySelectionBarProps {
   selectedCount: number;
@@ -9,6 +9,8 @@ export interface InventorySelectionBarProps {
   onOpenBatchStatusModal: () => void;
   onBatchDelete: () => void;
   onClearSelection: () => void;
+  onCopyImage?: () => void;
+  copyStatus?: 'idle' | 'copying' | 'copied';
 }
 
 export default function InventorySelectionBar({
@@ -16,7 +18,9 @@ export default function InventorySelectionBar({
   onOpenTransferModal,
   onOpenBatchStatusModal,
   onBatchDelete,
-  onClearSelection
+  onClearSelection,
+  onCopyImage,
+  copyStatus = 'idle'
 }: InventorySelectionBarProps) {
   if (selectedCount === 0) return null;
 
@@ -49,6 +53,50 @@ export default function InventorySelectionBar({
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {onCopyImage && (
+          <button
+            type="button"
+            onClick={onCopyImage}
+            disabled={copyStatus === 'copying'}
+            style={{
+              background: copyStatus === 'copied' ? '#059669' : '#10b981',
+              border: 'none',
+              color: '#ffffff',
+              borderRadius: '7px',
+              padding: '6px 12px',
+              fontSize: '12px',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: copyStatus === 'copying' ? 'wait' : 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={e => {
+              if (copyStatus !== 'copied') e.currentTarget.style.background = '#059669';
+            }}
+            onMouseLeave={e => {
+              if (copyStatus !== 'copied') e.currentTarget.style.background = '#10b981';
+            }}
+            title="Copiar tabla de paquetes seleccionados como imagen para WhatsApp"
+          >
+            {copyStatus === 'copying' ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+            ) : copyStatus === 'copied' ? (
+              <Check className="w-3.5 h-3.5 text-white" />
+            ) : (
+              <Camera className="w-3.5 h-3.5 text-white" />
+            )}
+            <span>
+              {copyStatus === 'copying'
+                ? 'Generando...'
+                : copyStatus === 'copied'
+                ? '¡Copiado!'
+                : 'Copiar Imagen (WhatsApp)'}
+            </span>
+          </button>
+        )}
+
         <button
           type="button"
           onClick={onOpenBatchStatusModal}
