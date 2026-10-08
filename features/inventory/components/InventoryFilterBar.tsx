@@ -17,7 +17,7 @@ export interface InventoryFilterBarProps {
   amexStatusCounts?: {
     total: number;
     activas?: number;
-    recibido: number;
+    recibido?: number;
     en_almacen: number;
     listo_recojo: number;
     en_ruta: number;
@@ -198,7 +198,6 @@ export default function InventoryFilterBar({
               <option value="ALL">Todos los Estados ({amexStatusCounts?.total ?? totalPaquetesCount})</option>
               <option value="ACTIVAS">📦 Solo Existencias Activas ({amexStatusCounts?.activas ?? 0})</option>
               <option value="en_almacen">📦 En Almacén ({amexStatusCounts?.en_almacen ?? 0})</option>
-              <option value="recibido">📥 Recibido ({amexStatusCounts?.recibido ?? 0})</option>
               <option value="listo_recojo">🏪 Listo Recojo ({amexStatusCounts?.listo_recojo ?? 0})</option>
               <option value="en_ruta">🚚 En Ruta ({amexStatusCounts?.en_ruta ?? 0})</option>
               <option value="entregado">✅ Entregado ({amexStatusCounts?.entregado ?? 0})</option>

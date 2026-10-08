@@ -160,7 +160,7 @@ export const inventoryService = {
         piso: updated.piso,
         posicion_estante: updated.posicionEstante,
         estado_tib: updated.estadoTib || updated.estadoEntrega || 'EnAlmacen',
-        estado_amex: updated.estadoAmex || 'recibido'
+        estado_amex: updated.estadoAmex === 'recibido' ? 'en_almacen' : (updated.estadoAmex || 'en_almacen')
       })
       .eq('id', updated.id);
   },
@@ -264,19 +264,21 @@ export const inventoryService = {
     arg4?: TipoEstadoAmex | TipoEstadoEntrega
   ): Promise<Paquete[]> {
     let paquetesList: Paquete[] = [];
-    let targetStatusAmex: TipoEstadoAmex = 'recibido';
+    let targetStatusAmex: TipoEstadoAmex = 'en_almacen';
     let targetStatusTib: TipoEstadoEntrega | undefined = undefined;
 
     if (Array.isArray(arg2)) {
       // Firma: batchStatusChange(selectedIds, paquetesList, targetStatusAmex, targetStatusTib?)
       paquetesList = arg2;
-      targetStatusAmex = (arg3 as TipoEstadoAmex) || 'recibido';
+      const rawAmex = (arg3 as TipoEstadoAmex) || 'en_almacen';
+      targetStatusAmex = rawAmex === 'recibido' ? 'en_almacen' : rawAmex;
       targetStatusTib = arg4 as TipoEstadoEntrega | undefined;
     } else {
       // Firma previa: batchStatusChange(selectedIds, targetStatusTib, paquetesList, targetStatusAmex?)
       targetStatusTib = arg2 as TipoEstadoEntrega | undefined;
       paquetesList = (arg3 as Paquete[]) || [];
-      targetStatusAmex = (arg4 as TipoEstadoAmex) || 'recibido';
+      const rawAmex = (arg4 as TipoEstadoAmex) || 'en_almacen';
+      targetStatusAmex = rawAmex === 'recibido' ? 'en_almacen' : rawAmex;
     }
 
     // Por requerimiento: el cambio masivo solo afecta a la columna estado_amex

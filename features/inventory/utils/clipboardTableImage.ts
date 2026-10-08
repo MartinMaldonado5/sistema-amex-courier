@@ -177,10 +177,11 @@ export function renderPackagesTableCanvas(packages: Paquete[]): HTMLCanvasElemen
     ctx.fillText(locText, colX.ubicacion + 8, locPillY + 15);
 
     // Columna 4: Estado AMEX (Píldora de estado)
-    const est = (pkg.estadoAmex || 'recibido').toLowerCase();
-    let estBg = '#eff6ff';
-    let estColor = '#1e40af';
-    let estLabel = 'RECIBIDO';
+    const rawEst = (pkg.estadoAmex || 'en_almacen').toLowerCase();
+    const est = rawEst === 'recibido' ? 'en_almacen' : rawEst;
+    let estBg = '#faf5ff';
+    let estColor = '#7e22ce';
+    let estLabel = 'EN ALMACÉN';
 
     if (est === 'entregado') {
       estBg = '#f0fdf4';

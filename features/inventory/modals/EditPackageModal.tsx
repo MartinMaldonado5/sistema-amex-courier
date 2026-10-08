@@ -131,13 +131,12 @@ export default function EditPackageModal({
             <div className="form-group">
               <label style={{ fontSize: '12px', fontWeight: 800, color: '#0369a1' }}>Estado AMEX (Operativo)</label>
               <select
-                value={editFormData.estadoAmex || 'recibido'}
+                value={editFormData.estadoAmex === 'recibido' ? 'en_almacen' : (editFormData.estadoAmex || 'en_almacen')}
                 onChange={e => setEditFormData({ ...editFormData, estadoAmex: e.target.value as TipoEstadoAmex })}
                 className="form-control"
                 style={{ borderColor: '#93c5fd', background: '#f0f9ff', fontWeight: 700, color: '#0369a1' }}
               >
-                <option value="recibido">📥 Recibido (Bodega Lince)</option>
-                <option value="en_almacen">📦 En Almacén (Estantería)</option>
+                <option value="en_almacen">📦 En Almacén</option>
                 <option value="listo_recojo">🏪 Listo Recojo en Tienda</option>
                 <option value="en_ruta">🚚 En Ruta (Reparto / Agencia)</option>
                 <option value="entregado">✅ Entregado al Cliente</option>

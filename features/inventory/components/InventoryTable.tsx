@@ -206,9 +206,7 @@ export default function InventoryTable({
                           fontWeight: 800,
                           textTransform: 'uppercase',
                           background:
-                            pkg.estadoAmex === 'recibido'
-                              ? '#e0f2fe'
-                              : pkg.estadoAmex === 'en_almacen'
+                            pkg.estadoAmex === 'en_almacen' || pkg.estadoAmex === 'recibido'
                               ? '#e0e7ff'
                               : pkg.estadoAmex === 'listo_recojo'
                               ? '#fef3c7'
@@ -218,9 +216,7 @@ export default function InventoryTable({
                               ? '#dcfce7'
                               : '#f1f5f9',
                           color:
-                            pkg.estadoAmex === 'recibido'
-                              ? '#0369a1'
-                              : pkg.estadoAmex === 'en_almacen'
+                            pkg.estadoAmex === 'en_almacen' || pkg.estadoAmex === 'recibido'
                               ? '#3730a3'
                               : pkg.estadoAmex === 'listo_recojo'
                               ? '#92400e'
@@ -230,9 +226,7 @@ export default function InventoryTable({
                               ? '#15803d'
                               : '#475569',
                           border:
-                            pkg.estadoAmex === 'recibido'
-                              ? '1px solid #bae6fd'
-                              : pkg.estadoAmex === 'en_almacen'
+                            pkg.estadoAmex === 'en_almacen' || pkg.estadoAmex === 'recibido'
                               ? '1px solid #c7d2fe'
                               : pkg.estadoAmex === 'listo_recojo'
                               ? '1px solid #fde68a'
@@ -243,9 +237,7 @@ export default function InventoryTable({
                               : '1px solid #e2e8f0'
                         }}
                       >
-                        {pkg.estadoAmex === 'recibido'
-                          ? '📥 RECIBIDO'
-                          : pkg.estadoAmex === 'en_almacen'
+                        {pkg.estadoAmex === 'en_almacen' || pkg.estadoAmex === 'recibido'
                           ? '📦 EN ALMACÉN'
                           : pkg.estadoAmex === 'listo_recojo'
                           ? '🏪 LISTO RECOJO'
@@ -253,7 +245,7 @@ export default function InventoryTable({
                           ? '🚚 EN RUTA'
                           : pkg.estadoAmex === 'entregado'
                           ? '✅ ENTREGADO'
-                          : (pkg.estadoAmex || 'RECIBIDO').toUpperCase()}
+                          : (pkg.estadoAmex || 'EN ALMACÉN').toUpperCase()}
                       </span>
                     </td>
                     <td style={{ padding: '8px 12px', textAlign: 'center', whiteSpace: 'nowrap' }}>

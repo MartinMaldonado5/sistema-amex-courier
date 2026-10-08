@@ -4,7 +4,7 @@ export type TipoUbicacion = 'AmexLince' | 'Entregado';
 export type TipoMetodoEntrega = 'RecojoLince' | 'CarroAmexDomicilio' | 'AgenciaProvincia';
 export type TipoEstadoTib = 'EnAlmacen' | 'Enviado' | 'Recibido' | 'Entregado' | string;
 export type TipoEstadoEntrega = TipoEstadoTib; // Alias de retrocompatibilidad
-export type TipoEstadoAmex = 'recibido' | 'en_almacen' | 'listo_recojo' | 'en_ruta' | 'entregado' | string;
+export type TipoEstadoAmex = 'en_almacen' | 'listo_recojo' | 'en_ruta' | 'entregado' | string;
 export type TipoMonedaPago = 'PEN' | 'USD';
 
 export interface Cliente {
@@ -46,7 +46,7 @@ export interface Paquete {
   metodoEntrega?: TipoMetodoEntrega; // Deprecado: opcional para compatibilidad UI
   estadoTib: TipoEstadoTib;          // Estado Logístico Externo TIB (Recibido, Enviado, Entregado, EnAlmacen)
   estadoEntrega?: TipoEstadoTib;     // Alias opcional de compatibilidad
-  estadoAmex: TipoEstadoAmex;        // Estado Operativo AMEX (por defecto 'recibido' al escanear)
+  estadoAmex: TipoEstadoAmex;        // Estado Operativo AMEX (por defecto 'en_almacen' al escanear)
   facturaPdfUrl?: string;
   tibImagenUrl?: string;             // Foto del paquete tomada en TIB
   tibTicketPdfUrl?: string;          // Ticket PDF de recepción en TIB

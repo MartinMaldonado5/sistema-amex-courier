@@ -56,7 +56,7 @@ function mapPaquete(row: Record<string, unknown>): Paquete {
     metodoEntrega: 'CarroAmexDomicilio',
     estadoTib: ((row.estado_tib || row.estado_entrega) as TipoEstadoTib) || 'EnAlmacen',
     estadoEntrega: ((row.estado_tib || row.estado_entrega) as TipoEstadoEntrega) || 'EnAlmacen',
-    estadoAmex: (row.estado_amex as TipoEstadoAmex) || 'recibido',
+    estadoAmex: (row.estado_amex === 'recibido' ? 'en_almacen' : ((row.estado_amex as TipoEstadoAmex) || 'en_almacen')),
     facturaPdfUrl: '',
     tibImagenUrl: row.tib_imagen_url ? String(row.tib_imagen_url) : undefined,
     tibTicketPdfUrl: row.tib_ticket_pdf_url ? String(row.tib_ticket_pdf_url) : undefined,

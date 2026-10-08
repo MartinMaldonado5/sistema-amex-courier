@@ -321,7 +321,7 @@ export default function BulkStatusByWrModal({
                             color: '#0369a1'
                           }}
                         >
-                          Actual: {(pkg.estadoAmex || 'recibido').toUpperCase()}
+                          Actual: {(pkg.estadoAmex === 'recibido' ? 'EN ALMACÉN' : (pkg.estadoAmex || 'EN ALMACÉN')).toUpperCase()}
                         </span>
                       </div>
                     ))}
@@ -353,7 +353,6 @@ export default function BulkStatusByWrModal({
               <option value="listo_recojo">🏪 Listo para Recojo en Tienda Lince</option>
               <option value="en_ruta">🚚 En Ruta (Reparto / Envío a Provincia)</option>
               <option value="en_almacen">📦 En Almacén (Ubicado en Estante)</option>
-              <option value="recibido">📥 Recibido (Ingreso en Recepción)</option>
             </select>
           </div>
 

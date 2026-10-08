@@ -21,7 +21,7 @@ export default function BatchStatusModal({
   selectedCount,
   batchTargetStatus,
   setBatchTargetStatus,
-  batchTargetStatusAmex = 'recibido',
+  batchTargetStatusAmex = 'en_almacen',
   setBatchTargetStatusAmex,
   onConfirm
 }: BatchStatusModalProps) {
@@ -64,7 +64,6 @@ export default function BatchStatusModal({
                 borderRadius: '8px'
               }}
             >
-              <option value="recibido">📥 Recibido (Ingreso en Recepción)</option>
               <option value="en_almacen">📦 En Almacén (Ubicado en Estante)</option>
               <option value="listo_recojo">🏪 Listo para Recojo en Tienda Lince</option>
               <option value="en_ruta">🚚 En Ruta (Reparto / Envío a Provincia)</option>

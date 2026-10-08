@@ -235,7 +235,7 @@ export async function syncCompletedExcelToDatabase(
             nombre_consignatario: item.cliente,
             peso_kg: item.pesoKg,
             estado_tib: mappedEstado,
-            estado_amex: 'recibido',
+            estado_amex: 'en_almacen',
             ubicacion_actual: 'AmexLince',
             anaquel: ana,
             piso: pis,

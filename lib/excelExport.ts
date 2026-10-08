@@ -38,10 +38,9 @@ export function exportToExcel(
 }
 
 export function mapEstadoAmexLabel(estado?: string | null): string {
-  if (!estado) return 'Recibido';
+  if (!estado) return 'En Almacén';
   const norm = estado.trim().toLowerCase();
-  if (norm === 'recibido') return 'Recibido';
-  if (norm === 'en_almacen' || norm === 'enalmacen') return 'En Almacén';
+  if (norm === 'recibido' || norm === 'en_almacen' || norm === 'enalmacen') return 'En Almacén';
   if (norm === 'listo_recojo' || norm === 'listorecojo') return 'Listo para Recojo';
   if (norm === 'en_ruta' || norm === 'enruta') return 'En Ruta';
   if (norm === 'entregado') return 'Entregado';

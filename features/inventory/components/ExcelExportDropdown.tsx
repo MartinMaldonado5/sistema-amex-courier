@@ -35,8 +35,7 @@ export default function ExcelExportDropdown({
   const filteredCount = filteredPaquetes.length;
   const selectedCount = selectedIds.length;
   const activasCount = paquetes.filter(p => p.estadoAmex !== 'entregado' && p.ubicacionActual !== 'Entregado').length;
-  const recibidoCount = paquetes.filter(p => p.estadoAmex === 'recibido').length;
-  const enAlmacenCount = paquetes.filter(p => p.estadoAmex === 'en_almacen').length;
+  const enAlmacenCount = paquetes.filter(p => p.estadoAmex === 'en_almacen' || p.estadoAmex === 'recibido').length;
   const listoRecojoCount = paquetes.filter(p => p.estadoAmex === 'listo_recojo').length;
   const enRutaCount = paquetes.filter(p => p.estadoAmex === 'en_ruta').length;
   const entregadoCount = paquetes.filter(p => p.estadoAmex === 'entregado').length;
@@ -73,14 +72,9 @@ export default function ExcelExportDropdown({
         );
         break;
       case 'recibido':
-        exportPaquetesToExcel(
-          paquetes.filter(p => p.estadoAmex === 'recibido'),
-          'Inventario_AMEX_Solo_Recibidos'
-        );
-        break;
       case 'en_almacen':
         exportPaquetesToExcel(
-          paquetes.filter(p => p.estadoAmex === 'en_almacen'),
+          paquetes.filter(p => p.estadoAmex === 'en_almacen' || p.estadoAmex === 'recibido'),
           'Inventario_AMEX_Solo_EnAlmacen'
         );
         break;
@@ -257,22 +251,7 @@ export default function ExcelExportDropdown({
             Por Estado AMEX
           </div>
 
-          {/* 4. Recibidos */}
-          <button
-            type="button"
-            onClick={() => handleExport('recibido')}
-            style={dropdownItemStyle}
-            onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Inbox className="w-4 h-4 text-sky-600" />
-              <span style={{ fontWeight: 600, color: '#334155', fontSize: '12px' }}>Solo Recibidos</span>
-            </div>
-            <span style={badgeStyle('#e0f2fe', '#0369a1')}>{recibidoCount}</span>
-          </button>
-
-          {/* 5. En Almacén */}
+          {/* 4. En Almacén */}
           <button
             type="button"
             onClick={() => handleExport('en_almacen')}

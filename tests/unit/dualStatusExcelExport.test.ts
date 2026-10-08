@@ -3,14 +3,14 @@ import { mapEstadoAmexLabel, mapEstadoTibLabel } from '@/lib/excelExport';
 
 describe('Dual Status Label Formatting & Mapping', () => {
   describe('mapEstadoAmexLabel', () => {
-    it('defaults to "Recibido" when null or undefined', () => {
-      expect(mapEstadoAmexLabel(null)).toBe('Recibido');
-      expect(mapEstadoAmexLabel(undefined)).toBe('Recibido');
-      expect(mapEstadoAmexLabel('')).toBe('Recibido');
+    it('defaults to "En Almacén" when null or undefined', () => {
+      expect(mapEstadoAmexLabel(null)).toBe('En Almacén');
+      expect(mapEstadoAmexLabel(undefined)).toBe('En Almacén');
+      expect(mapEstadoAmexLabel('')).toBe('En Almacén');
     });
 
     it('maps all standard Estado AMEX keys accurately', () => {
-      expect(mapEstadoAmexLabel('recibido')).toBe('Recibido');
+      expect(mapEstadoAmexLabel('recibido')).toBe('En Almacén');
       expect(mapEstadoAmexLabel('en_almacen')).toBe('En Almacén');
       expect(mapEstadoAmexLabel('enalmacen')).toBe('En Almacén');
       expect(mapEstadoAmexLabel('listo_recojo')).toBe('Listo para Recojo');

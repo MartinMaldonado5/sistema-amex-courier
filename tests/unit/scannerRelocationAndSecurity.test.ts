@@ -89,7 +89,7 @@ describe('Módulo 6: Escáner y WMS — Seguridad, Sanitización y Reasignación
         anaquel: 'A1',
         piso: 'P1',
         posicionEstante: 'A1-P1',
-        estadoAmex: 'recibido',
+        estadoAmex: 'en_almacen',
         estadoTib: 'EnAlmacen',
         estadoEntrega: 'EnAlmacen',
         creadoEn: '2026-10-04T12:00:00Z'

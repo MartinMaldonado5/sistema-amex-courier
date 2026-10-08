@@ -69,7 +69,7 @@ export function useInventoryData({
   const [isBatchStatusModalOpen, setIsBatchStatusModalOpen] = useState(false);
   const [isBulkWrModalOpen, setIsBulkWrModalOpen] = useState(false);
   const [batchTargetStatus, setBatchTargetStatus] = useState<TipoEstadoEntrega>('EnAlmacen');
-  const [batchTargetStatusAmex, setBatchTargetStatusAmex] = useState<TipoEstadoAmex>('recibido');
+  const [batchTargetStatusAmex, setBatchTargetStatusAmex] = useState<TipoEstadoAmex>('en_almacen');
   const [selectedThermalPkg, setSelectedThermalPkg] = useState<Paquete | null>(null);
   const [selectedPackageForAction, setSelectedPackageForAction] = useState<Paquete | null>(null);
 
@@ -207,6 +207,8 @@ export function useInventoryData({
           ? true
           : statusAmexFilter === 'ACTIVAS'
           ? p.estadoAmex !== 'entregado' && p.ubicacionActual !== 'Entregado'
+          : statusAmexFilter === 'en_almacen'
+          ? p.estadoAmex === 'en_almacen' || p.estadoAmex === 'recibido'
           : p.estadoAmex === statusAmexFilter;
 
       return (
@@ -228,7 +230,6 @@ export function useInventoryData({
 
   // Conteos en tiempo real por Estado AMEX para píldoras rápidas
   const amexStatusCounts = useMemo(() => {
-    let recibido = 0;
     let en_almacen = 0;
     let listo_recojo = 0;
     let en_ruta = 0;
@@ -236,8 +237,7 @@ export function useInventoryData({
 
     paquetes.forEach(p => {
       const st = p.estadoAmex;
-      if (st === 'recibido') recibido++;
-      else if (st === 'en_almacen') en_almacen++;
+      if (st === 'en_almacen' || st === 'recibido') en_almacen++;
       else if (st === 'listo_recojo') listo_recojo++;
       else if (st === 'en_ruta') en_ruta++;
       else if (st === 'entregado') entregado++;
@@ -250,7 +250,7 @@ export function useInventoryData({
     return {
       total: paquetes.length,
       activas,
-      recibido,
+      recibido: 0,
       en_almacen,
       listo_recojo,
       en_ruta,
@@ -395,7 +395,7 @@ export function useInventoryData({
       piso: pis,
       posicionEstante: pos,
       pesoKg: Number(editFormData.pesoKg || 0),
-      estadoAmex: (editFormData.estadoAmex || selectedPackageForAction.estadoAmex || 'recibido') as TipoEstadoAmex
+      estadoAmex: (editFormData.estadoAmex === 'recibido' ? 'en_almacen' : (editFormData.estadoAmex || selectedPackageForAction.estadoAmex || 'en_almacen')) as TipoEstadoAmex
     };
 
     if (onUpdatePackage) {

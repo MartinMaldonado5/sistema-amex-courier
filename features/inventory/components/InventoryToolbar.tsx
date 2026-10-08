@@ -14,7 +14,7 @@ export interface InventoryToolbarProps {
   amexStatusCounts?: {
     total: number;
     activas?: number;
-    recibido: number;
+    recibido?: number;
     en_almacen: number;
     listo_recojo: number;
     en_ruta: number;

@@ -61,7 +61,7 @@ export function parseAndMatchWrs(rawText: string, paquetes: Partial<Paquete>[]) 
 
 describe('Bulk WR Parser & Matcher', () => {
   const samplePackages: Partial<Paquete>[] = [
-    { id: '1', numeroReciboBodega: 'WR-1001', trackingUsa: '1Z999AAA', estadoAmex: 'recibido' },
+    { id: '1', numeroReciboBodega: 'WR-1001', trackingUsa: '1Z999AAA', estadoAmex: 'en_almacen' },
     { id: '2', numeroReciboBodega: 'WR-1002', trackingUsa: 'TBA12345', estadoAmex: 'en_almacen' },
     { id: '3', numeroReciboBodega: 'WR-1003', trackingUsa: '94001000', estadoAmex: 'listo_recojo' }
   ];

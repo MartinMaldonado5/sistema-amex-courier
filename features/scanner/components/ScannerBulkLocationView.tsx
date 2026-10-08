@@ -52,7 +52,7 @@ export default function ScannerBulkLocationView({
   const [targetTipo, setTargetTipo] = useState<'ANAQUEL' | 'OFI' | 'DSP_Z1' | 'DSP_Z2' | 'TRANSITO'>('ANAQUEL');
   const [targetAnaquel, setTargetAnaquel] = useState('A1');
   const [targetPiso, setTargetPiso] = useState('P1');
-  const [targetEstadoAmex, setTargetEstadoAmex] = useState<'en_almacen' | 'recibido' | 'listo_recojo' | 'mantener'>('en_almacen');
+  const [targetEstadoAmex, setTargetEstadoAmex] = useState<'en_almacen' | 'listo_recojo' | 'mantener'>('en_almacen');
   const [motivo, setMotivo] = useState('Ingreso Masivo WMS desde Excel');
   const [operador, setOperador] = useState(currentUser?.nombre || 'Operador AMEX');
 
@@ -217,7 +217,7 @@ export default function ScannerBulkLocationView({
         hora: new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         totalActualizados: totalProcesados,
         ubicacionDestino: targetPosicionFinal,
-        estadoAmex: targetEstadoAmex !== 'mantener' ? targetEstadoAmex : 'recibido',
+        estadoAmex: targetEstadoAmex !== 'mantener' ? targetEstadoAmex : 'en_almacen',
         codigos: payloadCodes as string[]
       };
 
@@ -628,7 +628,6 @@ export default function ScannerBulkLocationView({
                 style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12.5px', marginTop: '3px', fontWeight: 700 }}
               >
                 <option value="en_almacen">📦 En Almacén (Recomendado para Slotting)</option>
-                <option value="recibido">📥 Recibido (Ingreso previo)</option>
                 <option value="listo_recojo">🏪 Listo para Recojo</option>
                 <option value="mantener">🔒 Mantener estado AMEX actual de cada paquete</option>
               </select>

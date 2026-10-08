@@ -144,7 +144,7 @@ export async function generateInventoryExcelBufferFromDb(
       pesoVal !== null
         ? { type: Number, value: pesoVal }
         : { type: String, value: '' },
-      { type: String, value: String(p.estado_amex || 'recibido').toUpperCase() },
+      { type: String, value: String(p.estado_amex === 'recibido' ? 'en_almacen' : (p.estado_amex || 'en_almacen')).toUpperCase() },
       { type: String, value: mapEstadoLabel(p.estado_tib) },
       { type: String, value: posicionWms },
       { type: String, value: almacen },
