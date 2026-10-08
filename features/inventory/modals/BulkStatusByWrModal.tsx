@@ -42,10 +42,13 @@ export default function BulkStatusByWrModal({
       return { parsedCodes: [], matchedPackages: [], missingCodes: [] };
     }
 
-    // Separar por saltos de línea, comas, puntos y comas o tabuladores
-    const rawItems = rawText
-      .split(/[\n,;\t]+/)
-      .map(item => item.trim())
+    // Separar por saltos de línea, comas, puntos y comas, slashes (/) o guiones (-)
+    let cleaned = rawText.replace(/[/\\|,;–—]+/g, '\n');
+    cleaned = cleaned.replace(/\s+-\s*/g, '\n').replace(/\s*-\s+/g, '\n');
+    cleaned = cleaned.replace(/(?<=[0-9a-zA-Z])-(?=[a-zA-Z])/g, '\n');
+    const rawItems = cleaned
+      .split(/\s+/)
+      .map(item => item.replace(/["'()[\]{}]/g, '').trim())
       .filter(Boolean);
 
     // Normalizar códigos únicos

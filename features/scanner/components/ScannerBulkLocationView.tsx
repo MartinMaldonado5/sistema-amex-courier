@@ -64,33 +64,44 @@ export default function ScannerBulkLocationView({
   const [activeTabPreview, setActiveTabPreview] = useState<'matched' | 'missing' | 'history'>('matched');
   const [copiedMissing, setCopiedMissing] = useState(false);
 
-  // Parseo en tiempo real de los códigos pegados
+  // Parseo en tiempo real de los códigos pegados (admite saltos de línea, comas, slashes /, guiones -, pipes |, etc.)
   const { rawCodes, uniqueCodes } = useMemo(() => {
     if (!rawText.trim()) {
       return { rawCodes: [], uniqueCodes: [] };
     }
-    const lines = rawText
-      .split(/[\n,;\t]+/)
-      .map((item) => item.trim())
+    // 1. Reemplazar slashes, pipes, backslashes, comas, puntos y comas por saltos de línea
+    let cleaned = rawText.replace(/[/\\|,;–—]+/g, '\n');
+    // 2. Reemplazar guiones con espacios alrededor ' - ' o ' -' o '- ' por saltos de línea
+    cleaned = cleaned.replace(/\s+-\s*/g, '\n').replace(/\s*-\s+/g, '\n');
+    // 3. Reemplazar guiones pegados entre códigos (ej: WR001-WR002 o 123-WR002) por salto de línea
+    cleaned = cleaned.replace(/(?<=[0-9a-zA-Z])-(?=[a-zA-Z])/g, '\n');
+    // 4. Separar por espacios en blanco y saltos de línea
+    const items = cleaned
+      .split(/\s+/)
+      .map((item) => item.replace(/["'()[\]{}]/g, '').trim())
       .filter(Boolean);
 
-    const clean = Array.from(new Set(lines.map((c) => c.toUpperCase())));
-    return { rawCodes: lines, uniqueCodes: clean };
+    const clean = Array.from(new Set(items.map((c) => c.toUpperCase())));
+    return { rawCodes: items, uniqueCodes: clean };
   }, [rawText]);
 
   // Cruce en memoria combinando paquetes locales y paquetes traídos de BD
   const combinedPackages = useMemo(() => {
     const map = new Map<string, Paquete>();
     paquetes.forEach((p) => {
-      if (p.numeroReciboBodega) map.set(p.numeroReciboBodega.toUpperCase(), p);
-      if (p.trackingUsa) map.set(p.trackingUsa.toUpperCase(), p);
+      if (p.numeroReciboBodega) map.set(p.numeroReciboBodega.trim().toUpperCase(), p);
+      if (p.tracking) map.set(p.tracking.trim().toUpperCase(), p);
+      if (p.trackingUsa) map.set(p.trackingUsa.trim().toUpperCase(), p);
     });
     extraDbFound.forEach((p) => {
-      if (p.numeroReciboBodega && !map.has(p.numeroReciboBodega.toUpperCase())) {
-        map.set(p.numeroReciboBodega.toUpperCase(), p);
+      if (p.numeroReciboBodega && !map.has(p.numeroReciboBodega.trim().toUpperCase())) {
+        map.set(p.numeroReciboBodega.trim().toUpperCase(), p);
       }
-      if (p.trackingUsa && !map.has(p.trackingUsa.toUpperCase())) {
-        map.set(p.trackingUsa.toUpperCase(), p);
+      if (p.tracking && !map.has(p.tracking.trim().toUpperCase())) {
+        map.set(p.tracking.trim().toUpperCase(), p);
+      }
+      if (p.trackingUsa && !map.has(p.trackingUsa.trim().toUpperCase())) {
+        map.set(p.trackingUsa.trim().toUpperCase(), p);
       }
     });
     return map;
@@ -412,7 +423,7 @@ export default function ScannerBulkLocationView({
               rows={8}
               value={rawText}
               onChange={(e) => setRawText(e.target.value)}
-              placeholder={'Pega aquí la columna copiada de tu archivo Excel...\n\nEjemplo:\nWR000469622\nWR000465623\nWR000454540\nWR000454536'}
+              placeholder={'Pega aquí tus códigos WR o Tracking...\n\nSoporta pegado desde Excel, saltos de línea, comas, espacios, slashes (/) o guiones (-):\nWR000475468 / WR000475471\nWR000474778 - WR000474741\nWR000469622\nWR000465623'}
               style={{
                 width: '100%',
                 padding: '12px',
@@ -431,7 +442,7 @@ export default function ScannerBulkLocationView({
             {/* Métricas de lectura en vivo */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px', alignItems: 'center' }}>
               <span style={{ fontSize: '11.5px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
-                Líneas: {rawCodes.length}
+                Detectados: {rawCodes.length}
               </span>
               <span style={{ fontSize: '11.5px', background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
                 Únicos: {uniqueCodes.length}

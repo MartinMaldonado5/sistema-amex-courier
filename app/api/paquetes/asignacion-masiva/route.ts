@@ -21,11 +21,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ found: [], notFound: [] });
     }
 
+    let cleaned = codesParam.replace(/[/\\|,;–—]+/g, '\n');
+    cleaned = cleaned.replace(/\s+-\s*/g, '\n').replace(/\s*-\s+/g, '\n');
+    cleaned = cleaned.replace(/(?<=[0-9a-zA-Z])-(?=[a-zA-Z])/g, '\n');
     const rawCodes = Array.from(
       new Set(
-        codesParam
-          .split(/[\n,;\t]+/)
-          .map((c) => c.trim().toUpperCase())
+        cleaned
+          .split(/\s+/)
+          .map((c) => c.replace(/["'()[\]{}]/g, '').trim().toUpperCase())
           .filter(Boolean)
       )
     );
@@ -120,7 +123,14 @@ export async function POST(req: NextRequest) {
     const cleanCodes = Array.from(
       new Set(
         codes
-          .map((c: unknown) => String(c || '').trim().toUpperCase())
+          .flatMap((c: unknown) => {
+            const str = String(c || '');
+            let cleaned = str.replace(/[/\\|,;–—]+/g, '\n');
+            cleaned = cleaned.replace(/\s+-\s*/g, '\n').replace(/\s*-\s+/g, '\n');
+            cleaned = cleaned.replace(/(?<=[0-9a-zA-Z])-(?=[a-zA-Z])/g, '\n');
+            return cleaned.split(/\s+/);
+          })
+          .map((c: string) => c.replace(/["'()[\]{}]/g, '').trim().toUpperCase())
           .filter(Boolean)
       )
     );
