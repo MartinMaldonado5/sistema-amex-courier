@@ -30,33 +30,36 @@ export default function InventoryStatsCards({
   return (
     <div
       style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: '12px'
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '4px',
+        justifyContent: 'center'
       }}
     >
-      {/* 1. Existencias Reales Lince */}
+      {/* 1. Existencias Lince (arriba) */}
       <div
         onClick={() => setStatusAmexFilter && setStatusAmexFilter(statusAmexFilter === 'ACTIVAS' ? 'ALL' : 'ACTIVAS')}
         style={{
           background: statusAmexFilter === 'ACTIVAS' ? '#eff6ff' : '#ffffff',
-          border: statusAmexFilter === 'ACTIVAS' ? '1.5px solid #2563eb' : '1px solid #e2e8f0',
-          borderRadius: '10px',
-          padding: '10px 14px',
-          boxShadow: statusAmexFilter === 'ACTIVAS' ? '0 2px 6px rgba(37,99,235,0.15)' : '0 1px 2px rgba(0,0,0,0.03)',
-          cursor: setStatusAmexFilter ? 'pointer' : 'default',
+          border: statusAmexFilter === 'ACTIVAS' ? '1px solid #2563eb' : '1px solid #cbd5e1',
+          borderRadius: '7px',
+          padding: '2px 8px',
           display: 'flex',
           alignItems: 'center',
-          gap: '12px',
-          transition: 'all 0.15s ease'
+          gap: '6px',
+          fontSize: '11px',
+          cursor: setStatusAmexFilter ? 'pointer' : 'default',
+          transition: 'all 0.15s ease',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+          whiteSpace: 'nowrap'
         }}
         title="Clic para filtrar existencias activas en almacén Lince"
       >
         <div
           style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '8px',
+            width: '18px',
+            height: '18px',
+            borderRadius: '4px',
             background: '#eff6ff',
             color: '#2563eb',
             display: 'flex',
@@ -65,41 +68,39 @@ export default function InventoryStatsCards({
             flexShrink: 0
           }}
         >
-          <Boxes className="w-5 h-5" />
+          <Boxes className="w-3 h-3" />
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-            Existencias Lince
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-            <span style={{ fontSize: '19px', fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>
-              {totalExistenciasReales}
-            </span>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#16a34a' }}>
-              ● Activas
-            </span>
-          </div>
-        </div>
+        <span style={{ fontSize: '10px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
+          Existencias:
+        </span>
+        <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0f172a' }}>
+          {totalExistenciasReales}
+        </span>
+        <span style={{ fontSize: '10px', fontWeight: 700, color: '#16a34a' }}>
+          ● Activas
+        </span>
       </div>
 
-      {/* 2. Peso Total en Custodia */}
+      {/* 2. Peso en Custodia (abajo) */}
       <div
         style={{
           background: '#ffffff',
-          border: '1px solid #e2e8f0',
-          borderRadius: '10px',
-          padding: '10px 14px',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+          border: '1px solid #cbd5e1',
+          borderRadius: '7px',
+          padding: '2px 8px',
           display: 'flex',
           alignItems: 'center',
-          gap: '12px'
+          gap: '6px',
+          fontSize: '11px',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+          whiteSpace: 'nowrap'
         }}
       >
         <div
           style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '8px',
+            width: '18px',
+            height: '18px',
+            borderRadius: '4px',
             background: '#eef2ff',
             color: '#4f46e5',
             display: 'flex',
@@ -108,21 +109,17 @@ export default function InventoryStatsCards({
             flexShrink: 0
           }}
         >
-          <Warehouse className="w-5 h-5" />
+          <Warehouse className="w-3 h-3" />
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-            Peso en Custodia
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-            <span style={{ fontSize: '19px', fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>
-              {totalPesoRealKg.toFixed(1)} <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b' }}>kg</span>
-            </span>
-            <span style={{ fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap' }}>
-              ({pesoPromedioActivo.toFixed(2)} kg/prom)
-            </span>
-          </div>
-        </div>
+        <span style={{ fontSize: '10px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
+          Custodia:
+        </span>
+        <span style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a' }}>
+          {totalPesoRealKg.toFixed(1)} <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#64748b' }}>kg</span>
+        </span>
+        <span style={{ fontSize: '9.5px', color: '#64748b' }}>
+          ({pesoPromedioActivo.toFixed(2)} kg/prom)
+        </span>
       </div>
     </div>
   );

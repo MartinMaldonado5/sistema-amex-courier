@@ -137,6 +137,8 @@ export default function InventoryToolbar({
         onExportExcel={onExportExcel}
         onRefreshData={onRefreshData}
         onNewPackage={onNewPackage}
+        statusAmexFilter={statusAmexFilter}
+        setStatusAmexFilter={setStatusAmexFilter}
       />
 
       {/* 2. Sub-Pestañas Limpias */}

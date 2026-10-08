@@ -5,6 +5,7 @@ import { Warehouse, Plus, RefreshCw, Camera, Check, Loader2 } from 'lucide-react
 import { Paquete } from '@/types';
 import ExcelExportDropdown from './ExcelExportDropdown';
 import TibOperationsDropdown from './TibOperationsDropdown';
+import InventoryStatsCards from './InventoryStatsCards';
 import { copyPackagesTableAsImage } from '../utils/clipboardTableImage';
 
 export interface InventoryHeaderProps {
@@ -18,6 +19,8 @@ export interface InventoryHeaderProps {
   onExportExcel: () => void;
   onRefreshData?: () => Promise<void> | void;
   onNewPackage: () => void;
+  statusAmexFilter?: string;
+  setStatusAmexFilter?: (status: string) => void;
 }
 
 export default function InventoryHeader({
@@ -29,7 +32,9 @@ export default function InventoryHeader({
   onOpenBulkWrModal,
   onOpenSyncTibImagesModal,
   onRefreshData,
-  onNewPackage
+  onNewPackage,
+  statusAmexFilter,
+  setStatusAmexFilter
 }: InventoryHeaderProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied'>('idle');
@@ -240,6 +245,13 @@ export default function InventoryHeader({
           <Plus className="w-4 h-4" />
           <span>Ingresar Paquete</span>
         </button>
+
+        {/* Mini Tarjetas de Estadísticas Lince & Custodia (uno encima del otro) */}
+        <InventoryStatsCards
+          paquetes={paquetes}
+          statusAmexFilter={statusAmexFilter}
+          setStatusAmexFilter={setStatusAmexFilter}
+        />
       </div>
     </div>
   );
