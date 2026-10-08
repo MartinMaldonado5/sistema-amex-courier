@@ -117,12 +117,17 @@ export default function ExcelExportDropdown({
           background: '#f0fdf4',
           border: '1px solid #86efac',
           color: '#15803d',
-          display: 'flex',
+          display: 'inline-flex',
           alignItems: 'center',
           gap: '6px',
-          fontWeight: 800,
-          boxShadow: '0 1px 3px rgba(22, 101, 52, 0.08)',
-          cursor: 'pointer'
+          height: '33px',
+          padding: '0 12px',
+          borderRadius: '8px',
+          fontSize: '12px',
+          fontWeight: 700,
+          boxShadow: '0 1px 2px rgba(22, 101, 52, 0.08)',
+          cursor: 'pointer',
+          transition: 'all 0.15s ease'
         }}
         title="Exportar inventario en formato Excel con filtros o agrupaciones"
       >
@@ -199,20 +204,6 @@ export default function ExcelExportDropdown({
             <span style={badgeStyle('#f1f5f9', '#475569')}>{totalCount}</span>
           </button>
 
-          {/* Existencias Activas (Sin Entregados) */}
-          <button
-            type="button"
-            onClick={() => handleExport('activas')}
-            style={dropdownItemStyle}
-            onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Package className="w-4 h-4 text-blue-600" />
-              <span style={{ fontWeight: 700, color: '#1e293b', fontSize: '12px' }}>Solo Existencias Activas</span>
-            </div>
-            <span style={badgeStyle('#eff6ff', '#1d4ed8')}>{activasCount}</span>
-          </button>
 
           {/* 3. Solo Seleccionados */}
           <button

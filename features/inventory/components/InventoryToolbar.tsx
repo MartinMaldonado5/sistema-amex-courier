@@ -120,12 +120,7 @@ export default function InventoryToolbar({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-      {/* Breadcrumb sutil */}
-      <div className="sap-breadcrumb" style={{ fontSize: '11.5px', color: '#64748b' }}>
-        <span>Operaciones y Almacenes</span> / <span style={{ fontWeight: 700, color: '#334155' }}>3. Inventario</span>
-      </div>
-
-      {/* 1. Header Principal Unificado */}
+      {/* 1. Header Principal Unificado con Subpestañas y Tarjetas a Altura Completa */}
       <InventoryHeader
         paquetes={paquetes}
         filteredPaquetes={filteredPaquetes}
@@ -139,17 +134,16 @@ export default function InventoryToolbar({
         onNewPackage={onNewPackage}
         statusAmexFilter={statusAmexFilter}
         setStatusAmexFilter={setStatusAmexFilter}
-      />
-
-      {/* 2. Sub-Pestañas Limpias */}
-      <InventorySubTabs
-        activeSubTab={activeSubTab}
-        setActiveSubTab={setActiveSubTab}
-        filteredCount={filteredCount}
-        posicionesCount={posicionesCount}
-        kardexCount={kardexCount}
-        onOpenNewPositionModal={onOpenNewPositionModal}
-      />
+      >
+        <InventorySubTabs
+          activeSubTab={activeSubTab}
+          setActiveSubTab={setActiveSubTab}
+          filteredCount={filteredCount}
+          posicionesCount={posicionesCount}
+          kardexCount={kardexCount}
+          onOpenNewPositionModal={onOpenNewPositionModal}
+        />
+      </InventoryHeader>
 
       {/* 3. Barra de Búsqueda y Filtros Rápidos (solo en Existencias) */}
       {activeSubTab === 'existencias' && (

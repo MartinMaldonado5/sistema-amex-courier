@@ -196,7 +196,6 @@ export default function InventoryFilterBar({
               }}
             >
               <option value="ALL">Todos los Estados ({amexStatusCounts?.total ?? totalPaquetesCount})</option>
-              <option value="ACTIVAS">📦 Solo Existencias Activas ({amexStatusCounts?.activas ?? 0})</option>
               <option value="en_almacen">📦 En Almacén ({amexStatusCounts?.en_almacen ?? 0})</option>
               <option value="listo_recojo">🏪 Listo Recojo ({amexStatusCounts?.listo_recojo ?? 0})</option>
               <option value="en_ruta">🚚 En Ruta ({amexStatusCounts?.en_ruta ?? 0})</option>

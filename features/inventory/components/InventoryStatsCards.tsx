@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { Boxes, Warehouse } from 'lucide-react';
+import { Boxes, Scale } from 'lucide-react';
 import { Paquete } from '@/types';
 
 export interface InventoryStatsCardsProps {
@@ -10,116 +10,334 @@ export interface InventoryStatsCardsProps {
   setStatusAmexFilter?: (status: string) => void;
 }
 
+/**
+ * Componente de Anillo Circular de Progreso SVG (Circular Progress Ring)
+ */
+function CircularProgressRing({
+  progress, // 0.0 a 1.0
+  size = 38,
+  strokeWidth = 3.5,
+  gradientId,
+  startColor,
+  endColor,
+  children
+}: {
+  progress: number;
+  size?: number;
+  strokeWidth?: number;
+  gradientId: string;
+  startColor: string;
+  endColor: string;
+  children: React.ReactNode;
+}) {
+  const radius = (size - strokeWidth * 2) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const clampedProgress = Math.min(1, Math.max(0.04, progress));
+  const strokeDashoffset = circumference * (1 - clampedProgress);
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        width: `${size}px`,
+        height: `${size}px`,
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+    >
+      <svg
+        width={size}
+        height={size}
+        style={{
+          transform: 'rotate(-90deg)',
+          display: 'block'
+        }}
+      >
+        <defs>
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={startColor} />
+            <stop offset="100%" stopColor={endColor} />
+          </linearGradient>
+        </defs>
+
+        {/* Pista base */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="#f1f5f9"
+          strokeWidth={strokeWidth}
+        />
+
+        {/* Anillo de Progreso */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={`url(#${gradientId})`}
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          style={{
+            transition: 'stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}
+        />
+      </svg>
+
+      {/* Ícono centrado dentro del aro */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function InventoryStatsCards({
   paquetes,
   statusAmexFilter,
   setStatusAmexFilter
 }: InventoryStatsCardsProps) {
-  // EXISTENCIAS REALES FÍSICAS EN ALMACÉN (excluye entregados)
+  // 1. EXISTENCIAS REALES FÍSICAS EN ALMACÉN (excluye entregados)
   const paquetesActivos = useMemo(
     () => paquetes.filter(p => p.estadoAmex !== 'entregado' && p.ubicacionActual !== 'Entregado'),
     [paquetes]
   );
   const totalExistenciasReales = paquetesActivos.length;
+  const totalPaquetes = paquetes.length;
+
+  // Proporción de existencias activas vs total registrado
+  const ratioActivas = totalPaquetes > 0 ? totalExistenciasReales / totalPaquetes : 0;
+  const porcentajeActivasTexto = Math.round(ratioActivas * 100);
+
+  // 2. PESO EN CUSTODIA (paquetes activos)
   const totalPesoRealKg = useMemo(
     () => paquetesActivos.reduce((acc, p) => acc + (Number(p.pesoKg) || 0), 0),
     [paquetesActivos]
   );
+  const totalPesoHistoricoKg = useMemo(
+    () => paquetes.reduce((acc, p) => acc + (Number(p.pesoKg) || 0), 0),
+    [paquetes]
+  );
+  const ratioPeso = totalPesoHistoricoKg > 0 ? totalPesoRealKg / totalPesoHistoricoKg : 0.7;
+  const porcentajePesoTexto = Math.round(ratioPeso * 100);
   const pesoPromedioActivo = totalExistenciasReales > 0 ? totalPesoRealKg / totalExistenciasReales : 0;
+
+  const isActivasFiltered = statusAmexFilter === 'en_almacen' || statusAmexFilter === 'ACTIVAS';
 
   return (
     <div
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: '4px',
-        justifyContent: 'center'
+        justifyContent: 'space-between',
+        height: '100%',
+        gap: '8px',
+        alignItems: 'flex-end'
       }}
     >
-      {/* 1. Existencias Lince (arriba) */}
+      {/* 1. WIDGET CIRCULAR SUPERIOR: EXISTENCIAS EN ALMACÉN */}
       <div
-        onClick={() => setStatusAmexFilter && setStatusAmexFilter(statusAmexFilter === 'ACTIVAS' ? 'ALL' : 'ACTIVAS')}
+        onClick={() => setStatusAmexFilter && setStatusAmexFilter(isActivasFiltered ? 'ALL' : 'en_almacen')}
         style={{
-          background: statusAmexFilter === 'ACTIVAS' ? '#eff6ff' : '#ffffff',
-          border: statusAmexFilter === 'ACTIVAS' ? '1px solid #2563eb' : '1px solid #cbd5e1',
-          borderRadius: '7px',
-          padding: '2px 8px',
           display: 'flex',
           alignItems: 'center',
-          gap: '6px',
-          fontSize: '11px',
+          gap: '12px',
+          padding: '7px 14px 7px 10px',
+          borderRadius: '11px',
+          minWidth: '248px',
+          flex: '1 1 auto',
+          background: isActivasFiltered ? '#eff6ff' : '#ffffff',
+          border: isActivasFiltered ? '1.5px solid #2563eb' : '1px solid #e2e8f0',
+          boxShadow: isActivasFiltered
+            ? '0 2px 8px rgba(37,99,235,0.16)'
+            : '0 1px 3px rgba(0,0,0,0.03)',
           cursor: setStatusAmexFilter ? 'pointer' : 'default',
           transition: 'all 0.15s ease',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
-          whiteSpace: 'nowrap'
+          userSelect: 'none'
         }}
-        title="Clic para filtrar existencias activas en almacén Lince"
+        title="Clic para alternar filtro: En Almacén"
       >
-        <div
-          style={{
-            width: '18px',
-            height: '18px',
-            borderRadius: '4px',
-            background: '#eff6ff',
-            color: '#2563eb',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}
+        {/* Aro circular con ícono */}
+        <CircularProgressRing
+          progress={ratioActivas}
+          size={40}
+          strokeWidth={3.5}
+          gradientId="ringExistenciasGradient"
+          startColor="#3b82f6"
+          endColor="#1d4ed8"
         >
-          <Boxes className="w-3 h-3" />
+          <div
+            style={{
+              width: '24px',
+              height: '24px',
+              borderRadius: '50%',
+              background: isActivasFiltered ? '#2563eb' : '#eff6ff',
+              color: isActivasFiltered ? '#ffffff' : '#2563eb',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+            }}
+          >
+            <Boxes className="w-3.5 h-3.5" />
+          </div>
+        </CircularProgressRing>
+
+        {/* Textos y Métrica */}
+        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+            <span
+              style={{
+                fontSize: '10.5px',
+                fontWeight: 800,
+                color: isActivasFiltered ? '#1d4ed8' : '#475569',
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase'
+              }}
+            >
+              Existencias
+            </span>
+            <span
+              style={{
+                fontSize: '9.5px',
+                fontWeight: 800,
+                color: '#16a34a',
+                background: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                padding: '1.5px 6px',
+                borderRadius: '999px'
+              }}
+            >
+              ● {porcentajeActivasTexto}% en almacén
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px', marginTop: '2px' }}>
+            <span
+              style={{
+                fontSize: '18px',
+                fontWeight: 900,
+                color: '#0f172a',
+                fontFeatureSettings: '"tnum"'
+              }}
+            >
+              {totalExistenciasReales}
+            </span>
+            <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748b' }}>
+              bultos en almacén
+            </span>
+          </div>
         </div>
-        <span style={{ fontSize: '10px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
-          Existencias:
-        </span>
-        <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0f172a' }}>
-          {totalExistenciasReales}
-        </span>
-        <span style={{ fontSize: '10px', fontWeight: 700, color: '#16a34a' }}>
-          ● Activas
-        </span>
       </div>
 
-      {/* 2. Peso en Custodia (abajo) */}
+      {/* 2. WIDGET CIRCULAR INFERIOR: CUSTODIA TOTAL / PESO */}
       <div
         style={{
-          background: '#ffffff',
-          border: '1px solid #cbd5e1',
-          borderRadius: '7px',
-          padding: '2px 8px',
           display: 'flex',
           alignItems: 'center',
-          gap: '6px',
-          fontSize: '11px',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
-          whiteSpace: 'nowrap'
+          gap: '12px',
+          padding: '7px 14px 7px 10px',
+          borderRadius: '11px',
+          minWidth: '248px',
+          flex: '1 1 auto',
+          background: '#ffffff',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+          transition: 'all 0.15s ease',
+          userSelect: 'none'
         }}
+        title="Peso físico actualmente bajo custodia en Almacén Lince"
       >
-        <div
-          style={{
-            width: '18px',
-            height: '18px',
-            borderRadius: '4px',
-            background: '#eef2ff',
-            color: '#4f46e5',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}
+        {/* Aro circular con ícono */}
+        <CircularProgressRing
+          progress={ratioPeso}
+          size={40}
+          strokeWidth={3.5}
+          gradientId="ringCustodiaGradient"
+          startColor="#a855f7"
+          endColor="#7c3aed"
         >
-          <Warehouse className="w-3 h-3" />
+          <div
+            style={{
+              width: '24px',
+              height: '24px',
+              borderRadius: '50%',
+              background: '#f5f3ff',
+              color: '#7c3aed',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+            }}
+          >
+            <Scale className="w-3.5 h-3.5" />
+          </div>
+        </CircularProgressRing>
+
+        {/* Textos y Métrica */}
+        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+            <span
+              style={{
+                fontSize: '10.5px',
+                fontWeight: 800,
+                color: '#475569',
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase'
+              }}
+            >
+              Custodia Total
+            </span>
+            <span
+              style={{
+                fontSize: '9.5px',
+                fontWeight: 700,
+                color: '#7c3aed',
+                background: '#faf5ff',
+                border: '1px solid #e9d5ff',
+                padding: '1.5px 6px',
+                borderRadius: '999px'
+              }}
+            >
+              {pesoPromedioActivo.toFixed(2)} kg/prom
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px', marginTop: '2px' }}>
+            <span
+              style={{
+                fontSize: '18px',
+                fontWeight: 900,
+                color: '#0f172a',
+                fontFeatureSettings: '"tnum"'
+              }}
+            >
+              {totalPesoRealKg.toFixed(1)}
+            </span>
+            <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#475569' }}>
+              kg
+            </span>
+            <span style={{ fontSize: '10px', color: '#94a3b8' }}>
+              ({porcentajePesoTexto}% activo)
+            </span>
+          </div>
         </div>
-        <span style={{ fontSize: '10px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
-          Custodia:
-        </span>
-        <span style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a' }}>
-          {totalPesoRealKg.toFixed(1)} <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#64748b' }}>kg</span>
-        </span>
-        <span style={{ fontSize: '9.5px', color: '#64748b' }}>
-          ({pesoPromedioActivo.toFixed(2)} kg/prom)
-        </span>
       </div>
     </div>
   );

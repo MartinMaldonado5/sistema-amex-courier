@@ -43,15 +43,17 @@ export default function TibOperationsDropdown({
           background: '#eff6ff',
           border: '1px solid #bfdbfe',
           color: '#1d4ed8',
-          display: 'flex',
+          display: 'inline-flex',
           alignItems: 'center',
           gap: '6px',
           fontWeight: 700,
-          padding: '6px 12px',
+          height: '33px',
+          padding: '0 12px',
           borderRadius: '8px',
           cursor: 'pointer',
-          fontSize: '12.5px',
-          transition: 'all 0.15s ease'
+          fontSize: '12px',
+          transition: 'all 0.15s ease',
+          boxShadow: '0 1px 2px rgba(37,99,235,0.06)'
         }}
         title="Herramientas y sincronización TIB Cargo"
       >

@@ -205,9 +205,7 @@ export function useInventoryData({
       const matchesStatusAmex =
         statusAmexFilter === 'ALL'
           ? true
-          : statusAmexFilter === 'ACTIVAS'
-          ? p.estadoAmex !== 'entregado' && p.ubicacionActual !== 'Entregado'
-          : statusAmexFilter === 'en_almacen'
+          : statusAmexFilter === 'en_almacen' || statusAmexFilter === 'ACTIVAS'
           ? p.estadoAmex === 'en_almacen' || p.estadoAmex === 'recibido'
           : p.estadoAmex === statusAmexFilter;
 

@@ -27,9 +27,7 @@ export default function InventorySubTabs({
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: '8px',
-        borderBottom: '1px solid #e2e8f0',
-        paddingBottom: '8px'
+        gap: '8px'
       }}
     >
       {/* Pestañas de Navegación */}
@@ -38,25 +36,27 @@ export default function InventorySubTabs({
           type="button"
           onClick={() => setActiveSubTab('existencias')}
           style={{
-            background: activeSubTab === 'existencias' ? '#2563eb' : '#f8fafc',
+            background: activeSubTab === 'existencias' ? '#2563eb' : '#ffffff',
             color: activeSubTab === 'existencias' ? '#ffffff' : '#475569',
-            border: activeSubTab === 'existencias' ? '1px solid #1d4ed8' : '1px solid #e2e8f0',
+            border: activeSubTab === 'existencias' ? '1px solid #1d4ed8' : '1px solid #cbd5e1',
             fontWeight: 800,
-            fontSize: '12.5px',
-            display: 'flex',
+            fontSize: '12px',
+            display: 'inline-flex',
             alignItems: 'center',
             gap: '6px',
-            padding: '7px 14px',
+            height: '33px',
+            padding: '0 12px',
             borderRadius: '8px',
             cursor: 'pointer',
-            transition: 'all 0.15s ease'
+            transition: 'all 0.15s ease',
+            boxShadow: activeSubTab === 'existencias' ? '0 1px 3px rgba(37,99,235,0.2)' : '0 1px 2px rgba(0,0,0,0.02)'
           }}
         >
           <Boxes className="w-4 h-4" />
           <span>1. Existencias Lince</span>
           <span
             style={{
-              background: activeSubTab === 'existencias' ? 'rgba(255,255,255,0.25)' : '#e2e8f0',
+              background: activeSubTab === 'existencias' ? 'rgba(255,255,255,0.25)' : '#f1f5f9',
               color: activeSubTab === 'existencias' ? '#ffffff' : '#475569',
               fontSize: '11px',
               padding: '1px 6px',
@@ -72,25 +72,27 @@ export default function InventorySubTabs({
           type="button"
           onClick={() => setActiveSubTab('gestor')}
           style={{
-            background: activeSubTab === 'gestor' ? '#1e40af' : '#f8fafc',
+            background: activeSubTab === 'gestor' ? '#1e40af' : '#ffffff',
             color: activeSubTab === 'gestor' ? '#ffffff' : '#475569',
-            border: activeSubTab === 'gestor' ? '1px solid #1e3a8a' : '1px solid #e2e8f0',
+            border: activeSubTab === 'gestor' ? '1px solid #1e3a8a' : '1px solid #cbd5e1',
             fontWeight: 800,
-            fontSize: '12.5px',
-            display: 'flex',
+            fontSize: '12px',
+            display: 'inline-flex',
             alignItems: 'center',
             gap: '6px',
-            padding: '7px 14px',
+            height: '33px',
+            padding: '0 12px',
             borderRadius: '8px',
             cursor: 'pointer',
-            transition: 'all 0.15s ease'
+            transition: 'all 0.15s ease',
+            boxShadow: activeSubTab === 'gestor' ? '0 1px 3px rgba(30,64,175,0.2)' : '0 1px 2px rgba(0,0,0,0.02)'
           }}
         >
           <Settings className="w-4 h-4" />
           <span>2. Configurar Anaqueles & Capacidad</span>
           <span
             style={{
-              background: activeSubTab === 'gestor' ? 'rgba(255,255,255,0.25)' : '#e2e8f0',
+              background: activeSubTab === 'gestor' ? 'rgba(255,255,255,0.25)' : '#f1f5f9',
               color: activeSubTab === 'gestor' ? '#ffffff' : '#475569',
               fontSize: '11px',
               padding: '1px 6px',
@@ -106,25 +108,27 @@ export default function InventorySubTabs({
           type="button"
           onClick={() => setActiveSubTab('movimientos')}
           style={{
-            background: activeSubTab === 'movimientos' ? '#0f766e' : '#f8fafc',
+            background: activeSubTab === 'movimientos' ? '#0f766e' : '#ffffff',
             color: activeSubTab === 'movimientos' ? '#ffffff' : '#475569',
-            border: activeSubTab === 'movimientos' ? '1px solid #115e59' : '1px solid #e2e8f0',
+            border: activeSubTab === 'movimientos' ? '1px solid #115e59' : '1px solid #cbd5e1',
             fontWeight: 800,
-            fontSize: '12.5px',
-            display: 'flex',
+            fontSize: '12px',
+            display: 'inline-flex',
             alignItems: 'center',
             gap: '6px',
-            padding: '7px 14px',
+            height: '33px',
+            padding: '0 12px',
             borderRadius: '8px',
             cursor: 'pointer',
-            transition: 'all 0.15s ease'
+            transition: 'all 0.15s ease',
+            boxShadow: activeSubTab === 'movimientos' ? '0 1px 3px rgba(15,118,110,0.2)' : '0 1px 2px rgba(0,0,0,0.02)'
           }}
         >
           <Clock className="w-4 h-4" />
           <span>3. Bitácora de Movimientos y Custodia</span>
           <span
             style={{
-              background: activeSubTab === 'movimientos' ? 'rgba(255,255,255,0.25)' : '#e2e8f0',
+              background: activeSubTab === 'movimientos' ? 'rgba(255,255,255,0.25)' : '#f1f5f9',
               color: activeSubTab === 'movimientos' ? '#ffffff' : '#475569',
               fontSize: '11px',
               padding: '1px 6px',
@@ -147,10 +151,11 @@ export default function InventorySubTabs({
             color: '#ffffff',
             border: 'none',
             borderRadius: '8px',
-            padding: '7px 12px',
+            height: '33px',
+            padding: '0 12px',
             fontSize: '12px',
             fontWeight: 800,
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
             gap: '6px',
             cursor: 'pointer',
