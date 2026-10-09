@@ -26,6 +26,8 @@ export default function Sidebar({
   React.useEffect(() => {
     if (isScannerActive) {
       setIsScannerOpen(true);
+    } else {
+      setIsScannerOpen(false);
     }
   }, [isScannerActive]);
 
@@ -41,7 +43,10 @@ export default function Sidebar({
       <div
         key={tab}
         className={`nav-item ${isActive ? 'active' : ''}`}
-        onClick={() => onSelectTab(tab)}
+        onClick={() => {
+          setIsScannerOpen(false);
+          onSelectTab(tab);
+        }}
         role="button"
         tabIndex={0}
         style={{
@@ -143,7 +148,7 @@ export default function Sidebar({
       {/* ÁREA SCROLLABLE: TÍTULO Y MÓDULOS DEL SISTEMA */}
       <div
         data-lenis-scroll=""
-        style={{ flex: 1, overflowY: 'auto', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '4px' }}
+        style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '4px' }}
       >
         <div
           style={{
@@ -185,13 +190,9 @@ export default function Sidebar({
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div
                 className={`nav-item ${isScannerActive ? 'active' : ''}`}
-                onClick={() => {
-                  if (!isScannerActive) {
-                    onSelectTab('scanner-slotting');
-                    setIsScannerOpen(true);
-                  } else {
-                    setIsScannerOpen(prev => !prev);
-                  }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsScannerOpen(prev => !prev);
                 }}
                 role="button"
                 tabIndex={0}
@@ -273,11 +274,11 @@ export default function Sidebar({
       <div
         style={{
           borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-          background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 1) 100%)',
-          padding: '12px 12px 24px 12px',
+          background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(15, 23, 42, 1) 100%)',
+          padding: '10px 12px calc(14px + env(safe-area-inset-bottom, 0px)) 12px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '10px',
+          gap: '8px',
           flexShrink: 0,
           boxShadow: '0 -4px 14px rgba(0, 0, 0, 0.35)',
           zIndex: 10

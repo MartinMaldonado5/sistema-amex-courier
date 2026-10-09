@@ -82,6 +82,24 @@ export default function TibImageModal({
     void fetchTibImage(paquete.numeroReciboBodega, paquete.id, false);
   }, [isOpen, paquete]);
 
+  // Cerrar al presionar la tecla Escape
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isFullscreen) {
+          setIsFullscreen(false);
+        } else {
+          onClose();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isFullscreen, onClose]);
+
   const fetchTibImage = async (wr: string, id?: string, forceRefresh = false) => {
     setLoading(true);
     setErrorMsg(null);
@@ -143,9 +161,18 @@ export default function TibImageModal({
   if (!isOpen || !paquete) return null;
 
   return (
-    <div className="modal-backdrop" style={{ zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div
+      className="modal-backdrop"
+      onClick={e => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+      style={{ zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+    >
       <div
         className="modal-dialog"
+        onClick={e => e.stopPropagation()}
         style={{
           maxWidth: '820px',
           width: '95%',
