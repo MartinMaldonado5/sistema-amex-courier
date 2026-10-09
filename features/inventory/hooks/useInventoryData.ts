@@ -196,8 +196,10 @@ export function useInventoryData({
       const matchesShelf =
         shelfFilter === 'ALL'
           ? true
-          : shelfFilter === 'OFI' || shelfFilter === 'REC'
-          ? pos.startsWith('OFI') || pos.startsWith('REC') || (!p.posicionEstante && !p.anaquel)
+          : shelfFilter === 'OFI'
+          ? pos.startsWith('OFI')
+          : shelfFilter === 'REC'
+          ? pos.startsWith('REC') || (!p.posicionEstante && !p.anaquel)
           : shelfFilter === 'DSP'
           ? pos.startsWith('DSP')
           : pos.startsWith(shelfFilter);

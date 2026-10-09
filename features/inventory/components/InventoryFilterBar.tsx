@@ -163,9 +163,9 @@ export default function InventoryFilterBar({
           )}
         </div>
 
-        {/* Filtro Rápido: Anaquel */}
+        {/* Filtro Rápido: Ubicación */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569' }}>Anaquel:</span>
+          <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569' }}>Ubicación:</span>
           <select
             value={shelfFilter}
             onChange={e => {
@@ -182,13 +182,27 @@ export default function InventoryFilterBar({
               color: '#1e293b'
             }}
           >
-            <option value="ALL">Todos los Anaqueles</option>
-            {Object.keys(shelfGroups).map(shelfKey => (
-              <option key={shelfKey} value={shelfKey}>
-                Anaquel {shelfKey}
-              </option>
-            ))}
-            <option value="REC">Recepción / Sin Estante</option>
+            <option value="ALL">Todas las Ubicaciones</option>
+            {Object.keys(shelfGroups).map(shelfKey => {
+              const label =
+                shelfKey === 'OFI'
+                  ? 'Oficina (OFI)'
+                  : shelfKey === 'DSP-Z1'
+                  ? 'Despacho Zona 1 (DSP-Z1)'
+                  : shelfKey === 'DSP-Z2'
+                  ? 'Despacho Zona 2 (DSP-Z2)'
+                  : shelfKey.startsWith('DSP')
+                  ? `Despacho (${shelfKey})`
+                  : shelfKey.startsWith('A') || shelfKey.startsWith('E')
+                  ? `Anaquel ${shelfKey}`
+                  : `Ubicación ${shelfKey}`;
+
+              return (
+                <option key={shelfKey} value={shelfKey}>
+                  {label}
+                </option>
+              );
+            })}
           </select>
         </div>
 
