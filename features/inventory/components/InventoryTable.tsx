@@ -49,7 +49,7 @@ export default function InventoryTable({
 }: InventoryTableProps) {
   return (
     <div className="w-full bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" data-lenis-prevent-horizontal>
         <table className="w-full border-collapse text-xs text-left">
           <thead className="sticky top-0 bg-slate-50 z-10 shadow-xs">
             <tr className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold">

@@ -141,7 +141,10 @@ export default function Sidebar({
       </div>
 
       {/* ÁREA SCROLLABLE: TÍTULO Y MÓDULOS DEL SISTEMA */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <div
+        data-lenis-scroll=""
+        style={{ flex: 1, overflowY: 'auto', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '4px' }}
+      >
         <div
           style={{
             display: 'flex',

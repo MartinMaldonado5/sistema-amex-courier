@@ -32,7 +32,7 @@ export default function ActaDocumentPreview({ data }: ActaDocumentPreviewProps) 
   const boxDensityClass = pkgCount > 30 ? 'acta-box-dense' : '';
 
   return (
-    <div className="acta-document-container" id="acta-print-area">
+    <div className="acta-document-container" id="acta-print-area" data-lenis-prevent-horizontal>
       <div className="acta-a4-sheet">
         {/* Encabezado: Logo AMEX Courier + Título */}
         <div className="acta-header-row">

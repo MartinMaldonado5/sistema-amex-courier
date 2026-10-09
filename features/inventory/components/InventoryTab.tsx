@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSmoothScroll } from '@/components/providers/SmoothScrollProvider';
 import { Paquete, Cliente } from '@/types';
 import ThermalLabelModal from '@/components/modals/ThermalLabelModal';
 import Modal from '@/components/ui/Modal';
@@ -162,6 +163,16 @@ export default function InventoryTab({
   // Modal de Evidencia Fotográfica TIB
   const [selectedTibPkg, setSelectedTibPkg] = useState<Paquete | null>(null);
   const [isTibModalOpen, setIsTibModalOpen] = useState(false);
+
+  const smoothScroll = useSmoothScroll();
+
+  // Sincronizar dimensiones de Lenis al cambiar datos paginados, subpestañas o filtros
+  useEffect(() => {
+    const mainLenis = smoothScroll.getMain();
+    if (mainLenis) {
+      mainLenis.resize();
+    }
+  }, [paginatedPaquetes.length, activeSubTab, currentPage, pageSize, smoothScroll]);
 
   const handleOpenTibImage = (pkg: Paquete) => {
     setSelectedTibPkg(pkg);

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Warehouse, Plus, RefreshCw, Camera, Check, Loader2 } from 'lucide-react';
+import { Warehouse, Plus, RefreshCw, Camera, Check, Loader2, PackagePlus } from 'lucide-react';
 import { Paquete } from '@/types';
 import ExcelExportDropdown from './ExcelExportDropdown';
 import TibOperationsDropdown from './TibOperationsDropdown';
@@ -239,12 +239,12 @@ export default function InventoryHeader({
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              boxShadow: '0 2px 4px rgba(37,99,235,0.25)',
+              boxShadow: '0 2px 5px rgba(37,99,235,0.28)',
               cursor: 'pointer',
               transition: 'all 0.15s ease'
             }}
           >
-            <Plus className="w-4 h-4" />
+            <PackagePlus className="w-4 h-4" />
             <span>Ingresar Paquete</span>
           </button>
         </div>

@@ -246,7 +246,7 @@ export function SpreadsheetGrid({
   );
 
   return (
-    <div className="gsheet-viewport" ref={viewportRef}>
+    <div className="gsheet-viewport" ref={viewportRef} data-lenis-prevent="">
       <table className="gsheet-table">
         <thead>
           {/* Fila 0: Letras de Columnas (A hasta Z) */}

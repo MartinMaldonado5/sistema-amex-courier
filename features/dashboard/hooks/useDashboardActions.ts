@@ -6,6 +6,7 @@ import type { NewClientFormData } from '@/components/modals/NewClientModal';
 import type { NewPkgFormData } from '@/components/modals/NewPackageModal';
 import { supabase } from '@/lib/supabase/client';
 import { soundEffects } from '@/lib/audio/soundEffects';
+import { isValidWr, cleanWr } from '@/lib/validations/wr';
 
 import { DashboardUser } from './useDashboardSession';
 
@@ -146,10 +147,14 @@ export function useDashboardActions({
     const posicion = newPkgForm.posicionEstante || `${newPkgForm.anaquel || 'A1'}-${newPkgForm.piso || 'P1'}`;
     const [anaquel, piso] = posicion.includes('-') ? posicion.split('-') : [posicion, 'P1'];
 
-    const numPeso = parseFloat(newPkgForm.pesoKg) || 1.0;
-    const wr = (newPkgForm.numeroReciboBodega || `WR${Math.floor(100000 + Math.random() * 900000)}`).trim().toUpperCase();
+    const numPeso = parseFloat(newPkgForm.pesoKg) || 0;
+    const wr = cleanWr(newPkgForm.numeroReciboBodega);
+    if (!isValidWr(wr)) {
+      console.error('El código WR debe comenzar con WR y tener exactamente 11 caracteres:', wr);
+      return;
+    }
     const tracking = newPkgForm.trackingUsa?.trim() || '';
-    const nombre = newPkgForm.nombreConsignatario?.trim() || 'CLIENTE AMEX';
+    const nombre = newPkgForm.nombreConsignatario?.trim() || 'PENDIENTE ASIGNACIÓN TIB';
 
     const newPackage: Paquete = {
       id: `p-${Date.now()}`,
@@ -225,7 +230,8 @@ export function useDashboardActions({
   const openNewPkgModal = useCallback(() => {
     setNewPkgForm({
       ...emptyPkgForm,
-      numeroReciboBodega: `WR${Math.floor(100000 + Math.random() * 900000)}`
+      numeroReciboBodega: '',
+      posicionEstante: 'OFI-P1'
     });
     setIsNewPkgModalOpen(true);
   }, [emptyPkgForm, setIsNewPkgModalOpen, setNewPkgForm]);

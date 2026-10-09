@@ -315,7 +315,7 @@ export const DirectorioClientesView: React.FC<DirectorioClientesViewProps> = ({
           boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
         }}
       >
-        <div style={{ overflowX: 'auto' }}>
+        <div style={{ overflowX: 'auto' }} data-lenis-prevent-horizontal>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
             <thead>
               <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', textAlign: 'left' }}>

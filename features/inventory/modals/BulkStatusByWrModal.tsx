@@ -13,6 +13,7 @@ import {
   X
 } from 'lucide-react';
 import { Paquete, TipoEstadoAmex, TipoEstadoEntrega } from '@/types';
+import { smartFormatWr } from '@/lib/validations/wr';
 
 export interface BulkStatusByWrModalProps {
   isOpen: boolean;
@@ -71,8 +72,9 @@ export default function BulkStatusByWrModal({
     });
 
     uniqueCodes.forEach(code => {
-      // Buscar coincidencia exacta por WR o por Tracking USA
-      let match = wrMap.get(code) || trackingMap.get(code);
+      const formattedWr = smartFormatWr(code);
+      // Buscar coincidencia exacta por WR, WR formateado (11 chars) o por Tracking USA
+      let match = wrMap.get(code) || wrMap.get(formattedWr) || trackingMap.get(code);
 
       // Si no encuentra coincidencia directa y el usuario ingresó solo dígitos, buscar sufijo de WR
       if (!match) {

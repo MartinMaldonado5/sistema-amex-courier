@@ -618,7 +618,7 @@ export default function ArmarPlanillaTab({ getTarifaCliente }: ArmarPlanillaTabP
           </div>
 
           {/* Tabla de Resultados */}
-          <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '10px' }}>
+          <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '10px' }} data-lenis-prevent-horizontal>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
               <thead>
                 <tr style={{ background: '#f8fafc', textAlign: 'left', borderBottom: '1.5px solid #e2e8f0' }}>

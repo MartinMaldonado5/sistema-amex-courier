@@ -2,6 +2,7 @@
 
 import React, { useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
+import { smoothScrollManager } from '@/lib/smooth-scroll/manager';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -54,10 +55,12 @@ export default function Modal({
     document.addEventListener('keydown', handleKeyDown);
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    smoothScrollManager.pushModalLock();
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = originalOverflow;
+      smoothScrollManager.popModalLock();
     };
   }, [isOpen, handleKeyDown]);
 
@@ -109,7 +112,7 @@ export default function Modal({
         )}
 
         {/* Body */}
-        <div className="px-6 py-4 overflow-y-auto flex-1 text-slate-800 dark:text-slate-200 text-sm">
+        <div data-lenis-scroll="" className="px-6 py-4 overflow-y-auto flex-1 text-slate-800 dark:text-slate-200 text-sm">
           {children}
         </div>
 

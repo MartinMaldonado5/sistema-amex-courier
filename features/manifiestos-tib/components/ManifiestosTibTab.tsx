@@ -729,7 +729,7 @@ export default function ManifiestosTibTab({ onRefreshData }: { onRefreshData?: (
 
           {/* Tabla de Resultados Extraídos */}
           <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
+            <div style={{ overflowX: 'auto' }} data-lenis-prevent-horizontal>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
                 <thead>
                   <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 800 }}>

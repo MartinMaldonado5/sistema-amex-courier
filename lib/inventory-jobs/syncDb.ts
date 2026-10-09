@@ -1,6 +1,7 @@
 import readXlsxFile from 'read-excel-file/node';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { getFileFromR2 } from '@/lib/r2/client';
+import { cleanWr, isValidWr } from '@/lib/validations/wr';
 
 export interface SyncDbResult {
   ok: boolean;
@@ -122,8 +123,8 @@ export async function syncCompletedExcelToDatabase(
     const parsedRows: ParsedRow[] = [];
     for (let i = 1; i < rows.length; i++) {
       const r = rows[i] || [];
-      const rawWr = String(r[colIndex.wr] || '').trim().toUpperCase();
-      if (!rawWr || !rawWr.startsWith('WR')) continue;
+      const clean = cleanWr(r[colIndex.wr]);
+      if (!isValidWr(clean)) continue;
 
       const rawTracking = colIndex.tracking !== -1 ? String(r[colIndex.tracking] || '').trim() : '';
       const rawCliente = colIndex.cliente !== -1 ? String(r[colIndex.cliente] || '').trim() : '';
@@ -140,7 +141,7 @@ export async function syncCompletedExcelToDatabase(
       const rawPosicion = colIndex.posicion !== -1 ? String(r[colIndex.posicion] || '').trim() : 'REC-P1';
 
       parsedRows.push({
-        wr: rawWr,
+        wr: clean,
         tracking: rawTracking,
         cliente: rawCliente,
         tipoEmpaque: rawTipo,

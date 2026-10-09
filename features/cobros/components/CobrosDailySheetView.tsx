@@ -682,7 +682,7 @@ export const CobrosDailySheetView: React.FC<CobrosDailySheetViewProps> = ({
           maxWidth: '100%'
         }}
       >
-        <div style={{ overflowX: 'auto', width: '100%' }}>
+        <div style={{ overflowX: 'auto', width: '100%' }} data-lenis-prevent-horizontal>
           <table style={{ width: '100%', textAlign: 'left', fontSize: '12px', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#f8fafc', color: '#475569', borderBottom: '1px solid #e2e8f0', fontWeight: 800, textTransform: 'uppercase', fontSize: '10px', letterSpacing: '0.05em', userSelect: 'none' }}>

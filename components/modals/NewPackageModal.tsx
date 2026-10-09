@@ -1,22 +1,22 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Cliente } from '@/types';
 import {
-  Package,
+  PackagePlus,
   X,
   Barcode,
-  User,
-  Scale,
-  DollarSign,
   MapPin,
-  Truck,
-  Sparkles,
   Check,
-  Boxes,
-  ArrowRight,
   AlertCircle
 } from 'lucide-react';
+import {
+  isValidWr,
+  getWrValidationError,
+  smartFormatWr,
+  cleanWr,
+  WR_LENGTH
+} from '@/lib/validations/wr';
 
 export interface NewPkgFormData {
   numeroReciboBodega: string;
@@ -38,139 +38,101 @@ export interface NewPkgFormData {
 
 interface NewPackageModalProps {
   form: NewPkgFormData;
-  clientes: Cliente[];
+  clientes?: Cliente[];
   onChange: (form: NewPkgFormData) => void;
   onSave: (e: React.FormEvent) => void;
   onClose: () => void;
   isWarehouseMode?: boolean;
 }
 
+// Ubicaciones más frecuentes en Almacén Lince para selección en 1 clic
+const UBICACIONES_RAPIDAS = [
+  { code: 'OFI-P1', label: 'Oficina P1', group: 'Especial' },
+  { code: 'DSP-Z1', label: 'Despacho Z1', group: 'Despacho' },
+  { code: 'DSP-Z2', label: 'Despacho Z2', group: 'Despacho' },
+  { code: 'A1-P1', label: 'Anaquel 1 · Piso 1', group: 'A1' },
+  { code: 'A1-P2', label: 'Anaquel 1 · Piso 2', group: 'A1' },
+  { code: 'A1-P3', label: 'Anaquel 1 · Piso 3', group: 'A1' },
+  { code: 'A1-P4', label: 'Anaquel 1 · Piso 4', group: 'A1' },
+  { code: 'A2-P1', label: 'Anaquel 2 · Piso 1', group: 'A2' },
+  { code: 'A2-P2', label: 'Anaquel 2 · Piso 2', group: 'A2' },
+  { code: 'A2-P3', label: 'Anaquel 2 · Piso 3', group: 'A2' },
+  { code: 'A2-P4', label: 'Anaquel 2 · Piso 4', group: 'A2' }
+];
+
 export default function NewPackageModal({
   form,
-  clientes,
   onChange,
   onSave,
-  onClose,
-  isWarehouseMode = false
+  onClose
 }: NewPackageModalProps) {
-  const [activeTab, setActiveTab] = useState<'general' | 'carga'>('general');
   const [validationError, setValidationError] = useState<string | null>(null);
+  const wrInputRef = useRef<HTMLInputElement>(null);
 
-  const set = (key: keyof NewPkgFormData, value: string) => {
+  const currentWrClean = cleanWr(form.numeroReciboBodega);
+  const isWrValid = isValidWr(currentWrClean);
+  const wrLength = currentWrClean.length;
+
+  // Ubicación actual seleccionada
+  const currentUbicacion = form.posicionEstante || (form.anaquel && form.piso ? `${form.anaquel}-${form.piso}` : 'OFI-P1');
+
+  // Autofoco inmediato en el campo WR al abrir
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      wrInputRef.current?.focus();
+    }, 60);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const setField = (key: keyof NewPkgFormData, value: string) => {
     if (validationError) setValidationError(null);
     onChange({ ...form, [key]: value });
   };
 
-  // Pre-sets de peso rápido
-  const WEIGHT_PRESETS = ['0.5', '1.0', '2.5', '5.0', '10.0'];
-
-  // Tipos de empaque con iconos
-  const EMPAQUE_OPTIONS = [
-    { id: 'CAJA', label: 'Caja', icon: '📦' },
-    { id: 'SOBRE', label: 'Sobre', icon: '✉️' },
-    { id: 'SACA', label: 'Saca', icon: '🛍️' },
-    { id: 'PAQUETE', label: 'Bulto', icon: '🏷️' }
-  ];
-
-  // Presets de descripción
-  const DESC_PRESETS = [
-    'Ropa y Textiles',
-    'Calzado Deportivo',
-    'Electrónicos / Gadgets',
-    'Suplementos / Vitaminas',
-    'Repuestos / Accesorios'
-  ];
-
-  // Métodos de entrega
-  const METODOS_ENTREGA = [
-    { id: 'CarroAmexDomicilio', label: 'Reparto Domicilio', icon: '🚚' },
-    { id: 'RecojoLince', label: 'Recojo Lince', icon: '🏢' },
-    { id: 'AgenciaProvincia', label: 'Provincia', icon: '📦' }
-  ];
-
-  // Estantes preconfigurados
-  const ESTANTES = [
-    { code: 'A1-P1', label: 'Anaquel 1 · Piso 1 (Pesado)', ana: 'A1', pis: 'P1' },
-    { code: 'A1-P2', label: 'Anaquel 1 · Piso 2 (Medio)', ana: 'A1', pis: 'P2' },
-    { code: 'A1-P3', label: 'Anaquel 1 · Piso 3 (Ligero)', ana: 'A1', pis: 'P3' },
-    { code: 'A1-P4', label: 'Anaquel 1 · Piso 4 (Superior)', ana: 'A1', pis: 'P4' },
-    { code: 'A2-P1', label: 'Anaquel 2 · Piso 1 (Pesado)', ana: 'A2', pis: 'P1' },
-    { code: 'A2-P2', label: 'Anaquel 2 · Piso 2 (Medio)', ana: 'A2', pis: 'P2' },
-    { code: 'A2-P3', label: 'Anaquel 2 · Piso 3 (Ligero)', ana: 'A2', pis: 'P3' },
-    { code: 'A2-P4', label: 'Anaquel 2 · Piso 4 (Superior)', ana: 'A2', pis: 'P4' },
-    { code: 'OFI', label: 'Oficina (OFI)', ana: 'OFI', pis: '' },
-    { code: 'DSP-Z1', label: 'Despacho Zona 1 (DSP-Z1)', ana: 'DSP-Z1', pis: '' },
-    { code: 'DSP-Z2', label: 'Despacho Zona 2 (DSP-Z2)', ana: 'DSP-Z2', pis: '' }
-  ];
-
-  const currentEstante = form.posicionEstante || (form.anaquel && form.piso ? `${form.anaquel}-${form.piso}` : 'A1-P1');
-
-  // Cálculos en tiempo real
-  const previewPeso = parseFloat(form.pesoKg) || 0;
-  const previewFlete = previewPeso * 12; // $12 / kg estándar
-  const previewAdmin = previewPeso > 0 ? 5 : 0;
-  const previewTotalUsd = previewFlete + previewAdmin;
-  const previewTotalPen = previewTotalUsd * 3.78; // Tasa de cambio estimada
-
-  // Auto-generador de código WR correlativo
-  const handleGenerateNextWr = () => {
-    const randomNum = Math.floor(100000 + Math.random() * 900000);
-    set('numeroReciboBodega', `WR${randomNum}`);
-  };
-
-  // Clientes sugeridos por coincidencia de nombre
-  const matchingClientes = useMemo(() => {
-    const query = form.nombreConsignatario?.trim().toLowerCase() || '';
-    if (!query) {
-      return clientes.slice(0, 5);
-    }
-    return clientes
-      .filter(c =>
-        c.nombre.toLowerCase().includes(query) ||
-        (c.apellido && c.apellido.toLowerCase().includes(query)) ||
-        (c.documentoIdentidad && c.documentoIdentidad.includes(query))
-      )
-      .slice(0, 5);
-  }, [clientes, form.nombreConsignatario]);
-
-  const handleSelectClient = (c: Cliente) => {
-    const fullName = c.nombre + (c.apellido ? ` ${c.apellido}` : '');
+  const handleSelectUbicacion = (code: string) => {
+    const [ana, pis] = code.includes('-') ? code.split('-') : [code, 'P1'];
     onChange({
       ...form,
-      nombreConsignatario: fullName.trim().toUpperCase(),
-      dniConsignatario: c.documentoIdentidad || ''
+      posicionEstante: code,
+      anaquel: ana,
+      piso: pis,
+      ubicacionActual: 'AmexLince'
     });
-    setValidationError(null);
+    if (validationError) setValidationError(null);
   };
 
-  // Validación personalizada robusta (sin bloqueos silenciosos entre pestañas)
+  // Validación estricta: WR debe tener 11 caracteres y comenzar por WR
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!form.numeroReciboBodega?.trim()) {
-      setValidationError('Por favor ingrese o auto-genere el número de Guía WR.');
-      setActiveTab('general');
+    const wrError = getWrValidationError(form.numeroReciboBodega);
+    if (wrError) {
+      setValidationError(wrError);
+      wrInputRef.current?.focus();
       return;
     }
 
-    if (!form.nombreConsignatario?.trim()) {
-      setValidationError('Por favor ingrese el nombre del cliente o destinatario.');
-      setActiveTab('general');
-      return;
-    }
+    const clean = cleanWr(form.numeroReciboBodega);
 
-    const pesoNum = parseFloat(form.pesoKg);
-    if (isNaN(pesoNum) || pesoNum <= 0) {
-      setValidationError('Por favor ingrese un peso físico válido en kg (mayor a 0).');
-      setActiveTab('carga');
-      return;
-    }
+    // Asegurar valores por defecto para el flujo TIB posterior
+    const [ana, pis] = currentUbicacion.includes('-') ? currentUbicacion.split('-') : [currentUbicacion, 'P1'];
+    onChange({
+      ...form,
+      numeroReciboBodega: clean,
+      posicionEstante: currentUbicacion,
+      anaquel: ana,
+      piso: pis,
+      ubicacionActual: form.ubicacionActual || 'AmexLince',
+      nombreConsignatario: form.nombreConsignatario || 'PENDIENTE ASIGNACIÓN TIB',
+      tipoEmpaque: form.tipoEmpaque || 'CAJA',
+      pesoKg: form.pesoKg || '0'
+    });
 
     setValidationError(null);
     onSave(e);
   };
 
-  // Atajos de teclado: Ctrl + Enter para guardar, Esc para cerrar
+  // Atajos de teclado: Enter para registrar, Esc para cancelar
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -181,523 +143,387 @@ export default function NewPackageModal({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose, form]);
+  }, [onClose, form, currentUbicacion]);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)' }}>
-      <div style={{ background: '#ffffff', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.3)', border: '1px solid #cbd5e1', width: '100%', maxWidth: '820px', maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {/* Header Bar */}
-        <div style={{ padding: '14px 20px', background: '#0f172a', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #334155', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(37,99,235,0.2)', border: '1px solid rgba(96,165,250,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#93c5fd' }}>
-              <Package style={{ width: '20px', height: '20px' }} />
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        background: 'rgba(15, 23, 42, 0.55)',
+        backdropFilter: 'blur(5px)',
+        animation: 'fadeIn 0.15s ease-out'
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        style={{
+          background: '#ffffff',
+          borderRadius: '16px',
+          boxShadow: '0 20px 45px -10px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(226, 232, 240, 0.8)',
+          width: '100%',
+          maxWidth: '460px',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}
+      >
+        {/* Header Elegante y Profesional */}
+        <div
+          style={{
+            padding: '16px 20px',
+            background: '#ffffff',
+            borderBottom: '1px solid #e2e8f0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '10px',
+                background: '#eff6ff',
+                color: '#2563eb',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid #dbeafe',
+                flexShrink: 0
+              }}
+            >
+              <PackagePlus className="w-5 h-5" />
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h2 style={{ fontSize: '15px', fontWeight: 900, margin: 0 }}>Registrar Paquete WR</h2>
-                <span style={{ padding: '2px 8px', borderRadius: '9999px', fontSize: '10px', fontWeight: 900, background: 'rgba(59,130,246,0.2)', color: '#93c5fd', border: '1px solid rgba(96,165,250,0.3)' }}>
-                  Almacén Central Lince · Ingreso
-                </span>
-              </div>
-              <p style={{ fontSize: '11.5px', color: '#94a3b8', margin: '2px 0 0 0' }}>Asigna código WR, cliente, peso y ubicación en almacén</p>
+              <h2
+                style={{
+                  fontSize: '15px',
+                  fontWeight: 800,
+                  color: '#0f172a',
+                  margin: 0,
+                  lineHeight: 1.2
+                }}
+              >
+                Ingreso de Paquete WR
+              </h2>
+              <p
+                style={{
+                  fontSize: '11.5px',
+                  color: '#64748b',
+                  margin: '3px 0 0 0',
+                  fontWeight: 500
+                }}
+              >
+                Almacén Central Lince · Slotting WMS
+              </p>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'monospace' }}>
-              [Ctrl + Enter para guardar]
-            </span>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{ color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
-              aria-label="Cerrar modal"
-            >
-              <X style={{ width: '20px', height: '20px' }} />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              width: '30px',
+              height: '30px',
+              borderRadius: '8px',
+              border: 'none',
+              background: '#f8fafc',
+              color: '#64748b',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.15s ease'
+            }}
+            aria-label="Cerrar modal"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
-        {/* Interactive Navigation Tabs */}
-        <div style={{ padding: '8px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <button
-              type="button"
-              onClick={() => setActiveTab('general')}
-              style={{
-                padding: '6px 14px',
-                borderRadius: '8px',
-                fontSize: '12px',
-                fontWeight: 800,
-                border: 'none',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: activeTab === 'general' ? '#2563eb' : '#ffffff',
-                color: activeTab === 'general' ? '#ffffff' : '#64748b',
-                boxShadow: activeTab === 'general' ? '0 1px 3px rgba(37,99,235,0.3)' : 'none',
-                borderWidth: '1px',
-                borderColor: activeTab === 'general' ? '#2563eb' : '#cbd5e1'
-              }}
-            >
-              <Barcode style={{ width: '14px', height: '14px' }} />
-              <span>1. Datos del Paquete</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab('carga')}
-              style={{
-                padding: '6px 14px',
-                borderRadius: '8px',
-                fontSize: '12px',
-                fontWeight: 800,
-                border: 'none',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: activeTab === 'carga' ? '#2563eb' : '#ffffff',
-                color: activeTab === 'carga' ? '#ffffff' : '#64748b',
-                boxShadow: activeTab === 'carga' ? '0 1px 3px rgba(37,99,235,0.3)' : 'none',
-                borderWidth: '1px',
-                borderColor: activeTab === 'carga' ? '#2563eb' : '#cbd5e1'
-              }}
-            >
-              <Scale style={{ width: '14px', height: '14px' }} />
-              <span>2. Peso, Valor & Estante</span>
-            </button>
-          </div>
-
-          {/* Live mini estimate pill */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', fontWeight: 800, background: '#ffffff', padding: '4px 10px', borderRadius: '9999px', border: '1px solid #cbd5e1' }}>
-            <span style={{ color: '#64748b' }}>Flete:</span>
-            <span style={{ color: '#2563eb', fontFamily: 'monospace' }}>${previewTotalUsd.toFixed(2)} USD</span>
-            <span style={{ color: '#cbd5e1' }}>/</span>
-            <span style={{ color: '#059669', fontFamily: 'monospace' }}>S/ {previewTotalPen.toFixed(2)}</span>
-          </div>
-        </div>
-
-        {/* Validation error notice */}
+        {/* Mensaje de Error de Validación */}
         {validationError && (
-          <div style={{ margin: '12px 20px 0 20px', padding: '8px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', color: '#b91c1c', fontSize: '12px', fontWeight: 700 }}>
-            <AlertCircle style={{ width: '16px', height: '16px', flexShrink: 0 }} />
+          <div
+            style={{
+              margin: '14px 20px 0 20px',
+              padding: '9px 12px',
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              color: '#b91c1c',
+              fontSize: '12px',
+              fontWeight: 700
+            }}
+          >
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{validationError}</span>
           </div>
         )}
 
-        {/* Modal Form Body */}
-        <form onSubmit={handleSubmit} style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* ---------------- TAB 1: IDENTIFICACIÓN & CLIENTE ---------------- */}
-            <div style={{ display: activeTab === 'general' ? 'grid' : 'none', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              {/* Columna Izquierda: Identificación del Paquete */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <label style={{ fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Barcode style={{ width: '14px', height: '14px', color: '#2563eb' }} />
-                      Guía WR # (Recibo de Bodega) *
-                    </label>
-                    <button
-                      type="button"
-                      onClick={handleGenerateNextWr}
-                      style={{ fontSize: '11px', fontWeight: 800, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                    >
-                      <Sparkles style={{ width: '12px', height: '12px', color: '#d97706' }} />
-                      Auto-Generar WR
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    value={form.numeroReciboBodega}
-                    onChange={e => set('numeroReciboBodega', e.target.value.toUpperCase())}
-                    placeholder="WR000451"
-                    style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', fontFamily: 'monospace', fontWeight: 800, color: '#0f172a', outline: 'none', textTransform: 'uppercase' }}
-                  />
-                </div>
+        {/* Formulario Simplificado */}
+        <form onSubmit={handleSubmit} style={{ padding: '18px 20px 20px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Campo 1: Guía WR # */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <label
+                style={{
+                  fontSize: '12px',
+                  fontWeight: 800,
+                  color: '#1e293b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Barcode className="w-4 h-4 text-blue-600" />
+                Guía WR # (Recibo de Bodega)
+              </label>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                    Tracking Carrier USA (FedEx, UPS, USPS, Amazon)
-                  </label>
-                  <input
-                    type="text"
-                    value={form.trackingUsa}
-                    onChange={e => set('trackingUsa', e.target.value.toUpperCase())}
-                    placeholder="Ej: 1Z999AA10123456784 o TBA..."
-                    style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', outline: 'none' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                    Tipo de Empaque
-                  </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
-                    {EMPAQUE_OPTIONS.map(opt => {
-                      const isSelected = form.tipoEmpaque === opt.id;
-                      return (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => set('tipoEmpaque', opt.id)}
-                          style={{
-                            padding: '8px 4px',
-                            borderRadius: '8px',
-                            border: isSelected ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
-                            background: isSelected ? '#eff6ff' : '#ffffff',
-                            color: isSelected ? '#1e40af' : '#475569',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: '2px',
-                            fontSize: '11px',
-                            fontWeight: 800
-                          }}
-                        >
-                          <span style={{ fontSize: '15px' }}>{opt.icon}</span>
-                          <span>{opt.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                    N° Factura Proveedor / Invoice ID (Opcional)
-                  </label>
-                  <input
-                    type="text"
-                    value={form.numeroFactura}
-                    onChange={e => set('numeroFactura', e.target.value)}
-                    placeholder="Ej: INV-2026-9901"
-                    style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', outline: 'none' }}
-                  />
-                </div>
-              </div>
-
-              {/* Columna Derecha: Cliente & Mercancía (Sin DNI innecesario) */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div>
-                  <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <User style={{ width: '14px', height: '14px', color: '#2563eb' }} />
-                      Cliente / Destinatario *
-                    </span>
-                    <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#64748b' }}>Escribe o selecciona</span>
-                  </label>
-
-                  <input
-                    type="text"
-                    value={form.nombreConsignatario}
-                    onChange={e => set('nombreConsignatario', e.target.value.toUpperCase())}
-                    placeholder="Ej: AMEX JUAN PEREZ o MARIA GARCIA"
-                    style={{ width: '100%', padding: '9px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', fontWeight: 800, color: '#0f172a', outline: 'none', textTransform: 'uppercase' }}
-                  />
-
-                  {/* Sugerencias rápidas de clientes existentes */}
-                  {matchingClientes.length > 0 && (
-                    <div style={{ marginTop: '6px' }}>
-                      <div style={{ fontSize: '10.5px', color: '#64748b', fontWeight: 700, marginBottom: '4px' }}>
-                        Clientes sugeridos:
-                      </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                        {matchingClientes.map(c => {
-                          const fullName = c.nombre + (c.apellido ? ` ${c.apellido}` : '');
-                          const isMatch = form.nombreConsignatario?.toUpperCase() === fullName.toUpperCase();
-                          return (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={() => handleSelectClient(c)}
-                              style={{
-                                padding: '3px 8px',
-                                background: isMatch ? '#eff6ff' : '#f1f5f9',
-                                border: isMatch ? '1px solid #3b82f6' : '1px solid #e2e8f0',
-                                borderRadius: '6px',
-                                fontSize: '11px',
-                                fontWeight: 700,
-                                color: isMatch ? '#1d4ed8' : '#334155',
-                                cursor: 'pointer',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px'
-                              }}
-                            >
-                              <User style={{ width: '10px', height: '10px', color: '#3b82f6' }} />
-                              <span>{fullName}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                    Descripción del Contenido / Mercancía
-                  </label>
-                  <input
-                    type="text"
-                    value={form.descripcion}
-                    onChange={e => set('descripcion', e.target.value)}
-                    placeholder="Ej: Calzado deportivo, ropa, accesorios..."
-                    style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', outline: 'none' }}
-                  />
-                  {/* Botones rápidos de categorías */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
-                    {DESC_PRESETS.map(preset => (
-                      <button
-                        key={preset}
-                        type="button"
-                        onClick={() => set('descripcion', preset)}
-                        style={{
-                          padding: '2px 6px',
-                          background: form.descripcion === preset ? '#eff6ff' : '#f8fafc',
-                          border: form.descripcion === preset ? '1px solid #93c5fd' : '1px solid #e2e8f0',
-                          borderRadius: '4px',
-                          fontSize: '10.5px',
-                          fontWeight: 600,
-                          color: form.descripcion === preset ? '#1d4ed8' : '#64748b',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {preset}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                    Método de Entrega Previsto
-                  </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-                    {METODOS_ENTREGA.map(m => {
-                      const isSelected = (form.metodoEntrega || 'CarroAmexDomicilio') === m.id;
-                      return (
-                        <button
-                          key={m.id}
-                          type="button"
-                          onClick={() => set('metodoEntrega', m.id)}
-                          style={{
-                            padding: '6px 4px',
-                            borderRadius: '8px',
-                            border: isSelected ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
-                            background: isSelected ? '#eff6ff' : '#ffffff',
-                            color: isSelected ? '#1e40af' : '#475569',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: '2px',
-                            fontSize: '10.5px',
-                            fontWeight: 800
-                          }}
-                        >
-                          <span style={{ fontSize: '14px' }}>{m.icon}</span>
-                          <span>{m.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
+              {/* Indicador de 11 caracteres en vivo */}
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontFamily: 'monospace',
+                  fontWeight: 800,
+                  padding: '2px 7px',
+                  borderRadius: '6px',
+                  background: isWrValid
+                    ? '#dcfce7'
+                    : wrLength > 0
+                    ? '#fee2e2'
+                    : '#f1f5f9',
+                  color: isWrValid
+                    ? '#15803d'
+                    : wrLength > 0
+                    ? '#b91c1c'
+                    : '#64748b',
+                  border: isWrValid
+                    ? '1px solid #bbf7d0'
+                    : wrLength > 0
+                    ? '1px solid #fecaca'
+                    : '1px solid #e2e8f0',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {isWrValid ? '✓ 11 caracteres (Válido)' : `${wrLength}/11 caracteres`}
+              </span>
             </div>
 
-            {/* ---------------- TAB 2: PESO, VALORACIÓN & ESTANTE ---------------- */}
-            <div style={{ display: activeTab === 'carga' ? 'grid' : 'none', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              {/* Columna Izquierda: Carga y Valor */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Scale style={{ width: '14px', height: '14px', color: '#2563eb' }} />
-                      Peso Real (Kilogramos) *
-                    </span>
-                    <span style={{ fontFamily: 'monospace', color: '#64748b' }}>$12 USD / kg</span>
-                  </div>
+            <div style={{ position: 'relative' }}>
+              <input
+                ref={wrInputRef}
+                type="text"
+                maxLength={WR_LENGTH}
+                value={form.numeroReciboBodega}
+                onChange={(e) => {
+                  const val = e.target.value.toUpperCase();
+                  setField('numeroReciboBodega', val);
+                }}
+                onBlur={() => {
+                  if (form.numeroReciboBodega) {
+                    const formatted = smartFormatWr(form.numeroReciboBodega);
+                    if (formatted !== form.numeroReciboBodega) {
+                      setField('numeroReciboBodega', formatted);
+                    }
+                  }
+                }}
+                placeholder="Ej: WR000474478"
+                style={{
+                  width: '100%',
+                  padding: '11px 14px',
+                  fontSize: '15px',
+                  fontWeight: 800,
+                  fontFamily: 'monospace',
+                  letterSpacing: '0.04em',
+                  color: '#0f172a',
+                  background: '#f8fafc',
+                  border: validationError
+                    ? '1.5px solid #ef4444'
+                    : isWrValid
+                    ? '1.5px solid #22c55e'
+                    : '1.5px solid #cbd5e1',
+                  borderRadius: '10px',
+                  outline: 'none',
+                  transition: 'border-color 0.15s ease',
+                  textTransform: 'uppercase'
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = isWrValid ? '#22c55e' : '#2563eb';
+                  e.currentTarget.style.background = '#ffffff';
+                }}
+                onBlurCapture={(e) => {
+                  e.currentTarget.style.borderColor = validationError
+                    ? '#ef4444'
+                    : isWrValid
+                    ? '#22c55e'
+                    : '#cbd5e1';
+                  e.currentTarget.style.background = '#f8fafc';
+                }}
+              />
+            </div>
+            <p style={{ fontSize: '11px', color: isWrValid ? '#16a34a' : '#64748b', margin: '5px 0 0 2px' }}>
+              {isWrValid
+                ? 'Código WR verificado con formato reglamentario de 11 caracteres.'
+                : 'Debe iniciar con WR y tener exactamente 11 caracteres (ej. WR000474478).'}
+            </p>
+          </div>
 
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0.1"
-                    value={form.pesoKg}
-                    onChange={e => set('pesoKg', e.target.value)}
-                    placeholder="1.0"
-                    style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '15px', fontFamily: 'monospace', fontWeight: 800, color: '#0f172a', outline: 'none' }}
-                  />
+          {/* Campo 2: Ubicación / Posición en Almacén */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <label
+                style={{
+                  fontSize: '12px',
+                  fontWeight: 800,
+                  color: '#1e293b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <MapPin className="w-4 h-4 text-indigo-600" />
+                Ubicación / Posición en Almacén
+              </label>
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontFamily: 'monospace',
+                  fontWeight: 800,
+                  color: '#4338ca',
+                  background: '#e0e7ff',
+                  padding: '2px 8px',
+                  borderRadius: '6px'
+                }}
+              >
+                {currentUbicacion || 'OFI-P1'}
+              </span>
+            </div>
 
-                  {/* Weight Preset Buttons */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '6px' }}>
-                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>Preajustes:</span>
-                    {WEIGHT_PRESETS.map(w => (
-                      <button
-                        key={w}
-                        type="button"
-                        onClick={() => set('pesoKg', w)}
-                        style={{
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          fontSize: '11.5px',
-                          fontFamily: 'monospace',
-                          fontWeight: 800,
-                          border: 'none',
-                          cursor: 'pointer',
-                          background: form.pesoKg === w ? '#2563eb' : '#f1f5f9',
-                          color: form.pesoKg === w ? '#ffffff' : '#334155'
-                        }}
-                      >
-                        {w} kg
-                      </button>
-                    ))}
-                  </div>
-                </div>
+            {/* Input para escribir cualquier ubicación libre */}
+            <input
+              type="text"
+              value={form.posicionEstante || currentUbicacion}
+              onChange={(e) => handleSelectUbicacion(e.target.value.toUpperCase())}
+              placeholder="Ej: OFI-P1, DSP-Z2, A1-P1..."
+              style={{
+                width: '100%',
+                padding: '9px 12px',
+                fontSize: '13px',
+                fontWeight: 700,
+                fontFamily: 'monospace',
+                color: '#1e293b',
+                background: '#f8fafc',
+                border: '1.5px solid #cbd5e1',
+                borderRadius: '8px',
+                outline: 'none',
+                textTransform: 'uppercase',
+                marginBottom: '8px'
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = '#6366f1';
+                e.currentTarget.style.background = '#ffffff';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = '#cbd5e1';
+                e.currentTarget.style.background = '#f8fafc';
+              }}
+            />
 
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                    Sede / Almacén de Custodia
-                  </label>
-                  <select
-                    value={form.ubicacionActual}
-                    onChange={e => set('ubicacionActual', e.target.value)}
-                    style={{ width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', fontWeight: 700, outline: 'none' }}
+            {/* Chips de selección rápida en 1 clic */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+              {UBICACIONES_RAPIDAS.map((ubi) => {
+                const isSelected = currentUbicacion === ubi.code;
+                return (
+                  <button
+                    key={ubi.code}
+                    type="button"
+                    onClick={() => handleSelectUbicacion(ubi.code)}
+                    style={{
+                      padding: '4px 9px',
+                      borderRadius: '7px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      fontFamily: 'monospace',
+                      cursor: 'pointer',
+                      border: isSelected ? '1.5px solid #4f46e5' : '1px solid #e2e8f0',
+                      background: isSelected ? '#eef2ff' : '#ffffff',
+                      color: isSelected ? '#3730a3' : '#475569',
+                      transition: 'all 0.12s ease'
+                    }}
+                    title={ubi.label}
                   >
-                    <option value="AmexLince">🏢 Almacén Central Lince (Lima)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Columna Derecha: Selector de Anaqueles y Ticket de Cotización */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', marginBottom: '4px' }}>
-                    Posición de Estantería (Lince)
-                  </label>
-
-                  {/* Interactive Shelf Matrix Buttons */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                    {ESTANTES.map(est => {
-                      const isSelected = currentEstante === est.code;
-                      return (
-                        <button
-                          key={est.code}
-                          type="button"
-                          onClick={() => {
-                            onChange({
-                              ...form,
-                              anaquel: est.ana,
-                              piso: est.pis,
-                              posicionEstante: est.code
-                            });
-                          }}
-                          style={{
-                            padding: '8px 10px',
-                            borderRadius: '8px',
-                            border: isSelected ? '1.5px solid #9333ea' : '1px solid #cbd5e1',
-                            background: isSelected ? '#faf5ff' : '#ffffff',
-                            color: isSelected ? '#581c87' : '#334155',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            fontSize: '11.5px',
-                            fontWeight: 800
-                          }}
-                        >
-                          <span style={{ fontFamily: 'monospace' }}>{est.code}</span>
-                          <span style={{ fontSize: '10.5px', fontWeight: 500, color: '#64748b' }}>{est.label.split(' ')[0]}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Real-time Rate Ticket Card vs Ficha de Custodia WMS */}
-                <div style={{ padding: '14px', background: '#0f172a', color: '#ffffff', borderRadius: '12px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 800, borderBottom: '1px solid #334155', paddingBottom: '6px', color: '#94a3b8' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Boxes style={{ width: '14px', height: '14px', color: '#38bdf8' }} />
-                      Ficha de Custodia Almacén
-                    </span>
-                    <span style={{ fontFamily: 'monospace', color: '#38bdf8', fontWeight: 900 }}>WMS LINCE</span>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '11.5px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
-                      <span>Peso Físico:</span>
-                      <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#ffffff' }}>{previewPeso.toFixed(2)} kg</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
-                      <span>Tipo Empaque:</span>
-                      <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#ffffff' }}>{form.tipoEmpaque || 'CAJA'}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
-                      <span>Ubicación Estantería:</span>
-                      <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#c084fc' }}>{currentEstante || 'REC (Recepción)'}</span>
-                    </div>
-                  </div>
-
-                  <div style={{ paddingTop: '6px', borderTop: '1px solid #334155', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-                    <span style={{ fontWeight: 800, fontSize: '11.5px', color: '#94a3b8' }}>Flete Estimado:</span>
-                    <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: '14px', fontWeight: 900, fontFamily: 'monospace', color: '#34d399' }}>
-                        ${previewTotalUsd.toFixed(2)} USD
-                      </span>
-                      <span style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'monospace', color: '#94a3b8', marginLeft: '6px' }}>
-                        (S/ {previewTotalPen.toFixed(2)})
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                    {ubi.code}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Sticky Modal Footer Actions */}
-          <div style={{ padding: '12px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexShrink: 0 }}>
+          {/* Botones de Acción */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: '8px',
+              paddingTop: '6px',
+              borderTop: '1px solid #f1f5f9'
+            }}
+          >
             <button
               type="button"
               onClick={onClose}
-              style={{ padding: '8px 14px', fontSize: '12px', fontWeight: 700, color: '#64748b', background: 'transparent', border: 'none', cursor: 'pointer' }}
+              style={{
+                padding: '9px 16px',
+                fontSize: '12px',
+                fontWeight: 700,
+                color: '#64748b',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                borderRadius: '8px'
+              }}
             >
               Cancelar
             </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {activeTab === 'general' ? (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('carga')}
-                  style={{ padding: '9px 16px', fontSize: '12px', fontWeight: 800, color: '#ffffff', background: '#2563eb', border: 'none', borderRadius: '10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 6px rgba(37,99,235,0.25)' }}
-                >
-                  <span>Siguiente: Peso & Estante</span>
-                  <ArrowRight style={{ width: '14px', height: '14px' }} />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('general')}
-                  style={{ padding: '8px 14px', fontSize: '12px', fontWeight: 800, color: '#334155', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '10px', cursor: 'pointer' }}
-                >
-                  Volver a Datos
-                </button>
-              )}
-
-              <button
-                type="submit"
-                style={{ padding: '9px 18px', fontSize: '12px', fontWeight: 900, color: '#ffffff', background: '#059669', border: 'none', borderRadius: '10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 6px rgba(5,150,105,0.25)' }}
-              >
-                <Check style={{ width: '15px', height: '15px', strokeWidth: 3 }} />
-                <span>Registrar Paquete WR</span>
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={!isWrValid}
+              style={{
+                padding: '10px 20px',
+                fontSize: '12.5px',
+                fontWeight: 800,
+                color: '#ffffff',
+                background: isWrValid
+                  ? 'linear-gradient(135deg, #1d4ed8, #2563eb)'
+                  : '#94a3b8',
+                border: 'none',
+                borderRadius: '9px',
+                cursor: isWrValid ? 'pointer' : 'not-allowed',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '7px',
+                boxShadow: isWrValid ? '0 2px 6px rgba(37,99,235,0.28)' : 'none',
+                opacity: isWrValid ? 1 : 0.7,
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <Check className="w-4 h-4" strokeWidth={2.5} />
+              <span>Registrar Ingreso</span>
+            </button>
           </div>
         </form>
       </div>

@@ -767,6 +767,7 @@ export default function SyncTibImagesModal({
                 </div>
                 <div
                   ref={logsContainerRef}
+                  data-lenis-prevent=""
                   style={{
                     maxHeight: '160px',
                     overflowY: 'auto',

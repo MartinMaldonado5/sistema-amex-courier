@@ -119,23 +119,12 @@ export default function InventoryStatsCards({
     [paquetes]
   );
   const totalExistenciasReales = paquetesActivos.length;
-  const totalPaquetes = paquetes.length;
-
-  // Proporción de existencias activas vs total registrado
-  const ratioActivas = totalPaquetes > 0 ? totalExistenciasReales / totalPaquetes : 0;
-  const porcentajeActivasTexto = Math.round(ratioActivas * 100);
 
   // 2. PESO EN CUSTODIA (paquetes activos)
   const totalPesoRealKg = useMemo(
     () => paquetesActivos.reduce((acc, p) => acc + (Number(p.pesoKg) || 0), 0),
     [paquetesActivos]
   );
-  const totalPesoHistoricoKg = useMemo(
-    () => paquetes.reduce((acc, p) => acc + (Number(p.pesoKg) || 0), 0),
-    [paquetes]
-  );
-  const ratioPeso = totalPesoHistoricoKg > 0 ? totalPesoRealKg / totalPesoHistoricoKg : 0.7;
-  const porcentajePesoTexto = Math.round(ratioPeso * 100);
   const pesoPromedioActivo = totalExistenciasReales > 0 ? totalPesoRealKg / totalExistenciasReales : 0;
 
   const isActivasFiltered = statusAmexFilter === 'en_almacen' || statusAmexFilter === 'ACTIVAS';
@@ -175,7 +164,7 @@ export default function InventoryStatsCards({
       >
         {/* Aro circular con ícono */}
         <CircularProgressRing
-          progress={ratioActivas}
+          progress={1}
           size={40}
           strokeWidth={3.5}
           gradientId="ringExistenciasGradient"
@@ -213,19 +202,21 @@ export default function InventoryStatsCards({
             >
               Existencias
             </span>
-            <span
-              style={{
-                fontSize: '9.5px',
-                fontWeight: 800,
-                color: '#16a34a',
-                background: '#f0fdf4',
-                border: '1px solid #bbf7d0',
-                padding: '1.5px 6px',
-                borderRadius: '999px'
-              }}
-            >
-              ● {porcentajeActivasTexto}% en almacén
-            </span>
+            {isActivasFiltered && (
+              <span
+                style={{
+                  fontSize: '9.5px',
+                  fontWeight: 800,
+                  color: '#2563eb',
+                  background: '#dbeafe',
+                  border: '1px solid #bfdbfe',
+                  padding: '1.5px 6px',
+                  borderRadius: '999px'
+                }}
+              >
+                ● Filtrado
+              </span>
+            )}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px', marginTop: '2px' }}>
@@ -266,7 +257,7 @@ export default function InventoryStatsCards({
       >
         {/* Aro circular con ícono */}
         <CircularProgressRing
-          progress={ratioPeso}
+          progress={1}
           size={40}
           strokeWidth={3.5}
           gradientId="ringCustodiaGradient"
@@ -332,9 +323,6 @@ export default function InventoryStatsCards({
             </span>
             <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#475569' }}>
               kg
-            </span>
-            <span style={{ fontSize: '10px', color: '#94a3b8' }}>
-              ({porcentajePesoTexto}% activo)
             </span>
           </div>
         </div>

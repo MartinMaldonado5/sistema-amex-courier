@@ -16,6 +16,7 @@ import { useDashboardSession } from '@/features/dashboard/hooks/useDashboardSess
 import DashboardTabContent from '@/features/dashboard/components/DashboardTabContent';
 import { EMPTY_CLIENT_FORM, EMPTY_PKG_FORM } from '@/features/dashboard/data/default-forms';
 import { hasModuleAccess, getFirstAvailableTab } from '@/lib/navigation/registry';
+import { useSmoothScroll } from '@/components/providers/SmoothScrollProvider';
 
 const NewClientModal = dynamic(() => import('@/components/modals/NewClientModal'), { ssr: false });
 const NewPackageModal = dynamic(() => import('@/components/modals/NewPackageModal'), { ssr: false });
@@ -56,6 +57,23 @@ export default function DashboardPage() {
     }
   }, [currentUser, isLoadingSession, activeTab, setActiveTab]);
 
+  const smoothScroll = useSmoothScroll();
+
+  // Reset de scroll y recalcular dimensiones de Lenis al cambiar de pestaña
+  useEffect(() => {
+    const mainLenis = smoothScroll.getMain();
+    if (mainLenis) {
+      mainLenis.scrollTo(0, { immediate: true });
+      mainLenis.resize();
+
+      // Segundo pase para asegurar dimensiones exactas tras el montaje asíncrono de cada módulo
+      const timer = setTimeout(() => {
+        mainLenis.resize();
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab, smoothScroll]);
+
   const {
     clientes,
     paquetes,
@@ -69,6 +87,14 @@ export default function DashboardPage() {
     isLoadingInitialData,
     isGlobalRefreshing
   } = useDashboardData();
+
+  // Sincronizar dimensiones de Lenis al finalizar la carga de datos iniciales o cambios de paquetes
+  useEffect(() => {
+    const mainLenis = smoothScroll.getMain();
+    if (mainLenis) {
+      mainLenis.resize();
+    }
+  }, [paquetes.length, isLoadingInitialData, smoothScroll]);
   const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null);
   const [selectedThermalPkg, setSelectedThermalPkg] = useState<Paquete | null>(null);
   const [isNewClientModalOpen, setIsNewClientModalOpen] = useState(false);
@@ -162,7 +188,10 @@ export default function DashboardPage() {
           onLogout={handleLogout}
         />
 
-        <main className={`main-content tab-${activeTab} ${['dni-matrix', 'rotulos-a4', 'boletas-shalom'].includes(activeTab) ? 'dark-tab-mode' : ''} ${activeTab === 'live-sheets' ? 'live-sheets-mode' : ''} ${activeTab === 'dni-matrix' ? 'dni-matrix-mode' : ''} ${activeTab === 'rotulos-a4' ? 'rotulos-mode' : ''} ${activeTab === 'boletas-shalom' ? 'boletas-shalom-mode' : ''} ${activeTab === 'fico-cobros' ? 'cobros-mode' : ''}`}>
+        <main
+          data-lenis-scroll={activeTab !== 'live-sheets' ? '' : undefined}
+          data-lenis-prevent={activeTab === 'live-sheets' ? '' : undefined}
+          className={`main-content tab-${activeTab} ${['dni-matrix', 'rotulos-a4', 'boletas-shalom'].includes(activeTab) ? 'dark-tab-mode' : ''} ${activeTab === 'live-sheets' ? 'live-sheets-mode' : ''} ${activeTab === 'dni-matrix' ? 'dni-matrix-mode' : ''} ${activeTab === 'rotulos-a4' ? 'rotulos-mode' : ''} ${activeTab === 'boletas-shalom' ? 'boletas-shalom-mode' : ''} ${activeTab === 'fico-cobros' ? 'cobros-mode' : ''}`}>
           {!isTabAllowed ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center', padding: '32px' }}>
               <div style={{ width: 64, height: 64, borderRadius: 18, background: 'rgba(239, 68, 68, 0.15)', border: '1.5px solid rgba(239, 68, 68, 0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>

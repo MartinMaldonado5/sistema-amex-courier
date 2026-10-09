@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isValidWr } from './wr';
 
 export const UbicacionSchema = z.enum(['AmexLince', 'Entregado']).catch('AmexLince');
 export const EstadoTibSchema = z.enum([
@@ -10,7 +11,9 @@ export const EstadoTibSchema = z.enum([
 export const EstadoEntregaSchema = EstadoTibSchema; // Compatibilidad
 
 export const CreatePaqueteSchema = z.object({
-  numeroReciboBodega: z.string().trim().min(1, 'El recibo de bodega (WR) es requerido.'),
+  numeroReciboBodega: z.string().trim().transform(v => v.toUpperCase()).refine(v => isValidWr(v), {
+    message: 'El código WR debe comenzar con WR y tener exactamente 11 caracteres (ej. WR000474478).'
+  }),
   tracking: z.string().trim().default(''),
   trackingUsa: z.string().trim().optional(),
   tipoEmpaque: z.string().trim().default('CAJA'),

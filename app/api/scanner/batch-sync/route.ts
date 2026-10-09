@@ -6,6 +6,7 @@ import { validateBody } from '@/lib/api/validate';
 import { checkRateLimit, rateLimitExceededResponse } from '@/lib/security/rateLimit';
 import { withErrorHandler } from '@/lib/api/handler';
 import { logger } from '@/lib/logger';
+import { isValidWr, smartFormatWr } from '@/lib/validations/wr';
 
 const scannerLogger = logger.child('scanner-batch-sync');
 
@@ -226,8 +227,13 @@ async function handleBatchSync(req: NextRequest): Promise<NextResponse> {
         },
       });
     } else {
-      // Es un paquete nuevo
-      const newWr = upper.startsWith('WR') ? upper : `WR${upper.slice(-6)}`;
+      // Es un paquete nuevo - Garantizar regla estricta de 11 caracteres WR
+      let newWr = smartFormatWr(upper);
+      if (!isValidWr(newWr)) {
+        const digitsOnly = upper.replace(/\D/g, '');
+        const paddedDigits = (digitsOnly.length >= 9 ? digitsOnly.slice(-9) : digitsOnly).padStart(9, '0');
+        newWr = `WR${paddedDigits}`;
+      }
 
       if (!insertedInThisBatch.has(newWr)) {
         insertedInThisBatch.add(newWr);

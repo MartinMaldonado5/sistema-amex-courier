@@ -23,12 +23,12 @@ describe('Validaciones Zod — Suite de Pruebas', () => {
   describe('CreatePaqueteSchema', () => {
     it('debe validar y rellenar valores por defecto para un paquete nuevo', () => {
       const res = CreatePaqueteSchema.safeParse({
-        numeroReciboBodega: 'WR-00124',
+        numeroReciboBodega: 'wr000474478',
         pesoKg: '2.5',
       });
       expect(res.success).toBe(true);
       if (res.success) {
-        expect(res.data.numeroReciboBodega).toBe('WR-00124');
+        expect(res.data.numeroReciboBodega).toBe('WR000474478');
         expect(res.data.pesoKg).toBe(2.5);
         expect(res.data.ubicacionActual).toBe('AmexLince');
         expect(res.data.estadoTib).toBe('EnAlmacen');
@@ -36,14 +36,16 @@ describe('Validaciones Zod — Suite de Pruebas', () => {
       }
     });
 
-    it('debe rechazar un paquete sin número de recibo de bodega', () => {
-      const res = CreatePaqueteSchema.safeParse({ pesoKg: 10 });
-      expect(res.success).toBe(false);
+    it('debe rechazar un paquete sin número de recibo de bodega o con formato distinto a 11 caracteres', () => {
+      expect(CreatePaqueteSchema.safeParse({ pesoKg: 10 }).success).toBe(false);
+      expect(CreatePaqueteSchema.safeParse({ numeroReciboBodega: 'WR-123', pesoKg: 1 }).success).toBe(false);
+      expect(CreatePaqueteSchema.safeParse({ numeroReciboBodega: 'WR123', pesoKg: 1 }).success).toBe(false);
+      expect(CreatePaqueteSchema.safeParse({ numeroReciboBodega: '12345678901', pesoKg: 1 }).success).toBe(false);
     });
 
     it('debe rechazar peso negativo', () => {
       const res = CreatePaqueteSchema.safeParse({
-        numeroReciboBodega: 'WR-123',
+        numeroReciboBodega: 'WR000474478',
         pesoKg: -5,
       });
       expect(res.success).toBe(false);

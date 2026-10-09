@@ -84,7 +84,7 @@ export const ShalomTable: React.FC<ShalomTableProps> = ({
           </p>
         </div>
       ) : (
-        <div className="shalom-table-wrap">
+        <div className="shalom-table-wrap" data-lenis-prevent-horizontal>
           <table className="shalom-table">
             <thead>
               <tr>
