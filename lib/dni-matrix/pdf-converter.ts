@@ -18,10 +18,10 @@ function uint8ArrayToBase64(bytes: Uint8Array): string {
  */
 export async function convertDocxBufferToPdf(
   arrayBuffer: ArrayBuffer,
-  sizePreset: DniPrintSize = 'large'
+  sizePreset: DniPrintSize = 'xlarge'
 ): Promise<Blob> {
   const zip = await JSZip.loadAsync(arrayBuffer);
-  const config = DNI_SIZE_PRESETS[sizePreset] || DNI_SIZE_PRESETS.large;
+  const config = DNI_SIZE_PRESETS[sizePreset] || DNI_SIZE_PRESETS.xlarge;
 
   // Las imágenes del documento Word residen en word/media/
   const mediaKeys = Object.keys(zip.files).filter(
@@ -94,7 +94,7 @@ export async function convertDocxFolderToPdf(
   dirHandle: any,
   sameFolder = false,
   onProgress?: (current: number, total: number, filename: string) => void,
-  sizePreset: DniPrintSize = 'large'
+  sizePreset: DniPrintSize = 'xlarge'
 ): Promise<{ success: boolean; total: number; errors: number; destFolder: string }> {
   // 1. Escaneo de archivos .docx en la carpeta seleccionada
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -156,9 +156,9 @@ export async function convertDocxFolderToPdf(
  */
 export async function createPdfForSlot(
   slot: DniSlotData,
-  sizePreset: DniPrintSize = 'large'
+  sizePreset: DniPrintSize = 'xlarge'
 ): Promise<Blob> {
-  const config = DNI_SIZE_PRESETS[sizePreset] || DNI_SIZE_PRESETS.large;
+  const config = DNI_SIZE_PRESETS[sizePreset] || DNI_SIZE_PRESETS.xlarge;
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -218,7 +218,7 @@ export async function createPdfForSlot(
 export async function exportPdfZip(
   slots: DniSlotData[],
   onProgress?: (current: number, total: number) => void,
-  sizePreset: DniPrintSize = 'large'
+  sizePreset: DniPrintSize = 'xlarge'
 ): Promise<void> {
   const completeSlots = slots.filter((s) => s.anverso && s.reverso);
   if (completeSlots.length === 0) {
@@ -258,7 +258,7 @@ export async function exportPdfZip(
 export async function exportPdfToDirectoryFolder(
   slots: DniSlotData[],
   onProgress?: (msg: string, percent?: number) => void,
-  sizePreset: DniPrintSize = 'large'
+  sizePreset: DniPrintSize = 'xlarge'
 ): Promise<{ success: boolean; count: number; cancelled?: boolean }> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const w = window as any;

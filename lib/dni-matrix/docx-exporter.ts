@@ -35,25 +35,9 @@ export interface DniSizeConfig {
 }
 
 export const DNI_SIZE_PRESETS: Record<DniPrintSize, DniSizeConfig> = {
-  large: {
-    id: 'large',
-    name: 'Grande (16.5 × 10.4 cm) [Recomendado - Ocupa la hoja]',
-    widthCm: 16.5,
-    heightCm: 10.4,
-    widthMm: 165,
-    heightMm: 104,
-    widthPx: 624,
-    heightPx: 393,
-    spacingAfterTwips: 240, // ~1.2 cm
-    marginMm: 18,
-    marginTwips: convertMillimetersToTwip(18),
-    pdfX: 22.5,
-    pdfY1: 20,
-    pdfY2: 138
-  },
   xlarge: {
     id: 'xlarge',
-    name: 'Extra Grande (17.5 × 11.0 cm) [Ocupación máxima]',
+    name: 'Extra Grande (17.5 × 11.0 cm) [Recomendado - Máximo Detalle]',
     widthCm: 17.5,
     heightCm: 11.0,
     widthMm: 175,
@@ -66,6 +50,22 @@ export const DNI_SIZE_PRESETS: Record<DniPrintSize, DniSizeConfig> = {
     pdfX: 17.5,
     pdfY1: 16,
     pdfY2: 140
+  },
+  large: {
+    id: 'large',
+    name: 'Grande (16.5 × 10.4 cm) [Ajustado]',
+    widthCm: 16.5,
+    heightCm: 10.4,
+    widthMm: 165,
+    heightMm: 104,
+    widthPx: 624,
+    heightPx: 393,
+    spacingAfterTwips: 240, // ~1.2 cm
+    marginMm: 18,
+    marginTwips: convertMillimetersToTwip(18),
+    pdfX: 22.5,
+    pdfY1: 20,
+    pdfY2: 138
   },
   standard: {
     id: 'standard',
@@ -91,8 +91,8 @@ export const DNI_SIZE_PRESETS: Record<DniPrintSize, DniSizeConfig> = {
 export async function normalizeImage(
   base64Data: string,
   rotation = 0,
-  targetWidthPx = DNI_SIZE_PRESETS.large.widthPx,
-  targetHeightPx = DNI_SIZE_PRESETS.large.heightPx
+  targetWidthPx = DNI_SIZE_PRESETS.xlarge.widthPx,
+  targetHeightPx = DNI_SIZE_PRESETS.xlarge.heightPx
 ): Promise<{ buffer: Uint8Array; width: number; height: number }> {
   return new Promise((resolve, reject) => {
     if (typeof window === 'undefined') {
@@ -182,10 +182,10 @@ function sanitizeFilename(text: string): string {
  */
 async function buildExpedienteChildren(
   slot: DniSlotData,
-  sizePreset: DniPrintSize = 'large'
+  sizePreset: DniPrintSize = 'xlarge'
 ): Promise<Paragraph[]> {
   const children: Paragraph[] = [];
-  const config = DNI_SIZE_PRESETS[sizePreset] || DNI_SIZE_PRESETS.large;
+  const config = DNI_SIZE_PRESETS[sizePreset] || DNI_SIZE_PRESETS.xlarge;
 
   // 1. ANVERSO (mitad superior)
   if (slot.anverso) {
@@ -248,14 +248,14 @@ async function buildExpedienteChildren(
 export async function exportMasterDocx(
   slots: DniSlotData[],
   onProgress?: (status: string) => void,
-  sizePreset: DniPrintSize = 'large'
+  sizePreset: DniPrintSize = 'xlarge'
 ): Promise<void> {
   const completeSlots = slots.filter((s) => s.anverso && s.reverso);
   if (completeSlots.length === 0) {
     throw new Error('No hay expedientes completos (con anverso y reverso) para exportar.');
   }
 
-  const config = DNI_SIZE_PRESETS[sizePreset] || DNI_SIZE_PRESETS.large;
+  const config = DNI_SIZE_PRESETS[sizePreset] || DNI_SIZE_PRESETS.xlarge;
   onProgress?.('Preparando documento Word Maestro A4...');
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -308,14 +308,14 @@ export async function exportMasterDocx(
 export async function exportZipDocx(
   slots: DniSlotData[],
   onProgress?: (current: number, total: number) => void,
-  sizePreset: DniPrintSize = 'large'
+  sizePreset: DniPrintSize = 'xlarge'
 ): Promise<void> {
   const completeSlots = slots.filter((s) => s.anverso && s.reverso);
   if (completeSlots.length === 0) {
     throw new Error('No hay expedientes completos (con anverso y reverso) para exportar en ZIP.');
   }
 
-  const config = DNI_SIZE_PRESETS[sizePreset] || DNI_SIZE_PRESETS.large;
+  const config = DNI_SIZE_PRESETS[sizePreset] || DNI_SIZE_PRESETS.xlarge;
   const zip = new JSZip();
 
   for (let i = 0; i < completeSlots.length; i++) {
@@ -375,7 +375,7 @@ export async function exportZipDocx(
 export async function exportToDirectoryFolder(
   slots: DniSlotData[],
   onProgress?: (msg: string, percent?: number) => void,
-  sizePreset: DniPrintSize = 'large'
+  sizePreset: DniPrintSize = 'xlarge'
 ): Promise<{ success: boolean; count: number; cancelled?: boolean }> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const w = window as any;
@@ -388,7 +388,7 @@ export async function exportToDirectoryFolder(
     throw new Error('No hay expedientes completos para exportar.');
   }
 
-  const config = DNI_SIZE_PRESETS[sizePreset] || DNI_SIZE_PRESETS.large;
+  const config = DNI_SIZE_PRESETS[sizePreset] || DNI_SIZE_PRESETS.xlarge;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let dirHandle: any;

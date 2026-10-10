@@ -7,7 +7,7 @@ import { DniCloudService } from '../services/dniCloud.service';
 
 export function useDniMatrixState(currentUser?: { nombre?: string; email?: string; rol?: string; id?: string } | null) {
   const [totalSlots, setTotalSlots] = useState<number>(100);
-  const [printSize, setPrintSize] = useState<DniPrintSize>('large');
+  const [printSize, setPrintSize] = useState<DniPrintSize>('xlarge');
   const [activeSlotId, setActiveSlotIdState] = useState<number>(1);
   const [focusedSide, setFocusedSide] = useState<'anverso' | 'reverso' | null>(null);
   const [cloudSyncStatus, setCloudSyncStatus] = useState<CloudSyncStatus>('synced');
@@ -37,8 +37,16 @@ export function useDniMatrixState(currentUser?: { nombre?: string; email?: strin
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState<boolean>(false);
 
   const [zoomImage, setZoomImage] = useState<ZoomImageState | null>(null);
-  const [previewZoom, setPreviewZoom] = useState<number>(1.78);
+  const [previewZoom, setPreviewZoomState] = useState<number>(1.2);
   const [dragHoverSide, setDragHoverSide] = useState<'anverso' | 'reverso' | 'surface' | null>(null);
+
+  const setPreviewZoom = useCallback((zoomOrFn: number | ((prev: number) => number)) => {
+    setPreviewZoomState((prev) => {
+      const nextZoom = typeof zoomOrFn === 'function' ? zoomOrFn(prev) : zoomOrFn;
+      dniDb.saveSetting('previewZoom', nextZoom).catch(() => {});
+      return nextZoom;
+    });
+  }, []);
 
   const activeSlotRef = useRef<number>(activeSlotId);
   activeSlotRef.current = activeSlotId;
@@ -121,12 +129,24 @@ export function useDniMatrixState(currentUser?: { nombre?: string; email?: strin
             dniDb.saveSetting('soundEnabled', cloudDraft.settings.soundEnabled).catch(() => {});
           }
           if (cloudDraft.settings?.printSize) {
-            setPrintSize(cloudDraft.settings.printSize);
-            dniDb.saveSetting('dniPrintSize', cloudDraft.settings.printSize).catch(() => {});
+            const effPrintSize = cloudDraft.settings.printSize === 'large' ? 'xlarge' : cloudDraft.settings.printSize;
+            setPrintSize(effPrintSize);
+            dniDb.saveSetting('dniPrintSize', effPrintSize).catch(() => {});
+          } else {
+            setPrintSize('xlarge');
+            dniDb.saveSetting('dniPrintSize', 'xlarge').catch(() => {});
           }
           if (cloudDraft.settings?.activeSlotId) {
             setActiveSlotIdState(cloudDraft.settings.activeSlotId);
             dniDb.saveSetting('activeSlotId', cloudDraft.settings.activeSlotId).catch(() => {});
+          }
+
+          const savedZoom = await dniDb.getSetting<number>('previewZoom', 1.2);
+          if (savedZoom && savedZoom !== 1.78 && savedZoom !== 1.14) {
+            setPreviewZoomState(savedZoom);
+          } else {
+            setPreviewZoomState(1.2);
+            dniDb.saveSetting('previewZoom', 1.2).catch(() => {});
           }
 
           setCloudSyncStatus('synced');
@@ -150,8 +170,18 @@ export function useDniMatrixState(currentUser?: { nombre?: string; email?: strin
         const savedSound = await dniDb.getSetting<boolean>('soundEnabled', true);
         setSoundEnabled(savedSound);
 
-        const savedPrintSize = await dniDb.getSetting<DniPrintSize>('dniPrintSize', 'large');
-        setPrintSize(savedPrintSize);
+        const savedPrintSize = await dniDb.getSetting<DniPrintSize>('dniPrintSize', 'xlarge');
+        const effectivePrintSize = (!savedPrintSize || savedPrintSize === 'large') ? 'xlarge' : savedPrintSize;
+        setPrintSize(effectivePrintSize);
+        dniDb.saveSetting('dniPrintSize', effectivePrintSize).catch(() => {});
+
+        const savedZoom = await dniDb.getSetting<number>('previewZoom', 1.2);
+        if (savedZoom && savedZoom !== 1.78 && savedZoom !== 1.14) {
+          setPreviewZoomState(savedZoom);
+        } else {
+          setPreviewZoomState(1.2);
+          dniDb.saveSetting('previewZoom', 1.2).catch(() => {});
+        }
 
         const savedActiveSlot = await dniDb.getSetting<number>('activeSlotId', 1);
         if (savedActiveSlot && savedActiveSlot >= 1 && savedActiveSlot <= (savedTotal || 100)) {

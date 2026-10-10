@@ -278,22 +278,22 @@ export function DniDropzonePanel({
                         type="button"
                         className="zoom-btn"
                         title="Reducir tamaño imagen"
-                        onClick={() => setPreviewZoom((z) => Math.max(0.8, Number((z - 0.08).toFixed(2))))}
+                        onClick={() => setPreviewZoom((z) => Math.max(0.6, Number((z - 0.05).toFixed(2))))}
                       >
                         −
                       </button>
                       <span
                         className="zoom-value"
-                        title="Clic para reiniciar tamaño (178%)"
-                        onClick={() => setPreviewZoom(1.78)}
+                        title="Clic para reiniciar tamaño (120%)"
+                        onClick={() => setPreviewZoom(1.2)}
                       >
                         {Math.round(previewZoom * 100)}%
                       </span>
                       <button
                         type="button"
                         className="zoom-btn"
-                        title="Agrandar imagen para ocupar más fondo negro"
-                        onClick={() => setPreviewZoom((z) => Math.min(2.8, Number((z + 0.08).toFixed(2))))}
+                        title="Agrandar imagen para ocupar más fondo"
+                        onClick={() => setPreviewZoom((z) => Math.min(2.5, Number((z + 0.05).toFixed(2))))}
                       >
                         +
                       </button>
@@ -498,22 +498,22 @@ export function DniDropzonePanel({
                         type="button"
                         className="zoom-btn"
                         title="Reducir tamaño imagen"
-                        onClick={() => setPreviewZoom((z) => Math.max(0.8, Number((z - 0.08).toFixed(2))))}
+                        onClick={() => setPreviewZoom((z) => Math.max(0.6, Number((z - 0.05).toFixed(2))))}
                       >
                         −
                       </button>
                       <span
                         className="zoom-value"
-                        title="Clic para reiniciar tamaño (178%)"
-                        onClick={() => setPreviewZoom(1.78)}
+                        title="Clic para reiniciar tamaño (120%)"
+                        onClick={() => setPreviewZoom(1.2)}
                       >
                         {Math.round(previewZoom * 100)}%
                       </span>
                       <button
                         type="button"
                         className="zoom-btn"
-                        title="Agrandar imagen para ocupar más fondo negro"
-                        onClick={() => setPreviewZoom((z) => Math.min(2.8, Number((z + 0.08).toFixed(2))))}
+                        title="Agrandar imagen para ocupar más fondo"
+                        onClick={() => setPreviewZoom((z) => Math.min(2.5, Number((z + 0.05).toFixed(2))))}
                       >
                         +
                       </button>

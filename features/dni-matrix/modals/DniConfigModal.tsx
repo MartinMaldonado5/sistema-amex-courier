@@ -101,33 +101,6 @@ export function DniConfigModal({
             </label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label
-                className={`dni-size-card ${printSize === 'large' ? 'active' : ''}`}
-                onClick={async () => {
-                  setPrintSize('large');
-                  await dniDb.saveSetting('dniPrintSize', 'large');
-                  showToast('Tamaño Grande (16.5 × 10.4 cm) guardado', 'success');
-                }}
-              >
-                <input
-                  type="radio"
-                  name="printSizeOption"
-                  checked={printSize === 'large'}
-                  onChange={() => {}}
-                />
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                    <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#f8fafc' }}>
-                      Grande (16.5 &times; 10.4 cm)
-                    </span>
-                    <span className="badge badge-ready" style={{ fontSize: '0.7rem', padding: '2px 8px' }}>Recomendado</span>
-                  </div>
-                  <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '3px', lineHeight: 1.4 }}>
-                    Ocupa la mayor parte de la hoja A4 sin dejar espacios vacíos exagerados. Información y sellos del DNI 100% nítidos y legibles (1 sola página exacta).
-                  </div>
-                </div>
-              </label>
-
-              <label
                 className={`dni-size-card ${printSize === 'xlarge' ? 'active' : ''}`}
                 onClick={async () => {
                   setPrintSize('xlarge');
@@ -146,12 +119,41 @@ export function DniConfigModal({
                     <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#f8fafc' }}>
                       Extra Grande (17.5 &times; 11.0 cm)
                     </span>
-                    <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '4px', background: 'rgba(99, 102, 241, 0.18)', color: '#818cf8', fontWeight: 700 }}>
-                      Máximo Detalle
+                    <span className="badge badge-ready" style={{ fontSize: '0.7rem', padding: '2px 8px' }}>
+                      Por Defecto • Máximo Detalle
                     </span>
                   </div>
                   <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '3px', lineHeight: 1.4 }}>
-                    Ocupación máxima de margen a margen (1.5 cm) en la hoja A4 para casos donde se requiere ver cada detalle microscópico.
+                    Ocupación máxima de margen a margen (1.5 cm) en la hoja A4 para máxima nitidez y visibilidad de cada detalle.
+                  </div>
+                </div>
+              </label>
+
+              <label
+                className={`dni-size-card ${printSize === 'large' ? 'active' : ''}`}
+                onClick={async () => {
+                  setPrintSize('large');
+                  await dniDb.saveSetting('dniPrintSize', 'large');
+                  showToast('Tamaño Grande (16.5 × 10.4 cm) guardado', 'success');
+                }}
+              >
+                <input
+                  type="radio"
+                  name="printSizeOption"
+                  checked={printSize === 'large'}
+                  onChange={() => {}}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#f8fafc' }}>
+                      Grande (16.5 &times; 10.4 cm)
+                    </span>
+                    <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '4px', background: 'rgba(99, 102, 241, 0.18)', color: '#818cf8', fontWeight: 700 }}>
+                      Ajustado
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '3px', lineHeight: 1.4 }}>
+                    Ocupa la mayor parte de la hoja A4 sin dejar espacios vacíos exagerados. Información y sellos del DNI 100% nítidos y legibles (1 sola página exacta).
                   </div>
                 </div>
               </label>
