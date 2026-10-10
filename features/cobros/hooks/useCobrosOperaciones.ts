@@ -14,9 +14,20 @@ import {
 import { KambistaService } from '../services/kambista.service';
 import { INITIAL_COBROS_LOTES } from '../data/initial-data';
 
-const STORAGE_LOTES_KEY = 'amex_cobros_lotes_v2';
-const STORAGE_PAGOS_KEY = 'amex_cobros_pagos_v2';
-const STORAGE_TARIFAS_KEY = 'amex_clientes_tarifas_v1';
+const STORAGE_LOTES_KEY = 'amex_cobros_lotes_v3';
+const STORAGE_PAGOS_KEY = 'amex_cobros_pagos_v3';
+const STORAGE_TARIFAS_KEY = 'amex_clientes_tarifas_v2';
+
+// Limpieza proactiva de claves de pruebas anteriores en el navegador del usuario
+if (typeof window !== 'undefined') {
+  try {
+    localStorage.removeItem('amex_cobros_lotes_v2');
+    localStorage.removeItem('amex_cobros_pagos_v2');
+    localStorage.removeItem('amex_cobros_lotes_v1');
+    localStorage.removeItem('amex_cobros_pagos_v1');
+    localStorage.removeItem('amex_clientes_tarifas_v1');
+  } catch {}
+}
 
 export function useCobrosOperaciones() {
   const [tarifasPorCliente, setTarifasPorCliente] = useState<Record<string, number>>(() => {
@@ -34,19 +45,25 @@ export function useCobrosOperaciones() {
   });
 
   const [lotes, setLotes] = useState<ClienteCobroLote[]>(() => {
-    if (typeof window === 'undefined') return INITIAL_COBROS_LOTES;
+    if (typeof window === 'undefined') return [];
     try {
       const saved = localStorage.getItem(STORAGE_LOTES_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
+          // Si contiene rezagos de clientes de prueba mockup, depurar
+          const isMock = parsed.some(l => l.clienteNombre === 'JANIRA AMEX' || l.clienteNombre === 'NORA GUADIAMUS');
+          if (isMock) {
+            localStorage.removeItem(STORAGE_LOTES_KEY);
+            return [];
+          }
           return parsed;
         }
       }
     } catch (e) {
       console.warn('Error reading lotes from localStorage:', e);
     }
-    return INITIAL_COBROS_LOTES;
+    return [];
   });
 
   const [pagos, setPagos] = useState<TransaccionPago[]>(() => {
@@ -931,13 +948,18 @@ export function useCobrosOperaciones() {
    * Resetear a datos iniciales de la empresa si es necesario
    */
   const restaurarDatosEjemplo = useCallback(() => {
-    setLotes(INITIAL_COBROS_LOTES);
+    setLotes([]);
     setPagos([]);
     setTarifasPorCliente({});
     if (typeof window !== 'undefined') {
       localStorage.removeItem(STORAGE_LOTES_KEY);
       localStorage.removeItem(STORAGE_PAGOS_KEY);
       localStorage.removeItem(STORAGE_TARIFAS_KEY);
+      localStorage.removeItem('amex_cobros_lotes_v2');
+      localStorage.removeItem('amex_cobros_pagos_v2');
+      localStorage.removeItem('amex_cobros_lotes_v1');
+      localStorage.removeItem('amex_cobros_pagos_v1');
+      localStorage.removeItem('amex_clientes_tarifas_v1');
     }
   }, []);
 
