@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { InvoiceData, InvoiceItem } from '../types';
 import { Cliente } from '@/types';
 
@@ -105,8 +105,74 @@ export function InvoiceControlPanel({
     return acc + (isNaN(val) ? 0 : val);
   }, 0).toFixed(2);
 
+  const panelRef = useRef<HTMLElement | null>(null);
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+  const [isHoveredZone, setIsHoveredZone] = useState<boolean>(false);
+
+  // Detección y activación inteligente del scroll con touchpad y mouse en la zona del formulario
+  useEffect(() => {
+    const panel = panelRef.current;
+    const body = bodyRef.current;
+    if (!panel || !body) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // El cursor está sobre la zona de digitación: aislar el evento para evitar interferencia del contenedor exterior
+      e.stopPropagation();
+
+      const target = e.target as HTMLElement | null;
+
+      // 1. Si el cursor está sobre un elemento scrollable interno (como la tabla de ítems o lista de autocompletado)
+      const innerScrollable = target?.closest('.overflow-y-auto') as HTMLElement | null;
+      if (innerScrollable && innerScrollable !== body) {
+        const canScrollUp = e.deltaY < 0 && innerScrollable.scrollTop > 0;
+        const canScrollDown =
+          e.deltaY > 0 &&
+          innerScrollable.scrollTop + innerScrollable.clientHeight < innerScrollable.scrollHeight - 1;
+
+        if (canScrollUp || canScrollDown) {
+          // Dejar que el contenedor interno se desplace
+          return;
+        }
+      }
+
+      // 2. Si estamos en cualquier otra parte del panel (encabezado, inputs, títulos, o límites de la tabla de ítems)
+      const canBodyScrollUp = e.deltaY < 0 && body.scrollTop > 0;
+      const canBodyScrollDown =
+        e.deltaY > 0 && body.scrollTop + body.clientHeight < body.scrollHeight - 1;
+
+      if (canBodyScrollUp || canBodyScrollDown) {
+        e.preventDefault();
+
+        let delta = e.deltaY;
+        if (e.deltaMode === 1) delta *= 28; // Modo líneas (rueda tradicional de mouse)
+        else if (e.deltaMode === 2) delta *= body.clientHeight; // Modo páginas
+
+        body.scrollBy({
+          top: delta,
+          behavior: 'auto'
+        });
+      } else {
+        // En los topes exactos del formulario, evitar arrastre no deseado de la página exterior
+        e.preventDefault();
+      }
+    };
+
+    panel.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      panel.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
+
   return (
-    <aside className="invoice-control-panel no-print" aria-label="Panel de Configuración de Factura">
+    <aside
+      ref={panelRef}
+      data-lenis-prevent=""
+      className={`invoice-control-panel no-print ${isHoveredZone ? 'is-scroll-active' : ''}`}
+      aria-label="Panel de Configuración de Factura"
+      onMouseEnter={() => setIsHoveredZone(true)}
+      onMouseLeave={() => setIsHoveredZone(false)}
+    >
       {/* Cabecera del Panel */}
       <div className="invoice-panel-header">
         <div className="flex items-center justify-between">
@@ -120,6 +186,15 @@ export function InvoiceControlPanel({
                 <span className="text-[10px] bg-blue-500/20 text-blue-300 font-semibold px-2 py-0.5 rounded border border-blue-500/30">
                   ACCESSORIES SALES
                 </span>
+                {isHoveredZone && (
+                  <span
+                    className="text-[10px] bg-sky-500/20 text-sky-300 font-semibold px-2 py-0.5 rounded border border-sky-500/30 flex items-center gap-1 transition-all"
+                    title="Zona de scroll activada con touchpad y mouse"
+                  >
+                    <i className="fa-solid fa-computer-mouse text-[9px] text-sky-400"></i>
+                    <span>Scroll Activo</span>
+                  </span>
+                )}
               </h2>
               <p className="text-xs text-slate-400">
                 Plantilla exacta Word (zxzxzxzx.docx) • Edición de campos restringidos
@@ -175,7 +250,11 @@ export function InvoiceControlPanel({
       </div>
 
       {/* Cuerpo del Formulario con Scroll */}
-      <div className="invoice-panel-body">
+      <div
+        ref={bodyRef}
+        data-lenis-prevent=""
+        className="invoice-panel-body"
+      >
         {/* SECCIÓN 1: INVOICE NUMBER */}
         <div className="invoice-form-section">
           <div className="section-title">
@@ -474,6 +553,7 @@ export function InvoiceControlPanel({
                       step="1"
                       value={item.quantity ?? ''}
                       onChange={e => onUpdateItem(item.id, 'quantity', e.target.value)}
+                      onWheel={(e) => (e.target as HTMLElement).blur()}
                       className="w-full px-1.5 py-1 bg-slate-950 border border-slate-700/80 rounded text-xs text-white text-center font-mono focus:outline-none focus:border-blue-500"
                     />
                   </div>
@@ -485,6 +565,7 @@ export function InvoiceControlPanel({
                       step="0.01"
                       value={item.unitPrice ?? ''}
                       onChange={e => onUpdateItem(item.id, 'unitPrice', e.target.value)}
+                      onWheel={(e) => (e.target as HTMLElement).blur()}
                       placeholder="0.00"
                       className="w-full px-1.5 py-1 bg-slate-950 border border-slate-700/80 rounded text-xs text-white text-right font-mono focus:outline-none focus:border-blue-500"
                     />
@@ -497,6 +578,7 @@ export function InvoiceControlPanel({
                       step="0.01"
                       value={item.total ?? ''}
                       onChange={e => onUpdateItem(item.id, 'total', e.target.value)}
+                      onWheel={(e) => (e.target as HTMLElement).blur()}
                       placeholder="0.00"
                       className="w-full px-1.5 py-1 bg-slate-950 border border-slate-700/80 rounded text-xs text-sky-300 font-bold text-right font-mono focus:outline-none focus:border-blue-500"
                       title="Total de la fila (calculado automáticamente o ajustable)"

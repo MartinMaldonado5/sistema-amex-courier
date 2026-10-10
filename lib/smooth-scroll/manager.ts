@@ -259,7 +259,7 @@ class SmoothScrollManager {
       this.register(el);
     });
 
-    // Auto-protección global para todos los módulos: tablas, hojas y contenedores con scroll horizontal
+    // Auto-protección global para todos los módulos: tablas, hojas y contenedores con scroll horizontal o paneles de edición
     if (typeof root.querySelectorAll === 'function') {
       const horizontalElements = root.querySelectorAll<HTMLElement>(
         '.overflow-x-auto, .shalom-table-wrap, .acta-document-container, .sheet-tabs-list, [style*="overflowX"], [style*="overflow-x"]'
@@ -267,6 +267,15 @@ class SmoothScrollManager {
       horizontalElements.forEach((el) => {
         if (!el.hasAttribute('data-lenis-prevent-horizontal') && !el.hasAttribute('data-lenis-prevent')) {
           el.setAttribute('data-lenis-prevent-horizontal', '');
+        }
+      });
+
+      const dedicatedScrollElements = root.querySelectorAll<HTMLElement>(
+        '.invoice-control-panel, .invoice-panel-body'
+      );
+      dedicatedScrollElements.forEach((el) => {
+        if (!el.hasAttribute('data-lenis-prevent')) {
+          el.setAttribute('data-lenis-prevent', '');
         }
       });
     }

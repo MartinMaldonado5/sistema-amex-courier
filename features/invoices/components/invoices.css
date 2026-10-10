@@ -39,6 +39,16 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overscroll-behavior: contain;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.invoice-control-panel.is-scroll-active {
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(56, 189, 248, 0.1);
 }
 
 .invoice-panel-header {
@@ -48,6 +58,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .invoice-panel-body {
@@ -55,8 +66,45 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
+  flex: 1;
+  min-height: 0;
   max-height: calc(100vh - 220px);
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(56, 189, 248, 0.35) rgba(15, 23, 42, 0.6);
+}
+
+.invoice-panel-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.invoice-panel-body::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 4px;
+}
+
+.invoice-panel-body::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.25);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.invoice-panel-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.6);
+}
+
+/* Evitar que scroll de rueda incremente números en inputs numéricos del formulario */
+.invoice-control-panel input[type="number"]::-webkit-outer-spin-button,
+.invoice-control-panel input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.invoice-control-panel input[type="number"] {
+  -moz-appearance: textfield;
 }
 
 .invoice-form-section {
