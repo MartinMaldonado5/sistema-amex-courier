@@ -146,9 +146,10 @@ export default function ExcelExportDropdown({
         <div
           style={{
             position: 'absolute',
-            right: 0,
+            left: 0,
             top: 'calc(100% + 6px)',
             width: '280px',
+            maxWidth: 'calc(100vw - 32px)',
             background: '#ffffff',
             borderRadius: '10px',
             border: '1px solid #e2e8f0',

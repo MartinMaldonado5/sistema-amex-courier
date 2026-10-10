@@ -14,7 +14,7 @@ export interface KardexViewProps {
   setKardexTypeFilter: (s: string) => void;
   isLoadingKardex: boolean;
   onRefreshKardex: () => Promise<void> | void;
-  onOpenTransferModal: () => void;
+  onOpenTransferModal?: () => void;
   onExportExcel?: () => void;
 }
 
@@ -102,13 +102,15 @@ export default function KardexView({
             <RefreshCw className={`w-3.5 h-3.5 ${isLoadingKardex ? 'animate-spin' : ''}`} /> Refrescar
           </button>
 
-          <button
-            onClick={onOpenTransferModal}
-            className="btn btn-primary"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 700 }}
-          >
-            <Plus className="w-4 h-4" /> Registrar Movimiento
-          </button>
+          {onOpenTransferModal && (
+            <button
+              onClick={onOpenTransferModal}
+              className="btn btn-primary"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 700 }}
+            >
+              <Plus className="w-4 h-4" /> Registrar Movimiento
+            </button>
+          )}
         </div>
       </div>
 

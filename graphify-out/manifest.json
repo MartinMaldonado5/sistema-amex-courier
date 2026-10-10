@@ -100,8 +100,8 @@
     "semantic_hash": ""
   },
   "app/page.tsx": {
-    "mtime": 1791524207.8026667,
-    "ast_hash": "658fd43600dbc48a6b50d6a2c5582dae",
+    "mtime": 1791598558.8570042,
+    "ast_hash": "b5c5f068a665de3ef8226f526650d1b1",
     "semantic_hash": ""
   },
   "components/HeaderBar.tsx": {
@@ -110,8 +110,8 @@
     "semantic_hash": ""
   },
   "components/Sidebar.tsx": {
-    "mtime": 1791521384.5060704,
-    "ast_hash": "03acaae5bea3f08b540fecb3383bc4e8",
+    "mtime": 1791598558.8627772,
+    "ast_hash": "ba6e2281bc5ccfdbf4a9664e9a97b94a",
     "semantic_hash": ""
   },
   "components/modals/NewClientModal.tsx": {
@@ -526,13 +526,13 @@
     "semantic_hash": ""
   },
   "features/dashboard/hooks/useDashboardActions.ts": {
-    "mtime": 1791519181.4717214,
-    "ast_hash": "2f8590e115d58ea3ed0c974e19dc2be9",
+    "mtime": 1791598558.8687782,
+    "ast_hash": "8ffe14fe465ee88dc1c588da99e30c1a",
     "semantic_hash": ""
   },
   "features/dashboard/hooks/useDashboardData.ts": {
-    "mtime": 1791515828.3896718,
-    "ast_hash": "9a5b185bdc57c9974ef9efa726e07a6d",
+    "mtime": 1791598558.871248,
+    "ast_hash": "92cc837dbfc21e4b2cc5ab918dd82584",
     "semantic_hash": ""
   },
   "features/dashboard/hooks/useDashboardMetrics.ts": {
@@ -721,8 +721,8 @@
     "semantic_hash": ""
   },
   "features/inventory/components/InventoryTable.tsx": {
-    "mtime": 1791523230.7505121,
-    "ast_hash": "3170c69b2b2ae22647dcfaf5eb3b1127",
+    "mtime": 1791598558.8870988,
+    "ast_hash": "46742c78ffd362a2ccc58e6503bde5a6",
     "semantic_hash": ""
   },
   "features/inventory/components/InventoryToolbar.tsx": {
@@ -741,8 +741,8 @@
     "semantic_hash": ""
   },
   "features/inventory/hooks/useInventoryData.ts": {
-    "mtime": 1791515828.4213595,
-    "ast_hash": "b6acefd4277d37b02f9d820a33f8be72",
+    "mtime": 1791598558.8911297,
+    "ast_hash": "a83be23bbce4baf0ba68ac20b570157f",
     "semantic_hash": ""
   },
   "features/inventory/index.ts": {
@@ -781,8 +781,8 @@
     "semantic_hash": ""
   },
   "features/inventory/services/inventory.service.ts": {
-    "mtime": 1791515828.437351,
-    "ast_hash": "60677258d25568a6446d9efb2461c87b",
+    "mtime": 1791598558.9018936,
+    "ast_hash": "db9dc9fb6fd6bca0bf58f7def0101015",
     "semantic_hash": ""
   },
   "features/inventory/types.ts": {
@@ -1001,8 +1001,8 @@
     "semantic_hash": ""
   },
   "lib/excelExport.ts": {
-    "mtime": 1791515828.451652,
-    "ast_hash": "0df452c37ffebae97c15a2af7c9ad622",
+    "mtime": 1791598558.905941,
+    "ast_hash": "6176b32650161a81821fe4b6de97d8be",
     "semantic_hash": ""
   },
   "lib/fuzzySearch.ts": {
@@ -1076,8 +1076,8 @@
     "semantic_hash": "251bbc2cbda7fdcf91cfa9cb3e42f173"
   },
   "next-env.d.ts": {
-    "mtime": 1791515959.3939922,
-    "ast_hash": "c7b887684e81cfa5830eeeb7286485f6",
+    "mtime": 1791524653.9799716,
+    "ast_hash": "0e4a65e8b2b9aa3ed0f8957b9406bd41",
     "semantic_hash": ""
   },
   "next.config.ts": {
@@ -1152,8 +1152,8 @@
     "semantic_hash": "ab575e944f15d39a5486cf9fca385c5e"
   },
   "types/index.ts": {
-    "mtime": 1791515828.4768667,
-    "ast_hash": "bb85038f82e937021992e70c88a7f301",
+    "mtime": 1791598558.91625,
+    "ast_hash": "9a19aab9837fef636b163fa695fbffd0",
     "semantic_hash": ""
   },
   "types/supabase.ts": {
@@ -1532,8 +1532,8 @@
     "semantic_hash": ""
   },
   "tests/unit/dualStatusExcelExport.test.ts": {
-    "mtime": 1791515828.4681804,
-    "ast_hash": "68bb5cf9fa0186c8c920806214ed1db6",
+    "mtime": 1791598558.9101915,
+    "ast_hash": "5af69a6a811b9f2e31d00d1dcc140a7d",
     "semantic_hash": ""
   },
   "tests/unit/inventoryJobsWorkflow.test.ts": {
@@ -1672,8 +1672,8 @@
     "semantic_hash": ""
   },
   "features/inventory/modals/TibImageModal.tsx": {
-    "mtime": 1791425412.3428795,
-    "ast_hash": "7bc288612f37cc6504a55ba0d140a3bc",
+    "mtime": 1791598558.8971846,
+    "ast_hash": "3923bbb4c2d247394752e927e4ced3e8",
     "semantic_hash": ""
   },
   "features/manifiestos-tib/components/ManifiestosTibTab.tsx": {
@@ -1767,8 +1767,8 @@
     "semantic_hash": ""
   },
   "features/inventory/components/InventoryFilterBar.tsx": {
-    "mtime": 1791515828.3963492,
-    "ast_hash": "195dd3540eb60837f3a24e912451ea59",
+    "mtime": 1791598558.8790426,
+    "ast_hash": "3fd5ebe071237ff2ff9298d21a6591e0",
     "semantic_hash": ""
   },
   "features/inventory/components/InventoryHeader.tsx": {

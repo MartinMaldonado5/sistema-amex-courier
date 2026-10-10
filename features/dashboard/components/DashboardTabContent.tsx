@@ -115,6 +115,11 @@ const ManifiestosTibTab = dynamic(() => import('@/features/manifiestos-tib/compo
   loading: () => <DashboardSkeleton />
 });
 
+const ConfiguracionTab = dynamic(() => import('@/features/configuracion/components/ConfiguracionTab'), {
+  ssr: false,
+  loading: () => <DashboardSkeleton />
+});
+
 interface DashboardTabContentProps {
   activeTab: DashboardTabId;
   isLoadingInitialData: boolean;
@@ -302,6 +307,13 @@ export default function DashboardTabContent({
       {activeTab === 'admin-usuarios' && <AdminUsersTab />}
       {activeTab === 'despacho-rutas' && <DespachoRutasTab />}
       {activeTab === 'manifiestos-tib' && <ManifiestosTibTab onRefreshData={onRefreshData} />}
+      {activeTab === 'configuracion' && (
+        <ConfiguracionTab
+          paquetes={paquetes}
+          currentUser={currentUser}
+          onNavigateTab={onNavigateTab}
+        />
+      )}
     </>
   );
 }

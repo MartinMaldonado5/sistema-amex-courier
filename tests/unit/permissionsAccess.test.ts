@@ -60,7 +60,7 @@ describe('Control de Acceso y Permisos por Módulo (lib/navigation/registry.ts)'
   };
 
   describe('hasModuleAccess — Validación para Administradores', () => {
-    it('el administrador debe tener acceso irrestricto a todos los 17 módulos del sistema', () => {
+    it('el administrador debe tener acceso irrestricto a todos los 18 módulos del sistema', () => {
       SYSTEM_MODULES.forEach(module => {
         expect(hasModuleAccess(adminUser, module.tabId)).toBe(true);
       });
@@ -94,7 +94,7 @@ describe('Control de Acceso y Permisos por Módulo (lib/navigation/registry.ts)'
       expect(hasModuleAccess(angelUser, 'dashboard')).toBe(true);
     });
 
-    it('Angel NO debe tener acceso a los 12 módulos operativos no asignados', () => {
+    it('Angel NO debe tener acceso a los 13 módulos operativos no asignados', () => {
       const tabsBloqueados = [
         'live-sheets',
         'fico-cobros',
@@ -107,7 +107,8 @@ describe('Control de Acceso y Permisos por Módulo (lib/navigation/registry.ts)'
         'completar-inventario',
         'admin-usuarios',
         'despacho-rutas',
-        'manifiestos-tib'
+        'manifiestos-tib',
+        'configuracion'
       ];
 
       tabsBloqueados.forEach(tabId => {

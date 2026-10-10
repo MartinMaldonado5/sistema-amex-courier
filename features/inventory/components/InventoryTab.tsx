@@ -8,8 +8,6 @@ import Modal from '@/components/ui/Modal';
 import { useInventoryData } from '../hooks/useInventoryData';
 import InventoryToolbar from './InventoryToolbar';
 import InventoryTable from './InventoryTable';
-import KardexView from './KardexView';
-import GestorAlmacenView from './GestorAlmacenView';
 import TransferModal from '../modals/TransferModal';
 import EditPackageModal from '../modals/EditPackageModal';
 import BatchStatusModal from '../modals/BatchStatusModal';
@@ -263,68 +261,26 @@ export default function InventoryTab({
         onNewPackage={onNewPackage}
       />
 
-      {/* VISTA 1: Existencias y Almacén */}
-      {activeSubTab === 'existencias' && (
-        <InventoryTable
-          filteredPaquetes={filteredPaquetes}
-          paginatedPaquetes={paginatedPaquetes}
-          selectedIds={selectedIds}
-          onToggleSelect={handleToggleSelect}
-          onSelectAll={handleSelectAll}
-          onQuickDeliver={handleQuickDeliver}
-          onOpenTransferModal={openTransferModal}
-          onOpenEditModal={openEditModal}
-          onSelectThermalPkg={setSelectedThermalPkg}
-          onViewPdf={onViewPdf}
-          onOpenTibImage={handleOpenTibImage}
-          onDeletePackage={handleDeletePackage}
-          currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
-          pageSize={pageSize}
-          setPageSize={setPageSize}
-          totalPages={totalPages}
-        />
-      )}
-
-
-      {/* VISTA 3: Configurar Anaqueles & Parámetros WMS */}
-      {activeSubTab === 'gestor' && (
-        <GestorAlmacenView
-          posicionesList={posicionesList}
-          paquetes={paquetes}
-          onOpenBatchShelfModal={() => {
-            setNewPositionMode('batch');
-            setIsNewPositionModalOpen(true);
-          }}
-          onOpenSinglePositionModal={() => {
-            setNewPositionMode('single');
-            setIsNewPositionModalOpen(true);
-          }}
-          onEditPosition={setEditingPosition}
-          onFilterShelf={(shelfCode, floorLevel) => {
-            setShelfFilter(shelfCode);
-            setFloorFilter(floorLevel);
-            setActiveSubTab('existencias');
-          }}
-          onDeletePosition={handleDeletePosition}
-        />
-      )}
-
-      {/* VISTA 4: Bitácora de Movimientos y Cadena de Custodia */}
-      {activeSubTab === 'movimientos' && (
-        <KardexView
-          kardexList={kardexList}
-          filteredKardex={filteredKardex}
-          kardexSearch={kardexSearch}
-          setKardexSearch={setKardexSearch}
-          kardexTypeFilter={kardexTypeFilter}
-          setKardexTypeFilter={setKardexTypeFilter}
-          isLoadingKardex={isLoadingKardex}
-          onRefreshKardex={fetchData}
-          onOpenTransferModal={() => openTransferModal()}
-          onExportExcel={handleExportKardexExcel}
-        />
-      )}
+      {/* Tabla Principal de Existencias de Almacén */}
+      <InventoryTable
+        filteredPaquetes={filteredPaquetes}
+        paginatedPaquetes={paginatedPaquetes}
+        selectedIds={selectedIds}
+        onToggleSelect={handleToggleSelect}
+        onSelectAll={handleSelectAll}
+        onQuickDeliver={handleQuickDeliver}
+        onOpenTransferModal={openTransferModal}
+        onOpenEditModal={openEditModal}
+        onSelectThermalPkg={setSelectedThermalPkg}
+        onViewPdf={onViewPdf}
+        onOpenTibImage={handleOpenTibImage}
+        onDeletePackage={handleDeletePackage}
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        pageSize={pageSize}
+        setPageSize={setPageSize}
+        totalPages={totalPages}
+      />
 
       {/* Modales de Gestión de Inventario */}
       <TransferModal
@@ -392,57 +348,7 @@ export default function InventoryTab({
         />
       )}
 
-      {/* Modal Pop-up: Configuración de Anaqueles */}
-      <Modal
-        isOpen={isGestorModalOpen}
-        onClose={() => setIsGestorModalOpen(false)}
-        title="⚙️ Configurar Anaqueles & Parámetros WMS"
-        subtitle="Administración de capacidades y zonas de almacenamiento"
-        maxWidth="full"
-      >
-        <GestorAlmacenView
-          posicionesList={posicionesList}
-          paquetes={paquetes}
-          onOpenBatchShelfModal={() => {
-            setNewPositionMode('batch');
-            setIsNewPositionModalOpen(true);
-          }}
-          onOpenSinglePositionModal={() => {
-            setNewPositionMode('single');
-            setIsNewPositionModalOpen(true);
-          }}
-          onEditPosition={setEditingPosition}
-          onFilterShelf={(shelfCode, floorLevel) => {
-            setShelfFilter(shelfCode);
-            setFloorFilter(floorLevel);
-            setIsGestorModalOpen(false);
-            setActiveSubTab('existencias');
-          }}
-          onDeletePosition={handleDeletePosition}
-        />
-      </Modal>
 
-      {/* Modal Pop-up: Bitácora de Movimientos y Cadena de Custodia */}
-      <Modal
-        isOpen={isKardexModalOpen}
-        onClose={() => setIsKardexModalOpen(false)}
-        title="🔄 Bitácora de Movimientos y Cadena de Custodia"
-        subtitle="Historial inmutable de movimientos, ubicaciones y custodia física de paquetes"
-        maxWidth="full"
-      >
-        <KardexView
-          kardexList={kardexList}
-          filteredKardex={filteredKardex}
-          kardexSearch={kardexSearch}
-          setKardexSearch={setKardexSearch}
-          kardexTypeFilter={kardexTypeFilter}
-          setKardexTypeFilter={setKardexTypeFilter}
-          isLoadingKardex={isLoadingKardex}
-          onRefreshKardex={fetchData}
-          onOpenTransferModal={() => openTransferModal()}
-          onExportExcel={handleExportKardexExcel}
-        />
-      </Modal>
 
       {/* Modal de Cruce Rápido con TIB del Día (Worker Hostinger) */}
       <SyncTibModal

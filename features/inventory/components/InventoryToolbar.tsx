@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { EstanteriaPosicion, Paquete } from '@/types';
 import { DateFilterState } from '../types';
 import InventoryHeader from './InventoryHeader';
-import InventorySubTabs from './InventorySubTabs';
 import InventoryFilterBar from './InventoryFilterBar';
 import InventorySelectionBar from './InventorySelectionBar';
 import { copyPackagesTableAsImage } from '../utils/clipboardTableImage';
@@ -127,7 +126,7 @@ export default function InventoryToolbar({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-      {/* 1. Header Principal Unificado con Subpestañas y Tarjetas a Altura Completa */}
+      {/* 1. Header Principal Unificado con Tarjetas a Altura Completa */}
       <InventoryHeader
         paquetes={paquetes}
         filteredPaquetes={filteredPaquetes}
@@ -141,42 +140,31 @@ export default function InventoryToolbar({
         onNewPackage={onNewPackage}
         statusAmexFilter={statusAmexFilter}
         setStatusAmexFilter={setStatusAmexFilter}
-      >
-        <InventorySubTabs
-          activeSubTab={activeSubTab}
-          setActiveSubTab={setActiveSubTab}
-          filteredCount={filteredCount}
-          posicionesCount={posicionesCount}
-          kardexCount={kardexCount}
-          onOpenNewPositionModal={onOpenNewPositionModal}
-        />
-      </InventoryHeader>
+      />
 
-      {/* 3. Barra de Búsqueda y Filtros Rápidos (solo en Existencias) */}
-      {activeSubTab === 'existencias' && (
-        <InventoryFilterBar
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          shelfFilter={shelfFilter}
-          setShelfFilter={setShelfFilter}
-          shelfGroups={shelfGroups}
-          floorFilter={floorFilter}
-          setFloorFilter={setFloorFilter}
-          statusAmexFilter={statusAmexFilter}
-          setStatusAmexFilter={setStatusAmexFilter}
-          amexStatusCounts={amexStatusCounts}
-          locationFilter={locationFilter}
-          setLocationFilter={setLocationFilter}
-          packageTypeFilter={packageTypeFilter}
-          setPackageTypeFilter={setPackageTypeFilter}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          dateFilter={dateFilter}
-          setDateFilter={setDateFilter}
-          resetDateFilter={resetDateFilter}
-          totalPaquetesCount={paquetes.length}
-        />
-      )}
+      {/* 2. Barra de Búsqueda y Filtros Rápidos de Inventario */}
+      <InventoryFilterBar
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        shelfFilter={shelfFilter}
+        setShelfFilter={setShelfFilter}
+        shelfGroups={shelfGroups}
+        floorFilter={floorFilter}
+        setFloorFilter={setFloorFilter}
+        statusAmexFilter={statusAmexFilter}
+        setStatusAmexFilter={setStatusAmexFilter}
+        amexStatusCounts={amexStatusCounts}
+        locationFilter={locationFilter}
+        setLocationFilter={setLocationFilter}
+        packageTypeFilter={packageTypeFilter}
+        setPackageTypeFilter={setPackageTypeFilter}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        dateFilter={dateFilter}
+        setDateFilter={setDateFilter}
+        resetDateFilter={resetDateFilter}
+        totalPaquetesCount={paquetes.length}
+      />
 
       {/* 4. Barra Flotante de Acciones en Lote (cuando hay paquetes seleccionados) */}
       <InventorySelectionBar

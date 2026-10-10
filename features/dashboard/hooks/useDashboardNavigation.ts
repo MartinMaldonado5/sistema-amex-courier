@@ -28,7 +28,8 @@ export const VALID_DASHBOARD_TABS = [
   'auditoria',
   'admin-usuarios',
   'despacho-rutas',
-  'manifiestos-tib'
+  'manifiestos-tib',
+  'configuracion'
 ] as const;
 
 export type DashboardTabId = (typeof VALID_DASHBOARD_TABS)[number];

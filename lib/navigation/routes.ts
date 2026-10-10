@@ -22,10 +22,14 @@ export const TAB_TO_PATH: Record<string, string> = {
   'auditoria': '/auditoria',
   'admin-usuarios': '/admin-usuarios',
   'despacho-rutas': '/despacho-rutas',
-  'manifiestos-tib': '/manifiestos-tib'
+  'manifiestos-tib': '/manifiestos-tib',
+  'configuracion': '/configuracion'
 };
 
 export const PATH_TO_TAB: Record<string, string> = {
+  '/configuracion': 'configuracion',
+  '/config': 'configuracion',
+  '/configuracion-general': 'configuracion',
   '/auditoria': 'auditoria',
   '/dashboard': 'dashboard',
   '/amex-excel': 'live-sheets',

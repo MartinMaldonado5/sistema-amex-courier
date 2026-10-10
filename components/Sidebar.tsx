@@ -259,6 +259,7 @@ export default function Sidebar({
           {hasModuleAccess(currentUser, 'admin-usuarios') && navItem('admin-usuarios', 'fa-solid fa-user-gear', '15. Gestión de Usuarios')}
           {hasModuleAccess(currentUser, 'despacho-rutas') && navItem('despacho-rutas', 'fa-solid fa-route', '16. Rutas & Despacho Chofer')}
           {hasModuleAccess(currentUser, 'manifiestos-tib') && navItem('manifiestos-tib', 'fa-solid fa-file-invoice', '17. Manifiestos TIB')}
+          {hasModuleAccess(currentUser, 'configuracion') && navItem('configuracion', 'fa-solid fa-gears', '18. Configuración General')}
 
           {currentUser && !hasAnyAccess && (
             <div style={{ padding: '24px 14px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>

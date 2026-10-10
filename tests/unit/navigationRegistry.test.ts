@@ -9,10 +9,10 @@ import { tabToPath, pathToTab, migrateLegacyHash } from '@/lib/navigation/routes
 
 describe('Módulo de Navegación y Rutas — Suite de Pruebas', () => {
   describe('Registro Central de Módulos (lib/navigation/registry.ts)', () => {
-    it('debe contener los 17 módulos del sistema configurados con números correlativos', () => {
-      expect(SYSTEM_MODULES.length).toBe(17);
+    it('debe contener los 18 módulos del sistema configurados con números correlativos', () => {
+      expect(SYSTEM_MODULES.length).toBe(18);
       const numbers = SYSTEM_MODULES.map(m => m.number);
-      expect(numbers).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]);
+      expect(numbers).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
 
       const despachoMod = getModuleByTabId('despacho-rutas');
       expect(despachoMod).toBeDefined();
@@ -23,6 +23,11 @@ describe('Módulo de Navegación y Rutas — Suite de Pruebas', () => {
       expect(manifiestosTibMod).toBeDefined();
       expect(manifiestosTibMod?.number).toBe(17);
       expect(manifiestosTibMod?.path).toBe('/manifiestos-tib');
+
+      const configMod = getModuleByTabId('configuracion');
+      expect(configMod).toBeDefined();
+      expect(configMod?.number).toBe(18);
+      expect(configMod?.path).toBe('/configuracion');
     });
 
     it('el Módulo 6 (Escáner de Códigos) debe contener los 5 submódulos operativos', () => {

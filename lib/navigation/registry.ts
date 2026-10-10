@@ -285,6 +285,19 @@ export const SYSTEM_MODULES: ModuleMetadata[] = [
     category: 'documentacion',
     permissionKey: 'manifiestos_tib',
     permissionAliases: ['manifiestos-tib', 'manifiestos']
+  },
+  {
+    id: 'configuracion',
+    tabId: 'configuracion',
+    number: 18,
+    label: '18. Configuración General',
+    shortLabel: 'Configuración',
+    path: '/configuracion',
+    icon: 'fa-solid fa-gears',
+    category: 'sistema',
+    allowedRoles: ['ADMIN', 'SUPER_ADMIN', 'ADMINISTRADOR'],
+    permissionKey: 'configuracion',
+    permissionAliases: ['configuracion-general', 'config']
   }
 ];
 
@@ -351,7 +364,7 @@ export function hasModuleAccess(
       (m.permissionAliases && m.permissionAliases.includes(tabOrModuleId))
   );
 
-  // Módulo de administración de usuarios: restringido a admin a menos que se otorgue explícitamente
+  // Módulos administrativos: restringidos a admin a menos que se otorgue explícitamente
   if (
     (targetModule?.id === 'admin-usuarios' || tabOrModuleId === 'admin-usuarios') &&
     !user.isAdmin &&
@@ -360,6 +373,18 @@ export function hasModuleAccess(
   ) {
     const adminVal = permisos['admin_usuarios'] ?? permisos['admin-usuarios'] ?? permisos['usuarios'];
     if (adminVal !== true && !(typeof adminVal === 'object' && (adminVal as Record<string, unknown>)?.ver === true)) {
+      return false;
+    }
+  }
+
+  if (
+    (targetModule?.id === 'configuracion' || tabOrModuleId === 'configuracion') &&
+    !user.isAdmin &&
+    roleName !== 'admin' &&
+    roleName !== 'administrador'
+  ) {
+    const configVal = permisos['configuracion'] ?? permisos['configuracion_general'];
+    if (configVal !== true && !(typeof configVal === 'object' && (configVal as Record<string, unknown>)?.ver === true)) {
       return false;
     }
   }
