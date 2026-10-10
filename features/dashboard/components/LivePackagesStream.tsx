@@ -303,7 +303,16 @@ export function LivePackagesStream({
       </div>
 
       {/* Lista / Tabla de Bultos */}
-      <div style={{ flex: 1, overflowY: 'auto', minHeight: '280px', maxHeight: '440px' }}>
+      <div
+        data-lenis-prevent=""
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          minHeight: '280px',
+          maxHeight: '440px',
+          overscrollBehavior: 'contain'
+        }}
+      >
         {paquetes.length === 0 ? (
           <div style={{ padding: '48px 24px', textAlign: 'center', color: '#94a3b8' }}>
             <Package style={{ width: '36px', height: '36px', color: '#cbd5e1', margin: '0 auto 12px' }} />

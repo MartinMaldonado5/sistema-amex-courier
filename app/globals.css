@@ -1546,10 +1546,8 @@ tr:hover { background: #f8fafc !important; }
 .cmd-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
   width: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
+  min-height: 100%;
   background: #f8fafc;
 }
 

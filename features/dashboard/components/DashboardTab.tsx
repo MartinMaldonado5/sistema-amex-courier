@@ -59,12 +59,10 @@ export default function DashboardTab({
       style={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100%',
         width: '100%',
-        overflowY: 'auto',
-        overflowX: 'hidden',
+        minHeight: '100%',
         background: '#f8fafc',
-        padding: '24px 32px',
+        padding: '24px 32px 60px',
         gap: '24px',
         boxSizing: 'border-box'
       }}
