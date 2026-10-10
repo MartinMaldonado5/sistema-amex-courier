@@ -107,7 +107,6 @@ export function InvoiceControlPanel({
 
   const panelRef = useRef<HTMLElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
-  const [isHoveredZone, setIsHoveredZone] = useState<boolean>(false);
 
   // Detección y activación inteligente del scroll con touchpad y mouse en la zona del formulario
   useEffect(() => {
@@ -168,10 +167,8 @@ export function InvoiceControlPanel({
     <aside
       ref={panelRef}
       data-lenis-prevent=""
-      className={`invoice-control-panel no-print ${isHoveredZone ? 'is-scroll-active' : ''}`}
+      className="invoice-control-panel no-print"
       aria-label="Panel de Configuración de Factura"
-      onMouseEnter={() => setIsHoveredZone(true)}
-      onMouseLeave={() => setIsHoveredZone(false)}
     >
       {/* Cabecera del Panel */}
       <div className="invoice-panel-header">
@@ -186,15 +183,6 @@ export function InvoiceControlPanel({
                 <span className="text-[10px] bg-blue-500/20 text-blue-300 font-semibold px-2 py-0.5 rounded border border-blue-500/30">
                   ACCESSORIES SALES
                 </span>
-                {isHoveredZone && (
-                  <span
-                    className="text-[10px] bg-sky-500/20 text-sky-300 font-semibold px-2 py-0.5 rounded border border-sky-500/30 flex items-center gap-1 transition-all"
-                    title="Zona de scroll activada con touchpad y mouse"
-                  >
-                    <i className="fa-solid fa-computer-mouse text-[9px] text-sky-400"></i>
-                    <span>Scroll Activo</span>
-                  </span>
-                )}
               </h2>
               <p className="text-xs text-slate-400">
                 Plantilla exacta Word (zxzxzxzx.docx) • Edición de campos restringidos
