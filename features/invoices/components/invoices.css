@@ -46,6 +46,7 @@
   transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
+.invoice-control-panel:hover,
 .invoice-control-panel.is-scroll-active {
   border-color: rgba(56, 189, 248, 0.35);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(56, 189, 248, 0.1);
