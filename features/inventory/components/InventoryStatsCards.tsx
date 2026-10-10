@@ -109,9 +109,7 @@ function CircularProgressRing({
 }
 
 export default function InventoryStatsCards({
-  paquetes,
-  statusAmexFilter,
-  setStatusAmexFilter
+  paquetes
 }: InventoryStatsCardsProps) {
   // 1. EXISTENCIAS REALES FÍSICAS EN ALMACÉN (excluye entregados)
   const paquetesActivos = useMemo(
@@ -125,9 +123,6 @@ export default function InventoryStatsCards({
     () => paquetesActivos.reduce((acc, p) => acc + (Number(p.pesoKg) || 0), 0),
     [paquetesActivos]
   );
-  const pesoPromedioActivo = totalExistenciasReales > 0 ? totalPesoRealKg / totalExistenciasReales : 0;
-
-  const isActivasFiltered = statusAmexFilter === 'en_almacen' || statusAmexFilter === 'ACTIVAS';
 
   return (
     <div
@@ -140,9 +135,8 @@ export default function InventoryStatsCards({
         alignItems: 'flex-end'
       }}
     >
-      {/* 1. WIDGET CIRCULAR SUPERIOR: EXISTENCIAS EN ALMACÉN */}
+      {/* 1. WIDGET CIRCULAR SUPERIOR: EXISTENCIAS EN ALMACÉN (Informativo, no accionable) */}
       <div
-        onClick={() => setStatusAmexFilter && setStatusAmexFilter(isActivasFiltered ? 'ALL' : 'en_almacen')}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -151,16 +145,14 @@ export default function InventoryStatsCards({
           borderRadius: '11px',
           minWidth: '248px',
           flex: '1 1 auto',
-          background: isActivasFiltered ? '#eff6ff' : '#ffffff',
-          border: isActivasFiltered ? '1.5px solid #2563eb' : '1px solid #e2e8f0',
-          boxShadow: isActivasFiltered
-            ? '0 2px 8px rgba(37,99,235,0.16)'
-            : '0 1px 3px rgba(0,0,0,0.03)',
-          cursor: setStatusAmexFilter ? 'pointer' : 'default',
+          background: '#ffffff',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+          cursor: 'default',
           transition: 'all 0.15s ease',
           userSelect: 'none'
         }}
-        title="Clic para alternar filtro: En Almacén"
+        title="Existencias físicas actuales en Almacén Lince"
       >
         {/* Aro circular con ícono */}
         <CircularProgressRing
@@ -176,8 +168,8 @@ export default function InventoryStatsCards({
               width: '24px',
               height: '24px',
               borderRadius: '50%',
-              background: isActivasFiltered ? '#2563eb' : '#eff6ff',
-              color: isActivasFiltered ? '#ffffff' : '#2563eb',
+              background: '#eff6ff',
+              color: '#2563eb',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -190,33 +182,18 @@ export default function InventoryStatsCards({
 
         {/* Textos y Métrica */}
         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2, flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
             <span
               style={{
                 fontSize: '10.5px',
                 fontWeight: 800,
-                color: isActivasFiltered ? '#1d4ed8' : '#475569',
+                color: '#475569',
                 letterSpacing: '0.04em',
                 textTransform: 'uppercase'
               }}
             >
               Existencias
             </span>
-            {isActivasFiltered && (
-              <span
-                style={{
-                  fontSize: '9.5px',
-                  fontWeight: 800,
-                  color: '#2563eb',
-                  background: '#dbeafe',
-                  border: '1px solid #bfdbfe',
-                  padding: '1.5px 6px',
-                  borderRadius: '999px'
-                }}
-              >
-                ● Filtrado
-              </span>
-            )}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px', marginTop: '2px' }}>
@@ -250,6 +227,7 @@ export default function InventoryStatsCards({
           background: '#ffffff',
           border: '1px solid #e2e8f0',
           boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+          cursor: 'default',
           transition: 'all 0.15s ease',
           userSelect: 'none'
         }}
@@ -283,7 +261,7 @@ export default function InventoryStatsCards({
 
         {/* Textos y Métrica */}
         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2, flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
             <span
               style={{
                 fontSize: '10.5px',
@@ -294,19 +272,6 @@ export default function InventoryStatsCards({
               }}
             >
               Custodia Total
-            </span>
-            <span
-              style={{
-                fontSize: '9.5px',
-                fontWeight: 700,
-                color: '#7c3aed',
-                background: '#faf5ff',
-                border: '1px solid #e9d5ff',
-                padding: '1.5px 6px',
-                borderRadius: '999px'
-              }}
-            >
-              {pesoPromedioActivo.toFixed(2)} kg/prom
             </span>
           </div>
 

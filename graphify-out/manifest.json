@@ -110,8 +110,8 @@
     "semantic_hash": ""
   },
   "components/Sidebar.tsx": {
-    "mtime": 1791598558.8627772,
-    "ast_hash": "ba6e2281bc5ccfdbf4a9664e9a97b94a",
+    "mtime": 1791600909.4835749,
+    "ast_hash": "901c32a582596169e1f98d5f13173f58",
     "semantic_hash": ""
   },
   "components/modals/NewClientModal.tsx": {
@@ -285,8 +285,8 @@
     "semantic_hash": ""
   },
   "features/auditoria/components/AuditoriaTab.tsx": {
-    "mtime": 1790564177.5573964,
-    "ast_hash": "1994f089792c1efe20f813498811426a",
+    "mtime": 1791601115.234557,
+    "ast_hash": "cc4a3f37da5560a586358a6389336666",
     "semantic_hash": ""
   },
   "features/auditoria/index.ts": {
@@ -506,8 +506,8 @@
     "semantic_hash": ""
   },
   "features/dashboard/components/DashboardTabContent.tsx": {
-    "mtime": 1791425412.2555275,
-    "ast_hash": "2f1cafbe20535ab9d7af36bcda1fc7c3",
+    "mtime": 1791600962.5600424,
+    "ast_hash": "19383a64ea55725253a444cf16c52897",
     "semantic_hash": ""
   },
   "features/dashboard/components/ExecutiveKpiGrid.tsx": {
@@ -541,8 +541,8 @@
     "semantic_hash": ""
   },
   "features/dashboard/hooks/useDashboardNavigation.ts": {
-    "mtime": 1791425412.2684753,
-    "ast_hash": "8cfbee83977fa759070f7f72638d982c",
+    "mtime": 1791600888.8292322,
+    "ast_hash": "a080b1f946f2b9ea0639e38fb74fd630",
     "semantic_hash": ""
   },
   "features/dashboard/hooks/useDashboardSession.ts": {
@@ -711,13 +711,13 @@
     "semantic_hash": ""
   },
   "features/inventory/components/InventoryStatsCards.tsx": {
-    "mtime": 1791517086.06259,
-    "ast_hash": "5e495760d48374796350daf45adef981",
+    "mtime": 1791606638.3181849,
+    "ast_hash": "7cf6b7b0963ba599d75cf995d50eef52",
     "semantic_hash": ""
   },
   "features/inventory/components/InventoryTab.tsx": {
-    "mtime": 1791523294.8730974,
-    "ast_hash": "82ee5837f8af1e468eb10db79bc98531",
+    "mtime": 1791601090.0791824,
+    "ast_hash": "ff3e95f6fe3794c75ae6968dda7dd0ec",
     "semantic_hash": ""
   },
   "features/inventory/components/InventoryTable.tsx": {
@@ -726,13 +726,13 @@
     "semantic_hash": ""
   },
   "features/inventory/components/InventoryToolbar.tsx": {
-    "mtime": 1791515828.4171276,
-    "ast_hash": "8940d5705a8de64a8c563a8161e2ce57",
+    "mtime": 1791600462.5855086,
+    "ast_hash": "a2ab15a1d8b610bde01e68b6c10fc386",
     "semantic_hash": ""
   },
   "features/inventory/components/KardexView.tsx": {
-    "mtime": 1791172143.9947212,
-    "ast_hash": "3f68dcf61a3d2aef683686c278eff298",
+    "mtime": 1791600518.2693908,
+    "ast_hash": "fe0fd73f93ecc51e40775e4e1bb4b160",
     "semantic_hash": ""
   },
   "features/inventory/components/ShelfMatrixGrid.tsx": {
@@ -1021,8 +1021,8 @@
     "semantic_hash": ""
   },
   "lib/navigation/routes.ts": {
-    "mtime": 1791425412.3808434,
-    "ast_hash": "6a4fb8b86a0de4522349c1bcc6b7f220",
+    "mtime": 1791600868.785698,
+    "ast_hash": "e2e0f5db5b5cea5045ed2fa243d5511c",
     "semantic_hash": ""
   },
   "lib/openai/analyzer.ts": {
@@ -1076,7 +1076,7 @@
     "semantic_hash": "251bbc2cbda7fdcf91cfa9cb3e42f173"
   },
   "next-env.d.ts": {
-    "mtime": 1791524653.9799716,
+    "mtime": 1791602027.063647,
     "ast_hash": "0e4a65e8b2b9aa3ed0f8957b9406bd41",
     "semantic_hash": ""
   },
@@ -1477,8 +1477,8 @@
     "semantic_hash": ""
   },
   "features/inventory/components/ExcelExportDropdown.tsx": {
-    "mtime": 1791515828.3936927,
-    "ast_hash": "6c76e656dfeffff3adc14581d595eaf4",
+    "mtime": 1791601632.6631968,
+    "ast_hash": "258fb25f4fe6dc21b910580c3609e4be",
     "semantic_hash": ""
   },
   "features/inventory/modals/BulkStatusByWrModal.tsx": {
@@ -1577,8 +1577,8 @@
     "semantic_hash": ""
   },
   "lib/navigation/registry.ts": {
-    "mtime": 1791425412.3727417,
-    "ast_hash": "514a55c7226eaa7f56b182de837007ff",
+    "mtime": 1791600836.7119715,
+    "ast_hash": "71cad613494c49592b422eea61d5246f",
     "semantic_hash": ""
   },
   "tests/unit/authGuards.test.ts": {
@@ -1592,8 +1592,8 @@
     "semantic_hash": ""
   },
   "tests/unit/navigationRegistry.test.ts": {
-    "mtime": 1791425412.3888774,
-    "ast_hash": "4e9f3e6762ba03af0b8481b1c7429d02",
+    "mtime": 1791600986.9742203,
+    "ast_hash": "92ecbf1268bc7ae6470760be614b665c",
     "semantic_hash": ""
   },
   "tests/unit/scannerRelocationAndSecurity.test.ts": {
@@ -1712,8 +1712,8 @@
     "semantic_hash": ""
   },
   "tests/unit/permissionsAccess.test.ts": {
-    "mtime": 1791425412.3888774,
-    "ast_hash": "3649e246bc14bd7a2d809affbe1bf2f9",
+    "mtime": 1791601023.033149,
+    "ast_hash": "75b893397486a070ca778d9770f0ca1e",
     "semantic_hash": ""
   },
   "manifest-engine/README.md": {
@@ -1792,8 +1792,8 @@
     "semantic_hash": ""
   },
   "features/inventory/components/TibOperationsDropdown.tsx": {
-    "mtime": 1791515828.4213595,
-    "ast_hash": "77345e37dfb7d742b267f213f38e4275",
+    "mtime": 1791601605.9291139,
+    "ast_hash": "fa735b74672c1bf7630e8fcaf13f9697",
     "semantic_hash": ""
   },
   "features/inventory/utils/clipboardTableImage.ts": {
@@ -1854,6 +1854,16 @@
   "tests/unit/smoothScrollManager.test.ts": {
     "mtime": 1791523791.150975,
     "ast_hash": "7e241b862b17a5b04fd9d107e8ddcc7b",
+    "semantic_hash": ""
+  },
+  "features/configuracion/components/ConfiguracionTab.tsx": {
+    "mtime": 1791601212.5233707,
+    "ast_hash": "405a5df194d949802462ecfc4625e87e",
+    "semantic_hash": ""
+  },
+  "features/configuracion/index.ts": {
+    "mtime": 1791600807.13213,
+    "ast_hash": "167809c9f038c61649467cedebbc949c",
     "semantic_hash": ""
   }
 }
