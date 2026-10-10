@@ -13,6 +13,7 @@ export interface InventoryTableProps {
   filteredPaquetes: Paquete[];
   paginatedPaquetes: Paquete[];
   selectedIds: string[];
+  totalCount?: number;
   onToggleSelect: (id: string) => void;
   onSelectAll: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onQuickDeliver?: (pkg: Paquete) => void;
@@ -33,6 +34,7 @@ export default function InventoryTable({
   filteredPaquetes,
   paginatedPaquetes,
   selectedIds,
+  totalCount,
   onToggleSelect,
   onSelectAll,
   onQuickDeliver,
@@ -327,9 +329,16 @@ export default function InventoryTable({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b' }}>
             <span>
-              Mostrando <b>{Math.min((currentPage - 1) * pageSize + 1, filteredPaquetes.length)}</b> -{' '}
-              <b>{Math.min(currentPage * pageSize, filteredPaquetes.length)}</b> de{' '}
-              <b>{filteredPaquetes.length}</b> paquetes
+              {(() => {
+                const total = totalCount !== undefined ? totalCount : filteredPaquetes.length;
+                return (
+                  <>
+                    Mostrando <b>{total > 0 ? (currentPage - 1) * pageSize + 1 : 0}</b> -{' '}
+                    <b>{Math.min(currentPage * pageSize, total)}</b> de{' '}
+                    <b>{total}</b> paquetes
+                  </>
+                );
+              })()}
             </span>
 
             <span style={{ color: '#cbd5e1' }}>•</span>

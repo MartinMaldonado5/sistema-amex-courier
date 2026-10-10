@@ -14,6 +14,7 @@ import {
   TipoUbicacion
 } from '@/types';
 import { supabase } from '@/lib/supabase/client';
+import { ScannerQueueCloudService } from '@/features/scanner/services/scannerQueueCloud.service';
 
 function mapCliente(row: Record<string, unknown>): Cliente {
   return {
@@ -75,7 +76,7 @@ function mapRealtimePaquete(row: Record<string, unknown>): Paquete {
   return mapPaquete(row);
 }
 
-export function useDashboardData() {
+export function useDashboardData(currentUser?: { nombre?: string; email?: string; rol?: string; id?: string } | null) {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [paquetes, setPaquetes] = useState<Paquete[]>([]);
   const [entregas, setEntregas] = useState<OrdenEntrega[]>([]);
@@ -85,16 +86,37 @@ export function useDashboardData() {
   const [isGlobalRefreshing, setIsGlobalRefreshing] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('amex_scanner_staging_queue_v2');
-      if (!stored) return;
+    let isMounted = true;
+    async function loadQueue() {
+      // 1. Intentar cargar desde la nube si hay usuario
+      if (currentUser?.email) {
+        const cloudQueue = await ScannerQueueCloudService.loadStagingQueueFromCloud(currentUser.email);
+        if (isMounted && cloudQueue && Array.isArray(cloudQueue)) {
+          setScannedLogs(cloudQueue);
+          try {
+            localStorage.setItem('amex_scanner_staging_queue_v2', JSON.stringify(cloudQueue));
+          } catch {}
+          return;
+        }
+      }
 
-      const parsed: unknown = JSON.parse(stored);
-      if (Array.isArray(parsed)) setScannedLogs(parsed as ScannedLog[]);
-    } catch (error) {
-      console.warn('Error loading staging queue from localStorage:', error);
+      // 2. Fallback a localStorage
+      try {
+        const stored = localStorage.getItem('amex_scanner_staging_queue_v2');
+        if (!stored) return;
+
+        const parsed: unknown = JSON.parse(stored);
+        if (isMounted && Array.isArray(parsed)) setScannedLogs(parsed as ScannedLog[]);
+      } catch (error) {
+        console.warn('Error loading staging queue from localStorage:', error);
+      }
     }
-  }, []);
+
+    loadQueue();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser?.email]);
 
   const fetchSupabaseData = useCallback(async () => {
     try {

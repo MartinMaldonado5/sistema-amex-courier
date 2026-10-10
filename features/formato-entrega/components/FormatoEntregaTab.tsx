@@ -10,11 +10,13 @@ import type { Cliente, Paquete } from '@/types';
 interface FormatoEntregaTabProps {
   clientes?: Cliente[];
   paquetes?: Paquete[];
+  currentUser?: { nombre?: string; email?: string; rol?: string; id?: string } | null;
 }
 
 export default function FormatoEntregaTab({
   clientes = [],
-  paquetes = []
+  paquetes = [],
+  currentUser
 }: FormatoEntregaTabProps) {
   const {
     formData,
@@ -40,8 +42,9 @@ export default function FormatoEntregaTab({
     handleDeleteHistorialItem,
     handlePrint,
     handleExportPdf,
-    handleExportDocx
-  } = useFormatoEntrega(paquetes);
+    handleExportDocx,
+    cloudSyncStatus
+  } = useFormatoEntrega(paquetes, currentUser);
 
   return (
     <div className="formato-entrega-wrapper">

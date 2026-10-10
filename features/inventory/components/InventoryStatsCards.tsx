@@ -8,6 +8,8 @@ export interface InventoryStatsCardsProps {
   paquetes: Paquete[];
   statusAmexFilter?: string;
   setStatusAmexFilter?: (status: string) => void;
+  serverExistenciasActivas?: number;
+  serverPesoTotalKg?: number;
 }
 
 /**
@@ -109,20 +111,25 @@ function CircularProgressRing({
 }
 
 export default function InventoryStatsCards({
-  paquetes
+  paquetes,
+  serverExistenciasActivas,
+  serverPesoTotalKg
 }: InventoryStatsCardsProps) {
   // 1. EXISTENCIAS REALES FÍSICAS EN ALMACÉN (excluye entregados)
   const paquetesActivos = useMemo(
     () => paquetes.filter(p => p.estadoAmex !== 'entregado' && p.ubicacionActual !== 'Entregado'),
     [paquetes]
   );
-  const totalExistenciasReales = paquetesActivos.length;
+  const totalExistenciasReales =
+    serverExistenciasActivas !== undefined && serverExistenciasActivas > 0
+      ? serverExistenciasActivas
+      : paquetesActivos.length;
 
   // 2. PESO EN CUSTODIA (paquetes activos)
-  const totalPesoRealKg = useMemo(
-    () => paquetesActivos.reduce((acc, p) => acc + (Number(p.pesoKg) || 0), 0),
-    [paquetesActivos]
-  );
+  const totalPesoRealKg =
+    serverPesoTotalKg !== undefined && serverPesoTotalKg > 0
+      ? serverPesoTotalKg
+      : paquetesActivos.reduce((acc, p) => acc + (Number(p.pesoKg) || 0), 0);
 
   return (
     <div

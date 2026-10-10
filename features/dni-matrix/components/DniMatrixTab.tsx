@@ -20,11 +20,12 @@ import { DniZoomModal } from '../modals/DniZoomModal';
 export default function DniMatrixTab({
   paquetes = [],
   clientes = [],
+  currentUser,
   onGlobalRefresh,
   isRefreshing = false
 }: DniMatrixTabProps) {
-  // 1. Hook de Estado del Lote, Matriz, Arrastre/Pegado e IA
-  const state = useDniMatrixState();
+  // 1. Hook de Estado del Lote, Matriz, Arrastre/Pegado e IA (con Cloud Sync)
+  const state = useDniMatrixState(currentUser);
 
   // 2. Hook de Exportación DOCX, ZIP, PDF y Conversión Masiva
   const exportOps = useDniExport({
@@ -207,6 +208,7 @@ export default function DniMatrixTab({
         onCleared={() => {
           state.setSlotsData({});
           state.setActiveSlotId(1);
+          state.clearCloudDraft();
           state.setShowDeleteConfirmModal(false);
           state.setShowConfigModal(false);
         }}

@@ -100,8 +100,8 @@
     "semantic_hash": ""
   },
   "app/page.tsx": {
-    "mtime": 1791598558.8570042,
-    "ast_hash": "b5c5f068a665de3ef8226f526650d1b1",
+    "mtime": 1791622231.1114416,
+    "ast_hash": "b6c94a711c812a5125b0c69f550e002d",
     "semantic_hash": ""
   },
   "components/HeaderBar.tsx": {
@@ -506,8 +506,8 @@
     "semantic_hash": ""
   },
   "features/dashboard/components/DashboardTabContent.tsx": {
-    "mtime": 1791600962.5600424,
-    "ast_hash": "19383a64ea55725253a444cf16c52897",
+    "mtime": 1791622070.8649876,
+    "ast_hash": "7fb49bc12594d7bca952ae7fc05e2672",
     "semantic_hash": ""
   },
   "features/dashboard/components/ExecutiveKpiGrid.tsx": {
@@ -526,13 +526,13 @@
     "semantic_hash": ""
   },
   "features/dashboard/hooks/useDashboardActions.ts": {
-    "mtime": 1791598558.8687782,
-    "ast_hash": "8ffe14fe465ee88dc1c588da99e30c1a",
+    "mtime": 1791622271.6575682,
+    "ast_hash": "ce593e6d180ccf0b4885a8e3a555c375",
     "semantic_hash": ""
   },
   "features/dashboard/hooks/useDashboardData.ts": {
-    "mtime": 1791598558.871248,
-    "ast_hash": "92cc837dbfc21e4b2cc5ab918dd82584",
+    "mtime": 1791622217.0136058,
+    "ast_hash": "bc42b2e9a48fb16a57f5b98de267d4a9",
     "semantic_hash": ""
   },
   "features/dashboard/hooks/useDashboardMetrics.ts": {
@@ -566,8 +566,8 @@
     "semantic_hash": "e37d3aa25fcc9edca3df21887cdab7a3"
   },
   "features/dni-matrix/components/DniMatrixTab.tsx": {
-    "mtime": 1790572364.8270607,
-    "ast_hash": "34f27031c16444928357c898a89032d8",
+    "mtime": 1791621831.2548,
+    "ast_hash": "afb29c9845b854e2e858d9bc8f121a8d",
     "semantic_hash": ""
   },
   "features/dni-matrix/components/DniSlotEditor.tsx": {
@@ -591,9 +591,9 @@
     "semantic_hash": "7f9aa92217ee1bc230559d5ddddfe2ae"
   },
   "features/dni-matrix/hooks/useDniMatrixState.ts": {
-    "mtime": 1790997729.0094879,
-    "ast_hash": "7842bb20dead4889d341621c411680d3",
-    "semantic_hash": "7842bb20dead4889d341621c411680d3"
+    "mtime": 1791621790.7271743,
+    "ast_hash": "0e1117a8866fb5556004244fc91f50c5",
+    "semantic_hash": ""
   },
   "features/dni-matrix/index.ts": {
     "mtime": 1790562620.7899942,
@@ -631,9 +631,9 @@
     "semantic_hash": "a3ed9499506ee4e6066c6798d2a4cea9"
   },
   "features/dni-matrix/types.ts": {
-    "mtime": 1790136909.0519845,
-    "ast_hash": "230a17e78298f50a9516c6947635df4a",
-    "semantic_hash": "230a17e78298f50a9516c6947635df4a"
+    "mtime": 1791621728.032606,
+    "ast_hash": "9768d0a96d2866edae9786da8b18ebbf",
+    "semantic_hash": ""
   },
   "features/formato-entrega/components/ActaControlPanel.tsx": {
     "mtime": 1791080213.3167346,
@@ -646,13 +646,13 @@
     "semantic_hash": ""
   },
   "features/formato-entrega/components/FormatoEntregaTab.tsx": {
-    "mtime": 1791080213.3209949,
-    "ast_hash": "bf306d67ae26a02625c80bf8229c065e",
+    "mtime": 1791621967.1884615,
+    "ast_hash": "e447564cecb444eab52090d1dc5f7413",
     "semantic_hash": ""
   },
   "features/formato-entrega/hooks/useFormatoEntrega.ts": {
-    "mtime": 1791080213.3259792,
-    "ast_hash": "0ab46850bc4f9ba7fe1f8122fb0803ee",
+    "mtime": 1791621949.899726,
+    "ast_hash": "d1688dae56e75fa2a881cefb762e16e5",
     "semantic_hash": ""
   },
   "features/formato-entrega/index.ts": {
@@ -671,9 +671,9 @@
     "semantic_hash": ""
   },
   "features/formato-entrega/types.ts": {
-    "mtime": 1790136909.0768583,
-    "ast_hash": "9d638943756abc412ed1669f92bb2b6e",
-    "semantic_hash": "9d638943756abc412ed1669f92bb2b6e"
+    "mtime": 1791621889.6269624,
+    "ast_hash": "6c9b196a026de7f0bdcbbe1fddee13d8",
+    "semantic_hash": ""
   },
   "features/info-amex/components/InfoAmexTab.tsx": {
     "mtime": 1790572364.8386009,
@@ -711,23 +711,23 @@
     "semantic_hash": ""
   },
   "features/inventory/components/InventoryStatsCards.tsx": {
-    "mtime": 1791606638.3181849,
-    "ast_hash": "7cf6b7b0963ba599d75cf995d50eef52",
+    "mtime": 1791612239.0646589,
+    "ast_hash": "0439e5a1c0d7ed7941b62049f49365e2",
     "semantic_hash": ""
   },
   "features/inventory/components/InventoryTab.tsx": {
-    "mtime": 1791601090.0791824,
-    "ast_hash": "ff3e95f6fe3794c75ae6968dda7dd0ec",
+    "mtime": 1791612897.9355958,
+    "ast_hash": "f14bf0b22a81dd5d0f159071647a2fc3",
     "semantic_hash": ""
   },
   "features/inventory/components/InventoryTable.tsx": {
-    "mtime": 1791598558.8870988,
-    "ast_hash": "46742c78ffd362a2ccc58e6503bde5a6",
+    "mtime": 1791612454.1253538,
+    "ast_hash": "c6aa1eb2e5bcaaf8d4f56e419fd5baa4",
     "semantic_hash": ""
   },
   "features/inventory/components/InventoryToolbar.tsx": {
-    "mtime": 1791600462.5855086,
-    "ast_hash": "a2ab15a1d8b610bde01e68b6c10fc386",
+    "mtime": 1791612379.9352677,
+    "ast_hash": "ca69ea8dbf396a85d8ba6463d8113235",
     "semantic_hash": ""
   },
   "features/inventory/components/KardexView.tsx": {
@@ -741,8 +741,8 @@
     "semantic_hash": ""
   },
   "features/inventory/hooks/useInventoryData.ts": {
-    "mtime": 1791598558.8911297,
-    "ast_hash": "a83be23bbce4baf0ba68ac20b570157f",
+    "mtime": 1791612935.3235557,
+    "ast_hash": "b0a43de67b10300983760b76099b2c60",
     "semantic_hash": ""
   },
   "features/inventory/index.ts": {
@@ -781,8 +781,8 @@
     "semantic_hash": ""
   },
   "features/inventory/services/inventory.service.ts": {
-    "mtime": 1791598558.9018936,
-    "ast_hash": "db9dc9fb6fd6bca0bf58f7def0101015",
+    "mtime": 1791611987.605964,
+    "ast_hash": "d6a5a65349ddc4784cdf0b46b021c5b8",
     "semantic_hash": ""
   },
   "features/inventory/types.ts": {
@@ -801,14 +801,14 @@
     "semantic_hash": ""
   },
   "features/invoices/components/InvoicesTab.tsx": {
-    "mtime": 1790572364.8415606,
-    "ast_hash": "7f8640881090f62d3686c640f3811c0f",
+    "mtime": 1791622051.5396993,
+    "ast_hash": "e40ea82d0d6b2cd7a200e762c7c9b63c",
     "semantic_hash": ""
   },
   "features/invoices/hooks/useInvoice.ts": {
-    "mtime": 1790470553.9736054,
-    "ast_hash": "ef52e711e6b5d21776d5caa6f2beaa64",
-    "semantic_hash": "ef52e711e6b5d21776d5caa6f2beaa64"
+    "mtime": 1791622036.799151,
+    "ast_hash": "e5e4c8b81734104af4581fb84e7bb56a",
+    "semantic_hash": ""
   },
   "features/invoices/index.ts": {
     "mtime": 1790562767.9732676,
@@ -826,9 +826,9 @@
     "semantic_hash": ""
   },
   "features/invoices/types.ts": {
-    "mtime": 1790227996.874368,
-    "ast_hash": "ab030d5e625bfb554fb875557cc6cc52",
-    "semantic_hash": "ab030d5e625bfb554fb875557cc6cc52"
+    "mtime": 1791621997.9674287,
+    "ast_hash": "cb9c6801241b6d115bf65bf1e1d9f560",
+    "semantic_hash": ""
   },
   "features/live-sheets/components/FormulaBar.tsx": {
     "mtime": 1789102468.1849477,
@@ -951,8 +951,8 @@
     "semantic_hash": ""
   },
   "features/scanner/components/ScannerTab.tsx": {
-    "mtime": 1791425412.3727417,
-    "ast_hash": "9cf2de0701bc6b43400f5dc9a7667e31",
+    "mtime": 1791622299.8497272,
+    "ast_hash": "ada2f6e03e48ff1e02bd98546686800f",
     "semantic_hash": ""
   },
   "features/scanner/index.ts": {
@@ -1457,8 +1457,8 @@
     "semantic_hash": ""
   },
   "app/api/scanner/batch-sync/route.ts": {
-    "mtime": 1791519571.4131858,
-    "ast_hash": "638cd6b4f5ad7409b05c181bc3969837",
+    "mtime": 1791619864.4664536,
+    "ast_hash": "7b840cb668e63d8b93ce3bf40918facd",
     "semantic_hash": ""
   },
   "features/cobros/components/ArmarPlanillaTab.tsx": {
@@ -1767,13 +1767,13 @@
     "semantic_hash": ""
   },
   "features/inventory/components/InventoryFilterBar.tsx": {
-    "mtime": 1791598558.8790426,
-    "ast_hash": "3fd5ebe071237ff2ff9298d21a6591e0",
+    "mtime": 1791609634.5578947,
+    "ast_hash": "3bfc04e9e109c48bd0d445d3412adf75",
     "semantic_hash": ""
   },
   "features/inventory/components/InventoryHeader.tsx": {
-    "mtime": 1791517987.4461238,
-    "ast_hash": "b867c4e4b60e2c4167adffb1b76de579",
+    "mtime": 1791612302.8919811,
+    "ast_hash": "293bfee6b4347697c6aab6d532a5a5ab",
     "semantic_hash": ""
   },
   "features/inventory/components/InventorySelectionBar.tsx": {
@@ -1797,13 +1797,13 @@
     "semantic_hash": ""
   },
   "features/inventory/utils/clipboardTableImage.ts": {
-    "mtime": 1791515828.4439557,
-    "ast_hash": "7d8a4f1fb4a6410a5f8843e146d38290",
+    "mtime": 1791607434.062107,
+    "ast_hash": "034e670c5a460ec953325054527fb899",
     "semantic_hash": ""
   },
   "features/inventory/utils/dateFilter.ts": {
-    "mtime": 1791515828.4439557,
-    "ast_hash": "c0e18e70277a6c9046b08aa40d003c19",
+    "mtime": 1791612607.6102374,
+    "ast_hash": "37cb892dcfa95b7260f108382dfb31de",
     "semantic_hash": ""
   },
   "features/manifiestos-tib/components/ManifiestosTibHistorial.tsx": {
@@ -1822,13 +1822,13 @@
     "semantic_hash": ""
   },
   "tests/unit/clipboardTableImage.test.ts": {
-    "mtime": 1791431308.3614092,
-    "ast_hash": "df40510e63a74e1c485f6ba07ad7ec08",
+    "mtime": 1791607457.558658,
+    "ast_hash": "fb1c46d91f64db1d8a65097d7611493b",
     "semantic_hash": ""
   },
   "tests/unit/inventoryDateFilter.test.ts": {
-    "mtime": 1791515828.4681804,
-    "ast_hash": "bc8931decb4995e114ff7f5da2b3b918",
+    "mtime": 1791613012.1805832,
+    "ast_hash": "9d1a594d1ff834294737a671ca2906d2",
     "semantic_hash": ""
   },
   "tests/unit/manifiestosTibWorkflow.test.ts": {
@@ -1864,6 +1864,46 @@
   "features/configuracion/index.ts": {
     "mtime": 1791600807.13213,
     "ast_hash": "167809c9f038c61649467cedebbc949c",
+    "semantic_hash": ""
+  },
+  "lib/useDebounce.ts": {
+    "mtime": 1791611902.7087238,
+    "ast_hash": "76df36d6aabfc3b83fb72bfabe7602ce",
+    "semantic_hash": ""
+  },
+  "tests/unit/serverSideSearch.test.ts": {
+    "mtime": 1791613025.2658226,
+    "ast_hash": "306caabab21e3e4acb03c2a8c165c0a2",
+    "semantic_hash": ""
+  },
+  "tests/unit/scannerBatchSync.test.ts": {
+    "mtime": 1791619947.8622632,
+    "ast_hash": "82f1a2fb0e8bf2e4d3185e95ac347365",
+    "semantic_hash": ""
+  },
+  "features/dni-matrix/services/dniCloud.service.ts": {
+    "mtime": 1791621712.5490966,
+    "ast_hash": "3aa3aa583cf0d68df7236fd0930d2c28",
+    "semantic_hash": ""
+  },
+  "features/formato-entrega/services/actaCloud.service.ts": {
+    "mtime": 1791621869.3533912,
+    "ast_hash": "fe1111a675b7bec1e820a3c3b480c938",
+    "semantic_hash": ""
+  },
+  "features/invoices/services/invoiceCloud.service.ts": {
+    "mtime": 1791621983.4342558,
+    "ast_hash": "874c2a8231a65aee545720be6166eca8",
+    "semantic_hash": ""
+  },
+  "features/scanner/services/scannerQueueCloud.service.ts": {
+    "mtime": 1791622089.1576705,
+    "ast_hash": "80058ed29d4c17160d8396ec1f931c61",
+    "semantic_hash": ""
+  },
+  "tests/unit/cloudSyncModules.test.ts": {
+    "mtime": 1791622389.1076052,
+    "ast_hash": "7d04a1a9d25e3cbc093f18766cfef35b",
     "semantic_hash": ""
   }
 }

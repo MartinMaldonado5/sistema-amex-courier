@@ -9,7 +9,7 @@ export function renderPackagesTableCanvas(packages: Paquete[]): HTMLCanvasElemen
   const canvas = document.createElement('canvas');
   const dpr = 2; // Factor de resolución 2x Retina para nitidez en pantallas de celular y WhatsApp
 
-  const width = 820;
+  const width = 930;
   const headerHeight = 85;
   const columnHeaderHeight = 36;
   const rowHeight = 38;
@@ -93,16 +93,21 @@ export function renderPackagesTableCanvas(packages: Paquete[]): HTMLCanvasElemen
   ctx.fillStyle = '#475569';
   ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
-  // Coordenadas de columnas
+  // Coordenadas de columnas en orden:
+  // 1. Cliente/Consignatario | 2. Guía WR | 3. Tracking | 4. Peso | 5. Ubicación | 6. Estado AMEX
   const colX = {
-    wr: 20,
-    nombre: 170,
-    ubicacion: 480,
-    estado: 660
+    cliente: 20,
+    wr: 275,
+    tracking: 395,
+    peso: 560,
+    ubicacion: 650,
+    estado: 770
   };
 
+  ctx.fillText('CLIENTE / CONSIGNATARIO', colX.cliente, colY + 23);
   ctx.fillText('GUÍA WR', colX.wr, colY + 23);
-  ctx.fillText('CLIENTE / CONSIGNATARIO', colX.nombre, colY + 23);
+  ctx.fillText('TRACKING', colX.tracking, colY + 23);
+  ctx.fillText('PESO', colX.peso, colY + 23);
   ctx.fillText('UBICACIÓN', colX.ubicacion, colY + 23);
   ctx.fillText('ESTADO AMEX', colX.estado, colY + 23);
 
@@ -118,20 +123,34 @@ export function renderPackagesTableCanvas(packages: Paquete[]): HTMLCanvasElemen
     ctx.fillStyle = '#f1f5f9';
     ctx.fillRect(0, currentY + rowHeight - 1, width, 1);
 
-    // Columna 1: Guía WR
-    ctx.fillStyle = '#1e293b';
-    ctx.font = 'bold 12.5px "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace';
-    const wrText = pkg.numeroReciboBodega || pkg.tracking || 'S/N';
-    ctx.fillText(wrText, colX.wr, currentY + 24);
-
-    // Columna 2: Nombre de Cliente / Consignatario
+    // Columna 1: Nombre de Cliente / Consignatario
     ctx.fillStyle = '#0f172a';
     ctx.font = '600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     const rawNombre = (pkg.nombreConsignatario || 'CLIENTE AMEX').trim();
-    const cleanNombre = rawNombre.length > 34 ? `${rawNombre.slice(0, 32)}...` : rawNombre;
-    ctx.fillText(cleanNombre, colX.nombre, currentY + 24);
+    const cleanNombre = rawNombre.length > 28 ? `${rawNombre.slice(0, 26)}...` : rawNombre;
+    ctx.fillText(cleanNombre, colX.cliente, currentY + 24);
 
-    // Columna 3: Ubicación WMS (Insignia visual)
+    // Columna 2: Guía WR
+    ctx.fillStyle = '#1e293b';
+    ctx.font = 'bold 12px "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace';
+    const wrText = pkg.numeroReciboBodega || pkg.tracking || 'S/N';
+    ctx.fillText(wrText, colX.wr, currentY + 24);
+
+    // Columna 3: Tracking
+    ctx.fillStyle = '#334155';
+    ctx.font = '500 11.5px "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace';
+    const rawTracking = (pkg.tracking || pkg.trackingUsa || '-').trim();
+    const cleanTracking = rawTracking.length > 17 ? `${rawTracking.slice(0, 15)}...` : rawTracking;
+    ctx.fillText(cleanTracking, colX.tracking, currentY + 24);
+
+    // Columna 4: Peso
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 11.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    const pNum = Number(pkg.pesoKg);
+    const pesoText = !isNaN(pNum) && pNum > 0 ? `${pNum.toFixed(2)} kg` : (pkg.pesoKg ? `${pkg.pesoKg} kg` : '-');
+    ctx.fillText(pesoText, colX.peso, currentY + 24);
+
+    // Columna 5: Ubicación WMS (Insignia visual)
     const pos =
       pkg.posicionEstante ||
       (pkg.anaquel && pkg.piso ? `${pkg.anaquel}-${pkg.piso}` : pkg.anaquel || 'REC');
@@ -176,7 +195,7 @@ export function renderPackagesTableCanvas(packages: Paquete[]): HTMLCanvasElemen
     ctx.fillStyle = locColor;
     ctx.fillText(locText, colX.ubicacion + 8, locPillY + 15);
 
-    // Columna 4: Estado AMEX (Píldora de estado)
+    // Columna 6: Estado AMEX (Píldora de estado)
     const rawEst = (pkg.estadoAmex || 'en_almacen').toLowerCase();
     const est = rawEst === 'recibido' ? 'en_almacen' : rawEst;
     let estBg = '#faf5ff';

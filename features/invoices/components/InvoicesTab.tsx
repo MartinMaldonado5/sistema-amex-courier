@@ -9,9 +9,10 @@ import type { Cliente } from '@/types';
 
 interface InvoicesTabProps {
   clientes?: Cliente[];
+  currentUser?: { nombre?: string; email?: string; rol?: string; id?: string } | null;
 }
 
-export default function InvoicesTab({ clientes = [] }: InvoicesTabProps) {
+export default function InvoicesTab({ clientes = [], currentUser }: InvoicesTabProps) {
   const {
     invoiceData,
     toastMessage,

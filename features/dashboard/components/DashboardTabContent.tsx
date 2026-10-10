@@ -285,6 +285,7 @@ export default function DashboardTabContent({
         <DniMatrixTab
           paquetes={paquetes}
           clientes={clientes}
+          currentUser={currentUser}
           onGlobalRefresh={onRefreshData}
           isRefreshing={isGlobalRefreshing}
         />
@@ -294,11 +295,11 @@ export default function DashboardTabContent({
       {activeTab === 'boletas-shalom' && <BoletasShalomTab />}
 
       {activeTab === 'formato-entrega' && (
-        <FormatoEntregaTab clientes={clientes} paquetes={paquetes} />
+        <FormatoEntregaTab clientes={clientes} paquetes={paquetes} currentUser={currentUser} />
       )}
 
       {(activeTab === 'invoices-usa' || activeTab === 'invoices') && (
-        <InvoicesTab clientes={clientes} />
+        <InvoicesTab clientes={clientes} currentUser={currentUser} />
       )}
 
       {activeTab === 'info-amex' && <InfoAmexTab />}

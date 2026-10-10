@@ -81,72 +81,39 @@ async function handleBatchSync(req: NextRequest): Promise<NextResponse> {
 
   const admin = getSupabaseAdmin();
 
-  // 3. INTENTO PRIMARIO: Ejecución atómica ACID vía Stored Procedure PostgreSQL
-  try {
-    const { data: rpcResult, error: rpcError } = await admin.rpc('sync_scanner_batch_v2', {
-      p_items: items,
-      p_operador_nombre: activeOperatorName,
-      p_operador_email: activeOperatorEmail,
-      p_operador_id: activeOperatorId,
-    });
-
-    if (!rpcError && rpcResult && (rpcResult as { success?: boolean }).success) {
-      const typedResult = rpcResult as {
-        success: boolean;
-        synced_ids?: string[];
-        updated_count?: number;
-        inserted_count?: number;
-      };
-      const elapsedMs = Date.now() - startTime;
-      scannerLogger.info(`Lote de escáner procesado transaccionalmente por RPC en ${elapsedMs}ms`, {
-        totalItems: items.length,
-        syncedCount: typedResult.synced_ids?.length || 0,
-        updatedCount: typedResult.updated_count || 0,
-        insertedCount: typedResult.inserted_count || 0,
-        elapsedMs,
-      });
-
-      return NextResponse.json({
-        success: true,
-        totalReceived: items.length,
-        syncedCount: typedResult.synced_ids?.length || 0,
-        updatedCount: typedResult.updated_count || 0,
-        insertedCount: typedResult.inserted_count || 0,
-        syncedIds: typedResult.synced_ids || [],
-        elapsedMs,
-        message: `¡Éxito! ${typedResult.synced_ids?.length || 0} lectura(s) sincronizadas transaccionalmente en ${elapsedMs}ms.`,
-      });
-    }
-
-    if (rpcError) {
-      scannerLogger.warn('RPC devolvió error o no disponible, usando fallback batch:', { details: rpcError.message }, rpcError);
-    }
-  } catch (rpcEx) {
-    scannerLogger.warn('Excepción invocando RPC transaccional, usando fallback batch:', { error: String(rpcEx) }, rpcEx);
-  }
-
-  // 4. FALLBACK: Búsqueda masiva en Supabase (1 sola consulta SQL para todo el lote)
+  // 3. Búsqueda masiva indexada en paralelo (Técnica Módulo 6.5)
   const uniqueCodes = Array.from(new Set(items.map((it) => it.code.trim().toUpperCase())));
   if (uniqueCodes.length === 0) {
     return NextResponse.json({ error: 'No se encontraron códigos válidos en el lote.' }, { status: 400 });
   }
 
-  // Construir condición OR segura con .in
-  const escapedCodes = uniqueCodes.map((c) => `"${c.replace(/"/g, '')}"`).join(',');
-  const { data: existingPackages, error: selectError } = await admin
-    .from('paquetes')
-    .select('id, numero_recibo_bodega, tracking, nombre_consignatario, ubicacion_actual, posicion_estante, anaquel, piso')
-    .or(`numero_recibo_bodega.in.(${escapedCodes}),tracking.in.(${escapedCodes})`);
+  const [byWr, byTrk] = await Promise.all([
+    admin
+      .from('paquetes')
+      .select('id, numero_recibo_bodega, tracking, nombre_consignatario, ubicacion_actual, posicion_estante, anaquel, piso, estado_amex')
+      .in('numero_recibo_bodega', uniqueCodes),
+    admin
+      .from('paquetes')
+      .select('id, numero_recibo_bodega, tracking, nombre_consignatario, ubicacion_actual, posicion_estante, anaquel, piso, estado_amex')
+      .in('tracking', uniqueCodes),
+  ]);
 
-  if (selectError) {
-    scannerLogger.error('Error buscando paquetes existentes para el lote de escáner', selectError);
+  if (byWr.error) {
+    scannerLogger.error('Error buscando paquetes por numero_recibo_bodega en lote', byWr.error);
     return NextResponse.json(
-      { error: 'Error consultando base de datos para el lote.', details: selectError.message },
+      { error: 'Error consultando base de datos para el lote.', details: byWr.error.message },
+      { status: 500 }
+    );
+  }
+  if (byTrk.error) {
+    scannerLogger.error('Error buscando paquetes por tracking en lote', byTrk.error);
+    return NextResponse.json(
+      { error: 'Error consultando base de datos para el lote.', details: byTrk.error.message },
       { status: 500 }
     );
   }
 
-  // Diccionario rápido de búsqueda
+  // Diccionario rápido O(1) de búsqueda
   const packageMap = new Map<string, {
     id: string;
     numero_recibo_bodega: string;
@@ -156,17 +123,17 @@ async function handleBatchSync(req: NextRequest): Promise<NextResponse> {
     posicion_estante?: string;
   }>();
 
-  for (const pkg of (existingPackages as any[]) || []) {
+  for (const pkg of [...(byWr.data || []), ...(byTrk.data || [])]) {
     if (pkg.numero_recibo_bodega) {
       packageMap.set(pkg.numero_recibo_bodega.trim().toUpperCase(), pkg);
     }
-    const trk = pkg.tracking || pkg.tracking_usa;
+    const trk = (pkg as any).tracking || (pkg as any).tracking_usa;
     if (trk) {
       packageMap.set(String(trk).trim().toUpperCase(), pkg);
     }
   }
 
-  // 5. Separar items a actualizar vs items a insertar
+  // 4. Separar items a actualizar (agrupados para batch .in) vs items a insertar
   interface PkgResolve {
     logId: string;
     code: string;
@@ -180,9 +147,25 @@ async function handleBatchSync(req: NextRequest): Promise<NextResponse> {
     isNew: boolean;
   }
 
+  interface UpdateGroup {
+    fields: {
+      anaquel: string;
+      piso: string | null;
+      posicion_estante: string;
+      ubicacion_actual: string;
+      estado_amex: string;
+      usuario_email?: string;
+      eliminado_en: null;
+      motivo_eliminacion: null;
+      eliminado_por: null;
+      actualizado_en: string;
+    };
+    ids: Set<string>;
+  }
+
   const resolvedItems: PkgResolve[] = [];
   const toInsertList: Record<string, unknown>[] = [];
-  const toUpdateList: { id: string; fields: Record<string, unknown> }[] = [];
+  const updateGroups = new Map<string, UpdateGroup>();
 
   const nowIso = new Date().toISOString();
 
@@ -195,6 +178,18 @@ async function handleBatchSync(req: NextRequest): Promise<NextResponse> {
     const [ana, pis] = loc.includes('-') ? loc.split('-') : [loc, 'P1'];
     const consignatario = log.nombreConsignatario || '';
 
+    const isLevelLess =
+      ana === 'OFI' ||
+      ana === 'DSP-Z1' ||
+      ana === 'DSP-Z2' ||
+      ana === 'TRANSITO' ||
+      ana === 'REC' ||
+      ana === 'DSP';
+
+    const finalPiso = isLevelLess ? null : pis;
+    const finalPosicion = isLevelLess ? ana : loc;
+    const estadoAmex = (log as any).estadoAmex || 'en_almacen';
+
     const matchedPkg = packageMap.get(upper);
 
     if (matchedPkg) {
@@ -203,29 +198,34 @@ async function handleBatchSync(req: NextRequest): Promise<NextResponse> {
         code: upper,
         format: log.format || 'CODE_128',
         workflow: log.workflow || 'slotting',
-        location: loc,
+        location: finalPosicion,
         anaquel: ana,
-        piso: pis,
+        piso: finalPiso || 'P1',
         consignatario: consignatario || matchedPkg.nombre_consignatario || '',
         pkgId: matchedPkg.id,
         isNew: false,
       });
 
-      toUpdateList.push({
-        id: matchedPkg.id,
-        fields: {
-          anaquel: ana,
-          piso: pis,
-          posicion_estante: loc,
-          ubicacion_actual: 'AmexLince',
-          estado_amex: (log as any).estadoAmex || 'en_almacen',
-          ...(activeOperatorEmail ? { usuario_email: activeOperatorEmail } : {}),
-          eliminado_en: null,
-          motivo_eliminacion: null,
-          eliminado_por: null,
-          actualizado_en: nowIso,
-        },
-      });
+      // Agrupación de actualización por misma ubicación y estado (Técnica .in('id', ids))
+      const groupKey = `${ana}::${finalPiso ?? ''}::${finalPosicion}::${estadoAmex}`;
+      if (!updateGroups.has(groupKey)) {
+        updateGroups.set(groupKey, {
+          fields: {
+            anaquel: ana,
+            piso: finalPiso,
+            posicion_estante: finalPosicion,
+            ubicacion_actual: 'AmexLince',
+            estado_amex: estadoAmex,
+            ...(activeOperatorEmail ? { usuario_email: activeOperatorEmail } : {}),
+            eliminado_en: null,
+            motivo_eliminacion: null,
+            eliminado_por: null,
+            actualizado_en: nowIso,
+          },
+          ids: new Set<string>(),
+        });
+      }
+      updateGroups.get(groupKey)!.ids.add(matchedPkg.id);
     } else {
       // Es un paquete nuevo - Garantizar regla estricta de 11 caracteres WR
       let newWr = smartFormatWr(upper);
@@ -247,9 +247,9 @@ async function handleBatchSync(req: NextRequest): Promise<NextResponse> {
           peso_kg: null,
           ubicacion_actual: 'AmexLince',
           anaquel: ana,
-          piso: pis,
-          posicion_estante: loc,
-          estado_amex: (log as any).estadoAmex || 'en_almacen',
+          piso: finalPiso,
+          posicion_estante: finalPosicion,
+          estado_amex: estadoAmex,
           usuario_email: activeOperatorEmail,
           creado_por: activeOperatorId,
           eliminado_en: null,
@@ -262,9 +262,9 @@ async function handleBatchSync(req: NextRequest): Promise<NextResponse> {
         code: newWr,
         format: log.format || 'CODE_128',
         workflow: log.workflow || 'slotting',
-        location: loc,
+        location: finalPosicion,
         anaquel: ana,
-        piso: pis,
+        piso: finalPiso || 'P1',
         consignatario,
         isNew: true,
       });
@@ -274,7 +274,7 @@ async function handleBatchSync(req: NextRequest): Promise<NextResponse> {
   let updatedCount = 0;
   let insertedCount = 0;
 
-  // 6. Ejecutar inserción masiva de paquetes nuevos (si hay)
+  // 5. Inserción masiva de paquetes nuevos (si hay)
   if (toInsertList.length > 0) {
     const { data: createdPkgs, error: insertError } = await admin
       .from('paquetes')
@@ -303,20 +303,26 @@ async function handleBatchSync(req: NextRequest): Promise<NextResponse> {
     }
   }
 
-  // 7. Ejecutar actualizaciones concurrentes en el servidor
-  if (toUpdateList.length > 0) {
-    const updatePromises = toUpdateList.map(({ id, fields }) =>
-      admin.from('paquetes').update(fields).eq('id', id)
-    );
+  // 6. Actualización masiva ultrarrápida vía .in('id', ids) (Técnica Módulo 6.5)
+  if (updateGroups.size > 0) {
+    const updatePromises = Array.from(updateGroups.values()).map(async (group) => {
+      const idList = Array.from(group.ids);
+      if (idList.length === 0) return 0;
 
-    const updateResults = await Promise.allSettled(updatePromises);
-    for (const res of updateResults) {
-      if (res.status === 'fulfilled' && !res.value.error) {
-        updatedCount++;
-      } else if (res.status === 'rejected' || (res.status === 'fulfilled' && res.value.error)) {
-        scannerLogger.warn('Fallo actualizando un paquete individual en lote:', { status: res.status });
+      const { error: updErr } = await admin
+        .from('paquetes')
+        .update(group.fields)
+        .in('id', idList);
+
+      if (updErr) {
+        scannerLogger.error('Error actualizando lote agrupado con .in(id, ids):', updErr);
+        throw updErr;
       }
-    }
+      return idList.length;
+    });
+
+    const updateResults = await Promise.all(updatePromises);
+    updatedCount = updateResults.reduce((acc, count) => acc + count, 0);
   }
 
   // 8. Inserciones masivas en tablas de auditoría (1 sola llamada por tabla)
@@ -361,16 +367,27 @@ async function handleBatchSync(req: NextRequest): Promise<NextResponse> {
     creado_en: nowIso,
   }));
 
+  // Helper para insertar auditoría en bloques seguros sin desbordar PostgREST
+  async function insertAuditChunks(table: string, rows: Record<string, unknown>[], chunkSize = 100) {
+    if (rows.length === 0) return { error: null };
+    for (let i = 0; i < rows.length; i += chunkSize) {
+      const chunk = rows.slice(i, i + chunkSize);
+      const res = await admin.from(table).insert(chunk);
+      if (res.error) return res;
+    }
+    return { error: null };
+  }
+
   // Ejecución en paralelo de las 3 tablas de auditoría
   const [trazRes, kardexRes, logRes] = await Promise.all([
-    trazabilidadBatch.length > 0 ? admin.from('historial_trazabilidad').insert(trazabilidadBatch) : Promise.resolve({ error: null }),
-    kardexBatch.length > 0 ? admin.from('movimientos_kardex').insert(kardexBatch) : Promise.resolve({ error: null }),
-    escaneosLogBatch.length > 0 ? admin.from('escaneos_log').insert(escaneosLogBatch) : Promise.resolve({ error: null }),
+    insertAuditChunks('historial_trazabilidad', trazabilidadBatch),
+    insertAuditChunks('movimientos_kardex', kardexBatch),
+    insertAuditChunks('escaneos_log', escaneosLogBatch),
   ]);
 
-  if (trazRes.error) scannerLogger.warn('Error insertando historial de trazabilidad en lote', { details: trazRes.error.message }, trazRes.error);
-  if (kardexRes.error) scannerLogger.warn('Error insertando kardex en lote', { details: kardexRes.error.message }, kardexRes.error);
-  if (logRes.error) scannerLogger.warn('Error insertando escaneos_log en lote', { details: logRes.error.message }, logRes.error);
+  if (trazRes.error) scannerLogger.warn('Error insertando historial de trazabilidad en lote', { details: (trazRes.error as any).message }, trazRes.error);
+  if (kardexRes.error) scannerLogger.warn('Error insertando kardex en lote', { details: (kardexRes.error as any).message }, kardexRes.error);
+  if (logRes.error) scannerLogger.warn('Error insertando escaneos_log en lote', { details: (logRes.error as any).message }, logRes.error);
 
   const elapsedMs = Date.now() - startTime;
   const syncedIds = validResolved.map((it) => it.logId);

@@ -1,15 +1,14 @@
-'use client';
-
-import { useState, useEffect, useCallback } from 'react';
-import { InvoiceData, InvoiceItem, INITIAL_INVOICE_DATA } from '../types';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { InvoiceData, InvoiceItem, INITIAL_INVOICE_DATA, CloudSyncStatus } from '../types';
 import { generateInvoiceDocx } from '../services/invoiceDocxExporter';
 import { generateInvoicePdf } from '../services/invoicePdfExporter';
+import { InvoiceCloudService } from '../services/invoiceCloud.service';
 import { Cliente } from '@/types';
 
 const STORAGE_KEY_CURRENT = 'amex_invoice_current_draft';
 const STORAGE_KEY_HISTORY = 'amex_invoice_history_list';
 
-export function useInvoice() {
+export function useInvoice(currentUser?: { nombre?: string; email?: string; rol?: string; id?: string } | null) {
   const [invoiceData, setInvoiceData] = useState<InvoiceData>(INITIAL_INVOICE_DATA);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState<boolean>(false);
@@ -17,6 +16,10 @@ export function useInvoice() {
   const [isHistorialOpen, setIsHistorialOpen] = useState<boolean>(false);
   const [isPasteModalOpen, setIsPasteModalOpen] = useState<boolean>(false);
   const [pasteRawText, setPasteRawText] = useState<string>('');
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<CloudSyncStatus>('synced');
+
+  const isHydratedRef = useRef<boolean>(false);
+  const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const showToast = useCallback((msg: string) => {
     setToastMessage(msg);
@@ -25,38 +28,95 @@ export function useInvoice() {
     }, 3500);
   }, []);
 
-  // Cargar borrador y lista de historial al iniciar
+  // Cargar borrador y lista de historial al iniciar (Nube -> Fallback: Local)
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const savedDraft = localStorage.getItem(STORAGE_KEY_CURRENT);
-      if (savedDraft) {
-        const parsed = JSON.parse(savedDraft);
-        if (parsed && parsed.invoiceNumber) {
-          setInvoiceData(parsed);
+    let isMounted = true;
+    async function loadData() {
+      // 1. Cargar historial desde la nube
+      try {
+        const cloudHist = await InvoiceCloudService.fetchHistorialFromCloud(30);
+        if (isMounted && cloudHist.length > 0) {
+          setHistorial(cloudHist);
+          try {
+            localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(cloudHist));
+          } catch {}
+        } else {
+          const savedHistory = localStorage.getItem(STORAGE_KEY_HISTORY);
+          if (isMounted && savedHistory) {
+            setHistorial(JSON.parse(savedHistory));
+          }
+        }
+      } catch {
+        const savedHistory = localStorage.getItem(STORAGE_KEY_HISTORY);
+        if (isMounted && savedHistory) {
+          setHistorial(JSON.parse(savedHistory));
         }
       }
-      const savedHistory = localStorage.getItem(STORAGE_KEY_HISTORY);
-      if (savedHistory) {
-        const parsedHist = JSON.parse(savedHistory);
-        if (Array.isArray(parsedHist)) {
-          setHistorial(parsedHist);
-        }
-      }
-    } catch (err) {
-      console.warn('Error al leer localStorage de Invoices:', err);
-    }
-  }, []);
 
-  // Guardar automáticamente borrador actual
+      // 2. Cargar borrador de la nube si está logueado
+      if (currentUser?.email) {
+        setCloudSyncStatus('saving');
+        const cloudDraft = await InvoiceCloudService.loadDraftFromCloud(currentUser.email);
+        if (isMounted && cloudDraft && cloudDraft.invoiceNumber) {
+          setInvoiceData(cloudDraft);
+          try {
+            localStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(cloudDraft));
+          } catch {}
+          setCloudSyncStatus('synced');
+          isHydratedRef.current = true;
+          return;
+        }
+      }
+
+      // Fallback a localStorage
+      try {
+        const savedDraft = localStorage.getItem(STORAGE_KEY_CURRENT);
+        if (isMounted && savedDraft) {
+          const parsed = JSON.parse(savedDraft);
+          if (parsed && parsed.invoiceNumber) {
+            setInvoiceData(parsed);
+          }
+        }
+      } catch {}
+
+      if (isMounted) {
+        setCloudSyncStatus('synced');
+        isHydratedRef.current = true;
+      }
+    }
+
+    loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser?.email]);
+
+  // Guardar automáticamente borrador actual (Local + Nube debounced)
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (!isHydratedRef.current) return;
+
     try {
       localStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(invoiceData));
-    } catch {
-      // Ignorar quota exceeded
-    }
-  }, [invoiceData]);
+    } catch {}
+
+    if (!currentUser?.email) return;
+
+    setCloudSyncStatus('saving');
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+
+    autosaveTimerRef.current = setTimeout(async () => {
+      const ok = await InvoiceCloudService.saveDraftToCloud({
+        invoiceData,
+        userEmail: currentUser.email!,
+        userId: currentUser?.id
+      });
+      setCloudSyncStatus(ok ? 'synced' : 'error');
+    }, 1500);
+
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    };
+  }, [invoiceData, currentUser?.email, currentUser?.id]);
 
   // Recalcular suma total a partir de los ítems
   const recalculateGrandTotal = (items: InvoiceItem[]): string => {
@@ -294,15 +354,22 @@ export function useInvoice() {
   // Restaurar ejemplo inicial
   const handleResetToDefault = () => {
     if (confirm('¿Restaurar valores de la factura al ejemplo original del Word?')) {
-      setInvoiceData({
+      const resetState = {
         ...INITIAL_INVOICE_DATA,
         items: INITIAL_INVOICE_DATA.items.map(it => ({ ...it, id: `it-${Math.random()}` }))
-      });
+      };
+      setInvoiceData(resetState);
+      try {
+        localStorage.removeItem(STORAGE_KEY_CURRENT);
+      } catch {}
+      if (currentUser?.email) {
+        InvoiceCloudService.clearDraftFromCloud(currentUser.email).catch(() => {});
+      }
       showToast('Factura restablecida al ejemplo original');
     }
   };
 
-  // Guardar en Historial Local
+  // Guardar en Historial (Local + Nube)
   const handleSaveToHistorial = () => {
     const record: InvoiceData = {
       ...invoiceData,
@@ -313,7 +380,16 @@ export function useInvoice() {
     try {
       localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(nextHist));
     } catch {}
-    showToast('Factura guardada en el historial local');
+
+    // Guardar en Supabase permanente
+    InvoiceCloudService.saveInvoiceToCloud({
+      data: record,
+      operadorNombre: currentUser?.nombre,
+      operadorEmail: currentUser?.email,
+      operadorId: currentUser?.id
+    }).catch(err => console.warn('Error guardando invoice en nube:', err));
+
+    showToast('Factura guardada en el historial');
   };
 
   // Restaurar desde Historial
@@ -325,11 +401,16 @@ export function useInvoice() {
 
   // Eliminar del Historial
   const handleDeleteHistorialItem = (index: number) => {
+    const itemToDelete = historial[index];
     const nextHist = historial.filter((_, i) => i !== index);
     setHistorial(nextHist);
     try {
       localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(nextHist));
     } catch {}
+
+    if (itemToDelete?.id || itemToDelete?.invoiceNumber) {
+      InvoiceCloudService.deleteInvoiceFromCloud(itemToDelete.id || itemToDelete.invoiceNumber).catch(() => {});
+    }
   };
 
   // Exportar a Word (.docx)
@@ -401,6 +482,7 @@ export function useInvoice() {
     handleDeleteHistorialItem,
     handleExportDocx,
     handleExportPdf,
-    handlePrint
+    handlePrint,
+    cloudSyncStatus
   };
 }

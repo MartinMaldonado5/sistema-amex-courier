@@ -59,6 +59,8 @@ export interface InventoryToolbarProps {
   onExportExcel: () => void;
   onRefreshData?: () => Promise<void> | void;
   onNewPackage: () => void;
+  serverExistenciasActivas?: number;
+  serverPesoTotalKg?: number;
 }
 
 export default function InventoryToolbar({
@@ -100,7 +102,9 @@ export default function InventoryToolbar({
   onOpenSyncTibModal,
   onExportExcel,
   onRefreshData,
-  onNewPackage
+  onNewPackage,
+  serverExistenciasActivas,
+  serverPesoTotalKg
 }: InventoryToolbarProps) {
   const [selectionCopyStatus, setSelectionCopyStatus] = useState<'idle' | 'copying' | 'copied'>('idle');
 
@@ -140,6 +144,8 @@ export default function InventoryToolbar({
         onNewPackage={onNewPackage}
         statusAmexFilter={statusAmexFilter}
         setStatusAmexFilter={setStatusAmexFilter}
+        serverExistenciasActivas={serverExistenciasActivas}
+        serverPesoTotalKg={serverPesoTotalKg}
       />
 
       {/* 2. Barra de Búsqueda y Filtros Rápidos de Inventario */}

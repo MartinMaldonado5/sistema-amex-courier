@@ -158,3 +158,118 @@ export function getDateFilterSummary(filter: DateFilterState): string {
       return 'Filtro de Fecha';
   }
 }
+
+/**
+ * Convierte un DateFilterState en límites ISO (fechaDesde, fechaHasta) para consultas SQL.
+ */
+export function resolveDateFilterRange(
+  filter: DateFilterState,
+  referenceNow: Date = new Date()
+): { fechaDesde: string | null; fechaHasta: string | null } {
+  if (filter.type === 'ALL') {
+    return { fechaDesde: null, fechaHasta: null };
+  }
+
+  const todayStr = toLocalDateString(referenceNow);
+
+  switch (filter.type) {
+    case 'TODAY':
+      return {
+        fechaDesde: `${todayStr}T00:00:00.000Z`,
+        fechaHasta: `${todayStr}T23:59:59.999Z`
+      };
+
+    case 'YESTERDAY': {
+      const yest = new Date(referenceNow);
+      yest.setDate(referenceNow.getDate() - 1);
+      const yestStr = toLocalDateString(yest);
+      return {
+        fechaDesde: `${yestStr}T00:00:00.000Z`,
+        fechaHasta: `${yestStr}T23:59:59.999Z`
+      };
+    }
+
+    case 'LAST_7_DAYS': {
+      const sevenDaysAgo = new Date(referenceNow);
+      sevenDaysAgo.setDate(referenceNow.getDate() - 7);
+      const minStr = toLocalDateString(sevenDaysAgo);
+      return {
+        fechaDesde: `${minStr}T00:00:00.000Z`,
+        fechaHasta: `${todayStr}T23:59:59.999Z`
+      };
+    }
+
+    case 'THIS_MONTH': {
+      const y = referenceNow.getFullYear();
+      const m = referenceNow.getMonth();
+      const firstDay = `${y}-${String(m + 1).padStart(2, '0')}-01`;
+      const lastDayDate = new Date(y, m + 1, 0);
+      const lastDay = toLocalDateString(lastDayDate);
+      return {
+        fechaDesde: `${firstDay}T00:00:00.000Z`,
+        fechaHasta: `${lastDay}T23:59:59.999Z`
+      };
+    }
+
+    case 'LAST_MONTH': {
+      const y = referenceNow.getFullYear();
+      const prevMonth = referenceNow.getMonth() - 1;
+      const targetDate = new Date(y, prevMonth, 1);
+      const ty = targetDate.getFullYear();
+      const tm = targetDate.getMonth();
+      const firstDay = `${ty}-${String(tm + 1).padStart(2, '0')}-01`;
+      const lastDay = toLocalDateString(new Date(ty, tm + 1, 0));
+      return {
+        fechaDesde: `${firstDay}T00:00:00.000Z`,
+        fechaHasta: `${lastDay}T23:59:59.999Z`
+      };
+    }
+
+    case 'THIS_YEAR': {
+      const y = referenceNow.getFullYear();
+      return {
+        fechaDesde: `${y}-01-01T00:00:00.000Z`,
+        fechaHasta: `${y}-12-31T23:59:59.999Z`
+      };
+    }
+
+    case 'EXACT_DAY': {
+      if (!filter.exactDate) return { fechaDesde: null, fechaHasta: null };
+      return {
+        fechaDesde: `${filter.exactDate}T00:00:00.000Z`,
+        fechaHasta: `${filter.exactDate}T23:59:59.999Z`
+      };
+    }
+
+    case 'MONTH_YEAR': {
+      const ty = filter.year || referenceNow.getFullYear();
+      const tm = (filter.month || (referenceNow.getMonth() + 1)) - 1;
+      const firstDay = `${ty}-${String(tm + 1).padStart(2, '0')}-01`;
+      const lastDay = toLocalDateString(new Date(ty, tm + 1, 0));
+      return {
+        fechaDesde: `${firstDay}T00:00:00.000Z`,
+        fechaHasta: `${lastDay}T23:59:59.999Z`
+      };
+    }
+
+    case 'YEAR': {
+      const ty = filter.year || referenceNow.getFullYear();
+      return {
+        fechaDesde: `${ty}-01-01T00:00:00.000Z`,
+        fechaHasta: `${ty}-12-31T23:59:59.999Z`
+      };
+    }
+
+    case 'CUSTOM_RANGE': {
+      const start = filter.startDate?.trim() || '';
+      const end = filter.endDate?.trim() || '';
+      return {
+        fechaDesde: start ? `${start}T00:00:00.000Z` : null,
+        fechaHasta: end ? `${end}T23:59:59.999Z` : null
+      };
+    }
+
+    default:
+      return { fechaDesde: null, fechaHasta: null };
+  }
+}

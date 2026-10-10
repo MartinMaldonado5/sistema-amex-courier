@@ -63,7 +63,7 @@ export default function InventoryTab({
     setDateFilter,
     resetDateFilter,
 
-    // Paginación
+    // Paginación & Server-Side Search
     pageSize,
     setPageSize,
     currentPage,
@@ -71,6 +71,11 @@ export default function InventoryTab({
     totalPages,
     filteredPaquetes,
     paginatedPaquetes,
+    serverTotal,
+    serverExistenciasActivas,
+    serverPesoTotalKg,
+    isLoadingServer,
+    fetchServerPaquetes,
 
     // Kardex
     kardexList,
@@ -223,7 +228,7 @@ export default function InventoryTab({
         missingTibImagesCount={missingTibImagesCount}
         activeSubTab={activeSubTab}
         setActiveSubTab={setActiveSubTab}
-        filteredCount={filteredPaquetes.length}
+        filteredCount={serverTotal || filteredPaquetes.length}
         shelfGroups={shelfGroups}
         posicionesCount={posicionesList.length}
         kardexCount={kardexList.length}
@@ -257,8 +262,13 @@ export default function InventoryTab({
         onOpenKardexModal={() => setIsKardexModalOpen(true)}
         onOpenSyncTibModal={() => setIsSyncTibModalOpen(true)}
         onExportExcel={handleExportExcel}
-        onRefreshData={onRefreshData}
+        onRefreshData={async () => {
+          if (onRefreshData) await onRefreshData();
+          await fetchServerPaquetes();
+        }}
         onNewPackage={onNewPackage}
+        serverExistenciasActivas={serverExistenciasActivas}
+        serverPesoTotalKg={serverPesoTotalKg}
       />
 
       {/* Tabla Principal de Existencias de Almacén */}
@@ -266,6 +276,7 @@ export default function InventoryTab({
         filteredPaquetes={filteredPaquetes}
         paginatedPaquetes={paginatedPaquetes}
         selectedIds={selectedIds}
+        totalCount={serverTotal}
         onToggleSelect={handleToggleSelect}
         onSelectAll={handleSelectAll}
         onQuickDeliver={handleQuickDeliver}

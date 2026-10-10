@@ -86,7 +86,7 @@ export default function DashboardPage() {
     fetchSupabaseData,
     isLoadingInitialData,
     isGlobalRefreshing
-  } = useDashboardData();
+  } = useDashboardData(currentUser);
 
   // Sincronizar dimensiones de Lenis al finalizar la carga de datos iniciales o cambios de paquetes
   useEffect(() => {

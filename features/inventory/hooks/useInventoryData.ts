@@ -12,10 +12,11 @@ import {
 } from '@/types';
 import { supabase } from '@/lib/supabase/client';
 import { matchesFuzzySearch } from '@/lib/fuzzySearch';
+import { useDebounce } from '@/lib/useDebounce';
 import { exportPaquetesToExcel, exportKardexToExcel } from '@/lib/excelExport';
 import { inventoryService } from '../services/inventory.service';
 import { BatchShelfData, SinglePositionData, TransferFormData, DateFilterState } from '../types';
-import { initialDateFilter, isPackageInDateFilter } from '../utils/dateFilter';
+import { initialDateFilter, isPackageInDateFilter, resolveDateFilterRange } from '../utils/dateFilter';
 
 export interface UseInventoryDataProps {
   paquetes: Paquete[];
@@ -35,6 +36,7 @@ export function useInventoryData({
 
   // Filtros de Existencias (Limpios por defecto)
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [locationFilter, setLocationFilter] = useState<string>('ALL');
   const [shelfFilter, setShelfFilter] = useState<string>('ALL');
   const [floorFilter, setFloorFilter] = useState<string>('ALL');
@@ -47,6 +49,13 @@ export function useInventoryData({
   // Paginación reactiva
   const [pageSize, setPageSize] = useState<number>(50);
   const [currentPage, setCurrentPage] = useState<number>(1);
+
+  // Búsqueda y Paginación Server-Side (PostgreSQL / Supabase RPC)
+  const [serverPaquetes, setServerPaquetes] = useState<Paquete[]>([]);
+  const [serverTotal, setServerTotal] = useState<number>(0);
+  const [serverExistenciasActivas, setServerExistenciasActivas] = useState<number>(0);
+  const [serverPesoTotalKg, setServerPesoTotalKg] = useState<number>(0);
+  const [isLoadingServer, setIsLoadingServer] = useState<boolean>(false);
 
   // Filtros de Kardex
   const [kardexSearch, setKardexSearch] = useState('');
@@ -170,68 +179,110 @@ export function useInventoryData({
     };
   }, [fetchData]);
 
-  // Filtrado reactivo de paquetes con Motor Fuzzy Inteligente
-  const filteredPaquetes = useMemo(() => {
-    return paquetes.filter(p => {
-      const pos = p.posicionEstante || (p.anaquel && p.piso ? `${p.anaquel}-${p.piso}` : 'REC');
+  // Búsqueda Server-Side con PostgreSQL RPC + GIN Trigram
+  const fetchServerPaquetes = useCallback(async () => {
+    setIsLoadingServer(true);
+    try {
+      const { fechaDesde, fechaHasta } = resolveDateFilterRange(dateFilter);
+      const res = await inventoryService.searchPaquetesServerSide({
+        searchTerm: debouncedSearchTerm,
+        locationFilter,
+        statusAmexFilter,
+        shelfFilter,
+        floorFilter,
+        packageTypeFilter,
+        fechaDesde,
+        fechaHasta,
+        page: currentPage,
+        pageSize
+      });
 
-      const matchesSearch = matchesFuzzySearch(searchTerm, [
-        p.numeroReciboBodega,
-        p.trackingUsa,
-        p.nombreConsignatario,
-        p.dniConsignatario,
-        p.descripcion,
-        p.posicionEstante,
-        p.anaquel,
-        p.piso,
-        pos,
-        p.numeroFactura,
-        p.tipoEmpaque,
-        p.estadoTib || p.estadoEntrega,
-        p.estadoAmex
-      ]);
+      setServerPaquetes(res.paquetes);
+      setServerTotal(res.total);
+      setServerExistenciasActivas(res.existenciasActivas);
+      setServerPesoTotalKg(res.pesoTotalKg);
+    } catch (err) {
+      console.error('Error fetching server-side packages:', err);
+    } finally {
+      setIsLoadingServer(false);
+    }
+  }, [
+    debouncedSearchTerm,
+    locationFilter,
+    statusAmexFilter,
+    shelfFilter,
+    floorFilter,
+    packageTypeFilter,
+    dateFilter,
+    currentPage,
+    pageSize
+  ]);
 
-      const matchesLocation = locationFilter === 'ALL' || p.ubicacionActual === locationFilter;
+  useEffect(() => {
+    fetchServerPaquetes();
+  }, [fetchServerPaquetes]);
 
-      const matchesShelf =
-        shelfFilter === 'ALL'
-          ? true
-          : shelfFilter === 'OFI'
-          ? pos.startsWith('OFI')
-          : shelfFilter === 'REC'
-          ? pos.startsWith('REC') || (!p.posicionEstante && !p.anaquel)
-          : shelfFilter === 'DSP'
-          ? pos.startsWith('DSP')
-          : pos.startsWith(shelfFilter);
+  // Suscripción Realtime a cambios en la tabla 'paquetes'
+  useEffect(() => {
+    const paquetesChannel = supabase
+      .channel('paquetes_realtime_inventory')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'paquetes' },
+        () => {
+          fetchServerPaquetes();
+        }
+      )
+      .subscribe();
 
-      const matchesFloor = floorFilter === 'ALL' ? true : pos.includes(floorFilter) || p.piso === floorFilter;
-      const matchesType = packageTypeFilter === 'ALL' || p.tipoEmpaque === packageTypeFilter;
-      const matchesStatus = statusFilter === 'ALL' || (p.estadoTib || p.estadoEntrega) === statusFilter;
-      const matchesStatusAmex =
-        statusAmexFilter === 'ALL'
-          ? true
-          : statusAmexFilter === 'en_almacen' || statusAmexFilter === 'ACTIVAS'
-          ? p.estadoAmex === 'en_almacen' || p.estadoAmex === 'recibido'
-          : p.estadoAmex === statusAmexFilter;
-      const matchesDate = isPackageInDateFilter(p.creadoEn, dateFilter);
-
-      return (
-        matchesSearch &&
-        matchesLocation &&
-        matchesShelf &&
-        matchesFloor &&
-        matchesType &&
-        matchesStatus &&
-        matchesStatusAmex &&
-        matchesDate
-      );
-    });
-  }, [paquetes, searchTerm, locationFilter, shelfFilter, floorFilter, packageTypeFilter, statusFilter, statusAmexFilter, dateFilter]);
+    return () => {
+      supabase.removeChannel(paquetesChannel);
+    };
+  }, [fetchServerPaquetes]);
 
   // Resetear página al cambiar filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, locationFilter, shelfFilter, floorFilter, packageTypeFilter, statusFilter, statusAmexFilter, dateFilter, pageSize]);
+  }, [debouncedSearchTerm, locationFilter, shelfFilter, floorFilter, packageTypeFilter, statusFilter, statusAmexFilter, dateFilter, pageSize]);
+
+  // Total de páginas determinado por el total devuelto por Supabase PostgreSQL
+  const totalPages = Math.max(1, Math.ceil((serverTotal || serverPaquetes.length || paquetes.length) / pageSize));
+
+  // Paquetes paginados directos del servidor (50 registros bajo demanda)
+  const paginatedPaquetes = useMemo(() => {
+    if (
+      serverPaquetes.length > 0 ||
+      debouncedSearchTerm.trim() !== '' ||
+      locationFilter !== 'ALL' ||
+      statusAmexFilter !== 'ALL' ||
+      shelfFilter !== 'ALL' ||
+      floorFilter !== 'ALL' ||
+      packageTypeFilter !== 'ALL' ||
+      dateFilter.type !== 'ALL'
+    ) {
+      return serverPaquetes;
+    }
+    // Fallback únicamente si es el montaje inicial antes de que termine el primer RPC
+    if (isLoadingServer && paquetes.length > 0) {
+      return paquetes.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    }
+    return serverPaquetes;
+  }, [
+    serverPaquetes,
+    debouncedSearchTerm,
+    locationFilter,
+    statusAmexFilter,
+    shelfFilter,
+    floorFilter,
+    packageTypeFilter,
+    dateFilter.type,
+    isLoadingServer,
+    paquetes,
+    currentPage,
+    pageSize
+  ]);
+
+  const filteredPaquetes = paginatedPaquetes;
 
   // Conteos en tiempo real por Estado AMEX para píldoras rápidas
   const amexStatusCounts = useMemo(() => {
@@ -248,12 +299,12 @@ export function useInventoryData({
       else if (st === 'entregado') entregado++;
     });
 
-    const activas = paquetes.filter(
-      p => p.estadoAmex !== 'entregado' && p.ubicacionActual !== 'Entregado'
-    ).length;
+    const activas = serverExistenciasActivas > 0
+      ? serverExistenciasActivas
+      : paquetes.filter(p => p.estadoAmex !== 'entregado' && p.ubicacionActual !== 'Entregado').length;
 
     return {
-      total: paquetes.length,
+      total: serverTotal > 0 ? serverTotal : paquetes.length,
       activas,
       recibido: 0,
       en_almacen,
@@ -261,13 +312,7 @@ export function useInventoryData({
       en_ruta,
       entregado
     };
-  }, [paquetes]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredPaquetes.length / pageSize));
-  const paginatedPaquetes = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredPaquetes.slice(start, start + pageSize);
-  }, [filteredPaquetes, currentPage, pageSize]);
+  }, [paquetes, serverTotal, serverExistenciasActivas]);
 
   // Filtrado reactivo de Kardex
   const filteredKardex = useMemo(() => {
@@ -368,6 +413,12 @@ export function useInventoryData({
       if (onUpdatePackage) {
         updatedPackages.forEach(p => onUpdatePackage(p));
       }
+      setServerPaquetes(prev =>
+        prev.map(p => {
+          const found = updatedPackages.find(u => u.id === p.id);
+          return found || p;
+        })
+      );
     } catch (err) {
       console.warn('Error executing transfer:', err);
     }
@@ -408,6 +459,7 @@ export function useInventoryData({
     if (onUpdatePackage) {
       onUpdatePackage(updated);
     }
+    setServerPaquetes(prev => prev.map(p => (p.id === updated.id ? updated : p)));
 
     try {
       await inventoryService.updatePackage(updated);
@@ -427,6 +479,8 @@ export function useInventoryData({
       if (onDeletePackage) {
         onDeletePackage(pkgId);
       }
+      setServerPaquetes(prev => prev.filter(x => x.id !== pkgId));
+      setServerTotal(prev => Math.max(0, prev - 1));
       setSelectedIds(prev => prev.filter(x => x !== pkgId));
     } catch (err) {
       console.error('Error eliminando paquete:', err);
@@ -440,6 +494,7 @@ export function useInventoryData({
       await inventoryService.quickStatusChange(pkg, newStatus);
       const updated: Paquete = { ...pkg, estadoEntrega: newStatus, estadoTib: newStatus, actualizadoEn: new Date().toISOString() };
       if (onUpdatePackage) onUpdatePackage(updated);
+      setServerPaquetes(prev => prev.map(p => (p.id === updated.id ? updated : p)));
     } catch (err) {
       console.error('Error actualizando estado TIB:', err);
     }
@@ -451,6 +506,7 @@ export function useInventoryData({
       await inventoryService.quickStatusAmexChange(pkg, newStatusAmex);
       const updated: Paquete = { ...pkg, estadoAmex: newStatusAmex, actualizadoEn: new Date().toISOString() };
       if (onUpdatePackage) onUpdatePackage(updated);
+      setServerPaquetes(prev => prev.map(p => (p.id === updated.id ? updated : p)));
     } catch (err) {
       console.error('Error actualizando estado AMEX:', err);
     }
@@ -463,6 +519,7 @@ export function useInventoryData({
       if (onUpdatePackage) {
         onUpdatePackage(updated);
       }
+      setServerPaquetes(prev => prev.map(p => (p.id === updated.id ? updated : p)));
     } catch (err) {
       console.error('Error al entregar paquete rápido:', err);
       alert('Error al marcar como entregado.');
@@ -483,6 +540,12 @@ export function useInventoryData({
     if (onUpdatePackage) {
       updatedList.forEach(p => onUpdatePackage(p));
     }
+    setServerPaquetes(prev =>
+      prev.map(p => {
+        const found = updatedList.find(u => u.id === p.id);
+        return found || p;
+      })
+    );
   };
 
   // Cambio de estado masivo en lote (por selección en tabla)
@@ -497,6 +560,12 @@ export function useInventoryData({
       if (onUpdatePackage) {
         updatedList.forEach(p => onUpdatePackage(p));
       }
+      setServerPaquetes(prev =>
+        prev.map(p => {
+          const found = updatedList.find(u => u.id === p.id);
+          return found || p;
+        })
+      );
       setIsBatchStatusModalOpen(false);
       setSelectedIds([]);
     } catch (err) {
@@ -513,6 +582,8 @@ export function useInventoryData({
       if (onDeletePackage) {
         selectedIds.forEach(id => onDeletePackage(id));
       }
+      setServerPaquetes(prev => prev.filter(p => !selectedIds.includes(p.id)));
+      setServerTotal(prev => Math.max(0, prev - selectedIds.length));
       setSelectedIds([]);
     } catch (err) {
       console.error('Error eliminando en lote:', err);
@@ -595,7 +666,7 @@ export function useInventoryData({
 
   // Exportar Existencias a Excel
   const handleExportExcel = () => {
-    exportPaquetesToExcel(filteredPaquetes, 'Inventario_AMEX_Lince');
+    exportPaquetesToExcel(paginatedPaquetes.length > 0 ? paginatedPaquetes : paquetes, 'Inventario_AMEX_Lince');
   };
 
   // Exportar Bitácora de Movimientos y Custodia a Excel
@@ -636,6 +707,13 @@ export function useInventoryData({
     totalPages,
     filteredPaquetes,
     paginatedPaquetes,
+
+    // Server-Side Search & Métricas Agregadas
+    serverTotal,
+    serverExistenciasActivas,
+    serverPesoTotalKg,
+    isLoadingServer,
+    fetchServerPaquetes,
 
     // Kardex
     kardexList,

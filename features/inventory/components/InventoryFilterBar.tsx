@@ -127,7 +127,7 @@ export default function InventoryFilterBar({
           />
           <input
             type="text"
-            placeholder="Buscar por Guía WR#, Tracking, Consignatario o Posición..."
+            placeholder="Buscar por Guía WR#, Tracking o Consignatario..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             style={{

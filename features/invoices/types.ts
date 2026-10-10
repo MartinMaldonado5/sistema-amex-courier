@@ -6,11 +6,16 @@ export interface InvoiceItem {
   total: number | string;
 }
 
+export type CloudSyncStatus = 'synced' | 'saving' | 'error';
+
 export interface InvoiceData {
+  id?: string;
   // --- CAMPOS EDITABLES ---
   invoiceNumber: string;
   billToName: string;
   shipToName: string;
+  consigneeDni?: string;
+  trackingUsa?: string;
   items: InvoiceItem[];
   invoiceAmount: number | string;
 

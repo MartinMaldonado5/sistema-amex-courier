@@ -2,9 +2,12 @@ import { Paquete, Cliente } from '@/types';
 import { DniSlotData } from '@/lib/dni-matrix/db';
 import { DniPrintSize } from '@/lib/dni-matrix/docx-exporter';
 
+export type CloudSyncStatus = 'synced' | 'saving' | 'error';
+
 export interface DniMatrixTabProps {
   paquetes?: Paquete[];
   clientes?: Cliente[];
+  currentUser?: { nombre?: string; email?: string; rol?: string; id?: string } | null;
   onGlobalRefresh?: () => void;
   isRefreshing?: boolean;
 }

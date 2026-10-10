@@ -1,14 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { dniDb, DniSlotData } from '@/lib/dni-matrix/db';
 import { DniPrintSize } from '@/lib/dni-matrix/docx-exporter';
-import { ToastMessage, DniFilterType, ZoomImageState, DniStats } from '../types';
+import { ToastMessage, DniFilterType, ZoomImageState, DniStats, CloudSyncStatus } from '../types';
 import { compressImageForAi } from '@/lib/utils/imageCompressor';
+import { DniCloudService } from '../services/dniCloud.service';
 
-export function useDniMatrixState() {
+export function useDniMatrixState(currentUser?: { nombre?: string; email?: string; rol?: string; id?: string } | null) {
   const [totalSlots, setTotalSlots] = useState<number>(100);
   const [printSize, setPrintSize] = useState<DniPrintSize>('large');
   const [activeSlotId, setActiveSlotIdState] = useState<number>(1);
   const [focusedSide, setFocusedSide] = useState<'anverso' | 'reverso' | null>(null);
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<CloudSyncStatus>('synced');
+  const isHydratedRef = useRef<boolean>(false);
+  const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const setActiveSlotId = useCallback((idOrFn: number | ((prev: number) => number)) => {
     setActiveSlotIdState((prev) => {
@@ -91,32 +95,119 @@ export function useDniMatrixState() {
     [soundEnabled]
   );
 
-  // Carga inicial
+  // Carga inicial (Prioridad: Supabase Nube -> Fallback: IndexedDB local)
   useEffect(() => {
+    let isMounted = true;
     async function initData() {
+      // 1. Intentar cargar desde la nube si hay usuario logueado
+      if (currentUser?.email) {
+        setCloudSyncStatus('saving');
+        const cloudDraft = await DniCloudService.loadDraftFromCloud(currentUser.email);
+        if (isMounted && cloudDraft && Array.isArray(cloudDraft.slots) && cloudDraft.slots.length > 0) {
+          const map: Record<number, DniSlotData> = {};
+          cloudDraft.slots.forEach((s) => {
+            map[s.id] = s;
+            // Sincronizar hacia IndexedDB local como caché rápido
+            dniDb.saveSlot(s).catch(() => {});
+          });
+          setSlotsData(map);
+
+          if (cloudDraft.totalSlots) {
+            setTotalSlots(cloudDraft.totalSlots);
+            dniDb.saveSetting('totalSlots', cloudDraft.totalSlots).catch(() => {});
+          }
+          if (cloudDraft.settings?.soundEnabled !== undefined) {
+            setSoundEnabled(cloudDraft.settings.soundEnabled);
+            dniDb.saveSetting('soundEnabled', cloudDraft.settings.soundEnabled).catch(() => {});
+          }
+          if (cloudDraft.settings?.printSize) {
+            setPrintSize(cloudDraft.settings.printSize);
+            dniDb.saveSetting('dniPrintSize', cloudDraft.settings.printSize).catch(() => {});
+          }
+          if (cloudDraft.settings?.activeSlotId) {
+            setActiveSlotIdState(cloudDraft.settings.activeSlotId);
+            dniDb.saveSetting('activeSlotId', cloudDraft.settings.activeSlotId).catch(() => {});
+          }
+
+          setCloudSyncStatus('synced');
+          isHydratedRef.current = true;
+          return;
+        }
+      }
+
+      // 2. Fallback de contingencia: IndexedDB local
       const savedSlots = await dniDb.loadAllSlots();
-      const map: Record<number, DniSlotData> = {};
-      savedSlots.forEach((s) => {
-        map[s.id] = s;
-      });
-      setSlotsData(map);
+      if (isMounted) {
+        const map: Record<number, DniSlotData> = {};
+        savedSlots.forEach((s) => {
+          map[s.id] = s;
+        });
+        setSlotsData(map);
 
-      const savedTotal = await dniDb.getSetting<number>('totalSlots', 100);
-      setTotalSlots(savedTotal);
+        const savedTotal = await dniDb.getSetting<number>('totalSlots', 100);
+        setTotalSlots(savedTotal);
 
-      const savedSound = await dniDb.getSetting<boolean>('soundEnabled', true);
-      setSoundEnabled(savedSound);
+        const savedSound = await dniDb.getSetting<boolean>('soundEnabled', true);
+        setSoundEnabled(savedSound);
 
-      const savedPrintSize = await dniDb.getSetting<DniPrintSize>('dniPrintSize', 'large');
-      setPrintSize(savedPrintSize);
+        const savedPrintSize = await dniDb.getSetting<DniPrintSize>('dniPrintSize', 'large');
+        setPrintSize(savedPrintSize);
 
-      const savedActiveSlot = await dniDb.getSetting<number>('activeSlotId', 1);
-      if (savedActiveSlot && savedActiveSlot >= 1 && savedActiveSlot <= (savedTotal || 100)) {
-        setActiveSlotIdState(savedActiveSlot);
+        const savedActiveSlot = await dniDb.getSetting<number>('activeSlotId', 1);
+        if (savedActiveSlot && savedActiveSlot >= 1 && savedActiveSlot <= (savedTotal || 100)) {
+          setActiveSlotIdState(savedActiveSlot);
+        }
+
+        setCloudSyncStatus('synced');
+        isHydratedRef.current = true;
       }
     }
     initData();
-  }, []);
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser?.email]);
+
+  // Sincronización continua en la nube (Debounce 1500ms al detectar cambios)
+  useEffect(() => {
+    if (!isHydratedRef.current || !currentUser?.email) return;
+
+    setCloudSyncStatus('saving');
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+    }
+
+    autosaveTimerRef.current = setTimeout(async () => {
+      const slotsList = Object.values(slotsData).filter(
+        (s) => s && (s.anverso || s.reverso || s.label || s.dni)
+      );
+      const ok = await DniCloudService.saveDraftToCloud({
+        slots: slotsList,
+        settings: {
+          printSize,
+          soundEnabled,
+          activeSlotId
+        },
+        totalSlots,
+        userEmail: currentUser.email!,
+        userId: currentUser?.id
+      });
+      setCloudSyncStatus(ok ? 'synced' : 'error');
+    }, 1500);
+
+    return () => {
+      if (autosaveTimerRef.current) {
+        clearTimeout(autosaveTimerRef.current);
+      }
+    };
+  }, [slotsData, totalSlots, printSize, soundEnabled, activeSlotId, currentUser?.email, currentUser?.id]);
+
+  const clearCloudDraft = useCallback(async () => {
+    if (!currentUser?.email) return;
+    setCloudSyncStatus('saving');
+    const ok = await DniCloudService.clearDraftFromCloud(currentUser.email);
+    setCloudSyncStatus(ok ? 'synced' : 'error');
+  }, [currentUser?.email]);
 
   const padNum = (num: number): string => String(num).padStart(3, '0');
 
@@ -611,6 +702,8 @@ export function useDniMatrixState() {
     processImagePayload,
     extractBase64FromDataTransfer,
     playSound,
-    showToast
+    showToast,
+    cloudSyncStatus,
+    clearCloudDraft
   };
 }

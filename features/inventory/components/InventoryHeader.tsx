@@ -21,6 +21,8 @@ export interface InventoryHeaderProps {
   onNewPackage: () => void;
   statusAmexFilter?: string;
   setStatusAmexFilter?: (status: string) => void;
+  serverExistenciasActivas?: number;
+  serverPesoTotalKg?: number;
   children?: React.ReactNode;
 }
 
@@ -36,6 +38,8 @@ export default function InventoryHeader({
   onNewPackage,
   statusAmexFilter,
   setStatusAmexFilter,
+  serverExistenciasActivas,
+  serverPesoTotalKg,
   children
 }: InventoryHeaderProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -263,6 +267,8 @@ export default function InventoryHeader({
           paquetes={paquetes}
           statusAmexFilter={statusAmexFilter}
           setStatusAmexFilter={setStatusAmexFilter}
+          serverExistenciasActivas={serverExistenciasActivas}
+          serverPesoTotalKg={serverPesoTotalKg}
         />
       </div>
     </div>

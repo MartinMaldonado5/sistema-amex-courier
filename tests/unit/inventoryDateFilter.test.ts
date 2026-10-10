@@ -3,7 +3,8 @@ import {
   isPackageInDateFilter,
   getDateFilterSummary,
   toLocalDateString,
-  MONTH_NAMES
+  MONTH_NAMES,
+  resolveDateFilterRange
 } from '@/features/inventory/utils/dateFilter';
 import { DateFilterState } from '@/features/inventory/types';
 
@@ -103,5 +104,32 @@ describe('Inventory Date Filter Utilities', () => {
     expect(getDateFilterSummary({ type: 'CUSTOM_RANGE', startDate: '2026-10-01', endDate: '2026-10-08' })).toBe(
       '2026-10-01 al 2026-10-08'
     );
+  });
+
+  it('resolveDateFilterRange converts filter state into valid ISO SQL boundaries', () => {
+    expect(resolveDateFilterRange({ type: 'ALL' }, referenceNow)).toEqual({
+      fechaDesde: null,
+      fechaHasta: null
+    });
+
+    expect(resolveDateFilterRange({ type: 'TODAY' }, referenceNow)).toEqual({
+      fechaDesde: '2026-10-08T00:00:00.000Z',
+      fechaHasta: '2026-10-08T23:59:59.999Z'
+    });
+
+    expect(resolveDateFilterRange({ type: 'EXACT_DAY', exactDate: '2026-10-03' }, referenceNow)).toEqual({
+      fechaDesde: '2026-10-03T00:00:00.000Z',
+      fechaHasta: '2026-10-03T23:59:59.999Z'
+    });
+
+    expect(
+      resolveDateFilterRange(
+        { type: 'CUSTOM_RANGE', startDate: '2026-10-01', endDate: '2026-10-15' },
+        referenceNow
+      )
+    ).toEqual({
+      fechaDesde: '2026-10-01T00:00:00.000Z',
+      fechaHasta: '2026-10-15T23:59:59.999Z'
+    });
   });
 });

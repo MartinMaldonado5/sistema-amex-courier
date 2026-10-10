@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase/client';
 import {
   Paquete,
   TipoUbicacion,
+  TipoEstadoTib,
   TipoEstadoEntrega,
   TipoEstadoAmex,
   EstanteriaPosicion,
@@ -476,5 +477,107 @@ export const inventoryService = {
   // Eliminar posición
   async deletePosition(id: string): Promise<void> {
     await supabase.from('estanterias_posiciones').delete().eq('id', id);
+  },
+
+  // Búsqueda y Paginación Server-Side (RPC en PostgreSQL)
+  async searchPaquetesServerSide(
+    params: SearchPaquetesServerSideParams = {}
+  ): Promise<SearchPaquetesServerSideResult> {
+    const { data, error } = await supabase.rpc('buscar_paquetes_servidor', {
+      p_search: params.searchTerm?.trim() || '',
+      p_ubicacion: params.locationFilter || 'ALL',
+      p_estado_amex: params.statusAmexFilter || 'ALL',
+      p_shelf_filter: params.shelfFilter || 'ALL',
+      p_floor_filter: params.floorFilter || 'ALL',
+      p_package_type: params.packageTypeFilter || 'ALL',
+      p_fecha_desde: params.fechaDesde || null,
+      p_fecha_hasta: params.fechaHasta || null,
+      p_page: params.page || 1,
+      p_page_size: params.pageSize || 50
+    });
+
+    if (error || !data) {
+      console.error('Error en búsqueda server-side:', error);
+      return {
+        paquetes: [],
+        total: 0,
+        existenciasActivas: 0,
+        pesoTotalKg: 0,
+        page: params.page || 1,
+        pageSize: params.pageSize || 50
+      };
+    }
+
+    const rawData = data as Record<string, unknown>;
+    const paquetesList = Array.isArray(rawData.data)
+      ? (rawData.data as Record<string, unknown>[]).map(mapPaqueteDbRow)
+      : [];
+
+    return {
+      paquetes: paquetesList,
+      total: Number(rawData.total || 0),
+      existenciasActivas: Number(rawData.existencias_activas || 0),
+      pesoTotalKg: Number(rawData.peso_total_kg || 0),
+      page: Number(rawData.page || 1),
+      pageSize: Number(rawData.page_size || 50)
+    };
   }
 };
+
+export interface SearchPaquetesServerSideParams {
+  searchTerm?: string;
+  locationFilter?: string;
+  statusAmexFilter?: string;
+  shelfFilter?: string;
+  floorFilter?: string;
+  packageTypeFilter?: string;
+  fechaDesde?: string | null;
+  fechaHasta?: string | null;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface SearchPaquetesServerSideResult {
+  paquetes: Paquete[];
+  total: number;
+  existenciasActivas: number;
+  pesoTotalKg: number;
+  page: number;
+  pageSize: number;
+}
+
+function mapPaqueteDbRow(row: Record<string, unknown>): Paquete {
+  const posicion = String(
+    row.posicion_estante ||
+      (row.anaquel && row.piso ? `${row.anaquel}-${row.piso}` : 'REC')
+  );
+  const [anaquel, piso] = posicion.includes('-') ? posicion.split('-') : [posicion, 'P1'];
+
+  return {
+    id: String(row.id),
+    numeroReciboBodega: String(row.numero_recibo_bodega || ''),
+    tracking: String(row.tracking || row.tracking_usa || ''),
+    trackingUsa: String(row.tracking || row.tracking_usa || ''),
+    tipoEmpaque: String(row.tipo_empaque || ''),
+    numeroFactura: '',
+    dniConsignatario: String(row.dni_consignatario || ''),
+    nombreConsignatario: String(row.nombre_consignatario || ''),
+    descripcion: String(row.descripcion || ''),
+    pesoKg: row.peso_kg !== null && row.peso_kg !== undefined ? Number(row.peso_kg) : 0,
+    ubicacionActual: (row.ubicacion_actual as TipoUbicacion) || 'AmexLince',
+    anaquel: String(row.anaquel || anaquel),
+    piso: String(row.piso || piso),
+    posicionEstante: posicion,
+    metodoEntrega: 'CarroAmexDomicilio',
+    estadoTib: ((row.estado_tib || row.estado_entrega) as TipoEstadoTib) || 'EnAlmacen',
+    estadoEntrega: ((row.estado_tib || row.estado_entrega) as TipoEstadoEntrega) || 'EnAlmacen',
+    estadoAmex: (row.estado_amex === 'recibido' ? 'en_almacen' : ((row.estado_amex as TipoEstadoAmex) || 'en_almacen')),
+    facturaPdfUrl: '',
+    tibImagenUrl: row.tib_imagen_url ? String(row.tib_imagen_url) : undefined,
+    tibTicketPdfUrl: row.tib_ticket_pdf_url ? String(row.tib_ticket_pdf_url) : undefined,
+    usuarioEmail: String(row.usuario_email || ''),
+    creadoPor: row.creado_por ? String(row.creado_por) : undefined,
+    creadoEn: String(row.creado_en || ''),
+    actualizadoEn: String(row.actualizado_en || row.creado_en || '')
+  };
+}

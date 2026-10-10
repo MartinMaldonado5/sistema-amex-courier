@@ -9,6 +9,7 @@ import { soundEffects } from '@/lib/audio/soundEffects';
 import { isValidWr, cleanWr } from '@/lib/validations/wr';
 
 import { DashboardUser } from './useDashboardSession';
+import { ScannerQueueCloudService } from '@/features/scanner/services/scannerQueueCloud.service';
 
 const WMS_CODE_REGEX = /^[A-Za-z0-9\-_]{3,60}$/;
 
@@ -260,6 +261,13 @@ export function useDashboardActions({
         localStorage.setItem('amex_scanner_staging_queue_v2', JSON.stringify(updated));
       } catch (error) {
         console.warn('Error guardando la cola local del escáner:', error);
+      }
+      if (currentUser?.email) {
+        ScannerQueueCloudService.saveStagingQueueToCloud({
+          queue: updated,
+          userEmail: currentUser.email,
+          userId: currentUser?.id
+        }).catch(() => {});
       }
       return updated;
     });

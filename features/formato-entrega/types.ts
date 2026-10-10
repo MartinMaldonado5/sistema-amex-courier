@@ -14,9 +14,13 @@ export interface ActaEntregaData {
   notas?: string;
 }
 
+export type CloudSyncStatus = 'synced' | 'saving' | 'error';
+
 export interface ActaHistorialItem extends ActaEntregaData {
   id: string;
   creadoEn: string;
+  operadorNombre?: string;
+  operadorEmail?: string;
 }
 
 export const DEFAULT_ACTA_DATA: ActaEntregaData = {

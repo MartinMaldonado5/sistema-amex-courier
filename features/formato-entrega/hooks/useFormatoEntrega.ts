@@ -1,10 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
-import { ActaEntregaData, ActaHistorialItem, DEFAULT_ACTA_DATA } from '../types';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { ActaEntregaData, ActaHistorialItem, DEFAULT_ACTA_DATA, CloudSyncStatus } from '../types';
 import { generateActaEntregaPdf } from '../services/acta-pdf.service';
 import { generateActaEntregaDocx } from '../services/acta-docx.service';
+import { ActaCloudService } from '../services/actaCloud.service';
 import { Cliente, Paquete } from '@/types';
 
 const STORAGE_KEY = 'amex_actas_entrega_historial';
+const STORAGE_KEY_DRAFT = 'amex_actas_entrega_draft';
 
 export function getTodayFormatted(): string {
   const date = new Date();
@@ -15,7 +17,10 @@ export function getTodayFormatted(): string {
   return `${month} ${day}, ${year}`;
 }
 
-export function useFormatoEntrega(paquetesAlmacen: Paquete[] = []) {
+export function useFormatoEntrega(
+  paquetesAlmacen: Paquete[] = [],
+  currentUser?: { nombre?: string; email?: string; rol?: string; id?: string } | null
+) {
   const [formData, setFormData] = useState<ActaEntregaData>(() => ({
     ...DEFAULT_ACTA_DATA,
     fecha: getTodayFormatted()
@@ -27,6 +32,10 @@ export function useFormatoEntrega(paquetesAlmacen: Paquete[] = []) {
   const [isExporting, setIsExporting] = useState(false);
   const [historial, setHistorial] = useState<ActaHistorialItem[]>([]);
   const [isHistorialOpen, setIsHistorialOpen] = useState(false);
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<CloudSyncStatus>('synced');
+
+  const isHydratedRef = useRef<boolean>(false);
+  const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Mostrar mensaje toast temporal
   const showToast = useCallback((msg: string) => {
@@ -36,39 +45,116 @@ export function useFormatoEntrega(paquetesAlmacen: Paquete[] = []) {
     }, 3500);
   }, []);
 
-  // Cargar historial desde localStorage al montar
+  // Carga inicial (Prioridad: Supabase Nube -> Fallback: localStorage)
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setHistorial(JSON.parse(stored));
+    let isMounted = true;
+    async function loadData() {
+      // 1. Cargar historial desde la nube primero
+      try {
+        const cloudHist = await ActaCloudService.fetchHistorialFromCloud(30);
+        if (isMounted && cloudHist.length > 0) {
+          setHistorial(cloudHist);
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudHist));
+          } catch {}
+        } else {
+          // Fallback a localStorage
+          const stored = localStorage.getItem(STORAGE_KEY);
+          if (isMounted && stored) setHistorial(JSON.parse(stored));
+        }
+      } catch {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (isMounted && stored) setHistorial(JSON.parse(stored));
       }
-    } catch {
-      // Ignorar errores de parseo
-    }
-  }, []);
 
-  // Guardar en historial
+      // 2. Cargar borrador activo del usuario si está autenticado
+      if (currentUser?.email) {
+        setCloudSyncStatus('saving');
+        const cloudDraft = await ActaCloudService.loadDraftFromCloud(currentUser.email);
+        if (isMounted && cloudDraft) {
+          setFormData(cloudDraft);
+          setCloudSyncStatus('synced');
+          isHydratedRef.current = true;
+          return;
+        }
+      }
+
+      // Fallback a borrador local
+      try {
+        const localDraft = localStorage.getItem(STORAGE_KEY_DRAFT);
+        if (isMounted && localDraft) {
+          setFormData(JSON.parse(localDraft));
+        }
+      } catch {}
+
+      if (isMounted) {
+        setCloudSyncStatus('synced');
+        isHydratedRef.current = true;
+      }
+    }
+
+    loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser?.email]);
+
+  // Guardado automático debounced en la nube
+  useEffect(() => {
+    if (!isHydratedRef.current) return;
+
+    // Guardar en caché local
+    try {
+      localStorage.setItem(STORAGE_KEY_DRAFT, JSON.stringify(formData));
+    } catch {}
+
+    if (!currentUser?.email) return;
+
+    setCloudSyncStatus('saving');
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+
+    autosaveTimerRef.current = setTimeout(async () => {
+      const ok = await ActaCloudService.saveDraftToCloud({
+        formData,
+        userEmail: currentUser.email!,
+        userId: currentUser?.id
+      });
+      setCloudSyncStatus(ok ? 'synced' : 'error');
+    }, 1500);
+
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    };
+  }, [formData, currentUser?.email, currentUser?.id]);
+
+  // Guardar en historial (Nube + Local)
   const saveActaToHistorial = useCallback((data: ActaEntregaData) => {
     if (!data.destinatario && (!data.paquetes || data.paquetes.length === 0)) return;
 
     const newItem: ActaHistorialItem = {
       ...data,
       id: `acta-${Date.now()}`,
-      creadoEn: new Date().toISOString()
+      creadoEn: new Date().toISOString(),
+      operadorNombre: currentUser?.nombre || 'Operador Logístico',
+      operadorEmail: currentUser?.email || ''
     };
 
     setHistorial(prev => {
       const updated = [newItem, ...prev.filter(x => x.id !== newItem.id)].slice(0, 30);
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      } catch {
-        // Ignorar límites de almacenamiento
-      }
+      } catch {}
       return updated;
     });
-  }, []);
+
+    // Guardar en Supabase permanente
+    ActaCloudService.saveActaToCloud({
+      data,
+      operadorNombre: currentUser?.nombre,
+      operadorEmail: currentUser?.email,
+      operadorId: currentUser?.id
+    }).catch(err => console.warn('Error guardando acta en nube:', err));
+  }, [currentUser?.nombre, currentUser?.email, currentUser?.id]);
 
   // Actualizar un campo del formulario
   const updateField = useCallback(<K extends keyof ActaEntregaData>(field: K, value: ActaEntregaData[K]) => {
@@ -243,8 +329,14 @@ export function useFormatoEntrega(paquetesAlmacen: Paquete[] = []) {
     });
     setRawPasteText('');
     setSinglePackageInput('');
+    try {
+      localStorage.removeItem(STORAGE_KEY_DRAFT);
+    } catch {}
+    if (currentUser?.email) {
+      ActaCloudService.clearDraftFromCloud(currentUser.email).catch(() => {});
+    }
     showToast('Formulario restablecido.');
-  }, [showToast]);
+  }, [currentUser?.email, showToast]);
 
   // Cargar acta guardada desde historial
   const handleRestoreFromHistorial = useCallback((item: ActaHistorialItem) => {
@@ -270,11 +362,10 @@ export function useFormatoEntrega(paquetesAlmacen: Paquete[] = []) {
       const updated = prev.filter(x => x.id !== id);
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      } catch {
-        // Ignorar
-      }
+      } catch {}
       return updated;
     });
+    ActaCloudService.deleteActaFromCloud(id).catch(() => {});
     showToast('Acta eliminada del historial.');
   }, [showToast]);
 
@@ -338,6 +429,7 @@ export function useFormatoEntrega(paquetesAlmacen: Paquete[] = []) {
     handleDeleteHistorialItem,
     handlePrint,
     handleExportPdf,
-    handleExportDocx
+    handleExportDocx,
+    cloudSyncStatus
   };
 }
