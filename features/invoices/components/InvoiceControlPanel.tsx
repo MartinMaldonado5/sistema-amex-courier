@@ -115,45 +115,34 @@ export function InvoiceControlPanel({
     if (!panel || !body) return;
 
     const handleWheel = (e: WheelEvent) => {
-      // El cursor está sobre la zona de digitación: aislar el evento para evitar interferencia del contenedor exterior
+      // 1. Aislar estrictamente el evento para que jamás alcance a la ventana principal o al gestor Lenis
       e.stopPropagation();
 
       const target = e.target as HTMLElement | null;
 
-      // 1. Si el cursor está sobre un elemento scrollable interno (como la tabla de ítems o lista de autocompletado)
-      const innerScrollable = target?.closest('.overflow-y-auto') as HTMLElement | null;
-      if (innerScrollable && innerScrollable !== body) {
-        const canScrollUp = e.deltaY < 0 && innerScrollable.scrollTop > 0;
-        const canScrollDown =
-          e.deltaY > 0 &&
-          innerScrollable.scrollTop + innerScrollable.clientHeight < innerScrollable.scrollHeight - 1;
+      // 2. Si el cursor está en la cabecera u otra zona fija fuera del cuerpo deslizable:
+      // delegar el scroll directamente a body.scrollTop de forma inmediata (sin animaciones que causen lag)
+      if (!body.contains(target)) {
+        let delta = e.deltaY;
+        if (e.deltaMode === 1) delta *= 33; // Líneas de rueda de ratón tradicional
+        else if (e.deltaMode === 2) delta *= body.clientHeight;
+
+        const canScrollUp = delta < 0 && body.scrollTop > 0;
+        const canScrollDown = delta > 0 && body.scrollTop + body.clientHeight < body.scrollHeight - 1;
 
         if (canScrollUp || canScrollDown) {
-          // Dejar que el contenedor interno se desplace
-          return;
+          e.preventDefault();
+          body.scrollTop += delta;
+        } else {
+          e.preventDefault();
         }
+        return;
       }
 
-      // 2. Si estamos en cualquier otra parte del panel (encabezado, inputs, títulos, o límites de la tabla de ítems)
-      const canBodyScrollUp = e.deltaY < 0 && body.scrollTop > 0;
-      const canBodyScrollDown =
-        e.deltaY > 0 && body.scrollTop + body.clientHeight < body.scrollHeight - 1;
-
-      if (canBodyScrollUp || canBodyScrollDown) {
-        e.preventDefault();
-
-        let delta = e.deltaY;
-        if (e.deltaMode === 1) delta *= 28; // Modo líneas (rueda tradicional de mouse)
-        else if (e.deltaMode === 2) delta *= body.clientHeight; // Modo páginas
-
-        body.scrollBy({
-          top: delta,
-          behavior: 'auto'
-        });
-      } else {
-        // En los topes exactos del formulario, evitar arrastre no deseado de la página exterior
-        e.preventDefault();
-      }
+      // 3. Cuando el cursor está dentro del cuerpo (inputs, títulos, campos, etc.):
+      // NO ejecutamos e.preventDefault(). Dejamos que el motor nativo del navegador (GPU / Compositor)
+      // procese los microgestos del touchpad y ratón a 120 FPS con inercia física real.
+      // Así se eliminan por completo las trabas, microcongelamientos o tirones al deslizar.
     };
 
     panel.addEventListener('wheel', handleWheel, { passive: false });
@@ -519,7 +508,7 @@ export function InvoiceControlPanel({
               <div className="col-span-1 text-center"></div>
             </div>
 
-            <div className="divide-y divide-slate-800 max-h-72 overflow-y-auto">
+            <div className="divide-y divide-slate-800 max-h-72 overflow-y-auto" data-lenis-prevent="" style={{ overscrollBehavior: 'contain' }}>
               {(data.items || []).map((item, index) => (
                 <div key={item.id || index} className="grid grid-cols-12 gap-1 px-2 py-1.5 items-center hover:bg-slate-800/40">
                   {/* Item Name */}
