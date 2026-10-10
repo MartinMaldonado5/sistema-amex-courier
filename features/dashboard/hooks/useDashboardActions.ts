@@ -74,7 +74,7 @@ export function useDashboardActions({
       snapshot = previous;
       return previous.map((item) =>
         item.numeroReciboBodega.toUpperCase() === upper || item.trackingUsa.toUpperCase() === upper
-          ? { ...item, anaquel, piso, posicionEstante: location, estadoAmex: 'en_almacen' }
+          ? { ...item, anaquel, piso, posicionEstante: location, estadoAmex: 'en_almacen', actualizadoEn: new Date().toISOString() }
           : item
       );
     });
@@ -178,7 +178,8 @@ export function useDashboardActions({
       facturaPdfUrl: newPkgForm.facturaPdfUrl || '',
       usuarioEmail: currentUser?.email || '',
       creadoPor: currentUser?.id || undefined,
-      creadoEn: new Date().toISOString()
+      creadoEn: new Date().toISOString(),
+      actualizadoEn: new Date().toISOString()
     };
 
     setPaquetes((previous) => [newPackage, ...previous]);

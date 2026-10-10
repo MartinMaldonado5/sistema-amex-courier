@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { mapEstadoAmexLabel, mapEstadoTibLabel } from '@/lib/excelExport';
+import {
+  mapEstadoAmexLabel,
+  mapEstadoTibLabel,
+  formatFechaModificado,
+  formatFechaModificadoParts
+} from '@/lib/excelExport';
 
 describe('Dual Status Label Formatting & Mapping', () => {
   describe('mapEstadoAmexLabel', () => {
@@ -47,6 +52,43 @@ describe('Dual Status Label Formatting & Mapping', () => {
 
     it('preserves other custom statuses as-is', () => {
       expect(mapEstadoTibLabel('EnTransito')).toBe('EnTransito');
+    });
+  });
+
+  describe('formatFechaModificado', () => {
+    it('returns "—" when null, undefined or invalid date', () => {
+      expect(formatFechaModificado(null)).toBe('—');
+      expect(formatFechaModificado(undefined)).toBe('—');
+      expect(formatFechaModificado('')).toBe('—');
+      expect(formatFechaModificado('fecha-invalida')).toBe('—');
+    });
+
+    it('formats valid ISO dates to DD/MM/AAAA HH:mm:ss format matching TIB', () => {
+      const date = new Date(2026, 9, 9, 16, 35, 33); // Oct 9, 2026 16:35:33
+      const formatted = formatFechaModificado(date.toISOString());
+      expect(formatted).toBe('09/10/2026 16:35:33');
+    });
+
+    it('correctly zero-pads single-digit days, months, hours, minutes, and seconds', () => {
+      const date = new Date(2026, 0, 5, 8, 4, 7); // Jan 5, 2026 08:04:07
+      const formatted = formatFechaModificado(date.toISOString());
+      expect(formatted).toBe('05/01/2026 08:04:07');
+    });
+  });
+
+  describe('formatFechaModificadoParts', () => {
+    it('returns null when invalid', () => {
+      expect(formatFechaModificadoParts(null)).toBeNull();
+      expect(formatFechaModificadoParts('invalid')).toBeNull();
+    });
+
+    it('splits fecha and hora accurately', () => {
+      const date = new Date(2026, 9, 9, 16, 35, 33);
+      const parts = formatFechaModificadoParts(date.toISOString());
+      expect(parts).toEqual({
+        fecha: '09/10/2026',
+        hora: '16:35:33'
+      });
     });
   });
 });

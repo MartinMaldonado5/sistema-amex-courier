@@ -393,6 +393,7 @@ export function useInventoryData({
       editFormData.posicionEstante || `${editFormData.anaquel || 'A1'}-${editFormData.piso || 'P1'}`;
     const [ana, pis] = pos.includes('-') ? pos.split('-') : [pos, 'P1'];
 
+    const nowIso = new Date().toISOString();
     const updated: Paquete = {
       ...selectedPackageForAction,
       ...editFormData,
@@ -400,7 +401,8 @@ export function useInventoryData({
       piso: pis,
       posicionEstante: pos,
       pesoKg: Number(editFormData.pesoKg || 0),
-      estadoAmex: (editFormData.estadoAmex === 'recibido' ? 'en_almacen' : (editFormData.estadoAmex || selectedPackageForAction.estadoAmex || 'en_almacen')) as TipoEstadoAmex
+      estadoAmex: (editFormData.estadoAmex === 'recibido' ? 'en_almacen' : (editFormData.estadoAmex || selectedPackageForAction.estadoAmex || 'en_almacen')) as TipoEstadoAmex,
+      actualizadoEn: nowIso
     };
 
     if (onUpdatePackage) {
@@ -436,7 +438,7 @@ export function useInventoryData({
   const handleQuickStatusChange = async (pkg: Paquete, newStatus: TipoEstadoEntrega) => {
     try {
       await inventoryService.quickStatusChange(pkg, newStatus);
-      const updated: Paquete = { ...pkg, estadoEntrega: newStatus };
+      const updated: Paquete = { ...pkg, estadoEntrega: newStatus, estadoTib: newStatus, actualizadoEn: new Date().toISOString() };
       if (onUpdatePackage) onUpdatePackage(updated);
     } catch (err) {
       console.error('Error actualizando estado TIB:', err);
@@ -447,7 +449,7 @@ export function useInventoryData({
   const handleQuickStatusAmexChange = async (pkg: Paquete, newStatusAmex: TipoEstadoAmex) => {
     try {
       await inventoryService.quickStatusAmexChange(pkg, newStatusAmex);
-      const updated: Paquete = { ...pkg, estadoAmex: newStatusAmex };
+      const updated: Paquete = { ...pkg, estadoAmex: newStatusAmex, actualizadoEn: new Date().toISOString() };
       if (onUpdatePackage) onUpdatePackage(updated);
     } catch (err) {
       console.error('Error actualizando estado AMEX:', err);

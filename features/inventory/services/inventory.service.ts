@@ -96,13 +96,15 @@ export const inventoryService = {
       ? transferData.targetAnaquel
       : `${transferData.targetAnaquel}-${transferData.targetPiso || 'P1'}`;
 
+    const nowTransfer = new Date().toISOString();
     await supabase
       .from('paquetes')
       .update({
         ubicacion_actual: transferData.targetUbicacion,
         anaquel: transferData.targetAnaquel,
         piso: isLevelLess ? null : (transferData.targetPiso || 'P1'),
-        posicion_estante: targetPos
+        posicion_estante: targetPos,
+        actualizado_en: nowTransfer
       })
       .in('id', idsToMove);
 
@@ -131,7 +133,8 @@ export const inventoryService = {
           ubicacionActual: transferData.targetUbicacion,
           anaquel: transferData.targetAnaquel,
           piso: isLevelLess ? undefined : transferData.targetPiso,
-          posicionEstante: targetPos
+          posicionEstante: targetPos,
+          actualizadoEn: nowTransfer
         });
       }
     }
@@ -145,6 +148,7 @@ export const inventoryService = {
 
   // Guardar edición de paquete
   async updatePackage(updated: Paquete): Promise<void> {
+    const nowIso = new Date().toISOString();
     await supabase
       .from('paquetes')
       .update({
@@ -160,7 +164,8 @@ export const inventoryService = {
         piso: updated.piso,
         posicion_estante: updated.posicionEstante,
         estado_tib: updated.estadoTib || updated.estadoEntrega || 'EnAlmacen',
-        estado_amex: updated.estadoAmex === 'recibido' ? 'en_almacen' : (updated.estadoAmex || 'en_almacen')
+        estado_amex: updated.estadoAmex === 'recibido' ? 'en_almacen' : (updated.estadoAmex || 'en_almacen'),
+        actualizado_en: nowIso
       })
       .eq('id', updated.id);
   },
@@ -195,7 +200,8 @@ export const inventoryService = {
 
   // Cambio rápido de estado individual TIB
   async quickStatusChange(pkg: Paquete, newStatus: TipoEstadoEntrega): Promise<void> {
-    await supabase.from('paquetes').update({ estado_tib: newStatus }).eq('id', pkg.id);
+    const nowIso = new Date().toISOString();
+    await supabase.from('paquetes').update({ estado_tib: newStatus, actualizado_en: nowIso }).eq('id', pkg.id);
 
     await supabase.from('movimientos_kardex').insert({
       paquete_id: pkg.id,
@@ -211,7 +217,8 @@ export const inventoryService = {
 
   // Cambio rápido de estado operativo individual AMEX
   async quickStatusAmexChange(pkg: Paquete, newStatusAmex: TipoEstadoAmex): Promise<void> {
-    await supabase.from('paquetes').update({ estado_amex: newStatusAmex }).eq('id', pkg.id);
+    const nowIso = new Date().toISOString();
+    await supabase.from('paquetes').update({ estado_amex: newStatusAmex, actualizado_en: nowIso }).eq('id', pkg.id);
 
     await supabase.from('movimientos_kardex').insert({
       paquete_id: pkg.id,
@@ -227,12 +234,14 @@ export const inventoryService = {
 
   // Entrega rápida en 1 clic desde el mostrador/almacén
   async quickDeliver(pkg: Paquete): Promise<Paquete> {
+    const nowIso = new Date().toISOString();
     await supabase
       .from('paquetes')
       .update({
         estado_amex: 'entregado',
         estado_tib: 'Entregado',
-        ubicacion_actual: 'Entregado'
+        ubicacion_actual: 'Entregado',
+        actualizado_en: nowIso
       })
       .eq('id', pkg.id);
 
@@ -252,7 +261,8 @@ export const inventoryService = {
       estadoAmex: 'entregado',
       estadoTib: 'Entregado',
       estadoEntrega: 'Entregado',
-      ubicacionActual: 'Entregado'
+      ubicacionActual: 'Entregado',
+      actualizadoEn: nowIso
     };
   },
 
@@ -281,9 +291,11 @@ export const inventoryService = {
       targetStatusAmex = rawAmex === 'recibido' ? 'en_almacen' : rawAmex;
     }
 
+    const nowIso = new Date().toISOString();
     // Por requerimiento: el cambio masivo solo afecta a la columna estado_amex
     const updatePayload: Record<string, any> = {
-      estado_amex: targetStatusAmex
+      estado_amex: targetStatusAmex,
+      actualizado_en: nowIso
     };
     if (targetStatusTib) {
       updatePayload.estado_tib = targetStatusTib;
@@ -300,6 +312,7 @@ export const inventoryService = {
         const updated: Paquete = {
           ...pkg,
           estadoAmex: targetStatusAmex,
+          actualizadoEn: nowIso,
           ...(targetStatusTib ? { estadoTib: targetStatusTib, estadoEntrega: targetStatusTib } : {})
         };
         updatedList.push(updated);

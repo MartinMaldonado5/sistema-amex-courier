@@ -53,6 +53,7 @@ export interface Paquete {
   usuarioEmail?: string;
   creadoPor?: string;
   creadoEn: string;
+  actualizadoEn?: string;
 }
 
 export interface EmbarqueMaster {

@@ -60,6 +60,43 @@ export function mapEstadoTibLabel(estado?: string | null): string {
 }
 
 /**
+ * Formatea una fecha ISO a formato TIB: DD/MM/AAAA HH:mm:ss
+ */
+export function formatFechaModificado(dateString?: string | null): string {
+  if (!dateString) return '—';
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return '—';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const dia = pad(d.getDate());
+  const mes = pad(d.getMonth() + 1);
+  const anio = d.getFullYear();
+  const hora = pad(d.getHours());
+  const min = pad(d.getMinutes());
+  const seg = pad(d.getSeconds());
+  return `${dia}/${mes}/${anio} ${hora}:${min}:${seg}`;
+}
+
+/**
+ * Retorna la fecha y hora separadas para renderizado multi-línea idéntico a TIB
+ */
+export function formatFechaModificadoParts(dateString?: string | null): { fecha: string; hora: string } | null {
+  if (!dateString) return null;
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return null;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const dia = pad(d.getDate());
+  const mes = pad(d.getMonth() + 1);
+  const anio = d.getFullYear();
+  const hora = pad(d.getHours());
+  const min = pad(d.getMinutes());
+  const seg = pad(d.getSeconds());
+  return {
+    fecha: `${dia}/${mes}/${anio}`,
+    hora: `${hora}:${min}:${seg}`
+  };
+}
+
+/**
  * Exportador profesional de Paquetes / Inventario a Excel (.xlsx)
  */
 export function exportPaquetesToExcel(paquetes: Paquete[], filenamePrefix = 'Inventario_AMEX_Lince') {
@@ -71,6 +108,7 @@ export function exportPaquetesToExcel(paquetes: Paquete[], filenamePrefix = 'Inv
     'Tipo Paquete': p.tipoEmpaque || '',
     'Peso (Kg)': p.pesoKg && Number(p.pesoKg) > 0 ? Number(p.pesoKg) : '',
     'Estado AMEX': mapEstadoAmexLabel(p.estadoAmex),
+    'Modificado': formatFechaModificado(p.actualizadoEn || p.creadoEn),
     'Estado TIB': mapEstadoTibLabel(p.estadoTib || p.estadoEntrega),
     'Posición WMS': p.posicionEstante || (p.anaquel && p.piso ? `${p.anaquel}-${p.piso}` : 'REC'),
     'Almacén Actual': p.ubicacionActual === 'Entregado'

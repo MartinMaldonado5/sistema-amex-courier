@@ -62,7 +62,8 @@ function mapPaquete(row: Record<string, unknown>): Paquete {
     tibTicketPdfUrl: row.tib_ticket_pdf_url ? String(row.tib_ticket_pdf_url) : undefined,
     usuarioEmail: String(row.usuario_email || ''),
     creadoPor: row.creado_por ? String(row.creado_por) : undefined,
-    creadoEn: String(row.creado_en || '')
+    creadoEn: String(row.creado_en || ''),
+    actualizadoEn: String(row.actualizado_en || row.creado_en || '')
   };
 }
 

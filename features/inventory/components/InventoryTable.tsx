@@ -6,6 +6,7 @@ import {
   Camera
 } from 'lucide-react';
 import { Paquete } from '@/types';
+import { formatFechaModificadoParts } from '@/lib/excelExport';
 import RowActionsDropdown from './RowActionsDropdown';
 
 export interface InventoryTableProps {
@@ -67,13 +68,14 @@ export default function InventoryTable({
               <th className="py-2.5 px-3.5">Peso</th>
               <th className="py-2.5 px-3.5">Ubicación</th>
               <th className="py-2.5 px-3.5">Estado AMEX</th>
+              <th className="py-2.5 px-3.5 whitespace-nowrap">Modificado</th>
               <th className="py-2.5 px-3.5 text-center">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {filteredPaquetes.length === 0 ? (
               <tr>
-                <td colSpan={9} style={{ textAlign: 'center', padding: '36px', color: '#94a3b8' }}>
+                <td colSpan={10} style={{ textAlign: 'center', padding: '36px', color: '#94a3b8' }}>
                   <Boxes style={{ width: '40px', height: '40px', margin: '0 auto 8px auto', color: '#cbd5e1' }} />
                   <div style={{ fontWeight: 800, color: '#64748b' }}>
                     No se encontraron paquetes con los filtros seleccionados
@@ -247,6 +249,40 @@ export default function InventoryTable({
                           ? '✅ ENTREGADO'
                           : (pkg.estadoAmex || 'EN ALMACÉN').toUpperCase()}
                       </span>
+                    </td>
+
+                    {/* MODIFICADO (Fecha y Hora idéntico a TIB: DD/MM/AAAA HH:mm:ss) */}
+                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
+                      {(() => {
+                        const modParts = formatFechaModificadoParts(pkg.actualizadoEn || pkg.creadoEn);
+                        if (!modParts) {
+                          return <span style={{ color: '#94a3b8' }}>—</span>;
+                        }
+                        return (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                            <span
+                              style={{
+                                fontSize: '11.5px',
+                                fontWeight: 700,
+                                color: '#1e293b',
+                                fontFamily: 'monospace'
+                              }}
+                            >
+                              {modParts.fecha}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: '10.5px',
+                                fontWeight: 600,
+                                color: '#64748b',
+                                fontFamily: 'monospace'
+                              }}
+                            >
+                              {modParts.hora}
+                            </span>
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td style={{ padding: '8px 12px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                       <RowActionsDropdown
